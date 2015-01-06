@@ -20,11 +20,10 @@ module Hbc
       end
 
       def installed?
-        cmd = @command.run("/usr/bin/type",
-                           args: ["-p", "gpg"])
+        gpg_bin_path = @command.run("/usr/bin/type",
+                                    args: ["-p", "gpg"])
 
-        # if `gpg` is found, return its absolute path
-        cmd.success? ? cmd.stdout : false
+        gpg_bin_path.success? ? gpg_bin_path.stdout : false
       end
 
       def fetch_sig(force = false)
