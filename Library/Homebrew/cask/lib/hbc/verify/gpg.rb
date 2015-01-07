@@ -54,7 +54,11 @@ module Hbc
                  ["--fetch-key", cask.gpg.key_url.to_s]
                end
 
-        @command.run!("gpg", args: args)
+        import = @command.run("gpg", args:         args,
+                                     print_stderr: true)
+        unless import.success?
+          raise CaskError.new("GPG failed to retrieve the #{@cask} signing key: #{@cask.gpg.key_id || @cask.gpg.key_url}")
+        end
       end
 
       def verify
