@@ -14,11 +14,11 @@ module Hbc
 
       def initialize(signature, parameters = {})
         @parameters = parameters
-        @signature = UnderscoreSupportingURI.parse(signature)
+        @signature = URL.new(signature)
         parameters.each do |hkey, hvalue|
           raise "invalid 'gpg' parameter: '#{hkey.inspect}'" unless VALID_PARAMETERS.include?(hkey)
           writer_method = "#{hkey}=".to_sym
-          hvalue = UnderscoreSupportingURI.parse(hvalue) if hkey == :key_url
+          hvalue = URL.new(hvalue) if hkey == :key_url
           valid_id?(hvalue) if hkey == :key_id
           send(writer_method, hvalue)
         end
