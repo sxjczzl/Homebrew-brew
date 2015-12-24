@@ -61,7 +61,16 @@ module Hbc
       end
 
       def verify
-        return unless available?
+        unless available?
+          opoo <<-EOS.undent
+            Skipping GPG signature for #{@cask} because gpg is not available.
+            To enable GPG signature verification, install gpg with:
+
+              brew install gpg
+          EOS
+          return
+        end
+
         import_key
         signature = retrieve_signature
 
