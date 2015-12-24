@@ -70,6 +70,7 @@ module Hbc
                                     print_stdout: true)
 
         @successful = check.success?
+        raise CaskGpgVerificationFailedError.new(cask.token, downloaded_path, @signature) unless @successful
       end
     end
   end
