@@ -5,13 +5,13 @@ module Hbc
         cask.gpg
       end
 
-      attr_reader :cask, :downloaded_path, :signature
+      attr_reader :cask, :downloaded_path, :force_fetch
 
       def initialize(cask, downloaded_path, force_fetch = false, command = Hbc::SystemCommand)
         @command = command
         @cask = cask
         @downloaded_path = downloaded_path
-        @signature = retrieve_signature(force_fetch)
+        @force_fetch = force_fetch
       end
 
       def available?
@@ -26,7 +26,7 @@ module Hbc
         gpg_bin_path.success? ? gpg_bin_path.stdout : false
       end
 
-      def retrieve_signature(force = false)
+      def retrieve_signature
         maybe_dir = @cask.metadata_subdir("gpg")
         versioned_cask = @cask.version.is_a?(String)
 
@@ -41,7 +41,7 @@ module Hbc
         meta_dir = cached || @cask.metadata_subdir("gpg", :now, true)
         sig_path = meta_dir.join("signature.asc")
 
-        curl(@cask.gpg.signature, "-o", sig_path) if !cached || !sig_path.exist? || force
+        curl(@cask.gpg.signature, '-o', sig_path) if !cached || !sig_path.exist? || force_fetch
 
         sig_path
       end
@@ -63,12 +63,13 @@ module Hbc
       def verify
         return unless available?
         import_key
+        signature = retrieve_signature
 
         ohai "Verifying GPG signature for #{@cask}"
-        check = @command.run("gpg", args:         ["--verify", @signature, downloaded_path],
+        check = @command.run("gpg", args:         ["--verify", signature, downloaded_path],
                                     print_stdout: true)
 
-        raise CaskGpgVerificationFailedError.new(cask.token, downloaded_path, @signature) unless check.success?
+        raise CaskGpgVerificationFailedError.new(cask.token, downloaded_path, signature) unless check.success?
       end
     end
   end
