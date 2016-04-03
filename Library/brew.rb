@@ -69,15 +69,22 @@ begin
   # It should never affect external commands so they can handle usage
   # arguments themselves.
 
-  if empty_argv || (help_flag && (cmd.nil? || internal_cmd))
-    # TODO: - `brew help cmd` should display subcommand help
-    require "cmd/help"
-    if empty_argv
-      $stderr.puts ARGV.usage
-    else
+  if empty_argv
+    $stderr.puts ARGV.usage
+    exit 1
+  elsif help_flag
+    if cmd.nil?
       puts ARGV.usage
+      exit 0
+    else
+      # Handle both internal ruby and shell commands
+      require "cmd/help"
+      help_text = Homebrew.help_for_command(cmd)
+      unless help_text.empty?
+        puts help_text
+        exit 0
+      end
     end
-    exit ARGV.any? ? 0 : 1
   end
 
   if internal_cmd
