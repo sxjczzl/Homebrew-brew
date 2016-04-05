@@ -14,12 +14,12 @@ begin
   error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
   error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
 
+  formula = ARGV.formulae.first
   ENV.extend(Stdenv)
-  ENV.setup_build_environment
+  ENV.setup_build_environment(formula)
 
   trap("INT", old_trap)
 
-  formula = ARGV.formulae.first
   formula.extend(Homebrew::Assertions)
   formula.extend(Debrew::Formula) if ARGV.debug?
 
