@@ -165,12 +165,16 @@ class BrewCmdLoader
       if File.file?(file)
         return load_internal_cmd(name, file)
       end
+      sh_file = dir.join(name+".sh")
+      if File.file?(sh_file)
+        return ShellInternalCmd.new(name, sh_file)
+      end
     end
 
     # External commands: arbitrary exes to be exec'ed
     exe_file = which "brew-#{name}"
     if exe_file
-      return ExternalExeCmd(exe_file)
+      return ExternalExeCmd.new(name, exe_file)
     end
 
     # External commands: .rb files to be required
@@ -178,14 +182,15 @@ class BrewCmdLoader
     if rb_exe_file
       return load_rb_exe_cmd(name, rb_exe_file)
     end
-    # Well-known commands in non-default taps
   end
 
   # Load an "internal" command shipped with Homebrew. Supports the legacy
   # "function in Homebrew module" and new "BrewCmd class definition" forms
   def load_internal_cmd(name, file)
     if looks_like_cmd_class_file?(name, file)
-      load_class_file_cmd(name, file)
+      cmd = load_class_file_cmd(name, file)
+      cmd.is_internal_cmd = true
+      cmd
     else
       load_internal_function_cmd(name, file)
     end
@@ -202,7 +207,8 @@ class BrewCmdLoader
   # Loads new-style <Cmd>BrewCmd class command definition file
   def load_class_file_cmd(name, file)
     require file
-    Object.const_get(BrewCmdLoader.cmd_class_s(name)).new(name)
+    cmd_class = Object.const_get(BrewCmdLoader.cmd_class_s(name))
+    cmd_class.new(name, file)
   end
 
   # Loads an old-style Homebrew.<cmd> function file
@@ -230,8 +236,12 @@ class BrewCmdClass < BrewCmd
   #attr_rw :summary
   #attr_rw :helptext
 
-  def initialize(name)
+  attr_accessor :is_internal_cmd
+
+  def initialize(name, file)
     @name = name
+    @implementation_file = file
+    @is_internal_cmd = false
   end
 
   attr_reader :name
@@ -248,6 +258,18 @@ class BrewCmdClass < BrewCmd
 
   def helptext
     self.class.helptext
+  end
+
+  def implementation_type
+    :ruby_class_file
+  end
+
+  def implementation_file
+    @implementation_file
+  end
+
+  def internal_cmd?
+    @is_internal_cmd
   end
 end
 
@@ -283,6 +305,39 @@ class FunctionInternalCmd < BrewCmd
 
   def run
     Homebrew.send @function_name
+  end
+end
+
+class ShellInternalCmd < BrewCmd
+  def initialize(name, file)
+    @name = name
+    @implementation_file = file
+  end
+
+  def name
+    @name
+  end
+
+  def implementation_type
+    :builtin_shell_script
+  end
+
+  def implementation_file
+    @implementation_file
+  end
+
+  def internal_cmd?
+    true
+  end
+
+  def handles_help_itself?
+    false
+  end
+
+  # For ShellInternalCmd, run() should generally never get called, because the script
+  # will be invoked directly from brew.sh. But it's here for completeness.
+  def run
+    exec @implementation_file, *ARGV
   end
 end
 
@@ -334,7 +389,7 @@ class ExternalExeCmd < BrewCmd
     %w[CACHE LIBRARY_PATH].each do |e|
       ENV["HOMEBREW_#{e}"] = Object.const_get("HOMEBREW_#{e}").to_s
     end
-    exec @implementation_file
+    exec @implementation_file, *ARGV
   end
 
 end
