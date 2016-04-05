@@ -45,22 +45,9 @@ __brewcomp ()
 __brew_complete_formulae ()
 {
     local cur="${COMP_WORDS[COMP_CWORD]}"
-    local lib=$(brew --repository)/Library
-    local taps=${lib}/Taps
-
-    # capture tap/Formula/foo.rb, tap/HomebrewFormula/foo.rb
-    local ff=$(find $taps -depth 4 -path '*Formula/*rb' | sed -E "s|$taps/([^/]+)/homebrew-([^/]+)/(Homebrew)?Formula/(.*)\.rb|\1/\2/\4|")
-
-    # capture tap/foo.rb
-    local fr=$(find $taps -depth 3 -name '*rb' | sed -E "s|$taps/([^/]+)/homebrew-([^\]+)/(.*).rb|\1/\2/\3|")
-
-    # capture tap/Aliases/foo
-    local fa=$(find $taps -depth 4 -path '*Aliases*' | sed -E "s|$taps/([^\]+)/homebrew-([^\]+)/Aliases/(.*)|\1/\2/\3|")
-
-    # short names
-    local short=$(printf "$ff\\n$fr\\n$fa\\n" | cut -d / -f 3)
-
-    COMPREPLY=($(compgen -W "$short $ff $fr $fa" -- "$cur"))
+    local formulas=$(brew search)
+    local shortnames=$(echo "$formulas" | grep / | cut -d / -f 3)
+    COMPREPLY=($(compgen -W "$formulas $shortnames" -- "$cur"))
 }
 
 __brew_complete_installed ()
