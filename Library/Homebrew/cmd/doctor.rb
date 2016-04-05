@@ -1,5 +1,17 @@
 require "diagnostic"
 
+class DoctorBrewCmd < BrewCmdClass
+  summary "Examine this system for potential problems affecting brew"
+  helptext <<EOS
+
+brew doctor - #{summary}
+
+  brew doctor [--list-checks]
+
+Options:
+  --list-checks  List defined tests instead of running them
+EOS
+end
 module Homebrew
   def doctor
     checks = Diagnostic::Checks.new

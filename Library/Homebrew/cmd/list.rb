@@ -1,6 +1,29 @@
 require "metafiles"
 require "formula"
 
+class ListBrewCmd < BrewCmdClass
+  summary "List installed formulae, or files in installed formula"
+  helptext <<EOS
+
+brew list, ls - #{summary}
+
+  brew list [--full-name]
+  brew list --unbrewed
+  brew list [--versions [--multiple]] [--verbose] [--pinned] <formulae>
+
+Options:
+  --full-name  Print fully-qualified formula names
+  --unbrewed   List all files in brew prefix not installed by Homebrew
+  --versions   Include formula version numbers
+  --multiple   Only show formulae with multiple versions installed
+  --pinned     Show versions of pinned formulae
+EOS
+
+  def run
+    Homebrew.list
+  end
+end
+
 module Homebrew
   def list
     # Use of exec means we don't explicitly exit

@@ -1,31 +1,3 @@
-# Comprehensively test a formula or pull request.
-#
-# Usage: brew test-bot [options...] <pull-request|formula>
-#
-# Options:
-# --keep-logs:     Write and keep log files under ./brewbot/
-# --cleanup:       Clean the Homebrew directory. Very dangerous. Use with care.
-# --clean-cache:   Remove all cached downloads. Use with care.
-# --skip-setup:    Don't check the local system is setup correctly.
-# --skip-homebrew: Don't check Homebrew's files and tests are all valid.
-# --junit:         Generate a JUnit XML test results file.
-# --no-bottle:     Run brew install without --build-bottle
-# --keep-old:      Run brew bottle --keep-old to build new bottles for a single platform.
-# --legacy         Bulid formula from legacy Homebrew/homebrew repo.
-#                  (TODO remove it when it's not longer necessary)
-# --HEAD:          Run brew install with --HEAD
-# --local:         Ask Homebrew to write verbose logs under ./logs/ and set HOME to ./home/
-# --tap=<tap>:     Use the git repository of the given tap
-# --dry-run:       Just print commands, don't run them.
-# --fail-fast:     Immediately exit on a failing step.
-# --verbose:       Print out all logs in realtime
-# --fast:          Don't install any packages but run e.g. audit anyway.
-#
-# --ci-master:           Shortcut for Homebrew master branch CI options.
-# --ci-pr:               Shortcut for Homebrew pull request CI options.
-# --ci-testing:          Shortcut for Homebrew testing CI options.
-# --ci-upload:           Homebrew CI bottle upload.
-
 require "formula"
 require "utils"
 require "date"
@@ -33,6 +5,45 @@ require "rexml/document"
 require "rexml/xmldecl"
 require "rexml/cdata"
 require "tap"
+
+class TestBotBrewCmd < BrewCmdClass
+  summary "Comprehensively test a formula or PR"
+  helptext <<EOS
+
+brew test-bot - #{summary}
+
+Usage: brew test-bot [options...] <pull-request|formula>
+
+Options:
+  --keep-logs:     Write and keep log files under ./brewbot/.
+  --cleanup:       Clean the Homebrew directory. Very dangerous. Use with care.
+  --clean-cache:   Remove all cached downloads. Use with care.
+  --skip-setup:    Don't check the local system is setup correctly.
+  --skip-homebrew: Don't check Homebrew's files and tests are all valid.
+  --junit:         Generate a JUnit XML test results file.
+  --no-bottle:     Run brew install without --build-bottle.
+  --keep-old:      Run brew bottle --keep-old to build new bottles for a single platform.
+  --legacy         Build formula from legacy Homebrew/homebrew repo.
+                   (TODO remove it when it's not longer necessary)
+  --HEAD:          Run brew install with --HEAD.
+  --local:         Ask Homebrew to write verbose logs under ./logs/ and set HOME to ./home/.
+  --tap=<tap>:     Use the git repository of the given tap.
+  --dry-run:       Just print commands, don't run them.
+  --fail-fast:     Immediately exit on a failing step.
+  --verbose:       Print test step output in realtime. Has the side effect of passing output
+                   as raw bytes instead of re-encoding in UTF-8.
+  --fast:          Don't install any packages but run e.g. audit anyway.
+
+  --ci-master:           Shortcut for Homebrew master branch CI options.
+  --ci-pr:               Shortcut for Homebrew pull request CI options.
+  --ci-testing:          Shortcut for Homebrew testing CI options.
+  --ci-upload:           Homebrew CI bottle upload.
+EOS
+
+  def run
+    Homebrew.test_bot
+  end
+end
 
 module Homebrew
   BYTES_IN_1_MEGABYTE = 1024*1024
