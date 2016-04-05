@@ -1,9 +1,12 @@
+# Andrew's in-progress version of brew.rb that uses BrewCmd objects
+
 std_trap = trap("INT") { exit! 130 } # no backtrace thanks
 
 require "pathname"
 HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent.join("Homebrew")
 $:.unshift(HOMEBREW_LIBRARY_PATH.to_s)
 require "global"
+require "command"
 
 if ARGV == %w[--version] || ARGV == %w[-v]
   puts "Homebrew #{Homebrew.homebrew_version_string}"
@@ -29,10 +32,10 @@ end
 begin
   trap("INT", std_trap) # restore default CTRL-C handler
 
+  # Parse inputs
   empty_argv = ARGV.empty?
   help_flag_list = %w[-h --help --usage -? help]
   help_flag = false
-  internal_cmd = true
   cmd = nil
 
   ARGV.dup.each_with_index do |arg, i|
@@ -45,32 +48,8 @@ begin
     end
   end
 
-  # Add contributed commands to PATH before checking.
-  Dir["#{HOMEBREW_LIBRARY}/Taps/*/*/cmd"].each do |tap_cmd_dir|
-    ENV["PATH"] += "#{File::PATH_SEPARATOR}#{tap_cmd_dir}"
-  end
-
-  # Add SCM wrappers.
-  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_ENV_PATH}/scm"
-
-  if cmd
-    internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("cmd", cmd)
-
-    if !internal_cmd && ARGV.homebrew_developer?
-      internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("dev-cmd", cmd)
-    end
-  end
-
-  # Usage instructions should be displayed if and only if one of:
-  # - a help flag is passed AND an internal command is matched
-  # - a help flag is passed AND there is no command specified
-  # - no arguments are passed
-  #
-  # It should never affect external commands so they can handle usage
-  # arguments themselves.
-
-  if empty_argv || (help_flag && (cmd.nil? || internal_cmd))
-    # TODO: - `brew help cmd` should display subcommand help
+  # Display general usage if no args, or a help flag without a command
+  if cmd.nil?
     require "cmd/help"
     if empty_argv
       $stderr.puts ARGV.usage
@@ -80,40 +59,31 @@ begin
     exit ARGV.any? ? 0 : 1
   end
 
-  if internal_cmd
-    Homebrew.send cmd.to_s.tr("-", "_").downcase
-  elsif which "brew-#{cmd}"
-    %w[CACHE LIBRARY_PATH].each do |e|
-      ENV["HOMEBREW_#{e}"] = Object.const_get("HOMEBREW_#{e}").to_s
-    end
-    exec "brew-#{cmd}", *ARGV
-  elsif (path = which("brew-#{cmd}.rb")) && require?(path)
-    exit Homebrew.failed? ? 1 : 0
-  else
-    require "tap"
-    possible_tap = case cmd
-    when "brewdle", "brewdler", "bundle", "bundler"
-      Tap.fetch("Homebrew", "bundle")
-    when "cask"
-      Tap.fetch("caskroom", "cask")
-    when "services"
-      Tap.fetch("Homebrew", "services")
-    end
-
-    if possible_tap && !possible_tap.installed?
-      brew_uid = HOMEBREW_BREW_FILE.stat.uid
-      tap_commands = []
-      if Process.uid.zero? && !brew_uid.zero?
-        tap_commands += %W[/usr/bin/sudo -u ##{brew_uid}]
-      end
-      tap_commands += %W[#{HOMEBREW_BREW_FILE} tap #{possible_tap}]
-      safe_system *tap_commands
-      exec HOMEBREW_BREW_FILE, cmd, *ARGV
-    else
-      onoe "Unknown command: #{cmd}"
-      exit 1
-    end
+  # Add contributed commands to PATH before checking.
+  Dir["#{HOMEBREW_LIBRARY}/Taps/*/*/cmd"].each do |tap_cmd_dir|
+    ENV["PATH"] += "#{File::PATH_SEPARATOR}#{tap_cmd_dir}"
   end
+
+  # Add SCM wrappers.
+  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_ENV_PATH}/scm"
+
+  # Look up and run given command
+  cmd_obj = BrewCmd[cmd]
+  if cmd_obj.nil?
+    BrewCmdLoader.lookup_well_known_tap_commands(cmd)
+    cmd_obj = BrewCmd[cmd]
+  end
+  if cmd_obj.nil?
+    onoe "Unknown command: #{cmd}"
+    exit 1
+  end
+
+  if help_flag && !cmd_obj.handles_help_itself?
+    cmd_obj.display_help
+  else
+    cmd_obj.run
+  end
+  exit Homebrew.failed? ? 1 : 0
 
 rescue FormulaUnspecifiedError
   abort "This command requires a formula argument"
@@ -142,7 +112,7 @@ rescue RuntimeError, SystemCallError => e
 rescue Exception => e
   report_analytics_exception(e)
   onoe e
-  if internal_cmd
+  if !cmd_obj.nil? && cmd_obj.internal_cmd?
     $stderr.puts "#{Tty.white}Please report this bug:"
     $stderr.puts "    #{Tty.em}#{OS::ISSUES_URL}#{Tty.reset}"
   end

@@ -1,25 +1,37 @@
-# Gets a patch from a GitHub commit or pull request and applies it to Homebrew.
-# Optionally, installs the formulae changed by the patch.
-#
-# Usage: brew pull [options...] <patch-source>
-#
-# <patch-source> may be any of:
-#   * The ID number of a pull request in the Homebrew GitHub repo
-#   * The URL of a pull request on GitHub, using either the web page or API URL formats
-#   * The URL of a commit on GitHub
-#   * A "brew.sh/job/..." string specifying a testing job ID
-#
-# Options:
-#   --bottle:    Handle bottles, pulling the bottle-update commit and publishing files on Bintray
-#   --bump:      For one-formula PRs, automatically reword commit message to our preferred format
-#   --clean:     Do not rewrite or otherwise modify the commits found in the pulled PR
-#   --ignore-whitespace: Silently ignore whitespace discrepancies when applying diffs
-#   --install:   Install changed formulae locally after pulling the patch
-#   --resolve:   When a patch fails to apply, leave in progress and allow user to
-#                 resolve, instead of aborting
-#   --branch-okay: Do not warn if pulling to a branch besides master (useful for testing)
-#   --legacy:    Pull legacy formula PR from Homebrew/homebrew
-#                (TODO remove it when it's not longer necessary)
+
+class PullBrewCmd < BrewCmdClass
+  summary "Pull patches and bottles for PRs to local Homebrew repo"
+
+  helptext <<EOS
+
+brew pull [options...] <patch-source>
+
+Gets a patch from a GitHub commit or pull request and applies it to Homebrew.
+Optionally, installs the formulae changed by the patch.
+
+<patch-source> may be any of:
+  * The ID number of a pull request in the Homebrew GitHub repo
+  * The URL of a pull request on GitHub, using either the web page or API URL formats
+  * The URL of a commit on GitHub
+  * A "brew.sh/job/..." string specifying a testing job ID
+
+Options:
+  --bottle:    Handle bottles, pulling the bottle-update commit and publishing files on Bintray
+  --bump:      For one-formula PRs, automatically reword commit message to our preferred format
+  --clean:     Do not rewrite or otherwise modify the commits found in the pulled PR
+  --install:   Install changed formulae locally after pulling the patch
+  --resolve:   When a patch fails to apply, leave in progress and allow user to
+                 resolve, instead of aborting
+  --branch-okay: Do not warn if pulling to a branch besides master (useful for testing)
+  --ignore-whitespace: Silently ignore whitespace discrepancies when applying diffs
+  --legacy:    Pull legacy formula PR from Homebrew/homebrew
+               (TODO remove it when it's not longer necessary)
+EOS
+
+  def run
+    Homebrew.pull
+  end
+end
 
 require "utils"
 require "utils/json"
