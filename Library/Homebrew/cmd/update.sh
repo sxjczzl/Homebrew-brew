@@ -9,22 +9,42 @@ git() {
 git_init_if_necessary() {
   if [[ -n "$HOMEBREW_OSX" ]]
   then
-    OFFICIAL_REMOTE="https://github.com/Homebrew/brew.git"
+    BREW_OFFICIAL_REMOTE="https://github.com/Homebrew/brew.git"
+    CORE_OFFICIAL_REMOTE="https://github.com/Homebrew/homebrew-core"
   else
-    OFFICIAL_REMOTE="https://github.com/Linuxbrew/brew.git"
+    BREW_OFFICIAL_REMOTE="https://github.com/Linuxbrew/brew.git"
+    CORE_OFFICIAL_REMOTE="https://github.com/Linuxbrew/homebrew-core"
   fi
 
+  chdir "$HOMEBREW_REPOSITORY"
   if [[ ! -d ".git" ]]
   then
     set -e
     trap '{ rm -rf .git; exit 1; }' EXIT
     git init
     git config --bool core.autocrlf false
-    git config remote.origin.url "$OFFICIAL_REMOTE"
+    git config remote.origin.url "$BREW_OFFICIAL_REMOTE"
     git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
     git fetch --force --depth=1 origin refs/heads/master:refs/remotes/origin/master
     git reset --hard origin/master
-    SKIP_FETCH_HOMEBREW_REPOSITORY=1
+    SKIP_FETCH_BREW_REPOSITORY=1
+    set +e
+    trap - EXIT
+  fi
+
+  [[ -d "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" ]] || return
+  chdir "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core"
+  if [[ ! -d ".git" ]]
+  then
+    set -e
+    trap '{ rm -rf .git; exit 1; }' EXIT
+    git init
+    git config --bool core.autocrlf false
+    git config remote.origin.url "$CORE_OFFICIAL_REMOTE"
+    git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    git fetch --force --depth=1 origin refs/heads/master:refs/remotes/origin/master
+    git reset --hard origin/master
+    SKIP_FETCH_CORE_REPOSITORY=1
     set +e
     trap - EXIT
   fi
@@ -36,6 +56,7 @@ rename_taps_dir_if_necessary() {
   local user
   local repo
 
+  chdir "$HOMEBREW_REPOSITORY"
   for tap_dir in "$HOMEBREW_LIBRARY"/Taps/*
   do
     [[ -d "$tap_dir/.git" ]] || continue
@@ -279,11 +300,12 @@ EOS
   # ensure GIT_CONFIG is unset as we need to operate on .git/config
   unset GIT_CONFIG
 
-  chdir "$HOMEBREW_REPOSITORY"
   git_init_if_necessary
   # rename Taps directories
   # this procedure will be removed in the future if it seems unnecessary
   rename_taps_dir_if_necessary
+
+  chdir "$HOMEBREW_REPOSITORY"
 
   # kill all of subprocess on interrupt
   trap '{ pkill -P $$; wait; exit 130; }' SIGINT
@@ -291,7 +313,8 @@ EOS
   for DIR in "$HOMEBREW_REPOSITORY" "$HOMEBREW_LIBRARY"/Taps/*/*
   do
     [[ -d "$DIR/.git" ]] || continue
-    [[ -n "$SKIP_FETCH_HOMEBREW_REPOSITORY" && "$DIR" = "$HOMEBREW_REPOSITORY" ]] && continue
+    [[ -n "$SKIP_FETCH_BREW_REPOSITORY" && "$DIR" = "$HOMEBREW_REPOSITORY" ]] && continue
+    [[ -n "$SKIP_FETCH_CORE_REPOSITORY" && "$DIR" = "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" ]] && continue
     cd "$DIR" || continue
     UPSTREAM_BRANCH="$(upstream_branch)"
     # the refspec ensures that the default upstream branch gets updated

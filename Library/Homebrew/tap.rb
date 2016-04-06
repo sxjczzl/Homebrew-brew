@@ -175,8 +175,6 @@ class Tap
   # @option options [Boolean] :full_clone If set as true, full clone will be used.
   # @option options [Boolean] :quiet If set, suppress all output.
   def install(options = {})
-    require "descriptions"
-
     full_clone = options.fetch(:full_clone, false)
     quiet = options.fetch(:quiet, false)
     requested_remote = options[:clone_target] || "https://github.com/#{user}/homebrew-#{repo}"
@@ -215,13 +213,19 @@ class Tap
       raise
     end
 
+    post_install(options)
+  end
+
+  def post_install(options = {})
+    require "descriptions"
     link_manpages
+    Descriptions.cache_formulae(formula_names)
+    return if options[:quiet]
 
     formula_count = formula_files.size
-    puts "Tapped #{formula_count} formula#{plural(formula_count, "e")} (#{path.abv})" unless quiet
-    Descriptions.cache_formulae(formula_names)
+    puts "Tapped #{formula_count} formula#{plural(formula_count, "e")} (#{path.abv})"
 
-    if !options[:clone_target] && private? && !quiet
+    if !options[:clone_target] && private?
       puts <<-EOS.undent
         It looks like you tapped a private repository. To avoid entering your
         credentials each time you update, you can use git HTTP credential
@@ -231,6 +235,7 @@ class Tap
       EOS
     end
   end
+  private :post_install
 
   def link_manpages
     return unless (path/"man").exist?
@@ -492,7 +497,38 @@ class CoreTap < Tap
 
   def install(options = {})
     options[:clone_target] ||= OFFICIAL_REMOTE
-    super options
+    if Utils.git_available?
+      super options
+    else
+      raise TapAlreadyTappedError, name if installed?
+      repo_url = options[:clone_target]
+      quiet = options.fetch(:quiet, false)
+      unless repo_url.start_with? "https://github.com"
+        raise <<-EOS.undent
+          Git is not installed.
+          Cannot install homebrew/core with custom remote.
+        EOS
+      end
+      ohai "Tapping #{name}" unless quiet
+
+      require "resource"
+      resource = Resource.new do
+        url "#{repo_url}/tarball/master"
+        version "master"
+
+        def download_name
+          "homebrew-core"
+        end
+      end
+
+      if quiet
+        nostdout { resource.fetch }
+      else
+        resource.fetch
+      end
+      resource.unpack(path)
+      post_install(options)
+    end
   end
 
   # @private
