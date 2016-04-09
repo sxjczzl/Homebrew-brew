@@ -80,7 +80,12 @@ begin
       # Handle both internal ruby and shell commands
       require "cmd/help"
       help_text = Homebrew.help_for_command(cmd)
-      unless help_text.empty?
+      if help_text.nil?
+        # External command, let it handle help by itself
+      elsif help_text.empty?
+        puts "No help available for #{cmd}"
+        exit 1
+      else
         puts help_text
         exit 0
       end

@@ -50,7 +50,7 @@ module Homebrew
     elsif ARGV.homebrew_developer? && File.exist?(HOMEBREW_LIBRARY_PATH/"dev-cmd/#{cmd}.rb")
       HOMEBREW_LIBRARY_PATH/"dev-cmd/#{cmd}.rb"
     end
-    return "" if cmd_path.nil?
+    return nil if cmd_path.nil?
 
     cmd_path.read.
       split("\n").
