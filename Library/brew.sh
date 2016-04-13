@@ -57,7 +57,7 @@ then
   unset HOMEBREW_RUBY_PATH
 fi
 
-HOMEBREW_SYSTEM="$(uname -s)"
+HOMEBREW_SYSTEM="$(/usr/bin/uname -s)"
 case "$HOMEBREW_SYSTEM" in
   Darwin) HOMEBREW_OSX="1";;
   Linux) HOMEBREW_LINUX="1";;
@@ -69,14 +69,14 @@ then
   then
     HOMEBREW_RUBY_PATH="/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
   else
-    HOMEBREW_RUBY_PATH="$(which ruby)"
+    HOMEBREW_RUBY_PATH="$(/usr/bin/which ruby)"
   fi
 fi
 
 HOMEBREW_CURL="/usr/bin/curl"
 if [[ -n "$HOMEBREW_OSX" ]]
 then
-  HOMEBREW_PROCESSOR="$(uname -p)"
+  HOMEBREW_PROCESSOR="$(/usr/bin/uname -p)"
   HOMEBREW_PRODUCT="Homebrew"
   HOMEBREW_SYSTEM="Macintosh"
   # This is i386 even on x86_64 machines
@@ -91,13 +91,13 @@ then
     HOMEBREW_CURL="$HOMEBREW_PREFIX/opt/curl/bin/curl"
   fi
 else
-  HOMEBREW_PROCESSOR="$(uname -m)"
+  HOMEBREW_PROCESSOR="$(/usr/bin/uname -m)"
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
-  [[ -n "$HOMEBREW_LINUX" ]] && HOMEBREW_OS_VERSION="$(lsb_release -sd 2>/dev/null)"
-  : "${HOMEBREW_OS_VERSION:=$(uname -r)}"
+  [[ -n "$HOMEBREW_LINUX" ]] && HOMEBREW_OS_VERSION="$(/usr/bin/lsb_release -sd 2>/dev/null)"
+  : "${HOMEBREW_OS_VERSION:=$(/usr/bin/uname -r)}"
 fi
 HOMEBREW_USER_AGENT="$HOMEBREW_PRODUCT/$HOMEBREW_VERSION ($HOMEBREW_SYSTEM; $HOMEBREW_PROCESSOR $HOMEBREW_OS_VERSION)"
-HOMEBREW_CURL_VERSION="$("$HOMEBREW_CURL" --version 2>/dev/null | head -n1 | /usr/bin/awk '{print $1"/"$2}')"
+HOMEBREW_CURL_VERSION="$("$HOMEBREW_CURL" --version 2>/dev/null | /usr/bin/head -n1 | /usr/bin/awk '{print $1"/"$2}')"
 HOMEBREW_USER_AGENT_CURL="$HOMEBREW_USER_AGENT $HOMEBREW_CURL_VERSION"
 
 # Declared in bin/brew
@@ -183,7 +183,7 @@ elif [[ -n "$HOMEBREW_DEVELOPER" && -f "$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOME
   HOMEBREW_BASH_COMMAND="$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOMEBREW_COMMAND.sh"
 fi
 
-if [[ "$(id -u)" = "0" && "$(/usr/bin/stat -f%u "$HOMEBREW_BREW_FILE")" != "0" ]]
+if [[ "$(/usr/bin/id -u)" = "0" && "$(/usr/bin/stat -f%u "$HOMEBREW_BREW_FILE")" != "0" ]]
 then
   case "$HOMEBREW_COMMAND" in
     install|reinstall|postinstall|link|pin|update|upgrade|create|migrate|tap|tap-pin|switch)
