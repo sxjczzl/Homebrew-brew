@@ -303,14 +303,15 @@ correct. Add an explicit [`version`](http://www.rubydoc.info/github/Homebrew/bre
 
 ## Commit
 
-Everything is built on Git, so contribution is easy:
-
+Everything is built on Git, so contribution is easy:  
+1. Fork the Homebrew/homebrew-core repository on GitHub. This creates a pushable, personal remote repository. This is needed as only Homebrew maintainers have push access to the main repository.  
+2. Add the pushable forked repository with `git remote add YOUR_USERNAME https://github.com/YOUR_USERNAME/homebrew-core.git`
 ```shell
 brew update # required in more ways than you think (initializes the brew git repository if you don't already have it)
 cd $(brew --repo homebrew/core)
 # Create a new git branch for your formula so your pull request is easy to
 # modify if any changes come up during review.
-git checkout -b <some-descriptive-name>
+git checkout -b <some-descriptive-name> origin/master
 git add Formula/foo.rb
 git commit
 ```
@@ -332,12 +333,9 @@ Ensure you reference any relevant GitHub issue e.g. `Closes #12345` in the commi
 
 Now you just need to push your commit to GitHub.
 
-If you haven’t forked Homebrew yet, [go to the `homebrew-core` repository and hit the fork button](https://github.com/Homebrew/homebrew-core).
-
-If you have already forked Homebrew on GitHub, then you can manually push (just make sure you have been pulling from the `Homebrew/homebrew-core` master):
 
 ```shell
-git push https://github.com/myname/homebrew-core/ <what-you-called-your-branch>
+git push --set-upstream YOUR_USERNAME YOUR_BRANCH_NAME
 ```
 
 Now, please [open a pull request](https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/How-To-Open-a-Homebrew-Pull-Request-(and-get-it-merged).md#how-to-open-a-homebrew-pull-request-and-get-it-merged) for your changes.
