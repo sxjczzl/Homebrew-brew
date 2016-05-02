@@ -155,6 +155,7 @@ module Homebrew
     return "N/A" unless File.executable? java_home
     
     version = %x( $JAVA_HOME/bin/java -version 2>&1 | awk -F '"' '/version/ {print $2}' )
+    version
   end
 
   def dump_verbose_config(f = $stdout)
