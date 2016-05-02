@@ -148,16 +148,13 @@ module Homebrew
   end
 
   def describe_java
-    # java_home doesn't exist on all OS Xs; it might be missing on older versions.
-    return "N/A" unless File.executable? "/usr/libexec/java_home"
-
-    java_xml = Utils.popen_read("/usr/libexec/java_home", "--xml", "--failfast")
-    return "N/A" unless $?.success?
-    javas = []
-    REXML::XPath.each(REXML::Document.new(java_xml), "//key[text()='JVMVersion']/following-sibling::string") do |item|
-      javas << item.text
-    end
-    javas.uniq.join(", ")
+    # use $JAVA_HOME to find java version.
+    java_home = %x( echo $JAVA_HOME )
+    java_home.slice! "\n"
+    java_home << "/bin/java"
+    return "N/A" unless File.executable? java_home
+    
+    version = %x( $JAVA_HOME/bin/java -version 2>&1 | awk -F '"' '/version/ {print $2}' )
   end
 
   def dump_verbose_config(f = $stdout)
