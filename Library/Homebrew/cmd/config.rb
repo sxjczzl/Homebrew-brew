@@ -151,9 +151,9 @@ module Homebrew
     # use $JAVA_HOME to find java version.
     java_home = %x( echo $JAVA_HOME )
     java_home.slice! "\n"
+    return "N/A" unless !java_home.empty?
+
     java_home << "/bin/java"
-    return "N/A" unless File.executable? java_home
-    
     version = %x( $JAVA_HOME/bin/java -version 2>&1 | awk -F '"' '/version/ {print $2}' )
     version
   end
