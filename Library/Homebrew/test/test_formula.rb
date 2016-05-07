@@ -309,6 +309,27 @@ class FormulaTests < Homebrew::TestCase
     refute f2.test_defined?
   end
 
+  def test_test_trivial
+    f1 = formula do
+      url "foo-1.0"
+
+      test :trivial do
+        true
+      end
+    end
+
+    f2 = formula do
+      url "foo-1.0"
+
+      test do
+        true
+      end
+    end
+
+    assert f1.test_trivial?
+    refute f2.test_trivial?
+  end
+
   def test_test_fixtures
     f1 = formula do
       url "foo-1.0"
