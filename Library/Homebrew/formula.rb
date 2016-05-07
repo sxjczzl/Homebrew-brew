@@ -1348,6 +1348,10 @@ class Formula
     false
   end
 
+  def test_trivial?
+    test_defined? && @test_tag == :trivial
+  end
+
   # @private
   def test
   end
@@ -2043,7 +2047,8 @@ class Formula
     #
     # The test will fail if it returns false, or if an exception is raised.
     # Failed assertions and failed `system` commands will raise exceptions.
-    def test(&block)
+    def test(tag = :nontrivial, &block)
+      @test_tag = tag
       define_method(:test, &block)
     end
 
