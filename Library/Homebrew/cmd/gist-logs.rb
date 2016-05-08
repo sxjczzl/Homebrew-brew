@@ -1,3 +1,5 @@
+#: usage: brew gist-logs [--new-issue|-n] <formula>
+
 require "formula"
 require "cmd/config"
 require "net/http"
@@ -161,11 +163,7 @@ module Homebrew
   end
 
   def gist_logs
-    if ARGV.resolved_formulae.length != 1
-      puts "usage: brew gist-logs [--new-issue|-n] <formula>"
-      Homebrew.failed = true
-      return
-    end
+    raise FormulaUnspecifiedError if ARGV.resolved_formulae.length != 1
 
     gistify_logs(ARGV.resolved_formulae[0])
   end
