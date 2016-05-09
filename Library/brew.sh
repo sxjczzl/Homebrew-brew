@@ -176,7 +176,7 @@ case "$HOMEBREW_COMMAND" in
   -S)          HOMEBREW_COMMAND="search";;
   up)          HOMEBREW_COMMAND="update";;
   ln)          HOMEBREW_COMMAND="link";;
-  instal)      HOMEBREW_COMMAND="install";; # gem does the same
+  install)      HOMEBREW_COMMAND="install";; # gem does the same
   rm)          HOMEBREW_COMMAND="uninstall";;
   remove)      HOMEBREW_COMMAND="uninstall";;
   configure)   HOMEBREW_COMMAND="diy";;
