@@ -19,6 +19,12 @@
 /Library/PinnedTaps
 /Library/Taps
 
+# Ignore vendored files within `Library`
+/Library/Homebrew/vendor/ruby/*
+
+# Unignore our vendor symlink.
+!/Library/Homebrew/vendor/ruby/opt
+
 # Ignore `bin` contents (again).
 /bin
 
