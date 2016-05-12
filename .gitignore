@@ -22,6 +22,7 @@
 
 # Ignore vendored files within `Library`
 /Library/Homebrew/vendor/portable-ruby/*
+/Library/Homebrew/vendor/portable-git/*
 
 # Ignore `bin` contents (again).
 /bin
