@@ -285,13 +285,16 @@ class Version
       spec.stem
     end
 
-    # GitHub tarballs
+    # GitHub downloads
     # e.g. https://github.com/foo/bar/tarball/v1.2.3
     # e.g. https://github.com/sam-github/libnet/tarball/libnet-1.1.4
     # e.g. https://github.com/isaacs/npm/tarball/v0.2.5-1
     # e.g. https://github.com/petdance/ack/tarball/1.93_02
-    m = %r{github.com/.+/(?:zip|tar)ball/(?:v|\w+-)?((?:\d+[-._])+\d*)$}.match(spec_s)
-    return m.captures.first unless m.nil?
+    # e.g. https://github.com/gsamokovarov/jump/archive/v0.7.1.tar.gz
+    # e.g. https://codeload.github.com/gsamokovarov/jump/tar.gz/v0.7.1
+    # e.g. https://github.com/foo/bar/releases/download/0.10.11/bar.phar
+    m = %r{github.com/.+/(.+)/(?:zipball|tarball|tar\.gz|zip|archive|releases/download)/(?:(?:v|OTP|\1)[-_]?)?([^/]+).*$}.match(spec_s)
+    return m.captures[1] unless m.nil?
 
     # e.g. https://github.com/erlang/otp/tarball/OTP_R15B01 (erlang style)
     m = /[-_]([Rr]\d+[AaBb]\d*(?:-\d+)?)/.match(spec_s)
@@ -309,7 +312,6 @@ class Version
 
     # URL with no extension
     # e.g. https://waf.io/waf-1.8.12
-    # e.g. https://codeload.github.com/gsamokovarov/jump/tar.gz/v0.7.1
     m = /[-v]((?:\d+\.)*\d+)$/.match(spec_s)
     return m.captures.first unless m.nil?
 
@@ -370,7 +372,6 @@ class Version
     return m.captures.first unless m.nil?
 
     # e.g. http://mirrors.jenkins-ci.org/war/1.486/jenkins.war
-    # e.g. https://github.com/foo/bar/releases/download/0.10.11/bar.phar
     m = /\/(\d\.\d+(\.\d+)?)\//.match(spec_s)
     return m.captures.first unless m.nil?
 
