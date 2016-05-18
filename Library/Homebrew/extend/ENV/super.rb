@@ -72,10 +72,7 @@ module Superenv
       self["HOMEBREW_FORMULA_PREFIX"] = formula.prefix
     end
 
-    if MacOS::Xcode.without_clt? || (MacOS::Xcode.installed? && MacOS::Xcode.version.to_i >= 7)
-      self["MACOSX_DEPLOYMENT_TARGET"] = MacOS.version.to_s
-      self["SDKROOT"] = MacOS.sdk_path
-    end
+    self["MACOSX_DEPLOYMENT_TARGET"] = MacOS.version.to_s if MacOS::Xcode.installed?
 
     # On 10.9, the tools in /usr/bin proxy to the active developer directory.
     # This means we can use them for any combination of CLT and Xcode.
