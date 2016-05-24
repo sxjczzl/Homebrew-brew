@@ -10,6 +10,6 @@ First time contributing to Homebrew? Read our [Code of Conduct](https://github.c
 
 ### Propose a feature
 
-* Please create a pull request with your change proposal in the [Homebrew Evolution](https://github.com/Homebrew/brew-evolution) repository using the [proposal template](https://github.com/Homebrew/brew-evolution/blob/master/proposal_template.md).
+* create a pull request in the [Homebrew Evolution](https://github.com/Homebrew/brew-evolution) repository using the [proposal template](https://github.com/Homebrew/brew-evolution/blob/master/proposal_template.md)
 
 Thanks!
