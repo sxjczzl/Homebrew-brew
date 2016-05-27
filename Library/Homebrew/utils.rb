@@ -499,7 +499,7 @@ def nostdout
 end
 
 def paths
-  @paths ||= ENV["PATH"].split(File::PATH_SEPARATOR).collect do |p|
+  ENV["PATH"].split(File::PATH_SEPARATOR).collect do |p|
     begin
       File.expand_path(p).chomp("/")
     rescue ArgumentError
