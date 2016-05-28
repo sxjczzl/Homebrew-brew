@@ -1,4 +1,5 @@
-require "open-uri"
+require "uri"
+require "tempfile"
 
 module GitHub
   extend self
@@ -48,6 +49,8 @@ module GitHub
     @api_credentials ||= begin
       if ENV["HOMEBREW_GITHUB_API_TOKEN"]
         ENV["HOMEBREW_GITHUB_API_TOKEN"]
+      elsif ENV["HOMEBREW_GITHUB_API_USERNAME"] && ENV["HOMEBREW_GITHUB_API_PASSWORD"]
+        [ENV["HOMEBREW_GITHUB_API_USERNAME"], ENV["HOMEBREW_GITHUB_API_PASSWORD"]]
       else
         github_credentials = Utils.popen("git credential-osxkeychain get", "w+") do |io|
           io.puts "protocol=https\nhost=github.com"
@@ -79,8 +82,10 @@ module GitHub
   end
 
   def api_credentials_error_message(response_headers)
+    return if response_headers.empty?
+
     @api_credentials_error_message_printed ||= begin
-      unauthorized = (response_headers["status"] == "401 Unauthorized")
+      unauthorized = (response_headers["http/1.1"] == "401 Unauthorized")
       scopes = response_headers["x-accepted-oauth-scopes"].to_s.split(", ")
       if !unauthorized && scopes.empty?
         credentials_scopes = response_headers["x-oauth-scopes"].to_s.split(", ")
@@ -106,56 +111,93 @@ module GitHub
     end
   end
 
-  def api_headers
-    {
-      "User-Agent" => HOMEBREW_USER_AGENT_RUBY,
-      "Accept"     => "application/vnd.github.v3+json"
-    }
-  end
-
-  def open(url, &_block)
+  def open(url, data=nil)
     # This is a no-op if the user is opting out of using the GitHub API.
     return if ENV["HOMEBREW_NO_GITHUB_API"]
 
-    require "net/https"
+    args = %W[--header application/vnd.github.v3+json --write-out \n%{http_code}]
+    args += curl_args
 
-    headers = api_headers
     token, username = api_credentials
     case api_credentials_type
     when :keychain
-      headers[:http_basic_authentication] = [username, token]
+      args += %W[--user #{username}:#{token}]
     when :environment
-      headers["Authorization"] = "token #{token}"
+      args += ["--header", "Authorization: token #{token}"]
+    end
+
+    data_tmpfile = nil
+    if data
+      begin
+        data = Utils::JSON.dump data
+        data_tmpfile = Tempfile.new("github_api_post", HOMEBREW_TEMP)
+      rescue Utils::JSON::Error => e
+        raise Error, "Failed to parse JSON request:\n#{e.message}\n#{data}", e.backtrace
+      end
+    end
+
+    headers_tmpfile = Tempfile.new("github_api_headers", HOMEBREW_TEMP)
+    begin
+      if data
+        data_tmpfile.write data
+        args += ["--data", "@#{data_tmpfile.path}"]
+      end
+
+      args += ["--dump-header", "#{headers_tmpfile.path}"]
+
+      output, _, http_code = curl_output(url.to_s, *args).rpartition("\n")
+      output, _, http_code = output.rpartition("\n") if http_code == "000"
+      headers = headers_tmpfile.read
+    ensure
+      if data_tmpfile
+        data_tmpfile.close
+        data_tmpfile.unlink
+      end
+      headers_tmpfile.close
+      headers_tmpfile.unlink
     end
 
     begin
-      Kernel.open(url, headers) { |f| yield Utils::JSON.load(f.read) }
-    rescue OpenURI::HTTPError => e
-      handle_api_error(e)
-    rescue EOFError, SocketError, OpenSSL::SSL::SSLError => e
-      raise Error, "Failed to connect to: #{url}\n#{e.message}", e.backtrace
+      if !http_code.start_with?("2") && !$?.success?
+        raise_api_error(output, http_code, headers)
+      end
+      json = Utils::JSON.load output
+      if block_given?
+        yield json
+      else
+        json
+      end
     rescue Utils::JSON::Error => e
       raise Error, "Failed to parse JSON response\n#{e.message}", e.backtrace
     end
   end
 
-  def handle_api_error(e)
-    if e.io.meta.fetch("x-ratelimit-remaining", 1).to_i <= 0
-      reset = e.io.meta.fetch("x-ratelimit-reset").to_i
-      error = Utils::JSON.load(e.io.read)["message"]
+  def raise_api_error(output, http_code, headers)
+    meta = {}
+    headers.lines.each do |l|
+      key, _, value = l.delete(":").partition(" ")
+      key = key.downcase.strip
+      next if key.empty?
+      meta[key] = value.strip
+    end
+
+    if meta.fetch("x-ratelimit-remaining", 1).to_i <= 0
+      reset = meta.fetch("x-ratelimit-reset").to_i
+      error = Utils::JSON.load(output)["message"]
       raise RateLimitExceededError.new(reset, error)
     end
 
-    GitHub.api_credentials_error_message(e.io.meta)
+    GitHub.api_credentials_error_message(meta)
 
-    case e.io.status.first
+    case http_code
     when "401", "403"
-      raise AuthenticationFailedError.new(e.message)
+      raise AuthenticationFailedError.new(output)
     when "404"
-      raise HTTPNotFoundError, e.message, e.backtrace
+      raise HTTPNotFoundError, output
     else
-      error = Utils::JSON.load(e.io.read)["message"] rescue nil
-      raise Error, [e.message, error].compact.join("\n"), e.backtrace
+      error = Utils::JSON.load(output)["message"] rescue nil
+      error ||= output
+      raise Error, error
     end
   end
 
