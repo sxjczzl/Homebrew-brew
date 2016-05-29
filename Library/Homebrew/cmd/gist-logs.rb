@@ -7,7 +7,7 @@
 #:     If `--new-issue` is passed, automatically create a new issue in the appropriate
 #:     GitHub repository as well as creating the Gist.
 #:
-#:     If no logs are found, an error message is presented.      
+#:     If no logs are found, an error message is presented.
 
 require "formula"
 require "system_config"
