@@ -1,6 +1,5 @@
 require "pathname"
 require "exceptions"
-require "utils/hash"
 require "utils/json"
 require "utils/inreplace"
 require "utils/popen"
