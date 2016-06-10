@@ -43,6 +43,17 @@ class UtilTests < Homebrew::TestCase
     ENV.replace @env
   end
 
+  def test_sanitize_output_for_xml
+    s = " " * 256
+    if RUBY_VERSION.split(".").first.to_i >= 2
+      256.times { |i| s.setbyte(i, i) }
+    else
+      256.times { |i| s[i, 1] = i.chr }
+    end
+    $stderr.puts "[start of broken string]#{s}[end of broken string]"
+    assert_equal "dog", "cat"
+  end
+
   def test_ofail
     shutup { ofail "foo" }
     assert Homebrew.failed
