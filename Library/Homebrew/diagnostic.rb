@@ -597,7 +597,7 @@ module Homebrew
             Homebrew doesn't provide a libiconv formula, and expects to link against
             the system version in /usr. libiconv in other prefixes can cause
             compile or link failure, especially if compiled with improper
-            architectures. OS X itself never installs anything to /usr/local so
+            architectures. #{MacOS.os_name} itself never installs anything to /usr/local so
             it was either installed by a user or some other third party software.
 
             tl;dr: delete these files:
@@ -702,8 +702,8 @@ module Homebrew
 
         <<-EOS.undent
           Your Cellar and TEMP directories are on different volumes.
-          OS X won't move relative symlinks across volumes unless the target file already
-          exists. Brews known to be affected by this are Git and Narwhal.
+          #{MacOS.os_name} won't move relative symlinks across volumes unless the target file
+          already exists. Brews known to be affected by this are Git and Narwhal.
 
           You should set the "HOMEBREW_TEMP" environmental variable to a suitable
           directory on the same volume as your Cellar.
@@ -739,7 +739,7 @@ module Homebrew
 
         <<-EOS.undent
           The filesystem on #{case_sensitive_vols.join(",")} appears to be case-sensitive.
-          The default OS X filesystem is case-insensitive. Please report any apparent problems.
+          The default #{MacOS.os_name} filesystem is case-insensitive. Please report any apparent problems.
         EOS
       end
 
