@@ -21,7 +21,7 @@ module OS
           if OS::Mac.prerelease?
             "7.3.1"
           else
-            raise "OS X '#{MacOS.version}' is invalid"
+            raise "#{MacOS.os_name} '#{MacOS.version}' is invalid"
           end
         end
       end
