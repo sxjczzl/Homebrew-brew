@@ -250,7 +250,19 @@ class Reporter
       tabs = dir.subdirs.map { |d| Tab.for_keg(Keg.new(d)) }
       next unless tabs.first.tap == tap # skip if installed formula is not from this tap.
       new_tap = Tap.fetch(new_tap_name)
-      new_tap.install unless new_tap.installed?
+      # related to formulae deduplication. If formula stays in cask, autoinstall or provide cask instructions
+      if new_tap_name == "caskroom/cask"
+        if new_tap.installed?
+          puts "Formula #{name} is in homebrew cask now. Installing #{name}"
+          system "brew", "cask", "install", name
+          puts "See https://github.com/caskroom/homebrew-cask/issues/15603 for more details."
+        else
+          puts "Formula #{name} is in homebrew cask now. Run 'brew tap caskroom/cask' and 'brew cask install #{name}'
+                to continue using #{name}. See https://github.com/caskroom/homebrew-cask/issues/15603 for more details."
+        end
+      else
+        new_tap.install unless new_tap.installed?
+      end
       # update tap for each Tab
       tabs.each { |tab| tab.tap = new_tap }
       tabs.each(&:write)
