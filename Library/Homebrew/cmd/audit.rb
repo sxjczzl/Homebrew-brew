@@ -1185,6 +1185,12 @@ class ResourceAuditor
       end
     end
 
+    # Check pypi urls
+    urls.each do |p|
+      next unless p =~ %r{^(http|https)://pypi.python.org/(.*)}i
+      problem "#{p} should be `https://files.pythonhosted.org/#{$2}`"
+    end
+
     # Check SourceForge urls
     urls.each do |p|
       # Skip if the URL looks like a SVN repo
