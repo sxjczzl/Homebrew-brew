@@ -252,7 +252,7 @@ class Reporter
       new_tap = Tap.fetch(new_tap_name)
       # related to formulae deduplication. If formula stays in cask, autoinstall or provide cask instructions
       if new_tap_name == "caskroom/cask"
-        if new_tap.installed? || File.exist?("/usr/local/Caskroom")
+        if new_tap.installed? && File.exist?("/usr/local/Caskroom")
           puts "Formula #{name} is in homebrew cask now. Installing #{name}"
           system "brew", "cask", "install", name
           puts "See https://github.com/caskroom/homebrew-cask/issues/15603 for more details."
