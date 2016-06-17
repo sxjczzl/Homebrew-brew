@@ -262,10 +262,10 @@ class Reporter
         end
       else
         new_tap.install unless new_tap.installed?
+        # update tap for each Tab
+        tabs.each { |tab| tab.tap = new_tap }
+        tabs.each(&:write)
       end
-      # update tap for each Tab
-      tabs.each { |tab| tab.tap = new_tap }
-      tabs.each(&:write)
     end
   end
 
