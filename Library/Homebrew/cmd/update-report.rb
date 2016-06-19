@@ -253,12 +253,13 @@ class Reporter
       # related to formulae deduplication. If formula stays in cask, autoinstall or provide cask instructions
       if new_tap_name == "caskroom/cask"
         if new_tap.installed? && File.exist?("/usr/local/Caskroom")
-          puts "Formula #{name} is in homebrew cask now. Installing #{name}"
+          ohai "#{name} has been moved to Homebrew Cask. Installing #{name}..."
           system "brew", "cask", "install", name
-          puts "See https://github.com/caskroom/homebrew-cask/issues/15603 for more details."
         else
-          puts "Formula #{name} is in homebrew cask now. Run 'brew tap caskroom/cask' and 'brew cask install #{name}'
-                to continue using #{name}. See https://github.com/caskroom/homebrew-cask/issues/15603 for more details."
+          ohai <<-EOS.undent
+            #{name} has been moved to Homebrew Cask. To install it run:
+            brew cask install #{name}
+          EOS
         end
       else
         new_tap.install unless new_tap.installed?
