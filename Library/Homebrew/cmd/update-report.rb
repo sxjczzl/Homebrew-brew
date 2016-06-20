@@ -252,14 +252,14 @@ class Reporter
       new_tap = Tap.fetch(new_tap_name)
       # For formulae migrated to cask: Auto-install cask or provide install instructions.
       if new_tap_name == "caskroom/cask"
-        system "brew", "uninstall", name
+        system HOMEBREW_BREW_FILE, "uninstall", name
         if new_tap.installed? && (HOMEBREW_REPOSITORY/"Caskroom").directory?
           ohai "#{name} has been moved to Homebrew Cask. Installing #{name}..."
-          system "brew", "cask", "install", name
+          system HOMEBREW_BREW_FILE, "cask", "install", name
         else
-          ohai <<-EOS.undent
-            #{name} has been moved to Homebrew Cask. To install it run:
-              brew cask install #{name}
+          ohai "#{name} has been moved to Homebrew Cask.", <<-EOS.undent
+            To install it run:
+              brew cask install #{name} 
           EOS
         end
       else
