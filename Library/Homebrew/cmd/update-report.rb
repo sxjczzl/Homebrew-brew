@@ -258,7 +258,7 @@ class Reporter
         else
           ohai <<-EOS.undent
             #{name} has been moved to Homebrew Cask. To install it run:
-            brew cask install #{name}
+              brew cask install #{name}
           EOS
         end
       else
