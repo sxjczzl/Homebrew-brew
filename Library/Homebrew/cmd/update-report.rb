@@ -250,7 +250,7 @@ class Reporter
       tabs = dir.subdirs.map { |d| Tab.for_keg(Keg.new(d)) }
       next unless tabs.first.tap == tap # skip if installed formula is not from this tap.
       new_tap = Tap.fetch(new_tap_name)
-      # related to formulae deduplication. If formula stays in cask, autoinstall or provide cask instructions
+      # For formulae migrated to cask: Auto-install cask or provide install instructions.
       if new_tap_name == "caskroom/cask"
         if new_tap.installed? && File.exist?("/usr/local/Caskroom")
           ohai "#{name} has been moved to Homebrew Cask. Installing #{name}..."
