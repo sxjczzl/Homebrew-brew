@@ -255,10 +255,12 @@ class Reporter
         system HOMEBREW_BREW_FILE, "uninstall", name
         if new_tap.installed? && (HOMEBREW_REPOSITORY/"Caskroom").directory?
           ohai "#{name} has been moved to Homebrew Cask. Installing #{name}..."
+          system HOMEBREW_BREW_FILE, "uninstall", "--force", name
           system HOMEBREW_BREW_FILE, "cask", "install", name
         else
           ohai "#{name} has been moved to Homebrew Cask.", <<-EOS.undent
-            To install it run:
+            To uninstall the formula and install the cask run:
+              brew uninstall --force #{name}
               brew cask install #{name} 
           EOS
         end
