@@ -16,3 +16,4 @@ gem "coveralls", "0.8.10", :require => false
 # Remove these lines when we've stopped supporting it.
 gem "mime-types", "~> 1.16"
 gem "rest-client", "1.6.9"
+gem "rubocop", "0.40"

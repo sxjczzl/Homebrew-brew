@@ -834,4 +834,29 @@ class IntegrationCommandTests < Homebrew::TestCase
     desc_cache.unlink
     formula_file.unlink
   end
+
+  def test_style
+    foo_file = CoreTap.new.formula_dir/"foo.rb"
+    foo_file.write <<-EOS.undent
+      class Foo < Formula
+        url 'https://example.com/foo-1.0'
+      end
+    EOS
+
+    rubocop_yml = HOMEBREW_LIBRARY/".rubocop.yml"
+    rubocop_yml.write <<-EOS.undent
+      Style/Documentation:
+        Enabled: false
+
+      Style/StringLiterals:
+        EnforcedStyle: double_quotes
+    EOS
+
+    assert_match "Prefer double-quoted strings", cmd_fail("style")
+    assert_match "1 file inspected, 1 offense detected", cmd_fail("style", "#{foo_file}")
+    assert_match "1 file inspected, 1 offense detected", cmd_fail("style", "foo")
+  ensure
+    foo_file.unlink
+    rubocop_yml.unlink
+  end
 end
