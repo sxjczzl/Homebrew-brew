@@ -206,7 +206,7 @@ class Tap
     clear_cache
 
     ohai "Tapping #{name}" unless quiet
-    args =  %W[clone #{requested_remote} #{path}]
+    args =  %W[clone #{requested_remote} #{path} --config core.autocrlf=false]
     args << "--depth=1" unless full_clone
     args << "-q" if quiet
 
