@@ -14,31 +14,31 @@ class TestbotCommandTests < Homebrew::TestCase
 
   def test_resolve_test_tap
     tap = Homebrew::resolve_test_tap
-    assert_equal tap, nil
+    assert_equal tap, nil, "Should return nil if no tap slug provided"
 
-    with_environment("TRAVIS_REPO_SLUG" => "spam/homebrew-eggs") do
+    slug = "spam/homebrew-eggs"
+    url = "https://github.com/#{slug}.git"
+    pairs = [
+      {"TRAVIS_REPO_SLUG" => slug},
+      {"UPSTREAM_BOT_PARAMS" => "--tap=#{slug}"},
+      {"UPSTREAM_GIT_URL" => url},
+      {"GIT_URL" => url},
+    ]
+
+    predicate = Proc.new do
       tap = Homebrew::resolve_test_tap
+      assert_kind_of Tap, tap
       assert_equal tap.user, "spam"
+      assert_equal tap.repo, "eggs"
     end
 
-    with_environment("UPSTREAM_BOT_PARAMS" => "--tap=spam/homebrew-eggs") do
-      tap = Homebrew::resolve_test_tap
-      assert_equal tap.user, "spam"
+    pairs.each do |pair|
+      with_environment(pair) do
+        predicate.call
+      end
     end
 
-    url = "https://github.com/spam/homebrew-eggs.git"
-    with_environment("UPSTREAM_GIT_URL" => url) do
-      tap = Homebrew::resolve_test_tap
-      assert_equal tap.user, "spam"
-    end
-
-    with_environment("GIT_URL" => url) do
-      tap = Homebrew::resolve_test_tap
-      assert_equal tap.user, "spam"
-    end
-
-    ARGV.expects(:value).with("tap").returns("spam/homebrew-eggs")
-    tap = Homebrew::resolve_test_tap
-    assert_equal tap.user, "spam"
+    ARGV.expects(:value).with("tap").returns(slug)
+    predicate.call
   end
 end
