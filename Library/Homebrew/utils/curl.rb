@@ -9,6 +9,8 @@ def curl_args(extra_args=[])
   flags -= ["--progress-bar"] if ARGV.verbose?
 
   args = ["#{curl}"] + flags + extra_args
+  # needed for cask support
+  args << "--insecure" if MacOS.release < "10.6"
   args << "--verbose" if ENV["HOMEBREW_CURL_VERBOSE"]
   args << "--silent" if !$stdout.tty? || ENV["TRAVIS"]
   args
