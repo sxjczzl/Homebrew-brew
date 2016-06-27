@@ -23,8 +23,9 @@ def blacklisted?(name)
     Instead of PIL, consider `pip install pillow` or `brew install Homebrew/python/pillow`.
     EOS
   when "macruby" then <<-EOS.undent
-    MacRuby works better when you install their package:
-      http://www.macruby.org/
+    MacRuby is not packaged and is on an indefinite development hiatus.
+    You can read more about it at:
+      https://github.com/MacRuby/MacRuby
     EOS
   when /(lib)?lzma/
     "lzma is now part of the xz formula."
