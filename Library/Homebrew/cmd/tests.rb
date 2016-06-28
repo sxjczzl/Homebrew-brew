@@ -1,5 +1,6 @@
 #:  * `tests` [`-v`] [`--coverage`] [`--generic`] [`--no-compat`] [`--only=`<test_script/test_method>] [`--seed` <seed>] [`--trace`]:
 #:    Run Homebrew's unit and integration tests.
+#: @hide_from_man_page
 
 require "fileutils"
 
