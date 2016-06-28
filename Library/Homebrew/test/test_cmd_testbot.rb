@@ -19,14 +19,14 @@ class TestbotCommandTests < Homebrew::TestCase
     slug = "spam/homebrew-eggs"
     url = "https://github.com/#{slug}.git"
     environments = [
-      {"TRAVIS_REPO_SLUG" => slug},
-      {"UPSTREAM_BOT_PARAMS" => "--tap=#{slug}"},
-      {"UPSTREAM_BOT_PARAMS" => "--tap=spam/eggs"},
-      {"UPSTREAM_GIT_URL" => url},
-      {"GIT_URL" => url},
+      { "TRAVIS_REPO_SLUG" => slug },
+      { "UPSTREAM_BOT_PARAMS" => "--tap=#{slug}" },
+      { "UPSTREAM_BOT_PARAMS" => "--tap=spam/eggs" },
+      { "UPSTREAM_GIT_URL" => url },
+      { "GIT_URL" => url },
     ]
 
-    predicate = Proc.new do |message|
+    predicate = proc do |message|
       tap = Homebrew.resolve_test_tap
       assert_kind_of Tap, tap, message
       assert_equal tap.user, "spam", message
@@ -35,11 +35,11 @@ class TestbotCommandTests < Homebrew::TestCase
 
     environments.each do |pair|
       with_environment(pair) do
-        predicate[pair.to_s]
+        predicate.call pair.to_s
       end
     end
 
     ARGV.expects(:value).with("tap").returns(slug)
-    predicate["ARGV"]
+    predicate.call "ARGV"
   end
 end
