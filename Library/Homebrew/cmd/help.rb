@@ -93,7 +93,7 @@ module Homebrew
           gsub(/`(.*?)`/, "#{Tty.highlight}\\1#{Tty.reset}").
           gsub(/<(.*?)>/, "#{Tty.em}\\1#{Tty.reset}").
           gsub("@hide_from_man_page", "")
-      end.join
+      end.join.strip
     end
   end
 end
