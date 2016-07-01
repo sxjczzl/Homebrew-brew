@@ -1,5 +1,5 @@
 # Homebrew
-**Features, usage and installation instructions are [summarised on the homepage](http://brew.sh).**
+Features, usage and installation instructions are [summarised on the homepage](http://brew.sh).
 
 ## What Packages Are Available?
 1. Use `brew search` on the command line for a list of packages.
@@ -7,7 +7,7 @@
 3. Alternatively, you can visit [braumeister.org](http://braumeister.org) to browse packages online.
 
 ## More Documentation
-Use `brew help` or `man brew` on the command line. Additionally, check [our documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
+Use `brew help` or `man brew` on the command line or visit [our documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
 
 ## Troubleshooting
 
@@ -44,9 +44,13 @@ Homebrew is a member of the [Software Freedom Conservancy](http://sfconservancy.
 - [Donate with PayPal](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=V6ZE57MJRYC8L)
 - Donate by USA $ check from a USA bank:
   - Make check payable to "Software Freedom Conservancy, Inc." and place "Directed donation: Homebrew" in the memo field.  Checks should then be mailed to:
-    - Software Freedom Conservancy, Inc.
-      137 Montague ST  STE 380
-      BROOKLYN, NY 11201 USA
+
+      >  Software Freedom Conservancy, Inc.
+    
+      >  137 Montague ST  STE 380
+    
+      >  BROOKLYN, NY 11201 USA
+    
 - Donate by wire transfer: contact accounting@sfconservancy.org for wire transfer details.
 - Donate with Flattr or PayPal Giving Fund: coming soon.
 
