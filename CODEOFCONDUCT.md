@@ -14,7 +14,7 @@ Members of the community are respectful. We're respectful of others, their posit
 
 Overall, we're good to each other. We contribute to this community not because we have to, but because we want to. If we remember that, these guidelines will come naturally.
 
-# Diversity
+## Diversity
 The Homebrew community welcomes and encourages participation by everyone. Our community is based on mutual respect, tolerance, and encouragement, and we are working to help each other live up to these principles. We want our community to be more diverse: whoever you are, and whatever your background, we welcome you.
 
 We have created this diversity statement because we believe that a diverse Homebrew community is stronger and more vibrant. A diverse community where people treat each other with respect has more potential contributors and more sources for ideas.
