@@ -7,7 +7,7 @@
 3. Alternatively, you can visit [braumeister.org](http://braumeister.org) to browse packages online.
 
 ## More Documentation
-Use `brew help` or `man brew` in the command line. Additionally, check [our online documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
+Use `brew help` or `man brew` on the command line. Additionally, check [our documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
 
 ## Troubleshooting
 
