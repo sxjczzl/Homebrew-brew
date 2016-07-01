@@ -1,23 +1,27 @@
-# Homebrew
-Features, usage and installation instructions are [summarised on the homepage](http://brew.sh).
+# **Homebrew**
+**Features, usage and installation instructions are [summarised on the homepage](http://brew.sh).**
 
 ## What Packages Are Available?
-1. Type `brew search` for a list.
-2. Or visit [braumeister.org](http://braumeister.org) to browse packages online.
-3. Or use `brew search --desc <keyword>` to browse packages from the command line.
+There are 3 ways you can find packages:
++ Use `brew search` in the command line for a list of packages.
++ Use `brew search --desc <keyword>` to browse packages from the command line.
++ Alternatively, you can visit [braumeister.org](http://braumeister.org) to browse packages online.
 
 ## More Documentation
-`brew help`, `man brew` or check [our documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
+Use `brew help` or `man brew` in the command line. Additionally, check [our online documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
 
 ## Troubleshooting
-First, please run `brew update` and `brew doctor`.
 
-Second, read the [Troubleshooting Checklist](https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Troubleshooting.md#troubleshooting).
+Before creating an [issue](https://github.com/Homebrew/brew/issues/), please run `brew update` twice and `brew doctor` once from the command line. This should resolve most issues. 
 
-**If you don't read these it will take us far longer to help you with your problem.**
+If the issue persists, read the [Troubleshooting Checklist](https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Troubleshooting.md#troubleshooting).
+
+**If you don't read over these, it will take us far longer to help you with your problem.**
 
 ## Security
 Please report security issues to security@brew.sh.
+
+**If the issue is high risk, please use our PGP key.**
 
 This is our PGP key which is valid until May 24, 2017.
 * Key ID: `0xE33A3D3CCE59E297`
@@ -43,7 +47,7 @@ Homebrew is a member of the [Software Freedom Conservancy](http://sfconservancy.
   - Make check payable to "Software Freedom Conservancy, Inc." and place "Directed donation: Homebrew" in the memo field.  Checks should then be mailed to:
     - Software Freedom Conservancy, Inc.
       137 Montague ST  STE 380
-      BROOKLYN, NY 11201             USA
+      BROOKLYN, NY 11201 USA
 - Donate by wire transfer: contact accounting@sfconservancy.org for wire transfer details.
 - Donate with Flattr or PayPal Giving Fund: coming soon.
 
