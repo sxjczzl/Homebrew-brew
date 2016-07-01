@@ -11,7 +11,7 @@ Use `brew help` or `man brew` on the command line or visit [our documentation](h
 
 ## Troubleshooting
 
-Before creating an [issue](https://github.com/Homebrew/brew/issues/), please run `brew update` twice and `brew doctor` once from the command line. This should resolve most issues. 
+Before creating an issue, please run `brew update` twice and `brew doctor` once from the command line.
 
 If the issue persists, read the [Troubleshooting Checklist](https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Troubleshooting.md#troubleshooting).
 
