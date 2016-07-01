@@ -2,10 +2,9 @@
 **Features, usage and installation instructions are [summarised on the homepage](http://brew.sh).**
 
 ## What Packages Are Available?
-There are 3 ways you can find packages:
-+ Use `brew search` in the command line for a list of packages.
-+ Use `brew search --desc <keyword>` to browse packages from the command line.
-+ Alternatively, you can visit [braumeister.org](http://braumeister.org) to browse packages online.
+1. Use `brew search` on the command line for a list of packages.
+2. Use `brew search --desc <keyword>` to browse packages from the command line.
+3. Alternatively, you can visit [braumeister.org](http://braumeister.org) to browse packages online.
 
 ## More Documentation
 Use `brew help` or `man brew` in the command line. Additionally, check [our online documentation](https://github.com/Homebrew/brew/tree/master/share/doc/homebrew#readme).
