@@ -368,6 +368,11 @@ EOS
         exit
       fi
 
+      if [[ -n "$HOMEBREW_VERBOSE" ]]
+      then
+        echo "Fetching $DIR..."
+      fi
+
       if [[ -n "$HOMEBREW_UPDATE_PREINSTALL" ]]
       then
         git fetch --force "${QUIET_ARGS[@]}" origin \
