@@ -255,7 +255,7 @@ homebrew-update() {
       --debug) HOMEBREW_DEBUG=1;;
       --merge) HOMEBREW_MERGE=1 ;;
       --simulate-from-current-branch) HOMEBREW_SIMULATE_FROM_CURRENT_BRANCH=1 ;;
-      --preinstall) HOMEBREW_UPDATE_PREINSTALL=1 ;;
+      --preinstall) export HOMEBREW_UPDATE_PREINSTALL=1 ;;
       --*) ;;
       -*)
         [[ "$option" = *v* ]] && HOMEBREW_VERBOSE=1;
