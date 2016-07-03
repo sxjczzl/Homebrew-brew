@@ -347,6 +347,13 @@ EOS
     UPSTREAM_BRANCH="$(upstream_branch)"
     # the refspec ensures that the default upstream branch gets updated
     (
+      if [[ -n "$HOMEBREW_UPDATE_PREINSTALL" ]]
+      then
+        # Skip taps without formulae.
+        FORMULAE="$(find "$DIR" -maxdepth 1 \( -name '*.rb' -or -name 'Formula' -or -name 'HomebrewFormula' \) -print -quit)"
+        [[ -z "$FORMULAE" ]] && exit
+      fi
+
       UPSTREAM_REPOSITORY_URL="$(git config remote.origin.url)"
       if [[ "$UPSTREAM_REPOSITORY_URL" = "https://github.com/"* ]]
       then
