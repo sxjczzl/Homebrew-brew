@@ -9,6 +9,16 @@
 # shellcheck source=/dev/null
 source "$HOMEBREW_LIBRARY/Homebrew/utils/lock.sh"
 
+# Replaces the function in Library/brew.sh to cache the Git executable to
+# provide speedup when using Git repeatedly (as update.sh does).
+git() {
+  if [[ -z "$GIT_EXECUTABLE" ]]
+  then
+    GIT_EXECUTABLE="$("$HOMEBREW_LIBRARY/ENV/scm/git" --homebrew=print-path)"
+  fi
+  "$GIT_EXECUTABLE" "$@"
+}
+
 git_init_if_necessary() {
   if [[ -n "$HOMEBREW_OSX" ]]
   then
@@ -290,6 +300,7 @@ EOS
   then
     # we cannot install brewed git if homebrew/core is unavailable.
     [[ -d "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" ]] && brew install git
+    unset GIT_EXECUTABLE
     if ! git --version >/dev/null 2>&1
     then
       odie "Git must be installed and in your PATH!"
