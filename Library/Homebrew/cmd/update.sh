@@ -296,6 +296,11 @@ EOS
     odie "$HOMEBREW_REPOSITORY must be writable!"
   fi
 
+  if [[ -n "$HOMEBREW_UPDATE_PREINSTALL" ]]
+  then
+    echo "Checking for Homebrew updates..."
+  fi
+
   if ! git --version >/dev/null 2>&1
   then
     # we cannot install brewed git if homebrew/core is unavailable.
