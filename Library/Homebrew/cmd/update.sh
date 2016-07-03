@@ -414,7 +414,7 @@ EOS
 
   if [[ -n "$HOMEBREW_UPDATED" ||
         -n "$HOMEBREW_UPDATE_FAILED" ||
-        -n "$HOMEBREW_DEVELOPER" ]]
+        (-n "$HOMEBREW_DEVELOPER" && -z "$HOMEBREW_UPDATE_PREINSTALL") ]]
   then
     brew update-report "$@"
     return $?
