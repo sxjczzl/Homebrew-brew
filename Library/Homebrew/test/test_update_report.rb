@@ -87,6 +87,7 @@ class ReportTests < Homebrew::TestCase
     perform_update("update_git_diff_output_with_restructured_tap")
     assert_empty @hub.select_formula(:A)
     assert_empty @hub.select_formula(:D)
+    assert_empty @hub.select_formula(:R)
   ensure
     tap.path.parent.rmtree
   end
@@ -113,6 +114,7 @@ class ReportTests < Homebrew::TestCase
     perform_update("update_git_diff_simulate_homebrew_php_restructuring")
     assert_empty @hub.select_formula(:A)
     assert_empty @hub.select_formula(:D)
+    assert_empty @hub.select_formula(:R)
   ensure
     tap.path.parent.rmtree
   end
