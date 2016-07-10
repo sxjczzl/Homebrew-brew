@@ -209,7 +209,6 @@ class Reporter
         end
         @report[:M] << tap.formula_file_to_name(src)
       when /^R\d{0,3}/
-        next unless tap.formula_file?(dst)
         src_full_name = tap.formula_file_to_name(src)
         dst_full_name = tap.formula_file_to_name(dst)
         # Don't report formulae that are moved within a tap but not renamed
