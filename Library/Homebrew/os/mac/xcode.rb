@@ -22,7 +22,7 @@ module OS
           if OS::Mac.prerelease?
             "8.0"
           else
-            raise "OS X '#{MacOS.version}' is invalid"
+            raise "#{MacOS.os_name} '#{MacOS.version}' is invalid"
           end
         end
       end
