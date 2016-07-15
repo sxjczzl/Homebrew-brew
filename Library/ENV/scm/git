@@ -84,6 +84,19 @@ case "$(lowercase "$SCM_FILE")" in
     ;;
 esac
 
+vendor_dir="$(quiet_safe_cd "$SCM_DIR/../../Homebrew/vendor" && pwd -P)"
+vendor_current="$vendor_dir/portable-$SCM_FILE/current"
+vendor_path="$vendor_current/bin/$SCM_FILE"
+if executable "$vendor_path"
+then
+  if [[ "$HOMEBREW" = "fail-on-old-vendor-version" && \
+     "$(readlink "$vendor_current")" != "$(<"$vendor_dir/portable-${SCM_FILE}-version")" ]]
+  then
+    exit 1
+  fi
+  safe_exec "$vendor_path" "$@"
+fi
+
 brew_version="$(quiet_safe_cd "$SCM_DIR/../../../bin" && pwd -P)/$SCM_FILE"
 safe_exec "$brew_version" "$@"
 

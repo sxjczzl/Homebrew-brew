@@ -334,10 +334,9 @@ EOS
     echo "Checking for Homebrew updates..."
   fi
 
-  if ! git --version >/dev/null 2>&1
+  if ! git --homebrew=fail-on-old-vendor-version --version >/dev/null 2>&1
   then
-    # we cannot install brewed git if homebrew/core is unavailable.
-    [[ -d "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" ]] && brew install git
+    brew vendor-install git
     unset GIT_EXECUTABLE
     if ! git --version >/dev/null 2>&1
     then
