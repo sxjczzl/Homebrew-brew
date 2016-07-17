@@ -55,7 +55,7 @@ class IntegrationCommandTests < Homebrew::TestCase
     cmd_args = %W[
       -W0
       -I#{HOMEBREW_LIBRARY_PATH}/test/lib
-      -rconfig
+      -I#{HOMEBREW_LIBRARY_PATH}
     ]
     if ENV["HOMEBREW_TESTS_COVERAGE"]
       # This is needed only because we currently use a patched version of
