@@ -56,16 +56,10 @@ class IntegrationCommandTests < Homebrew::TestCase
       -W0
       -I#{HOMEBREW_LIBRARY_PATH}/test/lib
       -I#{HOMEBREW_LIBRARY_PATH}
+      -rbootstrap_coverage
+      -rintegration_mocks
+      --
     ]
-    if ENV["HOMEBREW_TESTS_COVERAGE"]
-      # This is needed only because we currently use a patched version of
-      # simplecov, and gems installed through git are not available without
-      # requiring bundler/setup first. See also the comment in test/Gemfile.
-      # Remove this line when we'll switch back to a stable simplecov release.
-      cmd_args << "-rbundler/setup"
-      cmd_args << "-rsimplecov"
-    end
-    cmd_args << "-rintegration_mocks"
     cmd_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
     cmd_args += args
     Bundler.with_original_env do

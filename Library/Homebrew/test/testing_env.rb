@@ -1,7 +1,7 @@
 $:.unshift File.expand_path("../..", __FILE__)
 $:.unshift File.expand_path("../lib", __FILE__)
 
-require "simplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
+require "bootstrap_coverage"
 require "global"
 require "formulary"
 
