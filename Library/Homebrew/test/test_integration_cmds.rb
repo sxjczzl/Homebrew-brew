@@ -52,15 +52,15 @@ class IntegrationCommandTests < Homebrew::TestCase
   def cmd_output(*args)
     # 1.8-compatible way of writing def cmd_output(*args, **env)
     env = args.last.is_a?(Hash) ? args.pop : {}
+
+    brew_shim = HOMEBREW_LIBRARY_PATH/"test/lib/bootstrap_brew.rb"
     cmd_args = %W[
       -W0
       -I#{HOMEBREW_LIBRARY_PATH}/test/lib
       -I#{HOMEBREW_LIBRARY_PATH}
-      -rbootstrap_coverage
-      -rintegration_mocks
       --
+      #{brew_shim.resolved_path}
     ]
-    cmd_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
     cmd_args += args
     Bundler.with_original_env do
       ENV["HOMEBREW_BREW_FILE"] = HOMEBREW_PREFIX/"bin/brew"
