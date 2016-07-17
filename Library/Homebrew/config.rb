@@ -39,4 +39,4 @@ HOMEBREW_TEMP = Pathname.new(ENV.fetch("HOMEBREW_TEMP", "/tmp"))
 HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent
 
 # Load path used by standalone scripts to access the Homebrew code base
-HOMEBREW_LOAD_PATH = HOMEBREW_LIBRARY_PATH
+HOMEBREW_LOAD_PATH = HOMEBREW_LIBRARY_PATH.to_s
