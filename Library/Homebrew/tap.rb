@@ -305,7 +305,7 @@ class Tap
 
   # path to the directory of all casks for caskroom/cask {Tap}.
   def cask_dir
-    @cask_dir ||= [path/"Casks", path].detect(&:directory?)
+    @cask_dir ||= [path/"Casks"].detect(&:directory?)
   end
 
   # an array of all {Formula} files of this {Tap}.
@@ -323,7 +323,16 @@ class Tap
   def formula_file?(file)
     file = Pathname.new(file) unless file.is_a? Pathname
     file = file.expand_path(path)
-    file.extname == ".rb" && (file.parent == formula_dir || file.parent == cask_dir)
+    file.extname == ".rb" && file.parent == formula_dir
+  end
+
+  # return true if given path would present a cask file in this {Tap}.
+  # accepts both absolute path and relative path (relative to this {Tap}'s path)
+  # @private
+  def cask_file?(file)
+    file = Pathname.new(file) unless file.is_a? Pathname
+    file = file.expand_path(path)
+    file.extname == ".rb" && file.parent == cask_dir
   end
 
   # an array of all {Formula} names of this {Tap}.
@@ -561,14 +570,6 @@ class CoreTap < Tap
   # @private
   def formula_dir
     @formula_dir ||= begin
-      self.class.ensure_installed!
-      super
-    end
-  end
-
-  # @private
-  def cask_dir
-    @cask_dir ||= begin
       self.class.ensure_installed!
       super
     end
