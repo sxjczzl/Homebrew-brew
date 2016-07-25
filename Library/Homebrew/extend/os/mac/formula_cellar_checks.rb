@@ -75,10 +75,11 @@ module FormulaCellarChecks
     return unless formula.build.used_options.empty?
 
     if checker.undeclared_deps?
+      undeclared_deps = checker.undeclared_deps.map { |d| d.strip_prefix("#{formula.tap}/") }
       audit_check_output <<-EOS.undent
         Formulae are required to declare all linked dependencies.
         Please add all linked dependencies to the formula with:
-          #{checker.undeclared_deps.map { |d| "depends_on \"#{d}\" => :linked"} * "\n          "}
+          #{undeclared_deps.map { |d| "depends_on \"#{d}\" => :linked"} * "\n          "}
       EOS
     end
   end
