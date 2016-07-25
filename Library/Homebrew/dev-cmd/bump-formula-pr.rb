@@ -9,6 +9,7 @@
 #   --devel:    Bump a `devel` rather than `stable` version.
 #   --url:      The new formula URL.
 #   --sha256:   The new formula SHA-256.
+#   --version:  The new formula version.
 #   --tag:      The new formula's `tag`
 #   --revision: The new formula's `revision`.
 
@@ -70,6 +71,7 @@ module Homebrew
 
     new_url = ARGV.value("url")
     new_hash = ARGV.value(hash_type)
+    new_version = ARGV.value("version")
     new_tag = ARGV.value("tag")
     new_revision = ARGV.value("revision")
     new_url_hash = if new_url && new_hash
@@ -111,7 +113,13 @@ module Homebrew
 
     new_formula_version = formula_version(formula, requested_spec, new_contents)
 
-    if new_formula_version < old_formula_version
+    if !new_version.nil? && new_formula_version != Version.new(new_version)
+      odie <<-EOS.undent
+        You probably need to bump this formula manually since the new version
+        #{new_formula_version} doesn't match the version
+        #{new_version} specified in --version.
+      EOS
+    elsif new_formula_version < old_formula_version
       odie <<-EOS.undent
         You probably need to bump this formula manually since changing the
         version from #{old_formula_version} to #{new_formula_version} would be a downgrade.
