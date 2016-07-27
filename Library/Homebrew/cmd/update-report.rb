@@ -249,22 +249,25 @@ class Reporter
   def migrate_tap_migration
     report[:D].each do |full_name|
       name = full_name.split("/").last
+      new_tap_name = tap.tap_migrations[name]
+      next if new_tap_name.nil? # skip if not in tap_migrations list.
+
       if tap == "caskroom/cask"
-        next unless (dir = HOMEBREW_REPOSITORY/"Caskroom"/name).exist?
-        next unless new_tap_name = tap.tap_migrations[name] # skip if formula is not in tap_migrations list.
+        next unless (HOMEBREW_REPOSITORY/"Caskroom"/name).exist?
         new_tap = Tap.fetch(new_tap_name)
         new_tap.install unless new_tap.installed?
-        ohai "#{name} has been moved to Homebrew Core. Installing #{name}..."
-        system HOMEBREW_BREW_FILE, "install", name
-        ohai <<-EOS.undent
-            To uninstall the cask run:
-              brew cask uninstall --force #{name}
+        ohai "#{name} has been moved to Homebrew. Installing #{name}...", <<-EOS.undent
+          To uninstall the cask run:
+            brew cask uninstall --force #{name}
         EOS
+        system HOMEBREW_BREW_FILE, "install", "#{new_tap_name}/#{name}"
+        unless Formulary.factory("#{new_tap_name}/#{name}").keg_only?
+          system HOMEBREW_BREW_FILE, "link", "#{new_tap_name}/#{name}", "--force"
+        end
         next
       end
 
       next unless (dir = HOMEBREW_CELLAR/name).exist? # skip if formula is not installed.
-      next unless new_tap_name = tap.tap_migrations[name] # skip if formula is not in tap_migrations list.
       tabs = dir.subdirs.map { |d| Tab.for_keg(Keg.new(d)) }
       next unless tabs.first.tap == tap # skip if installed formula is not from this tap.
       new_tap = Tap.fetch(new_tap_name)
