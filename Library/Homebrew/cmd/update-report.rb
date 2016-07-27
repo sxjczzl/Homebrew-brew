@@ -193,7 +193,7 @@ class Reporter
       dst = Pathname.new paths.last
 
       next unless dst.extname == ".rb"
-      next unless paths.any? { |p| tap.formula_file?(p) }
+      next unless paths.any? { |p| tap.formula_file?(p)}
 
       case status
       when "A", "D"
@@ -256,13 +256,20 @@ class Reporter
         next unless (HOMEBREW_REPOSITORY/"Caskroom"/name).exist?
         new_tap = Tap.fetch(new_tap_name)
         new_tap.install unless new_tap.installed?
-        ohai "#{name} has been moved to Homebrew. Installing #{name}...", <<-EOS.undent
+        ohai "#{name} has been moved to Homebrew.", <<-EOS.undent
           To uninstall the cask run:
             brew cask uninstall --force #{name}
         EOS
-        system HOMEBREW_BREW_FILE, "install", "#{new_tap_name}/#{name}"
-        unless Formulary.factory("#{new_tap_name}/#{name}").keg_only?
-          system HOMEBREW_BREW_FILE, "link", "#{new_tap_name}/#{name}", "--force"
+        new_full_name = "#{new_tap_name}/#{name}"
+        next if (HOMEBREW_CELLAR/name.split("/").last).directory?
+        ohai "Installing #{name}..."
+        system HOMEBREW_BREW_FILE, "install", new_full_name
+        begin
+          unless Formulary.factory(new_full_name).keg_only?
+            system HOMEBREW_BREW_FILE, "link", new_full_name, "--force"
+          end
+        rescue Exception => e
+          onoe e if ARGV.homebrew_developer?
         end
         next
       end
