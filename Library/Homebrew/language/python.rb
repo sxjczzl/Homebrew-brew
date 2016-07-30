@@ -123,15 +123,18 @@ module Language
         venv = Virtualenv.new formula, venv_root, python
         venv.create
 
-        # Find any Python bindings provided by dependencies
-        deps = formula.deps.select do |d|
-          !d.build? && (d.required? || formula.build.with?(d))
-        end
+        # Find any Python bindings provided by recursive dependencies
+        formula_deps = formula.recursive_dependencies
         xy = Language::Python.major_minor_version python
-        pth_contents = deps.map do |d|
-          "import site; site.addsitedir('#{Formula[d.name].opt_lib}/python#{xy}/site-packages')\n"
+        pth_contents = formula_deps.map do |d|
+          next if d.build?
+          dep_site_packages = Formula[d.name].opt_lib/"python#{xy}/site-packages"
+          next unless dep_site_packages.exist?
+          "import site; site.addsitedir('#{dep_site_packages}')\n"
         end
-        (venv_root/"lib/python#{xy}/site-packages/homebrew_deps.pth").write pth_contents.join
+        if pth_contents.any?
+          (venv_root/"lib/python#{xy}/site-packages/homebrew_deps.pth").write pth_contents.join
+        end
 
         venv
       end
