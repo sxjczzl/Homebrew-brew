@@ -122,6 +122,17 @@ module Language
         ENV.refurbish_args
         venv = Virtualenv.new formula, venv_root, python
         venv.create
+
+        # Find any Python bindings provided by dependencies
+        deps = formula.deps.select do |d|
+          !d.build? && (d.required? || formula.build.with?(d))
+        end
+        xy = Language::Python.major_minor_version python
+        pth_contents = deps.map do |d|
+          "import site; site.addsitedir('#{Formula[d.name].opt_lib}/python#{xy}/site-packages')\n"
+        end
+        (venv_root/"lib/python#{xy}/site-packages/homebrew_deps.pth").write pth_contents.join
+
         venv
       end
 
@@ -223,8 +234,8 @@ module Language
         def do_install(targets)
           targets = [targets] unless targets.is_a? Array
           @formula.system @venv_root/"bin/pip", "install",
-                 "-v", "--no-deps", "--no-binary", ":all:",
-                 *targets
+                          "-v", "--no-deps", "--no-binary", ":all:",
+                          "--ignore-installed", *targets
         end
       end # class Virtualenv
     end # module Virtualenv
