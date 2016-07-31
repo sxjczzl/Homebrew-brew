@@ -82,10 +82,12 @@ class LanguagePythonTests < Homebrew::TestCase
     refute_predicate dest/"kilroy", :exist?
 
     FileUtils.touch bin/"irrelevant"
-    @formula.expects(:system).returns(true).with do |*params|
-      FileUtils.touch bin/"kilroy"
-      params.first == @dir/"bin/pip" && params.last == "foo"
-    end
+    bin_before = Dir[bin/"*"]
+    FileUtils.touch bin/"kilroy"
+    bin_after = Dir[bin/"*"]
+    @venv.expects(:pip_install).with { |*params| params == ["foo"] }
+    Dir.expects(:[]).twice.returns(bin_before, bin_after)
+
     @venv.pip_install_and_link "foo"
 
     assert_predicate bin/"kilroy", :exist?
