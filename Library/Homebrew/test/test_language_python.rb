@@ -85,7 +85,7 @@ class LanguagePythonTests < Homebrew::TestCase
     bin_before = Dir[bin/"*"]
     FileUtils.touch bin/"kilroy"
     bin_after = Dir[bin/"*"]
-    @venv.expects(:pip_install).with { |*params| params == ["foo"] }
+    @venv.expects(:pip_install).with("foo")
     Dir.expects(:[]).twice.returns(bin_before, bin_after)
 
     @venv.pip_install_and_link "foo"
