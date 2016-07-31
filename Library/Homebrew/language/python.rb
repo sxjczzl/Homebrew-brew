@@ -192,10 +192,8 @@ module Language
         #   the contents of a `requirements.txt`.
         # @return [void]
         def pip_install(targets, options = {})
-          if options[:link_scripts]
-            link_scripts(options[:link_scripts]) { pip_install(targets) }
-            return
-          end
+          link_scripts = options[:link_scripts]
+          link_scripts_data = link_scripts_prepare if link_scripts
 
           targets = [targets] unless targets.is_a? Array
           targets.each do |t|
@@ -207,6 +205,8 @@ module Language
               do_install t
             end
           end
+
+          link_scripts_finalize(link_scripts_data, link_scripts) if link_scripts
         end
 
         # Compares the venv bin directory before and after executing a block,
@@ -224,6 +224,17 @@ module Language
         end
 
         private
+
+        def link_scripts_prepare
+          Dir[@venv_root/"bin/*"].to_set
+        end
+
+        def link_scripts_finalize(bin_before, destination)
+          bin_after = Dir[@venv_root/"bin/*"].to_set
+          bin_to_link = (bin_after - bin_before).to_a
+          destination = Pathname.new(destination)
+          destination.install_symlink(bin_to_link)
+        end
 
         def do_install(targets)
           targets = [targets] unless targets.is_a? Array
