@@ -74,8 +74,9 @@ class LanguagePythonTests < Homebrew::TestCase
   end
 
   def test_pip_install_and_link_links_scripts
-    bin = (@dir/"bin").tap(&:mkpath)
-    dest = @formula.dest
+    bin = @dir/"bin"
+    bin.mkpath
+    dest = @formula.bin
 
     refute_predicate bin/"kilroy", :exist?
     refute_predicate dest/"kilroy", :exist?
