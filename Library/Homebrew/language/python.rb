@@ -131,7 +131,7 @@ module Language
       def virtualenv_install_with_resources
         venv = virtualenv_create(libexec)
         venv.pip_install resources
-        venv.pip_install buildpath, :link_scripts => bin
+        venv.pip_install_and_link buildpath
         venv
       end
 
@@ -190,15 +190,8 @@ module Language
         #   installed, or a package identifier to be fetched from PyPI.
         #   Multiline strings are allowed and treated as though they represent
         #   the contents of a `requirements.txt`.
-        # @param options [Hash]
-        # @option options [false, Pathname, String] :link_scripts (false)
-        #   Destination into which new scripts installed by `targets` should be
-        #   linked, typically {Formula#bin}. If `false`, skip this step.
         # @return [void]
-        def pip_install(targets, options = {})
-          link_scripts = options[:link_scripts]
-          link_scripts_data = link_scripts_prepare if link_scripts
-
+        def pip_install(targets)
           targets = [targets] unless targets.is_a? Array
           targets.each do |t|
             if t.respond_to? :stage
@@ -209,22 +202,23 @@ module Language
               do_install t
             end
           end
+        end
 
-          link_scripts_finalize(link_scripts_data, link_scripts) if link_scripts
+        # Installs packages represented by `targets` into the virtualenv, but
+        #   unlike {#pip_install} also links new scripts to {Formula#bin}.
+        # @param (see #pip_install)
+        # @return (see #pip_install)
+        def pip_install_and_link(targets)
+          bin_before = Dir[@venv_root/"bin/*"].to_set
+
+          pip_install(targets)
+
+          bin_after = Dir[@venv_root/"bin/*"].to_set
+          bin_to_link = (bin_after - bin_before).to_a
+          @formula.bin.install_symlink(bin_to_link)
         end
 
         private
-
-        def link_scripts_prepare
-          Dir[@venv_root/"bin/*"].to_set
-        end
-
-        def link_scripts_finalize(bin_before, destination)
-          bin_after = Dir[@venv_root/"bin/*"].to_set
-          bin_to_link = (bin_after - bin_before).to_a
-          destination = Pathname.new(destination)
-          destination.install_symlink(bin_to_link)
-        end
 
         def do_install(targets)
           targets = [targets] unless targets.is_a? Array

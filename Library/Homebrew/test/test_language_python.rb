@@ -6,8 +6,10 @@ class LanguagePythonTests < Homebrew::TestCase
   def setup
     @dir = Pathname.new(mktmpdir)
     resource = stub("resource", :stage => true)
+    formula_bin = @dir/"formula_bin"
     @formula = mock("formula") do
       stubs(:resource).returns(resource)
+      stubs(:bin).returns(formula_bin)
     end
     @venv = Language::Python::Virtualenv::Virtualenv.new(@formula, @dir, "python")
   end
@@ -71,9 +73,9 @@ class LanguagePythonTests < Homebrew::TestCase
     @venv.pip_install res
   end
 
-  def test_pip_install_links_scripts
+  def test_pip_install_and_link_links_scripts
     bin = (@dir/"bin").tap(&:mkpath)
-    dest = @dir/"dest"
+    dest = @formula.dest
 
     refute_predicate bin/"kilroy", :exist?
     refute_predicate dest/"kilroy", :exist?
@@ -83,7 +85,7 @@ class LanguagePythonTests < Homebrew::TestCase
       FileUtils.touch bin/"kilroy"
       params.first == @dir/"bin/pip" && params.last == "foo"
     end
-    @venv.pip_install "foo", :link_scripts => dest
+    @venv.pip_install_and_link "foo"
 
     assert_predicate bin/"kilroy", :exist?
     assert_predicate dest/"kilroy", :exist?
