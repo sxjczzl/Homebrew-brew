@@ -213,20 +213,6 @@ module Language
           link_scripts_finalize(link_scripts_data, link_scripts) if link_scripts
         end
 
-        # Compares the venv bin directory before and after executing a block,
-        # and symlinks any new scripts into `destination`.
-        # Use like: venv.link_scripts(bin) { venv.pip_install my_package }
-        # @param destination [Pathname, String] Destination into which new
-        #   scripts should be linked.
-        # @return [void]
-        def link_scripts(destination)
-          bin_before = Dir[@venv_root/"bin/*"].to_set
-          yield
-          bin_after = Dir[@venv_root/"bin/*"].to_set
-          destination = Pathname.new(destination)
-          destination.install_symlink((bin_after - bin_before).to_a)
-        end
-
         private
 
         def link_scripts_prepare
