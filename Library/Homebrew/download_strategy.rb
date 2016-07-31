@@ -135,6 +135,8 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
       clone_repo
     end
 
+    version.update_commit(last_commit) if head?
+
     if @ref_type == :tag && @revision && current_revision
       unless current_revision == @revision
         raise <<-EOS.undent
@@ -151,6 +153,12 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
 
   def head?
     version.head?
+  end
+
+  # Return last commit's unique identifier for the repository.
+  # Return most recent modified timestamp unless overridden.
+  def last_commit
+    source_modified_time.to_i.to_s
   end
 
   private
@@ -324,18 +332,25 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
 
   # Private method, can be overridden if needed.
   def _fetch
-    urls = actual_urls
-    unless urls.empty?
-      ohai "Downloading from #{urls.last}"
-      if !ENV["HOMEBREW_NO_INSECURE_REDIRECT"].nil? && @url.start_with?("https://") &&
-         urls.any? { |u| !u.start_with? "https://" }
-        puts "HTTPS to HTTP redirect detected & HOMEBREW_NO_INSECURE_REDIRECT is set."
-        raise CurlDownloadStrategyError.new(@url)
-      end
-      @url = urls.last
+    url = @url
+
+    if ENV["HOMEBREW_ARTIFACT_DOMAIN"]
+      url = url.sub(%r{^((ht|f)tps?://)?}, ENV["HOMEBREW_ARTIFACT_DOMAIN"].chomp("/") + "/")
+      ohai "Downloading from #{url}"
     end
 
-    curl @url, "-C", downloaded_size, "-o", temporary_path
+    urls = actual_urls(url)
+    unless urls.empty?
+      ohai "Downloading from #{urls.last}"
+      if !ENV["HOMEBREW_NO_INSECURE_REDIRECT"].nil? && url.start_with?("https://") &&
+         urls.any? { |u| !u.start_with? "https://" }
+        puts "HTTPS to HTTP redirect detected & HOMEBREW_NO_INSECURE_REDIRECT is set."
+        raise CurlDownloadStrategyError.new(url)
+      end
+      url = urls.last
+    end
+
+    curl url, "-C", downloaded_size, "-o", temporary_path
   end
 
   # Curl options to be always passed to curl,
@@ -346,11 +361,11 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
     copts
   end
 
-  def actual_urls
+  def actual_urls(url)
     urls = []
-    curl_args = _curl_opts << "-I" << "-L" << @url
+    curl_args = _curl_opts << "-I" << "-L" << url
     Utils.popen_read("curl", *curl_args).scan(/^Location: (.+)$/).map do |m|
-      urls << URI.join(urls.last || @url, m.first.chomp).to_s
+      urls << URI.join(urls.last || url, m.first.chomp).to_s
     end
     urls
   end
@@ -501,6 +516,10 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     Time.parse REXML::XPath.first(xml, "//date/text()").to_s
   end
 
+  def last_commit
+    Utils.popen_read("svn", "info", "--show-item", "revision", cached_location.to_s).strip
+  end
+
   private
 
   def repo_url
@@ -579,6 +598,10 @@ class GitDownloadStrategy < VCSDownloadStrategy
 
   def source_modified_time
     Time.parse Utils.popen_read("git", "--git-dir", git_dir, "show", "-s", "--format=%cD")
+  end
+
+  def last_commit
+    Utils.popen_read("git", "--git-dir", git_dir, "rev-parse", "--short=7", "HEAD").chomp
   end
 
   private
@@ -818,6 +841,10 @@ class MercurialDownloadStrategy < VCSDownloadStrategy
     Time.parse Utils.popen_read("hg", "tip", "--template", "{date|isodate}", "-R", cached_location.to_s)
   end
 
+  def last_commit
+    Utils.popen_read("hg", "parent", "--template", "{node}", "-R", cached_location.to_s)
+  end
+
   private
 
   def cache_tag
@@ -852,6 +879,10 @@ class BazaarDownloadStrategy < VCSDownloadStrategy
 
   def source_modified_time
     Time.parse Utils.popen_read("bzr", "log", "-l", "1", "--timezone=utc", cached_location.to_s)[/^timestamp: (.+)$/, 1]
+  end
+
+  def last_commit
+    Utils.popen_read("bzr", "revno", cached_location.to_s).chomp
   end
 
   private
@@ -889,6 +920,10 @@ class FossilDownloadStrategy < VCSDownloadStrategy
 
   def source_modified_time
     Time.parse Utils.popen_read("fossil", "info", "tip", "-R", cached_location.to_s)[/^uuid: +\h+ (.+)$/, 1]
+  end
+
+  def last_commit
+    Utils.popen_read("fossil", "info", "tip", "-R", cached_location.to_s)[/^uuid: +(\h+) .+$/, 1]
   end
 
   private
@@ -960,7 +995,7 @@ class DownloadStrategyDetector
     when :post    then CurlPostDownloadStrategy
     when :fossil  then FossilDownloadStrategy
     else
-      raise "Unknown download strategy #{strategy} was requested."
+      raise "Unknown download strategy #{symbol} was requested."
     end
   end
 end

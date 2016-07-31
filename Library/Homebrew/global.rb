@@ -1,6 +1,7 @@
 require "extend/module"
 require "extend/fileutils"
 require "extend/pathname"
+require "extend/git_repository"
 require "extend/ARGV"
 require "extend/string"
 require "extend/enumerable"
@@ -9,6 +10,7 @@ require "utils"
 require "exceptions"
 require "set"
 require "rbconfig"
+require "official_taps"
 
 ARGV.extend(HomebrewArgvExtension)
 
@@ -18,6 +20,8 @@ HOMEBREW_WWW = "http://brew.sh"
 
 require "config"
 
+HOMEBREW_REPOSITORY.extend(GitRepositoryExtension)
+
 if RbConfig.respond_to?(:ruby)
   RUBY_PATH = Pathname.new(RbConfig.ruby)
 else
@@ -26,6 +30,7 @@ else
   )
 end
 RUBY_BIN = RUBY_PATH.dirname
+RUBY_TWO = RUBY_VERSION.split(".").first.to_i >= 2
 
 HOMEBREW_USER_AGENT_CURL = ENV["HOMEBREW_USER_AGENT_CURL"]
 HOMEBREW_USER_AGENT_RUBY = "#{ENV["HOMEBREW_USER_AGENT"]} ruby/#{RUBY_VERSION}-p#{RUBY_PATCHLEVEL}"

@@ -161,13 +161,13 @@ class UtilTests < Homebrew::TestCase
   end
 
   def test_popen_read
-    out = Utils.popen_read("/bin/sh", "-c", "echo success").chomp
+    out = Utils.popen_read("sh", "-c", "echo success").chomp
     assert_equal "success", out
     assert_predicate $?, :success?
   end
 
   def test_popen_read_with_block
-    out = Utils.popen_read("/bin/sh", "-c", "echo success") do |pipe|
+    out = Utils.popen_read("sh", "-c", "echo success") do |pipe|
       pipe.read.chomp
     end
     assert_equal "success", out
@@ -175,7 +175,7 @@ class UtilTests < Homebrew::TestCase
   end
 
   def test_popen_write_with_block
-    Utils.popen_write("/usr/bin/grep", "-q", "success") do |pipe|
+    Utils.popen_write("grep", "-q", "success") do |pipe|
       pipe.write("success\n")
     end
     assert_predicate $?, :success?
@@ -209,5 +209,18 @@ class UtilTests < Homebrew::TestCase
     assert_equal "1", number_readable(1)
     assert_equal "1,000", number_readable(1_000)
     assert_equal "1,000,000", number_readable(1_000_000)
+  end
+
+  def test_truncate_text_to_approximate_size
+    glue = "\n[...snip...]\n" # hard-coded copy from truncate_text_to_approximate_size
+    n = 20
+    long_s = "x" * 40
+    s = truncate_text_to_approximate_size(long_s, n)
+    assert_equal n, s.length
+    assert_match(/^x+#{Regexp.escape(glue)}x+$/, s)
+    s = truncate_text_to_approximate_size(long_s, n, :front_weight => 0.0)
+    assert_equal glue + ("x" * (n - glue.length)), s
+    s = truncate_text_to_approximate_size(long_s, n, :front_weight => 1.0)
+    assert_equal(("x" * (n - glue.length)) + glue, s)
   end
 end

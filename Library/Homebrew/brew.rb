@@ -1,7 +1,7 @@
 std_trap = trap("INT") { exit! 130 } # no backtrace thanks
 
 require "pathname"
-HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent.join("Homebrew")
+HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent
 $:.unshift(HOMEBREW_LIBRARY_PATH.to_s)
 require "global"
 
@@ -55,7 +55,7 @@ begin
   end
 
   # Add SCM wrappers.
-  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_ENV_PATH}/scm"
+  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_SHIMS_PATH}/scm"
 
   if cmd
     internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("cmd", cmd)
@@ -94,14 +94,8 @@ begin
     exit Homebrew.failed? ? 1 : 0
   else
     require "tap"
-    possible_tap = case cmd
-    when "brewdle", "brewdler", "bundle", "bundler"
-      Tap.fetch("Homebrew", "bundle")
-    when "cask"
-      Tap.fetch("caskroom", "cask")
-    when "services"
-      Tap.fetch("Homebrew", "services")
-    end
+    possible_tap = OFFICIAL_CMD_TAPS.find { |_, cmds| cmds.include?(cmd) }
+    possible_tap = Tap.fetch(possible_tap.first) if possible_tap
 
     if possible_tap && !possible_tap.installed?
       brew_uid = HOMEBREW_BREW_FILE.stat.uid
@@ -113,8 +107,7 @@ begin
       safe_system(*tap_commands)
       exec HOMEBREW_BREW_FILE, cmd, *ARGV
     else
-      onoe "Unknown command: #{cmd}"
-      exit 1
+      odie "Unknown command: #{cmd}"
     end
   end
 

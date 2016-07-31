@@ -1,7 +1,7 @@
 .\" generated with Ronn/v0.7.3
 .\" http://github.com/rtomayko/ronn/tree/0.7.3
 .
-.TH "BREW" "1" "June 2016" "Homebrew" "brew"
+.TH "BREW" "1" "July 2016" "Homebrew" "brew"
 .
 .SH "NAME"
 \fBbrew\fR \- The missing package manager for OS X
@@ -110,7 +110,7 @@ If \fB\-\-quiet\fR is passed, list only the names of commands without the header
 Show Homebrew and system configuration useful for debugging\. If you file a bug report, you will likely be asked for this information if you do not provide it\.
 .
 .TP
-\fBcreate\fR \fIURL\fR [\fB\-\-autotools\fR|\fB\-\-cmake\fR] [\fB\-\-no\-fetch\fR] [\fB\-\-set\-name\fR \fIname\fR] [\fB\-\-set\-version\fR \fIversion\fR]
+\fBcreate\fR \fIURL\fR [\fB\-\-autotools\fR|\fB\-\-cmake\fR] [\fB\-\-no\-fetch\fR] [\fB\-\-set\-name\fR \fIname\fR] [\fB\-\-set\-version\fR \fIversion\fR] [\fB\-\-tap\fR \fIuser\fR\fB/\fR\fIrepo\fR]
 Generate a formula for the downloadable file at \fIURL\fR and open it in the editor\. Homebrew will attempt to automatically derive the formula name and version, but if it fails, you\'ll have to make your own template\. The \fBwget\fR formula serves as a simple example\. For the complete API have a look at
 .
 .IP
@@ -124,6 +124,9 @@ If \fB\-\-no\-fetch\fR is passed, Homebrew will not download \fIURL\fR to the ca
 .
 .IP
 The options \fB\-\-set\-name\fR and \fB\-\-set\-version\fR each take an argument and allow you to explicitly set the name and version of the package you are creating\.
+.
+.IP
+The option \fB\-\-tap\fR takes a tap as its argument and generates the formula in the specified tap\.
 .
 .TP
 \fBdeps\fR [\fB\-\-1\fR] [\fB\-n\fR] [\fB\-\-union\fR] [\fB\-\-installed\fR] [\fB\-\-include\-build\fR] [\fB\-\-include\-optional\fR] [\fB\-\-skip\-recommended\fR] \fIformulae\fR
@@ -259,7 +262,7 @@ Pass \fB\-\-all\fR to get information on all formulae, or \fB\-\-installed\fR to
 See the docs for examples of using the JSON: \fIhttps://github\.com/Homebrew/brew/blob/master/share/doc/homebrew/Querying\-Brew\.md\fR
 .
 .TP
-\fBinstall\fR [\fB\-\-debug\fR] [\fB\-\-env=\fR\fIstd\fR|\fIsuper\fR] [\fB\-\-ignore\-dependencies\fR] [\fB\-\-only\-dependencies\fR] [\fB\-\-cc=\fR\fIcompiler\fR] [\fB\-\-build\-from\-source\fR|\fB\-\-force\-bottle\fR] [\fB\-\-devel\fR|\fB\-\-HEAD\fR] [\fB\-\-keep\-tmp\fR] \fIformula\fR
+\fBinstall\fR [\fB\-\-debug\fR] [\fB\-\-env=\fR\fIstd\fR|\fIsuper\fR] [\fB\-\-ignore\-dependencies\fR] [\fB\-\-only\-dependencies\fR] [\fB\-\-cc=\fR\fIcompiler\fR] [\fB\-\-build\-from\-source\fR] [\fB\-\-devel\fR|\fB\-\-HEAD\fR] [\fB\-\-keep\-tmp\fR] \fIformula\fR
 Install \fIformula\fR\.
 .
 .IP
@@ -288,9 +291,6 @@ If \fB\-\-build\-from\-source\fR or \fB\-s\fR is passed, compile the specified \
 .
 .IP
 If \fBHOMEBREW_BUILD_FROM_SOURCE\fR is set, regardless of whether \fB\-\-build\-from\-source\fR was passed, then both \fIformula\fR and the dependencies installed as part of this process are built from source even if bottles are available\.
-.
-.IP
-If \fB\-\-force\-bottle\fR is passed, install from a bottle if it exists for the current version of OS X, even if custom options are given\.
 .
 .IP
 If \fB\-\-devel\fR is passed, and \fIformula\fR defines it, install the development version\.
@@ -503,8 +503,15 @@ List all official taps\.
 List all pinned taps\.
 .
 .TP
-\fBtap\-info\fR \fItap\fR
-Display information about \fItap\fR\.
+\fBtap\-info\fR
+Display a brief summary of all installed taps\.
+.
+.TP
+\fBtap\-info\fR (\fB\-\-installed\fR|\fItaps\fR)
+Display detailed information about one or more \fItaps\fR\.
+.
+.IP
+Pass \fB\-\-installed\fR to display information on all installed taps\.
 .
 .TP
 \fBtap\-info\fR \fB\-\-json=\fR\fIversion\fR (\fB\-\-installed\fR|\fItaps\fR)
@@ -708,6 +715,10 @@ Set this to force Homebrew to use a particular git binary\.
 If set, instructs Homebrew to use the given URL as a download mirror for bottles\.
 .
 .TP
+\fBHOMEBREW_ARTIFACT_DOMAIN\fR
+If set, instructs Homebrew to use the given URL as a download mirror for bottles and binaries\.
+.
+.TP
 \fBHOMEBREW_BROWSER\fR
 If set, uses this setting as the browser when opening project homepages, instead of the OS default browser\.
 .
@@ -783,7 +794,7 @@ If set, Homebrew will not print the \fBHOMEBREW_INSTALL_BADGE\fR on a successful
 If set, Homebrew will not permit redirects from secure HTTPS to insecure HTTP\.
 .
 .IP
-While ensuring your downloads are fully secure, this is likely to cause from\-source Sourceforge & GNOME based formulae to fail to download\.
+While ensuring your downloads are fully secure, this is likely to cause from\-source Sourceforge, some GNU & GNOME based formulae to fail to download\.
 .
 .TP
 \fBHOMEBREW_NO_GITHUB_API\fR

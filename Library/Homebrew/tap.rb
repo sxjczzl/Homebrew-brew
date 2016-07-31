@@ -1,4 +1,5 @@
 require "extend/string"
+require "readall"
 
 # a {Tap} is used to extend the formulae provided by Homebrew core.
 # Usually, it's synced with a remote git repository. And it's likely
@@ -24,7 +25,9 @@ class Tap
       repo = args[1]
     end
 
-    raise "Invalid tap name" unless user && repo
+    if [user, repo].any? { |part| part.nil? || part.include?("/") }
+      raise "Invalid tap name '#{args.join("/")}'"
+    end
 
     # we special case homebrew so users don't have to shift in a terminal
     user = "Homebrew" if user == "homebrew"
@@ -62,6 +65,7 @@ class Tap
     @repo = repo
     @name = "#{@user}/#{@repo}".downcase
     @path = TAP_DIRECTORY/"#{@user}/homebrew-#{@repo}".downcase
+    @path.extend(GitRepositoryExtension)
   end
 
   # clear internal cache
@@ -84,15 +88,8 @@ class Tap
   # The remote path to this {Tap}.
   # e.g. `https://github.com/user/homebrew-repo`
   def remote
-    @remote ||= if installed?
-      if git? && Utils.git_available?
-        path.cd do
-          Utils.popen_read("git", "config", "--get", "remote.origin.url").chomp
-        end
-      end
-    else
-      raise TapUnavailableError, name
-    end
+    raise TapUnavailableError, name unless installed?
+    @remote ||= path.git_origin
   end
 
   # The default remote path to this {Tap}.
@@ -102,35 +99,31 @@ class Tap
 
   # True if this {Tap} is a git repository.
   def git?
-    (path/".git").exist?
+    path.git?
   end
 
   # git HEAD for this {Tap}.
   def git_head
     raise TapUnavailableError, name unless installed?
-    return unless git? && Utils.git_available?
-    path.cd { Utils.popen_read("git", "rev-parse", "--verify", "-q", "HEAD").chuzzle }
+    path.git_head
   end
 
   # git HEAD in short format for this {Tap}.
   def git_short_head
     raise TapUnavailableError, name unless installed?
-    return unless git? && Utils.git_available?
-    path.cd { Utils.popen_read("git", "rev-parse", "--short=4", "--verify", "-q", "HEAD").chuzzle }
+    path.git_short_head
   end
 
   # time since git last commit for this {Tap}.
   def git_last_commit
     raise TapUnavailableError, name unless installed?
-    return unless git? && Utils.git_available?
-    path.cd { Utils.popen_read("git", "show", "-s", "--format=%cr", "HEAD").chuzzle }
+    path.git_last_commit
   end
 
   # git last commit date for this {Tap}.
   def git_last_commit_date
     raise TapUnavailableError, name unless installed?
-    return unless git? && Utils.git_available?
-    path.cd { Utils.popen_read("git", "show", "-s", "--format=%cd", "--date=short", "HEAD").chuzzle }
+    path.git_last_commit_date
   end
 
   # The issues URL of this {Tap}.
@@ -221,9 +214,14 @@ class Tap
 
     begin
       safe_system "git", *args
-    rescue Interrupt, ErrorDuringExecution
+      unless Readall.valid_tap?(self, :aliases => true)
+        raise "Cannot tap #{name}: invalid syntax in tap!"
+      end
+    rescue Interrupt, ErrorDuringExecution, RuntimeError
       ignore_interrupts do
-        sleep 0.1 # wait for git to cleanup the top directory when interrupt happens.
+        # wait for git to possibly cleanup the top directory when interrupt happens.
+        sleep 0.1
+        FileUtils.rm_rf path
         path.parent.rmdir_if_possible
       end
       raise
@@ -422,6 +420,7 @@ class Tap
     if installed?
       hash["remote"] = remote
       hash["custom_remote"] = custom_remote?
+      hash["private"] = private?
     end
 
     hash

@@ -209,8 +209,12 @@ class Reporter
         end
         @report[:M] << tap.formula_file_to_name(src)
       when /^R\d{0,3}/
-        @report[:D] << tap.formula_file_to_name(src) if tap.formula_file?(src)
-        @report[:A] << tap.formula_file_to_name(dst) if tap.formula_file?(dst)
+        src_full_name = tap.formula_file_to_name(src)
+        dst_full_name = tap.formula_file_to_name(dst)
+        # Don't report formulae that are moved within a tap but not renamed
+        next if src_full_name == dst_full_name
+        @report[:D] << src_full_name
+        @report[:A] << dst_full_name
       end
     end
 
@@ -250,10 +254,26 @@ class Reporter
       tabs = dir.subdirs.map { |d| Tab.for_keg(Keg.new(d)) }
       next unless tabs.first.tap == tap # skip if installed formula is not from this tap.
       new_tap = Tap.fetch(new_tap_name)
-      new_tap.install unless new_tap.installed?
-      # update tap for each Tab
-      tabs.each { |tab| tab.tap = new_tap }
-      tabs.each(&:write)
+      # For formulae migrated to cask: Auto-install cask or provide install instructions.
+      if new_tap_name == "caskroom/cask"
+        if new_tap.installed? && (HOMEBREW_REPOSITORY/"Caskroom").directory?
+          ohai "#{name} has been moved to Homebrew Cask. Installing #{name}..."
+          system HOMEBREW_BREW_FILE, "uninstall", "--force", name
+          system HOMEBREW_BREW_FILE, "prune"
+          system HOMEBREW_BREW_FILE, "cask", "install", name
+        else
+          ohai "#{name} has been moved to Homebrew Cask.", <<-EOS.undent
+            To uninstall the formula and install the cask run:
+              brew uninstall --force #{name}
+              brew cask install #{name}
+          EOS
+        end
+      else
+        new_tap.install unless new_tap.installed?
+        # update tap for each Tab
+        tabs.each { |tab| tab.tap = new_tap }
+        tabs.each(&:write)
+      end
     end
   end
 

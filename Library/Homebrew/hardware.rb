@@ -5,8 +5,27 @@ module Hardware
     INTEL_64BIT_ARCHS = [:x86_64].freeze
 
     class << self
+      OPTIMIZATION_FLAGS = {
+        :penryn => "-march=core2 -msse4.1",
+        :core2 => "-march=core2",
+        :core => "-march=prescott",
+        :dunno => "",
+      }.freeze
+
+      def optimization_flags
+        OPTIMIZATION_FLAGS
+      end
+
+      def arch_32_bit
+        :i386
+      end
+
+      def arch_64_bit
+        :x86_64
+      end
+
       def type
-        :haswell
+        :intel
       end
 
       def family
@@ -19,6 +38,10 @@ module Hardware
 
       def bits
         64
+      end
+
+      def sse4?
+        RUBY_PLATFORM.to_s.include?("x86_64")
       end
 
       def is_32_bit?
@@ -35,6 +58,10 @@ module Hardware
 
       def ppc?
         type == :ppc
+      end
+
+      def arm?
+        type == :arm
       end
 
       def features
@@ -60,11 +87,7 @@ module Hardware
   end
 
   def self.oldest_cpu
-    if Hardware::CPU.intel?
-      :haswell
-    else
-      Hardware::CPU.family
-    end
+    :haswell
   end
 end
 

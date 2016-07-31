@@ -2,7 +2,7 @@ require "testing_env"
 require "version"
 require "os/mac/version"
 
-class MacOSVersionTests < Homebrew::TestCase
+class OSMacVersionTests < Homebrew::TestCase
   def setup
     @v = MacOS::Version.new("10.7")
   end
@@ -34,10 +34,10 @@ class MacOSVersionTests < Homebrew::TestCase
   end
 
   def test_compare_with_version
-    assert_operator @v, :>, Version.new("10.6")
-    assert_operator @v, :==, Version.new("10.7")
-    assert_operator @v, :===, Version.new("10.7")
-    assert_operator @v, :<, Version.new("10.8")
+    assert_operator @v, :>, Version.create("10.6")
+    assert_operator @v, :==, Version.create("10.7")
+    assert_operator @v, :===, Version.create("10.7")
+    assert_operator @v, :<, Version.create("10.8")
   end
 
   def test_from_symbol

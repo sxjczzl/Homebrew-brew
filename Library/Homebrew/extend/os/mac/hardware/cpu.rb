@@ -3,61 +3,33 @@ require "os/mac/pathname"
 module Hardware
   class CPU
     class << self
-
       OPTIMIZATION_FLAGS = {
         :haswell => "-march=haswell -msse4.2 -O3 -flto", #   -ffast-math -fwhole-program-vtables
         :penryn => "-march=core2 -msse4.1",
         :core2 => "-march=core2",
         :core => "-march=prescott",
-        :g3 => "-mcpu=750",
-        :g4 => "-mcpu=7400",
-        :g4e => "-mcpu=7450",
-        :g5 => "-mcpu=970",
-        :g5_64 => "-mcpu=970 -arch ppc64"
       }.freeze
       def optimization_flags
         OPTIMIZATION_FLAGS
       end
-
       # These methods use info spewed out by sysctl.
       # Look in <mach/machine.h> for decoding info.
       def type
-        case sysctl_int("hw.cputype")
-        when 7
-          :intel
-        when 18
-          :ppc
-        else
-          :dunno
-        end
+        :intel
       end
 
       def family
         if intel?
-          case sysctl_int("hw.cpufamily")
-          when 0x73d67300 # Yonah: Core Solo/Duo
-            :core
-          when 0x426f69ef # Merom: Core 2 Duo
-            :core2
-          when 0x78ea4fbc # Penryn
-            :penryn
-          when 0x6b5a4cd2 # Nehalem
-            :nehalem
-          when 0x573B5EEC # Arrandale
-            :arrandale
-          when 0x5490B78C # Sandy Bridge
-            :sandybridge
-          when 0x1F65E835 # Ivy Bridge
-            :ivybridge
-          when 0x10B282DC # Haswell
+          # case sysctl_int("hw.cpufamily")
+          # when 0x10B282DC # Haswell
             :haswell
-          when 0x582ed09c # Broadwell
-            :broadwell
-          when 0x37fc219f # Skylake
-            :skylake
-          else
-            :dunno
-          end
+          # when 0x582ed09c # Broadwell
+          #   :broadwell
+          # when 0x37fc219f # Skylake
+          #   :skylake
+          # else
+          #   :dunno
+          # end
         end
       end
 

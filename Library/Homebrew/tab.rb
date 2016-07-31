@@ -2,6 +2,7 @@ require "cxxstdlib"
 require "ostruct"
 require "options"
 require "utils/json"
+require "development_tools"
 
 # Inherit from OpenStruct to gain a generic initialization method that takes a
 # hash and creates an attribute for each key and value. `Tab.new` probably
@@ -15,7 +16,8 @@ class Tab < OpenStruct
     CACHE.clear
   end
 
-  def self.create(formula, compiler, stdlib, build, source_modified_time)
+  def self.create(formula, compiler, stdlib)
+    build = formula.build
     attributes = {
       "used_options" => build.used_options.as_flags,
       "unused_options" => build.unused_options.as_flags,
@@ -23,8 +25,8 @@ class Tab < OpenStruct
       "built_as_bottle" => build.bottle?,
       "poured_from_bottle" => false,
       "time" => Time.now.to_i,
-      "source_modified_time" => source_modified_time.to_i,
-      "HEAD" => Homebrew.git_head,
+      "source_modified_time" => formula.source_modified_time.to_i,
+      "HEAD" => HOMEBREW_REPOSITORY.git_head,
       "compiler" => compiler,
       "stdlib" => stdlib,
       "source" => {
@@ -108,7 +110,7 @@ class Tab < OpenStruct
       paths << dirs.first
     end
 
-    paths << f.prefix
+    paths << f.installed_prefix
 
     path = paths.map { |pn| pn.join(FILENAME) }.find(&:file?)
 
@@ -139,7 +141,7 @@ class Tab < OpenStruct
       "source_modified_time" => 0,
       "HEAD" => nil,
       "stdlib" => nil,
-      "compiler" => "clang",
+      "compiler" => DevelopmentTools.default_compiler,
       "source" => {
         "path" => nil,
         "tap" => nil,
@@ -176,6 +178,18 @@ class Tab < OpenStruct
 
   def build_32_bit?
     include?("32-bit")
+  end
+
+  def head?
+    spec == :head
+  end
+
+  def devel?
+    spec == :devel
+  end
+
+  def stable?
+    spec == :stable
   end
 
   def used_options

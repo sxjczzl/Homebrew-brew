@@ -50,13 +50,9 @@ module GitHub
       if ENV["HOMEBREW_GITHUB_API_TOKEN"]
         ENV["HOMEBREW_GITHUB_API_TOKEN"]
       elsif ENV["HOMEBREW_GITHUB_API_USERNAME"] && ENV["HOMEBREW_GITHUB_API_PASSWORD"]
-        [ENV["HOMEBREW_GITHUB_API_USERNAME"], ENV["HOMEBREW_GITHUB_API_PASSWORD"]]
+        [ENV["HOMEBREW_GITHUB_API_PASSWORD"], ENV["HOMEBREW_GITHUB_API_USERNAME"]]
       else
-        github_credentials = Utils.popen("git credential-osxkeychain get", "w+") do |io|
-          io.puts "protocol=https\nhost=github.com"
-          io.close_write
-          io.read
-        end
+        github_credentials = api_credentials_from_keychain
         github_username = github_credentials[/username=(.+)/, 1]
         github_password = github_credentials[/password=(.+)/, 1]
         if github_username && github_password
@@ -66,6 +62,20 @@ module GitHub
         end
       end
     end
+  end
+
+  def api_credentials_from_keychain
+    Utils.popen(["git", "credential-osxkeychain", "get"], "w+") do |pipe|
+      pipe.write "protocol=https\nhost=github.com\n"
+      pipe.close_write
+      pipe.read
+    end
+  rescue Errno::EPIPE
+    # The above invocation via `Utils.popen` can fail, causing the pipe to be
+    # prematurely closed (before we can write to it) and thus resulting in a
+    # broken pipe error. The root cause is usually a missing or malfunctioning
+    # `git-credential-osxkeychain` helper.
+    ""
   end
 
   def api_credentials_type
@@ -140,12 +150,14 @@ module GitHub
     begin
       if data
         data_tmpfile.write data
+        data_tmpfile.close
         args += ["--data", "@#{data_tmpfile.path}"]
       end
 
       args += ["--dump-header", "#{headers_tmpfile.path}"]
 
-      output, _, http_code = curl_output(url.to_s, *args).rpartition("\n")
+      output, errors, status = curl_output(url.to_s, *args)
+      output, _, http_code = output.rpartition("\n")
       output, _, http_code = output.rpartition("\n") if http_code == "000"
       headers = headers_tmpfile.read
     ensure
@@ -158,8 +170,8 @@ module GitHub
     end
 
     begin
-      if !http_code.start_with?("2") && !$?.success?
-        raise_api_error(output, http_code, headers)
+      if !http_code.start_with?("2") && !status.success?
+        raise_api_error(output, errors, http_code, headers)
       end
       json = Utils::JSON.load output
       if block_given?
@@ -172,7 +184,7 @@ module GitHub
     end
   end
 
-  def raise_api_error(output, http_code, headers)
+  def raise_api_error(output, errors, http_code, headers)
     meta = {}
     headers.lines.each do |l|
       key, _, value = l.delete(":").partition(" ")
@@ -196,7 +208,7 @@ module GitHub
       raise HTTPNotFoundError, output
     else
       error = Utils::JSON.load(output)["message"] rescue nil
-      error ||= output
+      error ||= "curl failed! #{errors}"
       raise Error, error
     end
   end

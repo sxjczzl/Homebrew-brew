@@ -63,6 +63,13 @@ class TapTest < Homebrew::TestCase
     tap = Tap.fetch("Homebrew", "foo")
     assert_kind_of Tap, tap
     assert_equal "homebrew/foo", tap.name
+
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("foo") }.message
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("homebrew/homebrew/bar") }.message
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("homebrew", "homebrew/baz") }.message
   ensure
     Tap.clear_cache
   end
@@ -135,7 +142,7 @@ class TapTest < Homebrew::TestCase
     end
     refute_predicate version_tap, :private?
   ensure
-    version_tap.path.rmtree
+    version_tap.path.rmtree if version_tap
   end
 
   def test_remote_not_git_repo
@@ -220,7 +227,7 @@ class TapTest < Homebrew::TestCase
     refute_predicate HOMEBREW_PREFIX/"share/man/man1/brew-tap-cmd.1", :exist?
     refute_predicate HOMEBREW_PREFIX/"share/man/man1", :exist?
   ensure
-    (HOMEBREW_PREFIX/"share").rmtree
+    (HOMEBREW_PREFIX/"share").rmtree if (HOMEBREW_PREFIX/"share").exist?
   end
 
   def test_pin_and_unpin
