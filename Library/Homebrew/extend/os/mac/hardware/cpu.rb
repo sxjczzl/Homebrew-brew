@@ -5,6 +5,7 @@ module Hardware
     class << self
 
       OPTIMIZATION_FLAGS = {
+        :haswell => "-march=haswell -msse4.2 -O3 -flto", #   -ffast-math -fwhole-program-vtables
         :penryn => "-march=core2 -msse4.1",
         :core2 => "-march=core2",
         :core => "-march=prescott",
@@ -57,21 +58,6 @@ module Hardware
           else
             :dunno
           end
-        elsif ppc?
-          case sysctl_int("hw.cpusubtype")
-          when 9
-            :g3  # PowerPC 750
-          when 10
-            :g4  # PowerPC 7400
-          when 11
-            :g4e # PowerPC 7450
-          when 100
-            # This is the only 64-bit PPC CPU type, so it's useful
-            # to distinguish in `brew config` output and in bottle tags
-            MacOS.prefer_64_bit? ? :g5_64 : :g5 # PowerPC 970
-          else
-            :dunno
-          end
         end
       end
 
@@ -100,15 +86,11 @@ module Hardware
       def universal_archs
         # Building 64-bit is a no-go on Tiger, and pretty hit or miss on Leopard.
         # Don't even try unless Tigerbrew's experimental 64-bit Leopard support is enabled.
-        if MacOS.version <= :leopard && !MacOS.prefer_64_bit?
-          [arch_32_bit].extend ArchitectureListExtension
-        else
-          # Amazingly, this order (64, then 32) matters. It shouldn't, but it
-          # does. GCC (some versions? some systems?) can blow up if the other
-          # order is used.
-          # http://superuser.com/questions/740563/gcc-4-8-on-macos-fails-depending-on-arch-order
-          [arch_64_bit, arch_32_bit].extend ArchitectureListExtension
-        end
+        # Amazingly, this order (64, then 32) matters. It shouldn't, but it
+        # does. GCC (some versions? some systems?) can blow up if the other
+        # order is used.
+        # http://superuser.com/questions/740563/gcc-4-8-on-macos-fails-depending-on-arch-order
+        [arch_64_bit, arch_32_bit].extend ArchitectureListExtension
       end
 
       def features

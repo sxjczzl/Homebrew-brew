@@ -2,22 +2,19 @@ require "os"
 
 module Hardware
   class CPU
-    INTEL_32BIT_ARCHS = [:i386].freeze
     INTEL_64BIT_ARCHS = [:x86_64].freeze
-    PPC_32BIT_ARCHS   = [:ppc, :ppc7400, :ppc7450, :ppc970].freeze
-    PPC_64BIT_ARCHS   = [:ppc64].freeze
 
     class << self
       def type
-        :dunno
+        :haswell
       end
 
       def family
-        :dunno
+        :haswell
       end
 
       def cores
-        1
+        8
       end
 
       def bits
@@ -64,11 +61,7 @@ module Hardware
 
   def self.oldest_cpu
     if Hardware::CPU.intel?
-      if Hardware::CPU.is_64_bit?
-        :core2
-      else
-        :core
-      end
+      :haswell
     else
       Hardware::CPU.family
     end

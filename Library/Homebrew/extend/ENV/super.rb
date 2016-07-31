@@ -49,7 +49,7 @@ module Superenv
     self["PKG_CONFIG_PATH"] = determine_pkg_config_path
     self["PKG_CONFIG_LIBDIR"] = determine_pkg_config_libdir
     self["HOMEBREW_CCCFG"] = determine_cccfg
-    self["HOMEBREW_OPTIMIZATION_LEVEL"] = "Os"
+    self["HOMEBREW_OPTIMIZATION_LEVEL"] = "O3"
     self["HOMEBREW_BREW_FILE"] = HOMEBREW_BREW_FILE.to_s
     self["HOMEBREW_PREFIX"] = HOMEBREW_PREFIX.to_s
     self["HOMEBREW_CELLAR"] = HOMEBREW_CELLAR.to_s
@@ -236,7 +236,8 @@ module Superenv
     elsif Hardware::CPU.intel? && !Hardware::CPU.sse4?
       Hardware::CPU.optimization_flags.fetch(Hardware.oldest_cpu)
     elsif compiler == :clang
-      "-march=native"
+      "-march=haswell -msse4.2 -O3 -flto" #   -ffast-math -fwhole-program-vtables
+      #"-march=haswell -msse4.2" #   -ffast-math -fwhole-program-vtables
     # This is mutated elsewhere, so return an empty string in this case
     else
       ""
@@ -281,13 +282,6 @@ module Superenv
 
     self["HOMEBREW_ARCHFLAGS"] = Hardware::CPU.universal_archs.as_arch_flags
 
-    # GCC doesn't accept "-march" for a 32-bit CPU with "-arch x86_64"
-    if compiler != :clang && Hardware.is_32_bit?
-      self["HOMEBREW_OPTFLAGS"] = self["HOMEBREW_OPTFLAGS"].sub(
-        /-march=\S*/,
-        "-Xarch_#{Hardware::CPU.arch_32_bit} \\0"
-      )
-    end
   end
 
   def permit_arch_flags
