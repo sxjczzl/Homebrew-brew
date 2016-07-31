@@ -190,6 +190,10 @@ module Language
         #   installed, or a package identifier to be fetched from PyPI.
         #   Multiline strings are allowed and treated as though they represent
         #   the contents of a `requirements.txt`.
+        # @param options [Hash]
+        # @option options [false, Pathname, String] :link_scripts (false)
+        #   Destination into which new scripts installed by `targets` should be
+        #   linked, typically {Formula#bin}. If `false`, skip this step.
         # @return [void]
         def pip_install(targets, options = {})
           link_scripts = options[:link_scripts]
