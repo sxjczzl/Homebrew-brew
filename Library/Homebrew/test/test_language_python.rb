@@ -71,18 +71,24 @@ class LanguagePythonTests < Homebrew::TestCase
     @venv.pip_install res
   end
 
-  def test_link_scripts_links_scripts
-    bin = (@dir/"bin")
-    dest = (@dir/"dest")
-    bin.mkpath
-    refute((bin/"kilroy").exist?)
-    refute((dest/"kilroy").exist?)
+  def test_pip_install_links_scripts
+    bin = (@dir/"bin").tap(&:mkpath)
+    dest = @dir/"dest"
+
+    refute_predicate bin/"kilroy", :exist?
+    refute_predicate dest/"kilroy", :exist?
+
     FileUtils.touch bin/"irrelevant"
-    @venv.link_scripts(dest) { FileUtils.touch bin/"kilroy" }
-    assert((bin/"kilroy").exist?)
-    assert((dest/"kilroy").exist?)
-    assert((dest/"kilroy").symlink?)
-    assert_equal((bin/"kilroy").realpath, (dest/"kilroy").realpath)
-    refute((dest/"irrelevant").exist?)
+    @formula.expects(:system).returns(true).with do |*params|
+      FileUtils.touch bin/"kilroy"
+      params.first == @dir/"bin/pip" && params.last == "foo"
+    end
+    @venv.pip_install "foo", :link_scripts => dest
+
+    assert_predicate bin/"kilroy", :exist?
+    assert_predicate dest/"kilroy", :exist?
+    assert_predicate dest/"kilroy", :symlink?
+    assert_equal (bin/"kilroy").realpath, (dest/"kilroy").realpath
+    refute_predicate dest/"irrelevant", :exist?
   end
 end
