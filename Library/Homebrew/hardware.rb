@@ -2,10 +2,7 @@ require "os"
 
 module Hardware
   class CPU
-    INTEL_32BIT_ARCHS = [:i386].freeze
     INTEL_64BIT_ARCHS = [:x86_64].freeze
-    PPC_32BIT_ARCHS   = [:ppc, :ppc7400, :ppc7450, :ppc970].freeze
-    PPC_64BIT_ARCHS   = [:ppc64].freeze
 
     class << self
       OPTIMIZATION_FLAGS = {
@@ -28,26 +25,19 @@ module Hardware
       end
 
       def type
-        case RUBY_PLATFORM
-        when /x86_64/, /i\d86/ then :intel
-        when /ppc\d+/ then :ppc
-        else :dunno
-        end
+        :intel
       end
 
       def family
-        :dunno
+        :haswell
       end
 
       def cores
-        1
+        8
       end
 
       def bits
-        case RUBY_PLATFORM
-        when /x86_64/, /ppc64/ then 64
-        when /i\d86/, /ppc/ then 32
-        end
+        64
       end
 
       def sse4?
@@ -97,15 +87,7 @@ module Hardware
   end
 
   def self.oldest_cpu
-    if Hardware::CPU.intel?
-      if Hardware::CPU.is_64_bit?
-        :core2
-      else
-        :core
-      end
-    else
-      Hardware::CPU.family
-    end
+    :haswell
   end
 end
 

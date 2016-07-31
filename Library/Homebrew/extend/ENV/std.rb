@@ -7,8 +7,8 @@ module Stdenv
   include SharedEnvExtension
 
   # @private
-  SAFE_CFLAGS_FLAGS = "-w -pipe"
-  DEFAULT_FLAGS = "-march=core2 -msse4"
+  SAFE_CFLAGS_FLAGS = "-w -pipe -march=haswell -msse4.2 -O3 -flto"
+  DEFAULT_FLAGS = "-march=haswell -msse4.2 -O3 -flto"
 
   def self.extended(base)
     unless ORIGINAL_PATHS.include? HOMEBREW_PREFIX/"bin"
@@ -92,7 +92,7 @@ module Stdenv
   %w[O3 O2 O1 O0 Os].each do |opt|
     define_method opt do
       remove_from_cflags(/-O./)
-      append_to_cflags "-#{opt}"
+      append_to_cflags "-O3"
     end
   end
 

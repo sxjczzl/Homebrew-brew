@@ -3,71 +3,33 @@ require "os/mac/pathname"
 module Hardware
   class CPU
     class << self
-      PPC_OPTIMIZATION_FLAGS = {
-        :g3 => "-mcpu=750",
-        :g4 => "-mcpu=7400",
-        :g4e => "-mcpu=7450",
-        :g5 => "-mcpu=970",
-        :g5_64 => "-mcpu=970 -arch ppc64",
+      OPTIMIZATION_FLAGS = {
+        :haswell => "-march=haswell -msse4.2 -O3 -flto", #   -ffast-math -fwhole-program-vtables
+        :penryn => "-march=core2 -msse4.1",
+        :core2 => "-march=core2",
+        :core => "-march=prescott",
       }.freeze
       def optimization_flags
-        OPTIMIZATION_FLAGS.merge(PPC_OPTIMIZATION_FLAGS)
+        OPTIMIZATION_FLAGS
       end
-
       # These methods use info spewed out by sysctl.
       # Look in <mach/machine.h> for decoding info.
       def type
-        case sysctl_int("hw.cputype")
-        when 7
-          :intel
-        when 18
-          :ppc
-        else
-          :dunno
-        end
+        :intel
       end
 
       def family
         if intel?
-          case sysctl_int("hw.cpufamily")
-          when 0x73d67300 # Yonah: Core Solo/Duo
-            :core
-          when 0x426f69ef # Merom: Core 2 Duo
-            :core2
-          when 0x78ea4fbc # Penryn
-            :penryn
-          when 0x6b5a4cd2 # Nehalem
-            :nehalem
-          when 0x573B5EEC # Arrandale
-            :arrandale
-          when 0x5490B78C # Sandy Bridge
-            :sandybridge
-          when 0x1F65E835 # Ivy Bridge
-            :ivybridge
-          when 0x10B282DC # Haswell
+          # case sysctl_int("hw.cpufamily")
+          # when 0x10B282DC # Haswell
             :haswell
-          when 0x582ed09c # Broadwell
-            :broadwell
-          when 0x37fc219f # Skylake
-            :skylake
-          else
-            :dunno
-          end
-        elsif ppc?
-          case sysctl_int("hw.cpusubtype")
-          when 9
-            :g3  # PowerPC 750
-          when 10
-            :g4  # PowerPC 7400
-          when 11
-            :g4e # PowerPC 7450
-          when 100
-            # This is the only 64-bit PPC CPU type, so it's useful
-            # to distinguish in `brew config` output and in bottle tags
-            MacOS.prefer_64_bit? ? :g5_64 : :g5 # PowerPC 970
-          else
-            :dunno
-          end
+          # when 0x582ed09c # Broadwell
+          #   :broadwell
+          # when 0x37fc219f # Skylake
+          #   :skylake
+          # else
+          #   :dunno
+          # end
         end
       end
 
@@ -96,15 +58,11 @@ module Hardware
       def universal_archs
         # Building 64-bit is a no-go on Tiger, and pretty hit or miss on Leopard.
         # Don't even try unless Tigerbrew's experimental 64-bit Leopard support is enabled.
-        if MacOS.version <= :leopard && !MacOS.prefer_64_bit?
-          [arch_32_bit].extend ArchitectureListExtension
-        else
-          # Amazingly, this order (64, then 32) matters. It shouldn't, but it
-          # does. GCC (some versions? some systems?) can blow up if the other
-          # order is used.
-          # http://superuser.com/questions/740563/gcc-4-8-on-macos-fails-depending-on-arch-order
-          [arch_64_bit, arch_32_bit].extend ArchitectureListExtension
-        end
+        # Amazingly, this order (64, then 32) matters. It shouldn't, but it
+        # does. GCC (some versions? some systems?) can blow up if the other
+        # order is used.
+        # http://superuser.com/questions/740563/gcc-4-8-on-macos-fails-depending-on-arch-order
+        [arch_64_bit, arch_32_bit].extend ArchitectureListExtension
       end
 
       def features
