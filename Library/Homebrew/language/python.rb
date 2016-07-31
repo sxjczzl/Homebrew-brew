@@ -131,7 +131,7 @@ module Language
       def virtualenv_install_with_resources
         venv = virtualenv_create(libexec)
         venv.pip_install resources
-        venv.link_scripts(bin) { venv.pip_install buildpath }
+        venv.pip_install buildpath, :link_scripts => bin
         venv
       end
 
@@ -191,7 +191,12 @@ module Language
         #   Multiline strings are allowed and treated as though they represent
         #   the contents of a `requirements.txt`.
         # @return [void]
-        def pip_install(targets)
+        def pip_install(targets, options = {})
+          if options[:link_scripts]
+            link_scripts(options[:link_scripts]) { pip_install(targets) }
+            return
+          end
+
           targets = [targets] unless targets.is_a? Array
           targets.each do |t|
             if t.respond_to? :stage
