@@ -88,7 +88,7 @@ class LanguagePythonTests < Homebrew::TestCase
     assert_predicate bin/"kilroy", :exist?
     assert_predicate dest/"kilroy", :exist?
     assert_predicate dest/"kilroy", :symlink?
-    assert_equal (bin/"kilroy").realpath, (dest/"kilroy").realpath
+    assert_equal((bin/"kilroy").realpath, (dest/"kilroy").realpath)
     refute_predicate dest/"irrelevant", :exist?
   end
 end
