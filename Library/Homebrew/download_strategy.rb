@@ -6,6 +6,7 @@ class AbstractDownloadStrategy
   include FileUtils
 
   attr_reader :meta, :name, :version, :resource
+  attr_reader :shutup
 
   def initialize(name, resource)
     @name = name
@@ -17,6 +18,19 @@ class AbstractDownloadStrategy
 
   # Download and cache the resource as {#cached_location}.
   def fetch
+  end
+
+  # Supress output
+  def shutup!
+    @shutup = true
+  end
+
+  def puts(*args)
+    super(*args) unless shutup
+  end
+
+  def ohai(*args)
+    super(*args) unless shutup
   end
 
   # Unpack {#cached_location} into the current working directory, and possibly
@@ -57,6 +71,14 @@ class AbstractDownloadStrategy
     # 2 as default because commands are eg. svn up, git pull
     args.insert(2, "-q") unless ARGV.verbose?
     args
+  end
+
+  def safe_system(*args)
+    if @shutup
+      quiet_system(*args) || raise(ErrorDuringExecution.new(args.shift, *args))
+    else
+      super(*args)
+    end
   end
 
   def quiet_safe_system(*args)
@@ -145,6 +167,11 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
         EOS
       end
     end
+  end
+
+  def fetch_last_commit
+    fetch
+    last_commit
   end
 
   def cached_location
@@ -601,7 +628,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
   end
 
   def last_commit
-    Utils.popen_read("git", "--git-dir", git_dir, "rev-parse", "--short=7", "HEAD").chomp
+    Utils.popen_read("git", "--git-dir", git_dir, "rev-parse", "HEAD").chomp
   end
 
   private
@@ -753,6 +780,39 @@ class GitDownloadStrategy < VCSDownloadStrategy
       relative_git_dir = Pathname.new(git_dir).relative_path_from(work_dir)
       dot_git.atomic_write("gitdir: #{relative_git_dir}\n")
     end
+  end
+end
+
+class GitHubGitDownloadStrategy < GitDownloadStrategy
+  def initialize(name, resource)
+    super
+    if @url =~ %r{^https?://github\.com/([^/]+)/([^/]+)\.git$}
+      @user = $1
+      @repo = $2
+    end
+  end
+
+  def github_last_commit
+    return if ENV["HOMEBREW_NO_GITHUB_API"]
+    args = []
+    args << "https://api.github.com/repos/#{@user}/#{@repo}/commits/#{@ref}"
+    args << "-I" << "-H" << "Accept: application/vnd.github.v3.sha"
+
+    curl_output(*args).first[/^ETag: \"(\h+)\"/, 1]
+  end
+
+  # TODO probably return unless head? at the begining
+  def fetch_last_commit
+    commit = begin
+      github_last_commit
+    rescue Exception
+      super
+    end
+
+    commit ||= super
+
+    version.update_commit(commit) if head? && commit
+    commit
   end
 end
 
@@ -957,6 +1017,8 @@ class DownloadStrategyDetector
 
   def self.detect_from_url(url)
     case url
+    when %r{^https?://github\.com/[^/]+/[^/]+\.git$}
+      GitHubGitDownloadStrategy
     when %r{^https?://.+\.git$}, %r{^git://}
       GitDownloadStrategy
     when %r{^https?://www\.apache\.org/dyn/closer\.cgi}, %r{^https?://www\.apache\.org/dyn/closer\.lua}
