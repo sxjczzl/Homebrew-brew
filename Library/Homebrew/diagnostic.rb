@@ -443,6 +443,29 @@ module Homebrew
         EOS
       end
 
+      def check_for_empty_taps
+        taps_dir = HOMEBREW_LIBRARY.join("Taps")
+        return unless taps_dir.exist?
+		return unless taps_dir.directory?
+
+        found_empty_dirs = []
+
+		# Delete all EMPTY taps_dir children directories
+        taps_dir.children.select{ |c| c.directory? }          \
+          .select { |c| (Dir.entries(c) - %w[. ..]).empty? } \
+          .each { |c| found_empty_dirs.push(c.to_s)
+            Dir.rmdir(c) }
+
+        return unless found_empty_dirs.length > 0
+
+        <<-EOS.undent
+          Found #{found_empty_dirs.length} empty directories in your Taps directory
+          located in #{HOMEBREW_LIBRARY}. This has been known to cause `brew update`
+          to report updated and new formulae multiple times. These empty folders have now
+          been removed to prevent this issue.
+        EOS
+      end
+
       def check_access_prefix_opt
         opt = HOMEBREW_PREFIX.join("opt")
         return unless opt.exist?
