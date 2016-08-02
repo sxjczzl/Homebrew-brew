@@ -1,16 +1,18 @@
-# Creates a pull request with the new version of a formula.
-#
-# Usage: brew bump [options...] <formula-name>
-#
-# Requires either `--url` and `--sha256` or `--tag` and `--revision`.
-#
-# Options:
-#   --dry-run:  Print what would be done rather than doing it.
-#   --devel:    Bump a `devel` rather than `stable` version.
-#   --url:      The new formula URL.
-#   --sha256:   The new formula SHA-256.
-#   --tag:      The new formula's `tag`
-#   --revision: The new formula's `revision`.
+#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] <formula> `--url=`<URL> `--sha256=`<SHA-256>:
+#:    Creates a pull request to update the formula <formula>
+#:    with new url <URL> and SHA-256 <SHA-256>.
+#:
+#:    If `--devel` is passed, bump a devel rather than stable version.
+#:
+#:    If `--dry-run` is passed, print what would be done rather than doing it.
+#:
+#:  * `bump-formula-pr` [`--dry-run`] [`--devel`] <formula> `--tag=`<TAG> `--revision=`<REVISION>:
+#:    Creates a pull request to update the formula <formula>
+#:    with new tag <TAG> and revision <REVISION>.
+#:
+#:    If `--devel` is passed, bump a devel rather than stable version.
+#:
+#:    If `--dry-run` is passed, print what would be done rather than doing it.
 
 require "formula"
 
