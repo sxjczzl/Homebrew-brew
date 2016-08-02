@@ -214,7 +214,7 @@ class Tap
 
     begin
       safe_system "git", *args
-      unless Readall.valid_tap?(self, :aliases => true)
+      unless repo.include?("boneyard") || Readall.valid_tap?(self, :aliases => true)
         raise "Cannot tap #{name}: invalid syntax in tap!"
       end
     rescue Interrupt, ErrorDuringExecution, RuntimeError
