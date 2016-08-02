@@ -115,6 +115,19 @@ class DependencyTests < Homebrew::TestCase
     refute_equal foo1, foo3
     refute_eql foo1, foo3
   end
+
+  def test_devel_dependency
+    mock_formulary_factory = MiniTest::Mock.new
+    mock_formulary_factory.expect(:call, OpenStruct.new(options: nil), ["foo", :devel])
+    mock_build_options_new = MiniTest::Mock.new
+    Formulary.stub(:factory, mock_formulary_factory) do
+      BuildOptions.stub(:new, mock_build_options_new) do
+        foo = Dependency.new("foo", [:devel])
+        formula = foo.to_formula
+      end
+    end
+    mock_formulary_factory.verify
+  end
 end
 
 class TapDependencyTests < Homebrew::TestCase

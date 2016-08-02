@@ -136,10 +136,12 @@ A Symbol (e.g. `:x11`) specifies a [`Requirement`](http://www.rubydoc.info/githu
 
 A Hash (e.g. `=>`) specifies a formula dependency with some additional information. Given a single string key, the value can take several forms:
 
-*   a Symbol (currently one of `:build`, `:optional`, `:recommended`).
+*   a Symbol (currently one of `:build`, `:devel`, `:optional`, `:recommended`).
     - `:build` means that dependency is a build-time only dependency so it can
       be skipped when installing from a bottle or when listing missing
       dependencies using `brew missing`.
+    - `:devel` generates an implicit `devel` option, meaning that the development
+      version of the dependency will be installed.
     - `:optional` generates an implicit `with-foo` option for the formula.
       This means that, given `depends_on "foo" => :optional`, the user must pass `--with-foo` in order to use the dependency.
     - `:recommended` generates an implicit `without-foo` option, meaning that

@@ -29,7 +29,11 @@ class Dependency
   end
 
   def to_formula
-    formula = Formulary.factory(name)
+    if tags.include?(:devel)
+      formula = Formulary.factory(name, :devel)
+    else
+      formula = Formulary.factory(name)
+    end
     formula.build = BuildOptions.new(options, formula.options)
     formula
   end
