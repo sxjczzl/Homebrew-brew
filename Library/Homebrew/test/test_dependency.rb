@@ -118,12 +118,12 @@ class DependencyTests < Homebrew::TestCase
 
   def test_devel_dependency
     mock_formulary_factory = MiniTest::Mock.new
-    mock_formulary_factory.expect(:call, OpenStruct.new(options: nil), ["foo", :devel])
+    mock_formulary_factory.expect(:call, OpenStruct.new({:options => nil}), ["foo", :devel])
     mock_build_options_new = MiniTest::Mock.new
     Formulary.stub(:factory, mock_formulary_factory) do
       BuildOptions.stub(:new, mock_build_options_new) do
         foo = Dependency.new("foo", [:devel])
-        formula = foo.to_formula
+        foo.to_formula
       end
     end
     mock_formulary_factory.verify
