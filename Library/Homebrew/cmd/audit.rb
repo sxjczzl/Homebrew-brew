@@ -348,6 +348,7 @@ class FormulaAuditor
         end
 
         dep.options.reject do |opt|
+          next true if opt.name == :devel
           next true if dep_f.option_defined?(opt)
           dep_f.requirements.detect do |r|
             if r.recommended?
