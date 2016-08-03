@@ -159,6 +159,10 @@ module HomebrewArgvExtension
     include? "--ignore-dependencies"
   end
 
+  def ignore_tabs?
+    include? "--ignore-tabs"
+  end
+
   def only_deps?
     include? "--only-dependencies"
   end
