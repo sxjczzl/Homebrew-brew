@@ -1,5 +1,6 @@
 require "testing_env"
 require "dependency"
+require "formula"
 
 class DependableTests < Homebrew::TestCase
   def setup
@@ -117,15 +118,20 @@ class DependencyTests < Homebrew::TestCase
   end
 
   def test_devel_dependency
+    f = formula do
+      url "foo"
+      version "1.0"
+    end
     mock_formulary_factory = MiniTest::Mock.new
-    mock_formulary_factory.expect(:call, OpenStruct.new({:options => nil}), ["foo", :devel])
-    mock_build_options_new = MiniTest::Mock.new
+    mock_formulary_factory.expect(:call, f, ["foo", :devel])
+
     Formulary.stub(:factory, mock_formulary_factory) do
-      BuildOptions.stub(:new, mock_build_options_new) do
+      BuildOptions.stub(:new, Options.create([:devel])) do
         foo = Dependency.new("foo", [:devel])
         foo.to_formula
       end
     end
+
     mock_formulary_factory.verify
   end
 end
