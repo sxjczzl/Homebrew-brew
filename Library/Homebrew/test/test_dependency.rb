@@ -126,7 +126,7 @@ class DependencyTests < Homebrew::TestCase
     mock_formulary_factory.expect(:call, f, ["foo", :devel])
 
     Formulary.stub(:factory, mock_formulary_factory) do
-      BuildOptions.stub(:new, Options.create([:devel])) do
+      BuildOptions.stub(:new, BuildOptions.new(%w[--devel], [])) do
         foo = Dependency.new("foo", [:devel])
         foo.to_formula
       end
