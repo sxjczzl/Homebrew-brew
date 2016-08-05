@@ -162,7 +162,13 @@ class FormulaAuditor
     @style_offenses = options[:style_offenses]
     @problems = []
     @text = FormulaText.new(formula.path)
-    @specs = %w[stable devel head].map { |s| formula.send(s) }.compact
+    @specs = %w[stable devel head].map do |spec|
+      if f = formula.send(spec)
+        { :name => spec, :formula => f } 
+      else
+        nil
+      end
+    end.compact
   end
 
   def audit_style
@@ -322,7 +328,7 @@ class FormulaAuditor
     @specs.each do |spec|
       # Check for things we don't like to depend on.
       # We allow non-Homebrew installs whenever possible.
-      spec.deps.each do |dep|
+      spec[:formula].deps.each do |dep|
         begin
           dep_f = dep.to_formula
         rescue TapFormulaUnavailableError
@@ -348,7 +354,7 @@ class FormulaAuditor
         end
 
         dep.options.reject do |opt|
-          next true if opt.name == :devel
+          next true if opt.name == :devel && spec[:name] == "devel"
           next true if dep_f.option_defined?(opt)
           dep_f.requirements.detect do |r|
             if r.recommended?
@@ -358,7 +364,11 @@ class FormulaAuditor
             end
           end
         end.each do |opt|
-          problem "Dependency #{dep} does not define option #{opt.name.inspect}"
+          if opt.name == :devel
+            problem "Don't specify a devel dependency for non-devel builds"
+          else
+            problem "Dependency #{dep} does not define option #{opt.name.inspect}"
+          end
         end
 
         case dep.name
