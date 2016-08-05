@@ -16,7 +16,7 @@ class GpgTest < Homebrew::TestCase
     Dir.chdir(@dir) do
       with_environment("HOME" => @dir) do
         shutup { Gpg.create_test_key(@dir) }
-        assert_predicate (@dir/".gnupg/secring.gpg"), :exist?
+        assert_predicate @dir/".gnupg/secring.gpg", :exist?
       end
     end
   end
