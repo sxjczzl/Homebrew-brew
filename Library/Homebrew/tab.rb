@@ -89,7 +89,7 @@ class Tab < OpenStruct
     deprecated_options.each do |deprecated_option|
       option = options.find { |o| o.name == deprecated_option.old }
       next unless option
-      options -= [option]
+      options -= Options.create([option])
       options << Option.new(deprecated_option.current, option.description)
     end
     options

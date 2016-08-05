@@ -49,7 +49,7 @@ class FormulaInstaller
     @verbose = false
     @quieter = false
     @debug = false
-    @options = Options.new
+    @options = Options.create
 
     @@attempted ||= Set.new
 
@@ -343,13 +343,13 @@ class FormulaInstaller
   end
 
   def expand_dependencies(deps)
-    inherited_options = Hash.new { |hash, key| hash[key] = Options.new }
+    inherited_options = Hash.new { |hash, key| hash[key] = Options.create }
 
     expanded_deps = Dependency.expand(formula, deps) do |dependent, dep|
       inherited_options[dep.name] |= inherited_options_for(dep)
       build = effective_build_options_for(
         dependent,
-        inherited_options.fetch(dependent.name, [])
+        inherited_options.fetch(dependent.name, Options.create)
       )
 
       if (dep.optional? || dep.recommended?) && build.without?(dep)
@@ -364,7 +364,7 @@ class FormulaInstaller
     expanded_deps.map { |dep| [dep, inherited_options[dep.name]] }
   end
 
-  def effective_build_options_for(dependent, inherited_options = [])
+  def effective_build_options_for(dependent, inherited_options = Options.create)
     args  = dependent.build.used_options
     args |= dependent == formula ? options : inherited_options
     args |= Tab.for_formula(dependent).used_options
@@ -373,7 +373,7 @@ class FormulaInstaller
   end
 
   def inherited_options_for(dep)
-    inherited_options = Options.new
+    inherited_options = Options.create
     u = Option.new("universal")
     if (options.include?(u) || formula.require_universal_deps?) && !dep.build? && dep.to_formula.option_defined?(u)
       inherited_options << u
@@ -533,12 +533,6 @@ class FormulaInstaller
       args << "--HEAD"
     elsif formula.devel?
       args << "--devel"
-    end
-
-    formula.options.each do |opt|
-      name = opt.name[/^([^=]+)=$/, 1]
-      value = ARGV.value(name) if name
-      args << "--#{name}=#{value}" if value
     end
 
     args
