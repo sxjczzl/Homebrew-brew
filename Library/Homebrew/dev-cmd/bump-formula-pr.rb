@@ -1,11 +1,13 @@
-#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--url=`<URL> `--sha256=`<SHA-256> <formula>:
-#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--tag=`<TAG> `--revision=`<REVISION> <formula>:
+#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--url=`<url> `--sha256=`<sha-256> <formula>:
+#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--tag=`<tag> `--revision=`<revision> <formula>:
 #:
 #:    Creates a pull request to update the formula with a new url or a new tag.
 #:
-#:    If a <URL> is specified, the <SHA-256> checksum of the new download must also be specified.
+#:    If a <url> is specified, the <SHA-256> checksum of the new download must
+#:    also be specified.
 #:
-#:    If a <TAG> is specified, the git commit <REVISION> corresponding to that tag must also be specified.
+#:    If a <tag> is specified, the git commit <revision> corresponding to that
+#:    tag must also be specified.
 #:
 #:    If `--devel` is passed, bump the development rather than stable version.
 #:    The development spec must already exist.
@@ -13,8 +15,9 @@
 #:    If `--dry-run` is passed, print what would be done rather than doing it.
 #:
 #:    Note that this command cannot be used to transition a formula from a
-#:    url-and-sha256 style specification into a tag-and-revision style specification, nor vice versa.
-#:    It must use whichever style specification the preexisting formula already uses.
+#:    url-and-sha256 style specification into a tag-and-revision style
+#:    specification, nor vice versa. It must use whichever style specification
+#:    the preexisting formula already uses.
 
 require "formula"
 
