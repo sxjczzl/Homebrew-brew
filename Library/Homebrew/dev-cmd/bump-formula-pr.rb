@@ -3,7 +3,7 @@
 #:
 #:    Creates a pull request to update the formula with a new url or a new tag.
 #:
-#:    If a <url> is specified, the <SHA-256> checksum of the new download must
+#:    If a <url> is specified, the <sha-256> checksum of the new download must
 #:    also be specified.
 #:
 #:    If a <tag> is specified, the git commit <revision> corresponding to that
