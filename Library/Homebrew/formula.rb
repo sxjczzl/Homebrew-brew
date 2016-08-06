@@ -466,10 +466,10 @@ class Formula
     rack.directory? ? rack.subdirs : []
   end
 
-  # All of current installed kegs.
+  # All of current installed kegs, sorted by version.
   # @private
   def installed_kegs
-    installed_prefixes.map { |dir| Keg.new(dir) }
+    installed_prefixes.map { |dir| Keg.new(dir) }.sort_by(&:version)
   end
 
   # The directory where the formula's binaries should be installed.
@@ -1318,8 +1318,6 @@ class Formula
       }
     end
 
-    hsh["installed"] = hsh["installed"].sort_by { |i| Version.create(i["version"]) }
-
     hsh
   end
 
@@ -1526,7 +1524,20 @@ class Formula
           end
         end
       end
-    elsif installed_prefixes.any? && !pinned?
+    elsif installed_prefixes.length > 1
+      if linked_keg.exist?
+        # If the most recent available version is not installed, cleanup
+        # only those older than the currently-linked one.
+        linked_version = PkgVersion.parse(linked_keg.resolved_path.basename.to_s)
+        eligible_for_cleanup = installed_kegs.select { |k| linked_version > k.version }
+        opoo "Skipping (old) #{linked_keg.resolved_path} due to it being linked"
+      else
+        # If no version is linked, keep only the newest one.
+        eligible_for_cleanup = installed_kegs
+        last_keg = eligible_for_cleanup.pop
+        opoo "Skipping (old, unlinked) #{last_keg} due to it being the latest version installed"
+      end
+    elsif !pinned?
       # If the cellar only has one version installed, don't complain
       # that we can't tell which one to keep. Don't complain at all if the
       # only installed version is a pinned formula.
