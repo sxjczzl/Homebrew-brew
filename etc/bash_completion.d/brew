@@ -84,7 +84,7 @@ __brew_complete_tapped() {
   local dir taps
 
   for dir in ${taplib}/*/*; do
-    [ -d "$dir" ] || continue
+    [[ -d "$dir" ]] || continue
     dir=${dir#${taplib}/}
     dir=${dir/homebrew-/}
     taps="$taps $dir"
