@@ -604,21 +604,25 @@ _brew ()
 
   # subcommands have their own completion functions
   case "$cmd" in
-    --cache|--cellar|--prefix)  __brew_complete_formulae ;;
+    --cache)                    __brew_complete_formulae ;;
+    --cellar)                   __brew_complete_formulae ;;
+    --prefix)                   __brew_complete_formulae ;;
     analytics)                  _brew_analytics ;;
-    audit|cat|edit|home)        __brew_complete_formulae ;;
-    test|unlink)                __brew_complete_installed ;;
+    audit)                      __brew_complete_formulae ;;
     bottle)                     _brew_bottle ;;
+    cat)                        __brew_complete_formulae ;;
     cleanup)                    _brew_cleanup ;;
     create)                     _brew_create ;;
     deps)                       _brew_deps ;;
     desc)                       _brew_desc ;;
-    doctor|dr)                  _brew_doctor ;;
     diy|configure)              _brew_diy ;;
+    doctor|dr)                  _brew_doctor ;;
+    edit)                       __brew_complete_formulae ;;
     fetch)                      _brew_fetch ;;
     gist-logs)                  _brew_gist_logs ;;
+    home)                       __brew_complete_formulae ;;
     info|abv)                   _brew_info ;;
-    install|instal|reinstall)   _brew_install ;;
+    install|instal)             _brew_install ;;
     irb)                        _brew_irb ;;
     link|ln)                    _brew_link ;;
     linkapps)                   _brew_linkapps ;;
@@ -633,19 +637,23 @@ _brew ()
     prune)                      _brew_prune ;;
     pull)                       _brew_pull ;;
     readall)                    _brew_readall ;;
+    reinstall)                  _brew_install ;;
     search|-S)                  _brew_search ;;
     style)                      _brew_style ;;
     switch)                     _brew_switch ;;
     tap)                        _brew_complete_tap ;;
     tap-info)                   _brew_tap_info ;;
+    tap-pin)                    __brew_complete_tapped ;;
     tap-readme)                 _brew_tap_readme ;;
     tap-unpin)                  _brew_tap_unpin ;;
+    test)                       __brew_complete_installed ;;
     tests)                      _brew_tests ;;
     uninstall|remove|rm)        _brew_uninstall ;;
+    unlink)                     __brew_complete_installed ;;
     unlinkapps)                 _brew_unlinkapps ;;
     unpack)                     _brew_unpack ;;
     unpin)                      __brew_complete_formulae ;;
-    untap|tap-pin)              __brew_complete_tapped ;;
+    untap)                      __brew_complete_tapped ;;
     update)                     _brew_update ;;
     upgrade)                    _brew_upgrade ;;
     uses)                       _brew_uses ;;
