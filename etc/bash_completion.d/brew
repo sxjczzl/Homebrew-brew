@@ -2,24 +2,24 @@
 
 __brewcomp_words_include() {
   local i=1
-  while [[ $i -lt $COMP_CWORD ]]
+  while [[ "$i" -lt "$COMP_CWORD" ]]
   do
     if [[ "${COMP_WORDS[i]}" = "$1" ]]
     then
       return 0
     fi
-    i=$((++i))
+    i="$((++i))"
   done
   return 1
 }
 
 # Find the previous non-switch word
 __brewcomp_prev() {
-  local idx=$((COMP_CWORD - 1))
+  local idx="$((COMP_CWORD - 1))"
   local prv="${COMP_WORDS[idx]}"
-  while [[ $prv = -* ]]
+  while [[ "$prv" = -* ]]
   do
-    idx=$((--idx))
+    idx="$((--idx))"
     prv="${COMP_WORDS[idx]}"
   done
   echo "$prv"
@@ -37,7 +37,7 @@ __brewcomp() {
     list="$list$s$sep"
   done
 
-  IFS=$sep
+  IFS="$sep"
   COMPREPLY=($(compgen -W "$list" -- "$cur"))
 }
 
@@ -52,26 +52,26 @@ __brew_complete_formulae() {
 
 __brew_complete_installed() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local inst=$(\ls $(brew --cellar))
+  local inst="$(ls "$(brew --cellar)")"
   COMPREPLY=($(compgen -W "$inst" -- "$cur"))
 }
 
 __brew_complete_outdated() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local od=$(brew outdated --quiet)
+  local od="$(brew outdated --quiet)"
   COMPREPLY=($(compgen -W "$od" -- "$cur"))
 }
 
 __brew_complete_versions() {
   local formula="$1"
-  local versions=$(brew list --versions "$formula")
+  local versions="$(brew list --versions "$formula")"
   local cur="${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=($(compgen -W "$versions" -X "$formula" -- "$cur"))
 }
 
 __brew_complete_logs() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local logs=$(ls ${HOMEBREW_LOGS:-~/Library/Logs/Homebrew/})
+  local logs="$(ls "${HOMEBREW_LOGS:-~/Library/Logs/Homebrew/}")"
   COMPREPLY=($(compgen -W "$logs" -- "$cur"))
 }
 
@@ -84,14 +84,14 @@ _brew_switch() {
 }
 
 __brew_complete_tapped() {
-  local taplib=$(brew --repository)/Library/Taps
+  local taplib="$(brew --repository)/Library/Taps"
   local dir taps
 
-  for dir in ${taplib}/*/*
+  for dir in "$taplib"/*/*
   do
     [[ -d "$dir" ]] || continue
-    dir=${dir#${taplib}/}
-    dir=${dir/homebrew-/}
+    dir="${dir#${taplib}/}"
+    dir="${dir/homebrew-/}"
     taps="$taps $dir"
   done
   __brewcomp "$taps"
@@ -182,7 +182,7 @@ _brew_diy() {
 
 _brew_fetch() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local prv=$(__brewcomp_prev)
+  local prv="$(__brewcomp_prev)"
   case "$cur" in
     --*)
       __brewcomp "
@@ -222,7 +222,7 @@ _brew_info() {
 
 _brew_install() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local prv=$(__brewcomp_prev)
+  local prv="$(__brewcomp_prev)"
 
   case "$cur" in
     --*)
@@ -510,7 +510,7 @@ _brew_update() {
 
 _brew_upgrade() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local prv=$(__brewcomp_prev)
+  local prv="$(__brewcomp_prev)"
 
   case "$cur" in
     --*)
@@ -542,7 +542,7 @@ _brew() {
   local i=1 cmd
 
   # find the subcommand
-  while [[ $i -lt $COMP_CWORD ]]
+  while [[ "$i" -lt "$COMP_CWORD" ]]
   do
     local s="${COMP_WORDS[i]}"
     case "$s" in
@@ -557,10 +557,10 @@ _brew() {
         break
         ;;
     esac
-    i=$((++i))
+    i="$((++i))"
   done
 
-  if [[ $i -eq $COMP_CWORD ]]
+  if [[ "$i" -eq "$COMP_CWORD" ]]
   then
     # Do not auto-complete "instal" abbreviation for "install" command.
     # Prefix newline to prevent not checking the first command.
