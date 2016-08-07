@@ -15,7 +15,7 @@ __brewcomp_words_include() {
 __brewcomp_prev() {
   local idx=$((COMP_CWORD - 1))
   local prv="${COMP_WORDS[idx]}"
-  while [[ $prv == -* ]]; do
+  while [[ $prv = -* ]]; do
     idx=$((--idx))
     prv="${COMP_WORDS[idx]}"
   done
