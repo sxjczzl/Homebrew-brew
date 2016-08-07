@@ -2,8 +2,10 @@
 
 __brewcomp_words_include() {
   local i=1
-  while [[ $i -lt $COMP_CWORD ]]; do
-    if [[ "${COMP_WORDS[i]}" = "$1" ]]; then
+  while [[ $i -lt $COMP_CWORD ]]
+  do
+    if [[ "${COMP_WORDS[i]}" = "$1" ]]
+    then
       return 0
     fi
     i=$((++i))
@@ -15,7 +17,8 @@ __brewcomp_words_include() {
 __brewcomp_prev() {
   local idx=$((COMP_CWORD - 1))
   local prv="${COMP_WORDS[idx]}"
-  while [[ $prv = -* ]]; do
+  while [[ $prv = -* ]]
+  do
     idx=$((--idx))
     prv="${COMP_WORDS[idx]}"
   done
@@ -28,7 +31,8 @@ __brewcomp() {
   local list s sep=$'\n' IFS=$' '$'\t'$'\n'
   local cur="${COMP_WORDS[COMP_CWORD]}"
 
-  for s in $1; do
+  for s in $1
+  do
     __brewcomp_words_include "$s" && continue
     list="$list$s$sep"
   done
@@ -83,7 +87,8 @@ __brew_complete_tapped() {
   local taplib=$(brew --repository)/Library/Taps
   local dir taps
 
-  for dir in ${taplib}/*/*; do
+  for dir in ${taplib}/*/*
+  do
     [[ -d "$dir" ]] || continue
     dir=${dir#${taplib}/}
     dir=${dir/homebrew-/}
@@ -221,7 +226,8 @@ _brew_install() {
 
   case "$cur" in
     --*)
-      if __brewcomp_words_include "--interactive"; then
+      if __brewcomp_words_include "--interactive"
+      then
         __brewcomp "--devel --git --HEAD"
       else
         __brewcomp "
@@ -281,17 +287,22 @@ _brew_list() {
   case "$cur" in
     --*)
       # most options to brew-list are mutually exclusive
-      if __brewcomp_words_include "--unbrewed"; then
+      if __brewcomp_words_include "--unbrewed"
+      then
         return
-      elif __brewcomp_words_include "--verbose"; then
+      elif __brewcomp_words_include "--verbose"
+      then
         return
-      elif __brewcomp_words_include "--pinned"; then
+      elif __brewcomp_words_include "--pinned"
+      then
         return
       # --multiple only applies with --versions
-      elif __brewcomp_words_include "--multiple"; then
+      elif __brewcomp_words_include "--multiple"
+      then
         __brewcomp "--versions"
         return
-      elif __brewcomp_words_include "--versions"; then
+      elif __brewcomp_words_include "--versions"
+      then
         __brewcomp "--multiple"
         return
       else
@@ -302,7 +313,8 @@ _brew_list() {
   esac
 
   # --multiple excludes formulae and *implies* --versions...
-  if __brewcomp_words_include "--multiple"; then
+  if __brewcomp_words_include "--multiple"
+  then
     __brewcomp "--versions"
   else
     __brew_complete_installed
@@ -530,7 +542,8 @@ _brew() {
   local i=1 cmd
 
   # find the subcommand
-  while [[ $i -lt $COMP_CWORD ]]; do
+  while [[ $i -lt $COMP_CWORD ]]
+  do
     local s="${COMP_WORDS[i]}"
     case "$s" in
       --*)
@@ -547,7 +560,8 @@ _brew() {
     i=$((++i))
   done
 
-  if [[ $i -eq $COMP_CWORD ]]; then
+  if [[ $i -eq $COMP_CWORD ]]
+  then
     # Do not auto-complete "instal" abbreviation for "install" command.
     # Prefix newline to prevent not checking the first command.
     local cmds=$'\n'"$(brew commands --quiet --include-aliases)"
