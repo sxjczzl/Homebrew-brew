@@ -620,7 +620,7 @@ _brew ()
     edit)                       __brew_complete_formulae ;;
     fetch)                      _brew_fetch ;;
     gist-logs)                  _brew_gist_logs ;;
-    home)                       __brew_complete_formulae ;;
+    home|homepage)              __brew_complete_formulae ;;
     info|abv)                   _brew_info ;;
     install|instal)             _brew_install ;;
     irb)                        _brew_irb ;;
@@ -654,7 +654,7 @@ _brew ()
     unpack)                     _brew_unpack ;;
     unpin)                      __brew_complete_formulae ;;
     untap)                      __brew_complete_tapped ;;
-    update)                     _brew_update ;;
+    update|up)                  _brew_update ;;
     upgrade)                    _brew_upgrade ;;
     uses)                       _brew_uses ;;
     *)                          ;;
