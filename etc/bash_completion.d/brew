@@ -1,7 +1,6 @@
 # Bash completion script for brew(1)
 
-__brewcomp_words_include ()
-{
+__brewcomp_words_include() {
   local i=1
   while [[ $i -lt $COMP_CWORD ]]; do
     if [[ "${COMP_WORDS[i]}" = "$1" ]]; then
@@ -13,8 +12,7 @@ __brewcomp_words_include ()
 }
 
 # Find the previous non-switch word
-__brewcomp_prev ()
-{
+__brewcomp_prev() {
   local idx=$((COMP_CWORD - 1))
   local prv="${COMP_WORDS[idx]}"
   while [[ $prv == -* ]]; do
@@ -24,8 +22,7 @@ __brewcomp_prev ()
   echo "$prv"
 }
 
-__brewcomp ()
-{
+__brewcomp() {
   # break $1 on space, tab, and newline characters,
   # and turn it into a newline separated list of words
   local list s sep=$'\n' IFS=$' '$'\t'$'\n'
@@ -42,45 +39,39 @@ __brewcomp ()
 
 # Don't use __brewcomp() in any of the __brew_complete_foo functions, as
 # it is too slow and is not worth it just for duplicate elimination.
-__brew_complete_formulae ()
-{
+__brew_complete_formulae() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local formulas="$(brew search)"
   local shortnames="$(echo "$formulas" | grep / | cut -d / -f 3)"
   COMPREPLY=($(compgen -W "$formulas $shortnames" -- "$cur"))
 }
 
-__brew_complete_installed ()
-{
+__brew_complete_installed() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local inst=$(\ls $(brew --cellar))
   COMPREPLY=($(compgen -W "$inst" -- "$cur"))
 }
 
-__brew_complete_outdated ()
-{
+__brew_complete_outdated() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local od=$(brew outdated --quiet)
   COMPREPLY=($(compgen -W "$od" -- "$cur"))
 }
 
-__brew_complete_versions ()
-{
+__brew_complete_versions() {
   local formula="$1"
   local versions=$(brew list --versions "$formula")
   local cur="${COMP_WORDS[COMP_CWORD]}"
   COMPREPLY=($(compgen -W "$versions" -X "$formula" -- "$cur"))
 }
 
-__brew_complete_logs ()
-{
+__brew_complete_logs() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local logs=$(ls ${HOMEBREW_LOGS:-~/Library/Logs/Homebrew/})
   COMPREPLY=($(compgen -W "$logs" -- "$cur"))
 }
 
-_brew_switch ()
-{
+_brew_switch() {
   case "$COMP_CWORD" in
     2)  __brew_complete_installed ;;
     3)  __brew_complete_versions "${COMP_WORDS[COMP_CWORD-1]}" ;;
@@ -88,8 +79,7 @@ _brew_switch ()
   esac
 }
 
-__brew_complete_tapped ()
-{
+__brew_complete_tapped() {
   local taplib=$(brew --repository)/Library/Taps
   local dir taps
 
@@ -102,13 +92,11 @@ __brew_complete_tapped ()
   __brewcomp "$taps"
 }
 
-_brew_tap_unpin ()
-{
+_brew_tap_unpin() {
   __brewcomp "$(brew tap --list-pinned)"
 }
 
-_brew_complete_tap ()
-{
+_brew_complete_tap() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -119,15 +107,13 @@ _brew_complete_tap ()
   __brewcomp "$(brew tap --list-official)"
 }
 
-_brew_analytics ()
-{
+_brew_analytics() {
   case "$COMP_CWORD" in
     2)  __brewcomp "off on regenerate-uuid state" ;;
   esac
 }
 
-_brew_bottle ()
-{
+_brew_bottle() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -138,13 +124,11 @@ _brew_bottle ()
   __brew_complete_installed
 }
 
-_brew_cleanup ()
-{
+_brew_cleanup() {
   __brew_complete_installed
 }
 
-_brew_create ()
-{
+_brew_create() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -154,8 +138,7 @@ _brew_create ()
   esac
 }
 
-_brew_deps ()
-{
+_brew_deps() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -166,8 +149,7 @@ _brew_deps ()
   __brew_complete_formulae
 }
 
-_brew_desc ()
-{
+_brew_desc() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -178,13 +160,12 @@ _brew_desc ()
   __brew_complete_formulae
 }
 
-_brew_doctor () {
+_brew_doctor() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   __brewcomp "$(brew doctor --list-checks)"
 }
 
-_brew_diy ()
-{
+_brew_diy() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -194,8 +175,7 @@ _brew_diy ()
   esac
 }
 
-_brew_fetch ()
-{
+_brew_fetch() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local prv=$(__brewcomp_prev)
   case "$cur" in
@@ -213,8 +193,7 @@ _brew_fetch ()
   __brew_complete_formulae
 }
 
-_brew_gist_logs ()
-{
+_brew_gist_logs() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -225,8 +204,7 @@ _brew_gist_logs ()
   __brew_complete_logs
 }
 
-_brew_info ()
-{
+_brew_info() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -237,8 +215,7 @@ _brew_info ()
   __brew_complete_formulae
 }
 
-_brew_install ()
-{
+_brew_install() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local prv=$(__brewcomp_prev)
 
@@ -265,8 +242,7 @@ _brew_install ()
   __brew_complete_formulae
 }
 
-_brew_irb ()
-{
+_brew_irb() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -276,8 +252,7 @@ _brew_irb ()
   esac
 }
 
-_brew_link ()
-{
+_brew_link() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -288,8 +263,7 @@ _brew_link ()
   __brew_complete_installed
 }
 
-_brew_linkapps ()
-{
+_brew_linkapps() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -300,8 +274,7 @@ _brew_linkapps ()
   __brew_complete_installed
 }
 
-_brew_list ()
-{
+_brew_list() {
   local allopts="--unbrewed --verbose --pinned --versions --multiple"
   local cur="${COMP_WORDS[COMP_CWORD]}"
 
@@ -336,8 +309,7 @@ _brew_list ()
   fi
 }
 
-_brew_log ()
-{
+_brew_log() {
   # if git-completion is loaded, then we complete git-log options
   declare -F _git_log >/dev/null || return
   local cur="${COMP_WORDS[COMP_CWORD]}"
@@ -357,8 +329,7 @@ _brew_log ()
   __brew_complete_formulae
 }
 
-_brew_man ()
-{
+_brew_man() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -368,8 +339,7 @@ _brew_man ()
   esac
 }
 
-_brew_options ()
-{
+_brew_options() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -380,8 +350,7 @@ _brew_options ()
   __brew_complete_formulae
 }
 
-_brew_outdated ()
-{
+_brew_outdated() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -391,8 +360,7 @@ _brew_outdated ()
   esac
 }
 
-_brew_postinstall ()
-{
+_brew_postinstall() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -403,8 +371,7 @@ _brew_postinstall ()
   __brew_complete_installed
 }
 
-_brew_prune ()
-{
+_brew_prune() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -414,8 +381,7 @@ _brew_prune ()
   esac
 }
 
-_brew_pull ()
-{
+_brew_pull() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -425,8 +391,7 @@ _brew_pull ()
   esac
 }
 
-_brew_readall ()
-{
+_brew_readall() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -437,8 +402,7 @@ _brew_readall ()
   __brew_complete_tapped
 }
 
-_brew_search ()
-{
+_brew_search() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -448,8 +412,7 @@ _brew_search ()
   esac
 }
 
-_brew_style ()
-{
+_brew_style() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -460,8 +423,7 @@ _brew_style ()
   __brew_complete_formulae
 }
 
-_brew_tap_info ()
-{
+_brew_tap_info() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -472,8 +434,7 @@ _brew_tap_info ()
   __brew_complete_tapped
 }
 
-_brew_tap_readme ()
-{
+_brew_tap_readme() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -483,8 +444,7 @@ _brew_tap_readme ()
   esac
 }
 
-_brew_tests ()
-{
+_brew_tests() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -494,8 +454,7 @@ _brew_tests ()
   esac
 }
 
-_brew_uninstall ()
-{
+_brew_uninstall() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -506,8 +465,7 @@ _brew_uninstall ()
   __brew_complete_installed
 }
 
-_brew_unlinkapps ()
-{
+_brew_unlinkapps() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -518,8 +476,7 @@ _brew_unlinkapps ()
   __brew_complete_installed
 }
 
-_brew_unpack ()
-{
+_brew_unpack() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -529,8 +486,7 @@ _brew_unpack ()
   esac
   __brew_complete_formulae
 }
-_brew_update ()
-{
+_brew_update() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -540,8 +496,7 @@ _brew_update ()
   esac
 }
 
-_brew_upgrade ()
-{
+_brew_upgrade() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   local prv=$(__brewcomp_prev)
 
@@ -560,8 +515,7 @@ _brew_upgrade ()
   __brew_complete_outdated
 }
 
-_brew_uses ()
-{
+_brew_uses() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "$cur" in
     --*)
@@ -572,8 +526,7 @@ _brew_uses ()
   __brew_complete_formulae
 }
 
-_brew ()
-{
+_brew() {
   local i=1 cmd
 
   # find the subcommand
@@ -662,8 +615,7 @@ _brew ()
 }
 
 # keep around for compatibility
-_brew_to_completion ()
-{
+_brew_to_completion() {
   _brew
 }
 
