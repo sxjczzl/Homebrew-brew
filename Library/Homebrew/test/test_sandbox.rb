@@ -25,4 +25,12 @@ class SandboxTest < Homebrew::TestCase
     end
     refute_predicate @file, :exist?
   end
+
+  def test_complains_on_failure
+    Utils.expects(:popen_read => "foo")
+    out, err = capture_io do
+      assert_raises(ErrorDuringExecution) { @sandbox.exec "false" }
+    end
+    assert_match out, "foo"
+  end
 end
