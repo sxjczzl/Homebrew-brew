@@ -95,6 +95,10 @@ class Sandbox
       -k Sender sandboxd
     ]
     logs = Utils.popen_read("syslog", *syslog_args)
+
+    # These messages are confusing and non-fatal, so don't report them.
+    logs = logs.gsub(/^.*Python(\d+) deny file-write.*pyc$/, "").strip
+
     unless logs.empty?
       if @logfile
         log = open(@logfile, "w")
