@@ -33,4 +33,13 @@ class SandboxTest < Homebrew::TestCase
     end
     assert_match out, "foo"
   end
+
+  def test_ignores_bogus_python_error
+    bogus_error = "Mar 17 02:55:06 sandboxd[342]: Python(49765) deny file-write-unlink /System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/distutils/errors.pyc\n"
+    Utils.expects(:popen_read => bogus_error)
+    out, err = capture_io do
+      assert_raises(ErrorDuringExecution) { @sandbox.exec "false" }
+    end
+    assert_predicate out, :empty?
+  end
 end
