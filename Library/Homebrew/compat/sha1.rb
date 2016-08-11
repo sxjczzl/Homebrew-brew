@@ -1,6 +1,5 @@
 class Formula
   def self.sha1(val)
-    odeprecated "Formula.sha1", "Formula.sha256"
     stable.sha1(val)
   end
 end
