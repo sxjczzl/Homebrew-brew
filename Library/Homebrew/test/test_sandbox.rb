@@ -29,7 +29,7 @@ class SandboxTest < Homebrew::TestCase
   def test_complains_on_failure
     Utils.expects(:popen_read => "foo")
     ARGV.stubs(:verbose? => true)
-    out, err = capture_io do
+    out, _err = capture_io do
       assert_raises(ErrorDuringExecution) { @sandbox.exec "false" }
     end
     assert_match "foo", out
@@ -43,7 +43,7 @@ class SandboxTest < Homebrew::TestCase
     EOS
     Utils.expects(:popen_read => with_bogus_error)
     ARGV.stubs(:verbose? => true)
-    out, err = capture_io do
+    out, _err = capture_io do
       assert_raises(ErrorDuringExecution) { @sandbox.exec "false" }
     end
     refute_predicate out, :empty?
