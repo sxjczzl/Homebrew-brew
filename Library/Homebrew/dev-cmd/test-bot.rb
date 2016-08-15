@@ -625,7 +625,7 @@ module Homebrew
               test "brew", "unlink", conflict.name
             end
             unless ARGV.include?("--fast")
-              run_as_not_developer { test "brew", "install", dependent.name }
+              run_as_not_developer { test "brew", "install", "--ignore-tabs", dependent.name }
               next if steps.last.failed?
             end
           end
