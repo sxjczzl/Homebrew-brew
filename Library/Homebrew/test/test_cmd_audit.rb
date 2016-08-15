@@ -71,6 +71,11 @@ class FormulaAuditorTests < Homebrew::TestCase
     FormulaAuditor.new Formulary.factory(path), options
   end
 
+  def formula_dependency(name, text)
+    path = Pathname.new "#{@dir}/#{name}.rb"
+    path.open("w") { |f| f.write text }
+  end
+
   def test_init_no_problems
     fa = formula_auditor "foo", <<-EOS.undent
       class Foo < Formula
@@ -372,5 +377,61 @@ class FormulaAuditorTests < Homebrew::TestCase
     assert_equal [], fa.problems
   ensure
     ENV["HOMEBREW_NO_GITHUB_API"] = original_value
+  end
+
+  def test_audit_dependency_devel_in_stable
+    bar = formula_dependency "bar", <<-EOS.undent
+      class Bar < Formula
+        homepage "https://github.com/example/bar"
+        url "http://example.com/bar-1.0.tgz"
+
+        devel do
+          url "http://example.com/bar-1.9.tgz"
+        end
+      end
+    EOS
+
+    foo = formula_auditor "foo", <<-EOS.undent, :strict => true, :online => false
+      class Foo < Formula
+        homepage "https://github.com/example/example"
+        url "http://example.com/foo-1.0.tgz"
+
+        depends_on "#{@dir}/bar.rb" => :devel
+      end
+    EOS
+
+    foo.audit_deps
+    assert_equal ["Don't specify a devel dependency for non-devel builds"], foo.problems
+  end
+
+  def test_audit_dependency_devel_in_devel
+    bar = formula_dependency "bar", <<-EOS.undent
+      class Bar < Formula
+        homepage "https://github.com/example/bar"
+        url "http://example.com/bar-1.0.tgz"
+
+        devel do
+          url "http://example.com/bar-1.9.tgz"
+        end
+      end
+    EOS
+
+    foo = formula_auditor "foo", <<-EOS.undent, :strict => true, :online => false
+      class Foo < Formula
+        homepage "https://github.com/example/example"
+        url "http://example.com/foo-1.0.tgz"
+
+        depends_on "#{@dir}/bar.rb"
+
+        devel do
+          url "http://example.com/foo-1.9.tgz"
+
+          depends_on "#{@dir}/bar.rb" => :devel
+        end
+      end
+    EOS
+
+    foo.audit_deps
+    assert_equal [], foo.problems
   end
 end
