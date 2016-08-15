@@ -137,5 +137,9 @@ module OS
         DevelopmentTools.installed?
       end
     end
+
+    def has_apple_developer_tools?
+      DevelopmentTools.installed?
+    end
   end
 end
