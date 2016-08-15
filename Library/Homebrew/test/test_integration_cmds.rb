@@ -331,7 +331,7 @@ class IntegrationCommandTests < Homebrew::TestCase
         system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
         FileUtils.touch "readme"
         system "git", "add", "--all"
-        system "git", "commit", "-m", "init"
+        system "git", "commit", "--no-gpg-sign", "-m", "init"
       end
     end
 
@@ -577,7 +577,7 @@ class IntegrationCommandTests < Homebrew::TestCase
     FileUtils.cd HOMEBREW_REPOSITORY do
       shutup do
         system "git", "init"
-        system "git", "commit", "--allow-empty", "-m", "This is a test commit"
+        system "git", "commit", "--allow-empty", "--no-gpg-sign", "-m", "This is a test commit"
       end
     end
     assert_match "This is a test commit", cmd("log")
