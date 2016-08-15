@@ -10,8 +10,28 @@ module FormulaCellarChecks
     prefix_bin = prefix_bin.realpath
     return if ORIGINAL_PATHS.include? prefix_bin
 
+    count = bin.children.count
+    active_path = nil
+    bin.children.each do |child|
+      count -= 1
+      program = which(child.basename)
+      break if program.nil?
+      program_realpath = program.realpath
+      if program_realpath.to_s.include? formula.prefix
+        return if count == 0
+        next
+      else
+        active_path = program_realpath.dirname
+        break
+      end
+      return if count == 0
+    end
+
+    message = "not"
+    message += " before #{active_path}" if active_path
+
     <<-EOS.undent
-      #{prefix_bin} is not in your PATH
+      #{prefix_bin} is #{message} in your PATH
       You can amend this by altering your #{shell_profile} file
     EOS
   end
