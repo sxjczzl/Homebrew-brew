@@ -1,3 +1,4 @@
+#!/bin/bash
 #:  * `update` [`--merge`]:
 #:    Fetch the newest version of Homebrew and all formulae from GitHub using
 #:     `git`(1).
