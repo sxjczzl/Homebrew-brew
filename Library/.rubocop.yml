@@ -3,6 +3,10 @@ AllCops:
     - 'Homebrew/vendor/**/*'
     - 'Homebrew/test/vendor/**/*'
 
+# until we want to make a mass-change to Ruby 2 style
+Style/HashSyntax:
+ -  EnforcedStyle: hash_rockets
+
 # ruby style guide favorite
 Style/StringLiterals:
   EnforcedStyle: double_quotes
