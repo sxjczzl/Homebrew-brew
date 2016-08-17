@@ -36,15 +36,15 @@ module Homebrew
     hub = ReporterHub.new
     updated = false
 
-    initial_revision = ENV["HOMEBREW_UPDATE_BEFORE"].to_s
-    current_revision = ENV["HOMEBREW_UPDATE_AFTER"].to_s
-    if initial_revision.empty? || current_revision.empty?
+    initial_commit = ENV["HOMEBREW_UPDATE_BEFORE"].to_s
+    current_commit = ENV["HOMEBREW_UPDATE_AFTER"].to_s
+    if initial_commit.empty? || current_commit.empty?
       odie "update-report should not be called directly!"
     end
 
-    if initial_revision != current_revision
+    if initial_commit != current_commit
       update_preinstall_header
-      puts "Updated Homebrew from #{shorten_revision(initial_revision)} to #{shorten_revision(current_revision)}."
+      puts "Updated Homebrew from #{shorten_commit(initial_commit)} to #{shorten_commit(current_commit)}."
       updated = true
     end
 
@@ -53,7 +53,7 @@ module Homebrew
       next unless tap.git?
       begin
         reporter = Reporter.new(tap)
-      rescue Reporter::ReporterRevisionUnsetError => e
+      rescue Reporter::ReporterCommitUnsetError => e
         onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
         next
       end
@@ -92,17 +92,17 @@ module Homebrew
 
   private
 
-  def shorten_revision(revision)
-    Utils.popen_read("git", "-C", HOMEBREW_REPOSITORY, "rev-parse", "--short", revision).chomp
+  def shorten_commit(commit)
+    Utils.popen_read("git", "-C", HOMEBREW_REPOSITORY, "rev-parse", "--short", commit).chomp
   end
 
   def install_core_tap_if_necessary
     core_tap = CoreTap.instance
     return if core_tap.installed?
     CoreTap.ensure_installed! :quiet => false
-    revision = core_tap.git_head
-    ENV["HOMEBREW_UPDATE_BEFORE_HOMEBREW_HOMEBREW_CORE"] = revision
-    ENV["HOMEBREW_UPDATE_AFTER_HOMEBREW_HOMEBREW_CORE"] = revision
+    commit = core_tap.git_head
+    ENV["HOMEBREW_UPDATE_BEFORE_HOMEBREW_HOMEBREW_CORE"] = commit
+    ENV["HOMEBREW_UPDATE_AFTER_HOMEBREW_HOMEBREW_CORE"] = commit
   end
 
   def migrate_legacy_cache_if_necessary
@@ -161,24 +161,24 @@ module Homebrew
 end
 
 class Reporter
-  class ReporterRevisionUnsetError < RuntimeError
+  class ReporterCommitUnsetError < RuntimeError
     def initialize(var_name)
       super "#{var_name} is unset!"
     end
   end
 
-  attr_reader :tap, :initial_revision, :current_revision
+  attr_reader :tap, :initial_commit, :current_commit
 
   def initialize(tap)
     @tap = tap
 
-    initial_revision_var = "HOMEBREW_UPDATE_BEFORE#{repo_var}"
-    @initial_revision = ENV[initial_revision_var].to_s
-    raise ReporterRevisionUnsetError, initial_revision_var if @initial_revision.empty?
+    initial_commit_var = "HOMEBREW_UPDATE_BEFORE#{repo_var}"
+    @initial_commit = ENV[initial_commit_var].to_s
+    raise ReporterCommitUnsetError, initial_commit_var if @initial_commit.empty?
 
-    current_revision_var = "HOMEBREW_UPDATE_AFTER#{repo_var}"
-    @current_revision = ENV[current_revision_var].to_s
-    raise ReporterRevisionUnsetError, current_revision_var if @current_revision.empty?
+    current_commit_var = "HOMEBREW_UPDATE_AFTER#{repo_var}"
+    @current_commit = ENV[current_commit_var].to_s
+    raise ReporterCommitUnsetError, current_commit_var if @current_commit.empty?
   end
 
   def report
@@ -211,7 +211,7 @@ class Reporter
         begin
           formula = Formulary.factory(tap.path/src)
           new_version = formula.pkg_version
-          old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
+          old_version = FormulaVersions.new(formula).formula_at_commit(@initial_commit, &:pkg_version)
           next if new_version == old_version
         rescue Exception => e
           onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
@@ -252,7 +252,7 @@ class Reporter
   end
 
   def updated?
-    initial_revision != current_revision
+    initial_commit != current_commit
   end
 
   def migrate_tap_migration
@@ -348,7 +348,7 @@ class Reporter
   def diff
     Utils.popen_read(
       "git", "-C", tap.path, "diff-tree", "-r", "--name-status", "--diff-filter=AMDR",
-      "-M85%", initial_revision, current_revision
+      "-M85%", initial_commit, current_commit
     )
   end
 end

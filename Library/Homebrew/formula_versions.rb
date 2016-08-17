@@ -26,12 +26,12 @@ class FormulaVersions
     end
   end
 
-  def file_contents_at_revision(rev)
-    repository.cd { Utils.popen_read("git", "cat-file", "blob", "#{rev}:#{entry_name}") }
+  def file_contents_at_commit(commit)
+    repository.cd { Utils.popen_read("git", "cat-file", "blob", "#{commit}:#{entry_name}") }
   end
 
-  def formula_at_revision(rev)
-    contents = file_contents_at_revision(rev)
+  def formula_at_commit(commit)
+    contents = file_contents_at_commit(commit)
 
     begin
       Homebrew.raise_deprecation_exceptions = true
@@ -39,7 +39,7 @@ class FormulaVersions
     rescue *IGNORED_EXCEPTIONS => e
       # We rescue these so that we can skip bad versions and
       # continue walking the history
-      ohai "#{e} in #{name} at revision #{rev}", e.backtrace if ARGV.debug?
+      ohai "#{e} in #{name} at commit #{commit}", e.backtrace if ARGV.debug?
     rescue FormulaUnavailableError
       # Suppress this error
     ensure
@@ -49,8 +49,8 @@ class FormulaVersions
 
   def bottle_version_map(branch)
     map = Hash.new { |h, k| h[k] = [] }
-    rev_list(branch) do |rev|
-      formula_at_revision(rev) do |f|
+    rev_list(branch) do |commit|
+      formula_at_commit(commit) do |f|
         bottle = f.bottle_specification
         unless bottle.checksums.empty?
           map[f.pkg_version] << bottle.revision
@@ -62,10 +62,10 @@ class FormulaVersions
 
   def revision_map(branch)
     map = Hash.new { |h, k| h[k] = [] }
-    rev_list(branch) do |rev|
-      formula_at_revision(rev) do |f|
         map[f.stable.version] << f.revision if f.stable
         map[f.devel.version] << f.revision if f.devel
+    rev_list(branch) do |commit|
+      formula_at_commit(commit) do |f|
       end
     end
     map

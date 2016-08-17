@@ -1,11 +1,11 @@
 #:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--url=`<url> `--sha256=`<sha-256> <formula>:
-#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--tag=`<tag> `--revision=`<revision> <formula>:
+#:  * `bump-formula-pr` [`--devel`] [`--dry-run`] `--tag=`<tag> `--commit=`<commit> <formula>:
 #:    Creates a pull request to update the formula with a new url or a new tag.
 #:
 #:    If a <url> is specified, the <sha-256> checksum of the new download must
 #:    also be specified.
 #:
-#:    If a <tag> is specified, the git commit <revision> corresponding to that
+#:    If a <tag> is specified, the git commit <commit> corresponding to that
 #:    tag must also be specified.
 #:
 #:    If `--devel` is passed, bump the development rather than stable version.
@@ -14,7 +14,7 @@
 #:    If `--dry-run` is passed, print what would be done rather than doing it.
 #:
 #:    Note that this command cannot be used to transition a formula from a
-#:    url-and-sha256 style specification into a tag-and-revision style
+#:    url-and-sha256 style specification into a tag-and-commit style
 #:    specification, nor vice versa. It must use whichever style specification
 #:    the preexisting formula already uses.
 
@@ -77,13 +77,13 @@ module Homebrew
     new_url = ARGV.value("url")
     new_hash = ARGV.value(hash_type)
     new_tag = ARGV.value("tag")
-    new_revision = ARGV.value("revision")
+    new_commit = ARGV.value("commit")
     new_url_hash = if new_url && new_hash
       true
-    elsif new_tag && new_revision
+    elsif new_tag && new_commit
       false
     elsif !hash_type
-      odie "#{formula}: no tag/revision specified!"
+      odie "#{formula}: no tag/commit specified!"
     else
       odie "#{formula}: no url/#{hash_type} specified!"
     end
@@ -109,7 +109,7 @@ module Homebrew
     else
       [
         [formula_spec.specs[:tag], new_tag],
-        [formula_spec.specs[:revision], new_revision],
+        [formula_spec.specs[:commit], new_commit],
       ]
     end
 

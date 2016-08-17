@@ -134,12 +134,12 @@ class AbstractDownloadStrategy
 end
 
 class VCSDownloadStrategy < AbstractDownloadStrategy
-  REF_TYPES = [:tag, :branch, :revisions, :revision].freeze
+  REF_TYPES = [:tag, :branch, :commits, :commit].freeze
 
   def initialize(name, resource)
     super
     @ref_type, @ref = extract_ref(meta)
-    @revision = meta[:revision]
+    @commit = meta[:commit]
     @clone = HOMEBREW_CACHE.join(cache_filename)
   end
 
@@ -159,11 +159,11 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
 
     version.update_commit(last_commit) if head?
 
-    if @ref_type == :tag && @revision && current_revision
-      unless current_revision == @revision
+    if @ref_type == :tag && @commit && current_commit
+      unless current_commit == @commit
         raise <<-EOS.undent
-          #{@ref} tag should be #{@revision}
-          but is actually #{current_revision}
+          #{@ref} tag should be #{@commit}
+          but is actually #{current_commit}
         EOS
       end
     end
@@ -213,7 +213,7 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
   def update
   end
 
-  def current_revision
+  def current_commit
   end
 
   def extract_ref(specs)
@@ -565,17 +565,17 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     end
   end
 
-  def fetch_repo(target, url, revision = nil, ignore_externals = false)
+  def fetch_repo(target, url, commit = nil, ignore_externals = false)
     # Use "svn up" when the repository already exists locally.
     # This saves on bandwidth and will have a similar effect to verifying the
-    # cache as it will make any changes to get the right revision.
+    # cache as it will make any changes to get the right commit.
     svncommand = target.directory? ? "up" : "checkout"
     args = ["svn", svncommand]
     args << url unless target.directory?
     args << target
-    if revision
+    if commit
       ohai "Checking out #{@ref}"
-      args << "-r" << revision
+      args << "-r" << commit
     end
     args << "--ignore-externals" if ignore_externals
     quiet_safe_system(*args)
@@ -591,12 +591,12 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
 
   def clone_repo
     case @ref_type
-    when :revision
+    when :commit
       fetch_repo cached_location, @url, @ref
-    when :revisions
-      # nil is OK for main_revision, as fetch_repo will then get latest
-      main_revision = @ref[:trunk]
-      fetch_repo cached_location, @url, main_revision, true
+    when :commits
+      # nil is OK for main_commit, as fetch_repo will then get latest
+      main_commit = @ref[:trunk]
+      fetch_repo cached_location, @url, main_commit, true
 
       get_externals do |external_name, external_url|
         fetch_repo cached_location+external_name, external_url, @ref[external_name], true
@@ -665,7 +665,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
   end
 
   def support_depth?
-    @ref_type != :revision && SHALLOW_CLONE_WHITELIST.any? { |rx| rx === @url }
+    @ref_type != :commit && SHALLOW_CLONE_WHITELIST.any? { |rx| rx === @url }
   end
 
   def git_dir
@@ -676,7 +676,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
     quiet_system "git", "--git-dir", git_dir, "rev-parse", "-q", "--verify", "#{@ref}^{commit}"
   end
 
-  def current_revision
+  def current_commit
     Utils.popen_read("git", "--git-dir", git_dir, "rev-parse", "-q", "--verify", "HEAD").strip
   end
 
@@ -739,7 +739,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
   def reset_args
     ref = case @ref_type
           when :branch then "origin/#{@ref}"
-          when :revision, :tag then @ref
+          when :commit, :tag then @ref
           end
 
     %W[reset --hard #{ref}]
