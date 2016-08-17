@@ -97,8 +97,8 @@ module Homebrew
     old_formula_version = formula_version(formula, requested_spec)
 
     replacement_pairs = []
-    if requested_spec == :stable && formula.revision != 0
-      replacement_pairs << [/^  revision \d+\n(\n(  head "))?/m, "\\2"]
+    if requested_spec == :stable && formula.formula_revision != 0
+      replacement_pairs << [/^  formula_revision \d+\n(\n(  head "))?/m, "\\2"]
     end
 
     replacement_pairs += if new_url_hash

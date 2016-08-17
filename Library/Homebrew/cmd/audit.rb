@@ -208,7 +208,7 @@ class FormulaAuditor
       [/^  mirror ["'][\S\ ]+["']/,        "mirror"],
       [/^  version ["'][\S\ ]+["']/,       "version"],
       [/^  (sha1|sha256) ["'][\S\ ]+["']/, "checksum"],
-      [/^  revision/,                      "revision"],
+      [/^  formula_revision/,              "formula_revision"],
       [/^  head ["'][\S\ ]+["']/,          "head"],
       [/^  stable do/,                     "stable block"],
       [/^  bottle do/,                     "bottle block"],
@@ -622,22 +622,24 @@ class FormulaAuditor
     end
   end
 
-  def audit_revision
+  def audit_formula_revision
     return unless formula.tap # skip formula not from core or any taps
     return unless formula.tap.git? # git log is required
 
     fv = FormulaVersions.new(formula, :max_depth => 10)
-    revision_map = fv.revision_map("origin/master")
-    revisions = revision_map[formula.version]
-    if !revisions.empty?
-      problem "revision should not decrease" if formula.revision < revisions.max
-    elsif formula.revision != 0
+    formula_revision_map = fv.formula_revision_map("origin/master")
+    formula_revisions = formula_revision_map[formula.version]
+    if !formula_revisions.empty?
+      if formula.formula_revision < formula_revisions.max
+        problem "formula_revision should not decrease"
+      end
+    elsif formula.formula_revision != 0
       if formula.stable
-        if revision_map[formula.stable.version].empty? # check stable spec
-          problem "revision should be removed"
+        if formula_revision_map[formula.stable.version].empty? # check stable spec
+          problem "formula_revision should be removed"
         end
       else # head/devel-only formula
-        problem "revision should be removed"
+        problem "formula_revision should be removed"
       end
     end
   end
@@ -1006,7 +1008,7 @@ class FormulaAuditor
     audit_formula_name
     audit_class
     audit_specs
-    audit_revision
+    audit_formula_revision
     audit_desc
     audit_homepage
     audit_bottle_spec

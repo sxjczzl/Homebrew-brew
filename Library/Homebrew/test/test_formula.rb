@@ -22,7 +22,7 @@ class FormulaTests < Homebrew::TestCase
   end
 
   def test_revised_prefix
-    f = Class.new(Testball) { revision 1 }.new
+    f = Class.new(Testball) { formula_revision 1 }.new
     assert_equal HOMEBREW_CELLAR/f.name/"0.1_1", f.prefix
   end
 
@@ -202,11 +202,11 @@ class FormulaTests < Homebrew::TestCase
   def test_latest_head_prefix
     f = Testball.new
 
-    stamps_with_revisions = [[111111, 1], [222222, 1], [222222, 2], [222222, 0]]
+    stamps_with_formula_revisions = [[111111, 1], [222222, 1], [222222, 2], [222222, 0]]
 
-    stamps_with_revisions.each do |stamp, revision|
+    stamps_with_formula_revisions.each do |stamp, formula_revision|
       version = "HEAD-#{stamp}"
-      version += "_#{revision}" if revision > 0
+      version += "_#{formula_revision}" if formula_revision > 0
       prefix = f.rack.join(version)
       prefix.mkpath
 
@@ -275,7 +275,7 @@ class FormulaTests < Homebrew::TestCase
     f = formula do
       url "foo"
       version "1.0"
-      revision 1
+      formula_revision 1
 
       devel do
         url "foo"
@@ -327,19 +327,19 @@ class FormulaTests < Homebrew::TestCase
     assert_equal PkgVersion.parse("1.0"), formula { url "foo-1.0.bar" }.pkg_version
   end
 
-  def test_version_with_revision
+  def test_version_with_formula_revision
     f = formula do
       url "foo-1.0.bar"
-      revision 1
+      formula_revision 1
     end
 
     assert_equal PkgVersion.parse("1.0_1"), f.pkg_version
   end
 
-  def test_head_uses_revisions
+  def test_head_uses_formula_revisions
     f = formula("test", Pathname.new(__FILE__).expand_path, :head) do
       url "foo-1.0.bar"
-      revision 1
+      formula_revision 1
       head "foo"
     end
 
