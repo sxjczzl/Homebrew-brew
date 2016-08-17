@@ -59,6 +59,13 @@ class Formula
     Formulary.core_path(name)
   end
 
+  def self.revision(*attrs)
+    # Don't announce deprecation yet as this is quite a big change
+    # to a public interface.
+    # odeprecated "Formula.formula_revision", "Formula.formula_revision"
+    formula_revision(*attrs)
+  end
+
   DATA = :DATA
 
   def patches
