@@ -41,9 +41,14 @@ module Homebrew
       args << "--trace" if ARGV.include? "--trace"
       if ARGV.value("only")
         ENV["HOMEBREW_TESTS_ONLY"] = "1"
-        test_name, test_method = ARGV.value("only").split("/", 2)
-        args << "TEST=test_#{test_name}.rb"
-        args << "TESTOPTS=--name=test_#{test_method}" if test_method
+
+        pairs = ARGV.value("only").split
+        pairs.each do |pair|
+          test_name, test_method = pair.split("/", 2)
+
+          args << "TEST=test_#{test_name}.rb" unless test_name.empty?
+          args << "TESTOPTS=--name=test_#{test_method}" if test_method
+        end
       end
       args += ARGV.named.select { |v| v[/^TEST(OPTS)?=/] }
       system "bundle", "exec", "rake", "test", *args
