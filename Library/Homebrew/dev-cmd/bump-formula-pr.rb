@@ -142,23 +142,36 @@ module Homebrew
       if ARGV.dry_run?
         ohai "git checkout -b #{branch} origin/master"
         ohai "git commit --no-edit --verbose --message='#{formula.name} #{new_formula_version}#{devel_message}' -- #{formula.path}"
-        ohai "hub fork --no-remote"
-        ohai "hub fork"
-        ohai "hub fork (to read $HUB_REMOTE)"
-        ohai "git push $HUB_REMOTE #{branch}:#{branch}"
+        ohai "git push #{remote} #{branch}:#{branch}"
         ohai "hub pull-request --browse -m '#{formula.name} #{new_formula_version}#{devel_message}'"
       else
         safe_system "git", "checkout", "-b", branch, "origin/master"
         safe_system "git", "commit", "--no-edit", "--verbose",
           "--message=#{formula.name} #{new_formula_version}#{devel_message}",
           "--", formula.path
-        safe_system "hub", "fork", "--no-remote"
-        quiet_system "hub", "fork"
-        remote = Utils.popen_read("hub fork 2>&1")[/fatal: remote (.+) already exists\./, 1]
-        odie "cannot get remote from 'hub'!" if remote.to_s.empty?
         safe_system "git", "push", remote, "#{branch}:#{branch}"
         safe_system "hub", "pull-request", "--browse", "-m",
           "#{formula.name} #{new_formula_version}#{devel_message}\n\nCreated with `brew bump-formula-pr`."
+      end
+    end
+  end
+
+  private
+
+  def remote
+    if ARGV.flag?("--remote") || ARGV.value("remote")
+      ARGV.value("remote").tap do |name|
+        odie "--remote specified but no <remote_url> given" if name.to_s.empty?
+      end
+    elsif ARGV.dry_run?
+      ohai "hub fork --no-remote"
+      ohai "hub fork"
+      ohai "hub fork (to read $HUB_REMOTE)"
+    else
+      safe_system "hub", "fork", "--no-remote"
+      quiet_system "hub", "fork"
+      Utils.popen_read("hub fork 2>&1")[/fatal: remote (.+) already exists\./, 1].tap do |name|
+        odie "cannot get remote from 'hub'!" if name.to_s.empty?
       end
     end
   end
