@@ -452,11 +452,11 @@ module Homebrew
     end
 
     def pkg_version(spec_type = :stable)
-      PkgVersion.new(version(spec_type), revision)
+      PkgVersion.new(version(spec_type), formula_revision)
     end
 
     def revision
-      info["revision"]
+      info["formula_revision"]
     end
   end
 

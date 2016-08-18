@@ -5,17 +5,17 @@ class PkgVersion
 
   RX = /\A(.+?)(?:_(\d+))?\z/
 
-  attr_reader :version, :revision
+  attr_reader :version, :formula_revision
 
   def self.parse(path)
-    _, version, revision = *path.match(RX)
+    _, version, formula_revision = *path.match(RX)
     version = Version.create(version)
-    new(version, revision.to_i)
+    new(version, formula_revision.to_i)
   end
 
-  def initialize(version, revision)
+  def initialize(version, formula_revision)
     @version = version
-    @revision = revision
+    @formula_revision = formula_revision
   end
 
   def head?
@@ -23,8 +23,8 @@ class PkgVersion
   end
 
   def to_s
-    if revision > 0
-      "#{version}_#{revision}"
+    if formula_revision > 0
+      "#{version}_#{formula_revision}"
     else
       version.to_s
     end
@@ -33,11 +33,11 @@ class PkgVersion
 
   def <=>(other)
     return unless PkgVersion === other
-    (version <=> other.version).nonzero? || revision <=> other.revision
+    (version <=> other.version).nonzero? || formula_revision <=> other.formula_revision
   end
   alias_method :eql?, :==
 
   def hash
-    version.hash ^ revision.hash
+    version.hash ^ formula_revision.hash
   end
 end

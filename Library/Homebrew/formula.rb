@@ -111,8 +111,8 @@ class Formula
 
   # Used for creating new Homebrew versions of software without new upstream
   # versions.
-  # @see .revision
-  attr_reader :revision
+  # @see .formula_revision
+  attr_reader :formula_revision
 
   # The current working directory during builds.
   # Will only be non-`nil` inside {#install}.
@@ -138,7 +138,7 @@ class Formula
   def initialize(name, path, spec)
     @name = name
     @path = path
-    @revision = self.class.revision || 0
+    @formula_revision = self.class.formula_revision || 0
 
     if path == Formulary.core_path(name)
       @tap = CoreTap.instance
@@ -295,9 +295,9 @@ class Formula
     head.version.update_commit(head.downloader.last_commit)
   end
 
-  # The {PkgVersion} for this formula with {version} and {#revision} information.
+  # The {PkgVersion} for this formula with {version} and {#formula_revision} information.
   def pkg_version
-    PkgVersion.new(version, revision)
+    PkgVersion.new(version, formula_revision)
   end
 
   # A named Resource for the currently active {SoftwareSpec}.
@@ -420,7 +420,7 @@ class Formula
     end.compact
 
     head_versions.max_by do |pn_pkgversion|
-      [Tab.for_keg(prefix(pn_pkgversion)).source_modified_time, pn_pkgversion.revision]
+      [Tab.for_keg(prefix(pn_pkgversion)).source_modified_time, pn_pkgversion.formula_revision]
     end
   end
 
@@ -451,9 +451,9 @@ class Formula
   def installed_prefix
     if head && (head_version = latest_head_version) && !head_version_outdated?(head_version)
       latest_head_prefix
-    elsif devel && (devel_prefix = prefix(PkgVersion.new(devel.version, revision))).directory?
+    elsif devel && (devel_prefix = prefix(PkgVersion.new(devel.version, formula_revision))).directory?
       devel_prefix
-    elsif stable && (stable_prefix = prefix(PkgVersion.new(stable.version, revision))).directory?
+    elsif stable && (stable_prefix = prefix(PkgVersion.new(stable.version, formula_revision))).directory?
       stable_prefix
     else
       prefix
@@ -1287,7 +1287,7 @@ class Formula
         "devel" => (devel.version.to_s if devel),
         "head" => (head.version.to_s if head)
       },
-      "revision" => revision,
+      "formula_revision" => formula_revision,
       "installed" => [],
       "linked_keg" => (linked_keg.resolved_path.basename.to_s if linked_keg.exist?),
       "pinned" => pinned?,
@@ -1685,15 +1685,16 @@ class Formula
     # @private
     attr_accessor :pour_bottle_check_unsatisfied_reason
 
-    # @!attribute [w] revision
+    # @!attribute [w] formula_revision
     # Used for creating new Homebrew versions of software without new upstream
     # versions. For example, if we bump the major version of a library this
-    # {Formula} {.depends_on} then we may need to update the `revision` of this
-    # {Formula} to install a new version linked against the new library version.
+    # {Formula} {.depends_on} then we may need to update the `formula_revision`
+    # of this {Formula} to install a new version linked against the new library
+    # version.
     # `0` if unset.
     #
-    # <pre>revision 1</pre>
-    attr_rw :revision
+    # <pre>formula_revision 1</pre>
+    attr_rw :formula_revision
 
     # A list of the {.stable}, {.devel} and {.head} {SoftwareSpec}s.
     # @private
