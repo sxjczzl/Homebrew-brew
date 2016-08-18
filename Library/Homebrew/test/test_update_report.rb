@@ -31,14 +31,14 @@ class ReportTests < Homebrew::TestCase
 
   def perform_update(fixture_name = "")
     Formulary.stubs(:factory).returns(stub(:pkg_version => "1.0"))
-    FormulaVersions.stubs(:new).returns(stub(:formula_at_revision => "2.0"))
+    FormulaVersions.stubs(:new).returns(stub(:formula_at_commit => "2.0"))
     @reporter.diff = fixture(fixture_name)
     @hub.add(@reporter) if @reporter.updated?
   end
 
-  def test_update_report_without_revision_var
+  def test_update_report_without_commit_var
     ENV.delete_if { |k, _v| k.start_with? "HOMEBREW_UPDATE" }
-    assert_raises(Reporter::ReporterRevisionUnsetError) { Reporter.new(@tap) }
+    assert_raises(Reporter::ReporterCommitUnsetError) { Reporter.new(@tap) }
   end
 
   def test_update_homebrew_without_any_changes

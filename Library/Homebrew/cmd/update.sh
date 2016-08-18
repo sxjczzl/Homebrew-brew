@@ -123,7 +123,7 @@ upstream_branch() {
   echo "$upstream_branch"
 }
 
-read_current_revision() {
+read_current_commit() {
   git rev-parse -q --verify HEAD
 }
 
@@ -152,11 +152,11 @@ reset_on_interrupt() {
     git checkout "$INITIAL_BRANCH" "${QUIET_ARGS[@]}"
   fi
 
-  if [[ -n "$INITIAL_REVISION" ]]
+  if [[ -n "$INITIAL_COMMIT" ]]
   then
     git rebase --abort &>/dev/null
     git merge --abort &>/dev/null
-    git reset --hard "$INITIAL_REVISION" "${QUIET_ARGS[@]}"
+    git reset --hard "$INITIAL_COMMIT" "${QUIET_ARGS[@]}"
   fi
 
   if [[ -n "$HOMEBREW_DEVELOPER" ]]
@@ -176,22 +176,22 @@ simulate_from_current_branch() {
   local DIR
   local TAP_VAR
   local UPSTREAM_BRANCH
-  local CURRENT_REVISION
+  local CURRENT_COMMIT
 
   DIR="$1"
   cd "$DIR" || return
   TAP_VAR="$2"
   UPSTREAM_BRANCH="$3"
-  CURRENT_REVISION="$4"
+  CURRENT_COMMIT="$4"
 
-  INITIAL_REVISION="$(git rev-parse -q --verify "$UPSTREAM_BRANCH")"
-  export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$INITIAL_REVISION"
-  export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_REVISION"
-  if [[ "$INITIAL_REVISION" != "$CURRENT_REVISION" ]]
+  INITIAL_COMMIT="$(git rev-parse -q --verify "$UPSTREAM_BRANCH")"
+  export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$INITIAL_COMMIT"
+  export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_COMMIT"
+  if [[ "$INITIAL_COMMIT" != "$CURRENT_COMMIT" ]]
   then
     HOMEBREW_UPDATED="1"
   fi
-  if ! git merge-base --is-ancestor "$INITIAL_REVISION" "$CURRENT_REVISION"
+  if ! git merge-base --is-ancestor "$INITIAL_COMMIT" "$CURRENT_COMMIT"
   then
     odie "Your $DIR HEAD is not a descendant of $UPSTREAM_BRANCH!"
   fi
@@ -243,8 +243,8 @@ merge_or_rebase() {
     fi
   fi
 
-  INITIAL_REVISION="$(read_current_revision)"
-  export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$INITIAL_REVISION"
+  INITIAL_COMMIT="$(read_current_commit)"
+  export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$INITIAL_COMMIT"
 
   # ensure we don't munge line endings on checkout
   git config core.autocrlf false
@@ -259,10 +259,10 @@ merge_or_rebase() {
       --strategy-option=ignore-all-space
   fi
 
-  CURRENT_REVISION="$(read_current_revision)"
-  export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_REVISION"
+  CURRENT_COMMIT="$(read_current_commit)"
+  export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_COMMIT"
 
-  if [[ "$INITIAL_REVISION" != "$CURRENT_REVISION" ]]
+  if [[ "$INITIAL_COMMIT" != "$CURRENT_COMMIT" ]]
   then
     HOMEBREW_UPDATED="1"
   fi
@@ -395,7 +395,7 @@ EOS
     TAP_VAR="$(repo_var "$DIR")"
     UPSTREAM_BRANCH_DIR="$(upstream_branch)"
     declare UPSTREAM_BRANCH"$TAP_VAR"="$UPSTREAM_BRANCH_DIR"
-    declare PREFETCH_REVISION"$TAP_VAR"="$(git rev-parse -q --verify refs/remotes/origin/"$UPSTREAM_BRANCH_DIR")"
+    declare PREFETCH_COMMIT"$TAP_VAR"="$(git rev-parse -q --verify refs/remotes/origin/"$UPSTREAM_BRANCH_DIR")"
 
     if [[ -z "$HOMEBREW_UPDATE_FORCE" ]]
     then
@@ -482,21 +482,21 @@ EOS
     TAP_VAR="$(repo_var "$DIR")"
     UPSTREAM_BRANCH_VAR="UPSTREAM_BRANCH$TAP_VAR"
     UPSTREAM_BRANCH="${!UPSTREAM_BRANCH_VAR}"
-    CURRENT_REVISION="$(read_current_revision)"
+    CURRENT_COMMIT="$(read_current_commit)"
 
-    PREFETCH_REVISION_VAR="PREFETCH_REVISION$TAP_VAR"
-    PREFETCH_REVISION="${!PREFETCH_REVISION_VAR}"
-    POSTFETCH_REVISION="$(git rev-parse -q --verify refs/remotes/origin/"$UPSTREAM_BRANCH")"
+    PREFETCH_COMMIT_VAR="PREFETCH_COMMIT$TAP_VAR"
+    PREFETCH_COMMIT="${!PREFETCH_COMMIT_VAR}"
+    POSTFETCH_COMMIT="$(git rev-parse -q --verify refs/remotes/origin/"$UPSTREAM_BRANCH")"
 
     if [[ -n "$HOMEBREW_SIMULATE_FROM_CURRENT_BRANCH" ]]
     then
-      simulate_from_current_branch "$DIR" "$TAP_VAR" "$UPSTREAM_BRANCH" "$CURRENT_REVISION"
+      simulate_from_current_branch "$DIR" "$TAP_VAR" "$UPSTREAM_BRANCH" "$CURRENT_COMMIT"
     elif [[ -z "$HOMEBREW_UPDATE_FORCE" ]] &&
-         [[ "$PREFETCH_REVISION" = "$POSTFETCH_REVISION" ]] &&
-         [[ "$CURRENT_REVISION" = "$POSTFETCH_REVISION" ]]
+         [[ "$PREFETCH_COMMIT" = "$POSTFETCH_COMMIT" ]] &&
+         [[ "$CURRENT_COMMIT" = "$POSTFETCH_COMMIT" ]]
     then
-      export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$CURRENT_REVISION"
-      export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_REVISION"
+      export HOMEBREW_UPDATE_BEFORE"$TAP_VAR"="$CURRENT_COMMIT"
+      export HOMEBREW_UPDATE_AFTER"$TAP_VAR"="$CURRENT_COMMIT"
     else
       merge_or_rebase "$DIR" "$TAP_VAR" "$UPSTREAM_BRANCH"
       [[ -n "$HOMEBREW_VERBOSE" ]] && echo

@@ -259,27 +259,27 @@ module Homebrew
     end
 
     def download
-      def shorten_revision(revision)
-        git("rev-parse", "--short", revision).strip
+      def shorten_commit(commit)
+        git("rev-parse", "--short", commit).strip
       end
 
       def current_sha1
-        shorten_revision "HEAD"
+        shorten_commit "HEAD"
       end
 
       def current_branch
         git("symbolic-ref", "HEAD").gsub("refs/heads/", "").strip
       end
 
-      def single_commit?(start_revision, end_revision)
-        git("rev-list", "--count", "#{start_revision}..#{end_revision}").to_i == 1
+      def single_commit?(start_commit, end_commit)
+        git("rev-list", "--count", "#{start_commit}..#{end_commit}").to_i == 1
       end
 
-      def diff_formulae(start_revision, end_revision, path, filter)
+      def diff_formulae(start_commit, end_commit, path, filter)
         return unless @tap
         git(
           "diff-tree", "-r", "--name-only", "--diff-filter=#{filter}",
-          start_revision, end_revision, "--", path
+          start_commit, end_commit, "--", path
         ).lines.map do |line|
           file = Pathname.new line.chomp
           next unless @tap.formula_file?(file)

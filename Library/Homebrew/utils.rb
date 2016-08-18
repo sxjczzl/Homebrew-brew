@@ -242,9 +242,9 @@ module Homebrew
   end
 
   def self.homebrew_version_string
-    if pretty_revision = HOMEBREW_REPOSITORY.git_short_head
-      last_commit = HOMEBREW_REPOSITORY.git_last_commit_date
-      "#{HOMEBREW_VERSION} (git revision #{pretty_revision}; last commit #{last_commit})"
+    if pretty_commit = HOMEBREW_REPOSITORY.git_short_head
+      last_commit_date = HOMEBREW_REPOSITORY.git_last_commit_date
+      "#{HOMEBREW_VERSION} (git commit #{pretty_commit}; last commit #{last_commit_date})"
     else
       "#{HOMEBREW_VERSION} (no git repository)"
     end
@@ -254,9 +254,9 @@ module Homebrew
     require "tap"
     tap = CoreTap.instance
     return "N/A" unless tap.installed?
-    if pretty_revision = tap.git_short_head
-      last_commit = tap.git_last_commit_date
-      "(git revision #{pretty_revision}; last commit #{last_commit})"
+    if pretty_commit = tap.git_short_head
+      last_commit_date = tap.git_last_commit_date
+      "(git commit #{pretty_commit}; last commit #{last_commit_date})"
     else
       "(no git repository)"
     end

@@ -1734,7 +1734,7 @@ class Formula
     #     `S3DownloadStrategy` (download from S3 using signed request)
     #
     # <pre>url "https://packed.sources.and.we.prefer.https.example.com/archive-1.2.3.tar.bz2"</pre>
-    # <pre>url "https://some.dont.provide.archives.example.com", :using => :git, :tag => "1.2.3", :revision => "db8e4de5b2d6653f66aea53094624468caad15d2"</pre>
+    # <pre>url "https://some.dont.provide.archives.example.com", :using => :git, :tag => "1.2.3", :commit => "db8e4de5b2d6653f66aea53094624468caad15d2"</pre>
     def url(val, specs = {})
       stable.url(val, specs)
     end
@@ -1860,7 +1860,7 @@ class Formula
     # The download strategies (e.g. `:using =>`) are the same as for {url}.
     # `master` is the default branch and doesn't need stating with a `:branch` parameter.
     # <pre>head "https://we.prefer.https.over.git.example.com/.git"</pre>
-    # <pre>head "https://example.com/.git", :branch => "name_of_branch", :revision => "abc123"</pre>
+    # <pre>head "https://example.com/.git", :branch => "name_of_branch", :commit => "abc123"</pre>
     # or (if autodetect fails):
     # <pre>head "https://hg.is.awesome.but.git.has.won.example.com/", :using => :hg</pre>
     def head(val = nil, specs = {}, &block)

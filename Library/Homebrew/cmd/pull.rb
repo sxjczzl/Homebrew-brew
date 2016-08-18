@@ -88,8 +88,8 @@ module Homebrew
       # The cache directory seems like a good place to put patches.
       HOMEBREW_CACHE.mkpath
 
-      # Store current revision and branch
-      orig_revision = `git rev-parse --short HEAD`.strip
+      # Store current commit and branch
+      orig_commit = `git rev-parse --short HEAD`.strip
       branch = `git symbolic-ref --short HEAD`.strip
 
       unless branch == "master" || ARGV.include?("--clean") || ARGV.include?("--branch-okay")
@@ -118,7 +118,7 @@ module Homebrew
       if tap
         Utils.popen_read(
           "git", "diff-tree", "-r", "--name-only",
-          "--diff-filter=AM", orig_revision, "HEAD", "--", tap.formula_dir.to_s
+          "--diff-filter=AM", orig_commit, "HEAD", "--", tap.formula_dir.to_s
         ).each_line do |line|
           next unless line.end_with? ".rb\n"
           name = "#{tap.name}/#{File.basename(line.chomp, ".rb")}"
@@ -201,7 +201,7 @@ module Homebrew
 
         curl "--silent", "--fail", "-o", "/dev/null", "-I", bottle_commit_url
 
-        safe_system "git", "checkout", "--quiet", "-B", bottle_branch, orig_revision
+        safe_system "git", "checkout", "--quiet", "-B", bottle_branch, orig_commit
         pull_patch bottle_commit_url, "bottle commit"
         safe_system "git", "rebase", "--quiet", branch
         safe_system "git", "checkout", "--quiet", branch
@@ -216,7 +216,7 @@ module Homebrew
       end
 
       ohai "Patch changed:"
-      safe_system "git", "diff-tree", "-r", "--stat", orig_revision, "HEAD"
+      safe_system "git", "diff-tree", "-r", "--stat", orig_commit, "HEAD"
     end
 
     # Verify bintray publishing after all patches have been applied
