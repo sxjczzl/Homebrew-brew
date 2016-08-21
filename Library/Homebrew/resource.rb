@@ -12,6 +12,7 @@ class Resource
   attr_reader :mirrors, :specs, :using, :source_modified_time
   attr_writer :version
   attr_accessor :download_strategy, :checksum
+  attr_rw :gpg
 
   # Formula name must be set after the DSL, as we have no access to the
   # formula name before initialization of the formula
@@ -37,6 +38,10 @@ class Resource
     def mirrors
       @resource.mirrors
     end
+
+    def gpg
+      @resource.gpg
+    end
   end
 
   def initialize(name = nil, &block)
@@ -46,6 +51,7 @@ class Resource
     @mirrors = []
     @specs = {}
     @checksum = nil
+    @gpg = nil
     @using = nil
     instance_eval(&block) if block_given?
   end
