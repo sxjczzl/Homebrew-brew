@@ -3,7 +3,6 @@ require "gpg"
 
 class GpgTest < Homebrew::TestCase
   def setup
-    skip "GPG Unavailable" unless Gpg.available?
     @dir = Pathname.new(mktmpdir)
   end
 
@@ -12,6 +11,7 @@ class GpgTest < Homebrew::TestCase
   end
 
   def test_create_test_key
+    skip "GPG Unavailable" unless Gpg.available?
     Dir.chdir(@dir) do
       with_environment("HOME" => @dir) do
         shutup { Gpg.create_test_key(@dir) }
