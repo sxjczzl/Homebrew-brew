@@ -659,7 +659,13 @@ module Homebrew
         test "brew", "readall", "--syntax"
         if OS.mac? &&
            (HOMEBREW_REPOSITORY/"Library/Homebrew/cask/cmd/brew-cask-tests.rb").exist?
-          run_as_not_developer { test "brew", "tap", "caskroom/cask" }
+          run_as_not_developer do
+            test "brew", "tap", "caskroom/cask"
+            test "brew", "cask", "install", "https://raw.githubusercontent.com/caskroom/homebrew-cask/master/Casks/adobe-air.rb"
+            test "brew", "install", "https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/cabextract.rb"
+            test "brew", "install", "https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/unar.rb"
+            test "brew", "install", "https://raw.githubusercontent.com/Homebrew/homebrew-core/master/Formula/xz.rb"
+          end
           test "brew", "cask-tests"
         end
 
