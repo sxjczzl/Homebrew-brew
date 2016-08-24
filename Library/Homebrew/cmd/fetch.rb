@@ -58,7 +58,9 @@ module Homebrew
 
       unless fetched_bottle
         fetch_formula(f)
+        fetch_gpg(f) if f.gpg
         f.resources.each { |r| fetch_resource(r) }
+        f.resources.each { |v| fetch_gpg(v) if v.gpg }
         f.patchlist.each { |p| fetch_patch(p) if p.external? }
       end
     end
@@ -85,6 +87,10 @@ module Homebrew
   rescue ChecksumMismatchError => e
     retry if retry_fetch? f
     opoo "Formula reports different #{e.hash_type}: #{e.expected}"
+  end
+
+  def fetch_gpg(g)
+    fetch_fetchable g.gpg
   end
 
   def fetch_patch(p)
