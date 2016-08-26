@@ -21,8 +21,12 @@ class Tty
       bold 34
     end
 
-    def white
-      bold 39
+    def gray
+      bold 30
+    end
+
+    def green
+      bold 32
     end
 
     def magenta
@@ -43,14 +47,6 @@ class Tty
 
     def em
       underline 39
-    end
-
-    def green
-      bold 32
-    end
-
-    def gray
-      bold 30
     end
 
     def highlight
@@ -88,7 +84,7 @@ end
 
 def ohai(title, *sput)
   title = Tty.truncate(title) if $stdout.tty? && !ARGV.verbose?
-  puts "#{Tty.blue}==>#{Tty.white} #{title}#{Tty.reset}"
+  puts "#{Tty.blue}==>#{Tty.highlight} #{title}#{Tty.reset}"
   puts sput
 end
 
@@ -96,7 +92,7 @@ def oh1(title, options = {})
   if $stdout.tty? && !ARGV.verbose? && options.fetch(:truncate, :auto) == :auto
     title = Tty.truncate(title)
   end
-  puts "#{Tty.green}==>#{Tty.white} #{title}#{Tty.reset}"
+  puts "#{Tty.green}==>#{Tty.highlight} #{title}#{Tty.reset}"
 end
 
 # Print a warning (do this rarely)
