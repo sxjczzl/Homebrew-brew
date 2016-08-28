@@ -9,8 +9,6 @@ RUBY_TWO = RUBY_VERSION.split(".").first.to_i >= 2
 raise "Homebrew must be run under Ruby 2!" unless RUBY_TWO
 
 require "pathname"
-HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent
-$:.unshift(HOMEBREW_LIBRARY_PATH.to_s)
 require "global"
 
 if ARGV == %w[--version] || ARGV == %w[-v]

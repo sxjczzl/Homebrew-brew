@@ -266,7 +266,11 @@ then
   # Hide shellcheck complaint:
   # shellcheck source=/dev/null
   source "$HOMEBREW_BASH_COMMAND"
-  { update-preinstall; "homebrew-$HOMEBREW_COMMAND" "$@"; exit $?; }
+  {
+    update-preinstall
+    "homebrew-$HOMEBREW_COMMAND" "$@"
+    exit $?
+  }
 else
   # Hide shellcheck complaint:
   # shellcheck source=/dev/null
@@ -275,5 +279,10 @@ else
 
   # Unshift command back into argument list (unless argument list was empty).
   [[ "$HOMEBREW_ARG_COUNT" -gt 0 ]] && set -- "$HOMEBREW_COMMAND" "$@"
-  { update-preinstall; exec "$HOMEBREW_RUBY_PATH" -W0 "$HOMEBREW_LIBRARY/Homebrew/brew.rb" "$@"; }
+  {
+    update-preinstall
+    exec "$HOMEBREW_RUBY_PATH" -W0 \
+      -I "$HOMEBREW_LIBRARY/Homebrew" \
+      -- "$HOMEBREW_LIBRARY/Homebrew/brew.rb" "$@"
+  }
 fi
