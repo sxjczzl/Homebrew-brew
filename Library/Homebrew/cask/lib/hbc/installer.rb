@@ -86,7 +86,7 @@ class Hbc::Installer
     s = if MacOS.version >= :lion && !ENV["HOMEBREW_NO_EMOJI"]
           (ENV["HOMEBREW_INSTALL_BADGE"] || "\xf0\x9f\x8d\xba") + "  "
         else
-          "#{Tty.blue}==>#{Tty.reset} #{Tty.white}Success!#{Tty.reset} "
+          "#{Tty.blue}==>#{Tty.reset} #{Tty.highlight}Success!#{Tty.reset} "
         end
     s << "#{@cask} was successfully installed!"
   end

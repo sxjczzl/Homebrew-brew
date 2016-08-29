@@ -21,7 +21,6 @@ class TtyTests < Homebrew::TestCase
   def test_no_tty_formatting
     $stdout.stubs(:tty?).returns false
     assert_nil Tty.blue
-    assert_nil Tty.white
     assert_nil Tty.red
     assert_nil Tty.green
     assert_nil Tty.gray
