@@ -552,6 +552,20 @@ class FormulaTests < Homebrew::TestCase
     end
     assert f_true.pour_bottle?
   end
+
+  def test_shell_profile_exists
+    klass = Class.new(Formula) do
+      def initialize()
+      end
+
+      def my_shell_profile(*arguments)
+        shell_profile(*arguments)
+      end
+    end
+
+    formula = klass.new()
+    assert (formula.shell_profile.instance_of?(String))
+  end
 end
 
 class OutdatedVersionsTests < Homebrew::TestCase

@@ -13,6 +13,7 @@ require "pkg_version"
 require "tap"
 require "keg"
 require "migrator"
+require "utils/shell"
 
 # A formula provides instructions and metadata for Homebrew to install a piece
 # of software. Every Homebrew formula is a {Formula}.
@@ -1708,6 +1709,12 @@ class Formula
 
       remove_method(:options)
     end
+  end
+
+  public
+
+  def shell_profile(*arguments)
+    Utils::Shell::shell_profile(*arguments)
   end
 
   # The methods below define the formula DSL.
