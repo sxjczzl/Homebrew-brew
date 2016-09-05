@@ -12,6 +12,7 @@ require "pkg_version"
 require "tap"
 require "keg"
 require "migrator"
+require "utils/shell"
 
 # A formula provides instructions and metadata for Homebrew to install a piece
 # of software. Every Homebrew formula is a {Formula}.
@@ -41,6 +42,7 @@ require "migrator"
 class Formula
   include FileUtils
   include Utils::Inreplace
+  include Utils::Shell
   extend Enumerable
 
   # @!method inreplace(paths, before = nil, after = nil)
@@ -1706,6 +1708,12 @@ class Formula
 
       remove_method(:options)
     end
+  end
+
+  public
+
+  def shell_profile(*arguments)
+    Utils::Shell::shell_profile(*arguments)
   end
 
   # The methods below define the formula DSL.
