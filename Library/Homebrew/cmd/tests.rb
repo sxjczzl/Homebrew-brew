@@ -22,18 +22,6 @@ module Homebrew
         FileUtils.rm_f "coverage/.resultset.json"
       end
 
-      # Override author/committer as global settings might be invalid and thus
-      # will cause silent failure during the setup of dummy Git repositories.
-      %w[AUTHOR COMMITTER].each do |role|
-        ENV["GIT_#{role}_NAME"] = "brew tests"
-        ENV["GIT_#{role}_EMAIL"] = "brew-tests@localhost"
-      end
-
-      Homebrew.install_gem_setup_path! "bundler"
-      unless quiet_system("bundle", "check")
-        system "bundle", "install", "--path", "vendor/bundle"
-      end
-
       # Make it easier to reproduce test runs.
       ENV["SEED"] = ARGV.next if ARGV.include? "--seed"
 
@@ -46,18 +34,55 @@ module Homebrew
         args << "TESTOPTS=--name=test_#{test_method}" if test_method
       end
       args += ARGV.named.select { |v| v[/^TEST(OPTS)?=/] }
-      system "bundle", "exec", "rake", "test", *args
 
-      Homebrew.failed = !$?.success?
+      begin
+        sanitize_env!
 
-      if (fs_leak_log = HOMEBREW_LIBRARY/"Homebrew/test/fs_leak_log").file?
-        fs_leak_log_content = fs_leak_log.read
-        unless fs_leak_log_content.empty?
-          opoo "File leak is detected"
-          puts fs_leak_log_content
-          Homebrew.failed = true
+        # Since we "borrow" HOME for duration of tests bundler
+        # needs fetching/installing every run.
+        Homebrew.install_gem_setup_path! "bundler"
+        unless quiet_system("bundle", "check")
+          system "bundle", "install", "--path", "vendor/bundle"
         end
+
+        system "bundle", "exec", "rake", "test", *args
+        Homebrew.failed = !$?.success?
+
+        if (fs_leak_log = HOMEBREW_LIBRARY/"Homebrew/test/fs_leak_log").file?
+          fs_leak_log_content = fs_leak_log.read
+          unless fs_leak_log_content.empty?
+            opoo "File leak is detected"
+            puts fs_leak_log_content
+            Homebrew.failed = true
+          end
+        end
+      ensure
+        ENV["HOME"] = @old_home
+        # For the sake of safety, ensure @env_home actually resides in
+        # HOMEBREW_TEMP before trying to remove this directory.
+        FileUtils.rm_r @env_home if @env_home.dirname == HOMEBREW_TEMP
       end
     end
+  end
+
+  def sanitize_env!
+    # Override author/committer as global settings might be invalid and thus
+    # will cause silent failure during the setup of dummy Git repositories.
+    %w[AUTHOR COMMITTER].each do |role|
+      ENV["GIT_#{role}_NAME"] = "brew tests"
+      ENV["GIT_#{role}_EMAIL"] = "brew-tests@localhost"
+    end
+
+    # Variables possibly set in git configuration files can cause deviations
+    # from expected hashes of tests & cause them to fail. To ensure
+    # predictability ignore those.
+    ENV.delete("GITCONFIG")
+    ENV["GIT_CONFIG_NOSYSTEM"] = "1"
+
+    # Ensure tests are run from a temporary HOME so user configuration
+    # files, such as ~/.gitconfig, are ignored for consistency.
+    @old_home = ENV["HOME"]
+    @env_home = ENV["HOME"] = Pathname.new(Dir.mktmpdir("tests", HOMEBREW_TEMP))
+    ENV["HOME"] = @env_home
   end
 end
