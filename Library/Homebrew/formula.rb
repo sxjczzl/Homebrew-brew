@@ -30,9 +30,11 @@ require "migrator"
 # @see https://github.com/styleguide/ruby Ruby Style Guide
 #
 # <pre>class Wget < Formula
+#   desc "Internet file retriever"
 #   homepage "https://www.gnu.org/software/wget/"
-#   url "https://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz"
-#   sha256 "52126be8cf1bddd7536886e74c053ad7d0ed2aa89b4b630f76785bac21695fcd"
+#   url "https://ftpmirror.gnu.org/wget/wget-1.18.tar.xz"
+#   mirror "https://ftp.gnu.org/gnu/wget/wget-1.18.tar.xz"
+#   sha256 "b5b55b75726c04c06fe253daec9329a6f1a3c0c1878e3ea76ebfebc139ea9cc1"
 #
 #   def install
 #     system "./configure", "--prefix=#{prefix}"
@@ -296,6 +298,12 @@ class Formula
   # @see .version
   def version
     active_spec.version
+  end
+
+  # GPG verification for current spec.
+  # @see .gpg
+  def gpg
+    active_spec.gpg
   end
 
   def update_head_version
@@ -1826,6 +1834,17 @@ class Formula
     # <pre>sha256 "2a2ba417eebaadcb4418ee7b12fe2998f26d6e6f7fda7983412ff66a741ab6f7"</pre>
     Checksum::TYPES.each do |type|
       define_method(type) { |val| stable.send(type, val) }
+    end
+
+    # @!attribute [w] gpg
+    # An optional mechanism to verify the download with GnuPG as well as the
+    # standard checksum verification. Upstream must publish signature files
+    # for us to be able to use this mechanism. Those signature files often
+    # have either a ".gpg" or ".sig" file extension.
+    #
+    # <pre>gpg "https://ftpmirror.gnu.org/wget/wget-1.18.tar.xz.sig"</pre>
+    def gpg(val)
+      stable.gpg(val)
     end
 
     # @!attribute [w] bottle

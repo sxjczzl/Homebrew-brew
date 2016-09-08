@@ -192,6 +192,7 @@ class FormulaAuditor
       [/^  mirror ["'][\S\ ]+["']/,        "mirror"],
       [/^  version ["'][\S\ ]+["']/,       "version"],
       [/^  (sha1|sha256) ["'][\S\ ]+["']/, "checksum"],
+      [/^  gpg ["'][\S\ ]+["']/,           "gpg verification"],
       [/^  revision/,                      "revision"],
       [/^  version_scheme/,                "version_scheme"],
       [/^  head ["'][\S\ ]+["']/,          "head"],

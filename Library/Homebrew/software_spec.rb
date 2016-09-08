@@ -3,6 +3,7 @@ require "resource"
 require "checksum"
 require "version"
 require "options"
+require "gpg"
 require "build_options"
 require "dependency_collector"
 require "utils/bottles"
@@ -29,6 +30,7 @@ class SoftwareSpec
   def_delegators :@resource, :cached_download, :clear_cache
   def_delegators :@resource, :checksum, :mirrors, :specs, :using
   def_delegators :@resource, :version, :mirror, *Checksum::TYPES
+  def_delegators :@resource, :gpg
   def_delegators :@resource, :downloader
 
   def initialize
