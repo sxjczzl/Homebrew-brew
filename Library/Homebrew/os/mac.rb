@@ -37,6 +37,14 @@ module OS
       version < "10.9"
     end
 
+    def os_name
+      if version >= "10.12"
+        "macOS"
+      else
+        "OS X"
+      end
+    end
+
     def cat
       version.to_sym
     end
