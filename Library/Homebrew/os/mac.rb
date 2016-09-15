@@ -37,9 +37,9 @@ module OS
       version < "10.9"
     end
 
-    def os_name
+    def os_name(version = @version)
       # TODO: replace os_name by constant string "macOS" when macOS 10.14 is released
-      if version >= "10.12"
+      if Version.create(version) >= Version.create("10.12")
         "macOS"
       else
         "OS X"
