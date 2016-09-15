@@ -28,7 +28,7 @@ class KegOnlyReason
 
   def to_s
     return @explanation unless @explanation.empty?
-    os_name = OS.mac? ? MacOS.os_name : 'macOS'
+    os_name = OS::Mac.os_name(ENV["HOMEBREW_OSX_VERSION"])
     case @reason
     when :provided_by_osx then <<-EOS
 #{os_name} already provides this software and installing another version in
