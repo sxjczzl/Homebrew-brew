@@ -44,7 +44,7 @@ class IntegrationCommandTests < Homebrew::TestCase
   end
 
   def needs_osx
-    skip "Not on OS X" unless OS.mac?
+    skip "Not on macOS" unless OS.mac?
   end
 
   def cmd_id_from_args(args)
