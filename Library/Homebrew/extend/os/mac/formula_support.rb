@@ -1,0 +1,54 @@
+# Used to annotate formulae that duplicate macOS provided software
+# or cause conflicts when linked in.
+class KegOnlyReason
+  def initialize(reason, explanation)
+    @reason = reason
+    @explanation = explanation
+  end
+
+  def valid?
+    case @reason
+      when :provided_pre_mountain_lion
+        MacOS.version < :mountain_lion
+      when :provided_pre_mavericks
+        MacOS.version < :mavericks
+      when :provided_pre_el_capitan
+        MacOS.version < :el_capitan
+      when :provided_until_xcode43
+        MacOS::Xcode.installed? && MacOS::Xcode.version < "4.3"
+      when :provided_until_xcode5
+        MacOS::Xcode.installed? && MacOS::Xcode.version < "5.0"
+      else
+        true
+    end
+  end
+
+  def to_s
+    return @explanation unless @explanation.empty?
+    case @reason
+      when :provided_by_osx then <<-EOS
+#{MacOS.os_name} already provides this software and installing another version in
+parallel can cause all kinds of trouble.
+      EOS
+      when :shadowed_by_osx then <<-EOS
+#{MacOS.os_name} provides similar software and installing this software in
+parallel can cause all kinds of trouble.
+      EOS
+      when :provided_pre_mountain_lion then <<-EOS
+OS X already provides this software in versions before Mountain Lion.
+      EOS
+      when :provided_pre_mavericks then <<-EOS
+OS X already provides this software in versions before Mavericks.
+      EOS
+      when :provided_pre_el_capitan then <<-EOS
+OS X already provides this software in versions before El Capitan.
+      EOS
+      when :provided_until_xcode43
+        "Xcode provides this software prior to version 4.3."
+      when :provided_until_xcode5
+        "Xcode provides this software prior to version 5."
+      else
+        @reason
+    end.strip
+  end
+end
