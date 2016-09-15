@@ -38,6 +38,7 @@ module OS
     end
 
     def os_name
+      # TODO: replace os_name by constant string "macOS" when macOS 10.14 is released
       if version >= "10.12"
         "macOS"
       else
