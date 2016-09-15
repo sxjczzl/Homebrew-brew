@@ -11,6 +11,6 @@ class MinimumMacOSRequirement < Requirement
   satisfy(:build_env => false) { MacOS.version >= @version }
 
   def message
-    "OS X #{@version.pretty_name} or newer is required."
+    "#{MacOS.os_name(@version)} #{@version.pretty_name} or newer is required."
   end
 end
