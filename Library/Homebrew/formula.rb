@@ -1998,7 +1998,7 @@ class Formula
     # depends_on :postgresql if build.without? "sqlite"
     # depends_on :hg # Mercurial (external or brewed) is needed</pre>
     #
-    # <pre># If any Python >= 2.7 < 3.x is okay (either from OS X or brewed):
+    # <pre># If any Python >= 2.7 < 3.x is okay (either from macOS or brewed):
     # depends_on :python</pre>
     # <pre># to depend on Python >= 2.7 but use system Python where possible
     # depends_on :python if MacOS.version <= :snow_leopard</pre>
@@ -2111,7 +2111,7 @@ class Formula
     # add the necessary includes and libs (etc.) during the brewing of that
     # other formula. But generally, keg_only formulae are not in your PATH
     # and not seen by compilers if you build your own software outside of
-    # Homebrew. This way, we don't shadow software provided by OS X.
+    # Homebrew. This way, we don't shadow software provided by macOS.
     # <pre>keg_only :provided_by_osx</pre>
     # <pre>keg_only "because I want it so"</pre>
     def keg_only(reason, explanation = "")
