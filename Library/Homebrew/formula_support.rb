@@ -28,13 +28,14 @@ class KegOnlyReason
 
   def to_s
     return @explanation unless @explanation.empty?
+    os_name = OS.mac? ? MacOS.os_name : 'macOS'
     case @reason
     when :provided_by_osx then <<-EOS
-#{MacOS.os_name} already provides this software and installing another version in
+#{os_name} already provides this software and installing another version in
 parallel can cause all kinds of trouble.
 EOS
     when :shadowed_by_osx then <<-EOS
-#{MacOS.os_name} provides similar software and installing this software in
+#{os_name} provides similar software and installing this software in
 parallel can cause all kinds of trouble.
 EOS
     when :provided_pre_mountain_lion then <<-EOS
