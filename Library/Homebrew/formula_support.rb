@@ -30,11 +30,11 @@ class KegOnlyReason
     return @explanation unless @explanation.empty?
     case @reason
     when :provided_by_osx then <<-EOS
-OS X already provides this software and installing another version in
+#{MacOS.os_name} already provides this software and installing another version in
 parallel can cause all kinds of trouble.
 EOS
     when :shadowed_by_osx then <<-EOS
-OS X provides similar software and installing this software in
+#{MacOS.os_name} provides similar software and installing this software in
 parallel can cause all kinds of trouble.
 EOS
     when :provided_pre_mountain_lion then <<-EOS
