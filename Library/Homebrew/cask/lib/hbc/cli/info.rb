@@ -18,7 +18,7 @@ class Hbc::CLI::Info < Hbc::CLI::Base
     puts "#{cask.token}: #{cask.version}"
     puts formatted_url(cask.homepage) if cask.homepage
     installation_info(cask)
-    puts "From: #{formatted_url(github_info(cask))}" if github_info(cask)
+    puts "From: #{formatted_url(repo_info(cask))}" if repo_info(cask)
     name_info(cask)
     artifact_info(cask)
     Hbc::Installer.print_caveats(cask)
@@ -48,9 +48,11 @@ class Hbc::CLI::Info < Hbc::CLI::Base
     puts cask.name.empty? ? "#{Tty.red}None#{Tty.reset}" : cask.name
   end
 
-  def self.github_info(cask)
+  def self.repo_info(cask)
     user, repo, token = Hbc::QualifiedToken.parse(Hbc.all_tokens.detect { |t| t.split("/").last == cask.token })
-    "#{Tap.fetch(user, repo).default_remote}/blob/master/Casks/#{token}.rb"
+    remote = Tap.fetch(user, repo).remote
+    return "#{remote}/blob/master/Casks/#{token}.rb" if remote.include? "github.com"
+    "#{remote}"
   end
 
   def self.artifact_info(cask)
