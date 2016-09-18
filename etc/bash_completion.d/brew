@@ -52,7 +52,7 @@ __brew_complete_formulae() {
 
 __brew_complete_installed() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local inst="$(ls "$(brew --cellar)")"
+  local inst="$(ls --indicator-style=none "$(brew --cellar)")"
   COMPREPLY=($(compgen -W "$inst" -- "$cur"))
 }
 
@@ -71,7 +71,7 @@ __brew_complete_versions() {
 
 __brew_complete_logs() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local logs="$(ls "${HOMEBREW_LOGS:-~/Library/Logs/Homebrew/}")"
+  local logs="$(ls --indicator-style=none "${HOMEBREW_LOGS:-$HOME/Library/Logs/Homebrew/}")"
   COMPREPLY=($(compgen -W "$logs" -- "$cur"))
 }
 
