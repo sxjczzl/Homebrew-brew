@@ -37,6 +37,16 @@ module OS
       version < "10.9"
     end
 
+    def os_name(version = @version)
+      # TODO: replace os_name by constant string "macOS" when macOS 10.14 is released
+      version = Version.new(version) unless version.is_a? Version
+      if version >= "10.12"
+        "macOS"
+      else
+        "OS X"
+      end
+    end
+
     def cat
       version.to_sym
     end

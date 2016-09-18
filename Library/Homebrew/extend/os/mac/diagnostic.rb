@@ -39,7 +39,7 @@ module Homebrew
         end
 
         <<-EOS.undent
-          You are using OS X #{MacOS.version}.
+          You are using #{MacOS.os_name} #{MacOS.version}.
           #{who} do not provide support for this #{what}.
           You may encounter build failures or other breakages.
           Please create pull-requests instead of filing issues.
@@ -150,7 +150,7 @@ module Homebrew
           You have an outdated version of /usr/bin/install_name_tool installed.
           This will cause binary package installations to fail.
           This can happen if you install osx-gcc-installer or RailsInstaller.
-          To restore it, you must reinstall OS X or restore the binary from
+          To restore it, you must reinstall #{MacOS.os_name} or restore the binary from
           the OS packages.
         EOS
       end
