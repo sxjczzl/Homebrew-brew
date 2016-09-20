@@ -1,11 +1,13 @@
 require "set"
 
 class Option
-  attr_reader :name, :description, :flag
+  attr_reader :name, :value, :description, :flag
 
-  def initialize(name, description = "")
-    @name = name
-    @flag = "--#{name}"
+  def initialize(arg, description = "")
+    arg = arg.match(/^([^=]+=?)(.+)?$/)
+    @name = arg[1]
+    @value = arg[2]
+    @flag = "--#{name}#{value}"
     @description = description
   end
 
@@ -15,16 +17,16 @@ class Option
 
   def <=>(other)
     return unless Option === other
-    name <=> other.name
+    flag <=> other.flag
   end
 
   def ==(other)
-    instance_of?(other.class) && name == other.name
+    instance_of?(other.class) && flag == other.flag
   end
   alias_method :eql?, :==
 
   def hash
-    name.hash
+    flag.hash
   end
 
   def inspect
@@ -57,41 +59,60 @@ end
 class Options
   include Enumerable
 
-  def self.create(array)
-    new array.map { |e| Option.new(e[/^--([^=]+=?)(.+)?$/, 1] || e) }
+  attr_reader :options
+  protected :options
+
+  def self.create(array = [])
+    options = Hash.new
+    array.each do |option|
+      option = Option.new(option.strip_prefix("--")) unless option.is_a?(Option)
+      options[option.name] = option
+    end
+    new options
   end
 
-  def initialize(*args)
-    @options = Set.new(*args)
+  # We store options in a Hash (option name => option object),
+  # because they may have different value under the same name.
+  def initialize(options)
+    @options = options
   end
 
   def each(*args, &block)
-    @options.each(*args, &block)
+    @options.each_value(*args, &block)
   end
 
   def <<(o)
-    @options << o
+    opt = @options[o.name]
+    if opt
+      @options[o.name] = o if opt.value.nil? && !o.value.nil?
+    else
+      @options[o.name] = o
+    end
     self
   end
 
-  def +(o)
-    self.class.new(@options + o)
+  def +(other)
+    new_options = @options.merge(other.options) do |_name, old_opt, new_opt|
+      if old_opt.value.nil? && !new_opt.value.nil?
+        new_opt
+      else
+        old_opt
+      end
+    end
+    self.class.new new_options
+  end
+  alias_method :|, :+
+
+  def -(other)
+    self.class.new Hash[@options.reject { |name, _option| other.options.key?(name) }]
   end
 
-  def -(o)
-    self.class.new(@options - o)
-  end
-
-  def &(o)
-    self.class.new(@options & o)
-  end
-
-  def |(o)
-    self.class.new(@options | o)
+  def &(other)
+    self.class.new Hash[@options.select { |name, _option| other.options.key?(name) }]
   end
 
   def *(arg)
-    @options.to_a * arg
+    @options.values * arg
   end
 
   def empty?
@@ -106,6 +127,9 @@ class Options
     any? { |opt| opt == o || opt.name == o || opt.flag == o }
   end
 
+  def to_a
+    @options.values
+  end
   alias_method :to_ary, :to_a
 
   def inspect

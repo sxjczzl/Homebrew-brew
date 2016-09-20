@@ -56,7 +56,7 @@ end
 
 class OptionsTests < Homebrew::TestCase
   def setup
-    @options = Options.new
+    @options = Options.create
   end
 
   def test_no_duplicate_options
@@ -83,11 +83,11 @@ class OptionsTests < Homebrew::TestCase
   end
 
   def test_union_returns_options
-    assert_instance_of Options, @options + Options.new
+    assert_instance_of Options, @options + Options.create
   end
 
   def test_difference_returns_options
-    assert_instance_of Options, @options - Options.new
+    assert_instance_of Options, @options - Options.create
   end
 
   def test_shovel_returns_self
@@ -113,14 +113,14 @@ class OptionsTests < Homebrew::TestCase
 
   def test_intersection
     foo, bar, baz = %w[foo bar baz].map { |o| Option.new(o) }
-    options = Options.new << foo << bar
+    options = Options.create [foo, bar]
     @options << foo << baz
     assert_equal [foo], (@options & options).to_a
   end
 
   def test_set_union
     foo, bar, baz = %w[foo bar baz].map { |o| Option.new(o) }
-    options = Options.new << foo << bar
+    options = Options.create [foo, bar]
     @options << foo << baz
     assert_equal [foo, bar, baz].sort, (@options | options).sort
   end

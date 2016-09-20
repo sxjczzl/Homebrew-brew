@@ -37,7 +37,7 @@ class SoftwareSpec
     @dependency_collector = DependencyCollector.new
     @bottle_specification = BottleSpecification.new
     @patches = []
-    @options = Options.new
+    @options = Options.create
     @flags = ARGV.flags_only
     @deprecated_flags = []
     @deprecated_options = []

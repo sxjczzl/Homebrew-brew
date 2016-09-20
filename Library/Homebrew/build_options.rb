@@ -93,7 +93,7 @@ class BuildOptions
 
   # @private
   def used_options
-    @options & @args
+    @args & @options
   end
 
   # @private
