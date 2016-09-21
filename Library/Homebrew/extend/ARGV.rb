@@ -159,6 +159,10 @@ module HomebrewArgvExtension
     !ENV["HOMEBREW_DEVELOPER"].nil?
   end
 
+  def suppress_unsupported_macos_warnings?
+    !ENV["HOMEBREW_NO_WARN_UNSUPPORTED_MACOS"].nil?
+  end
+
   def sandbox?
     include?("--sandbox") || !ENV["HOMEBREW_SANDBOX"].nil?
   end

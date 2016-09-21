@@ -162,6 +162,42 @@ You have not agreed to the Xcode license. Please resolve this by running:
 EOS
     fi
   fi
+
+  # Handle suppression of unsupported macOS (prerelease or outdated release)
+  # warnings. Remember the HOMEBREW_NO_WARN_UNSUPPORTED_MACOS environment
+  # variable through recording the target macOS major version (e.g. 10.9) as
+  # homebrew.nowarnmacos and the "warning epoch" as homebrew.nowarnmacosepoch
+  # in the Homebrew repository's git config.
+  #
+  # "Warning epoch" is a positive integer that should be bumped every time we
+  # add basic support for a new prerelease version of macOS or deprecate an old
+  # version. This ensures that a user who has suppressed warnings previously
+  # will start getting warnings again (if applicable) and will have to review
+  # their decision when one of the above happens.
+  [[ "$HOMEBREW_MACOS_VERSION" =~ ^[0-9]+\.[0-9]+ ]]
+  HOMEBREW_MACOS_MAJOR_VERSION="${BASH_REMATCH[0]}"
+  HOMEBREW_MACOS_WARNING_EPOCH="1"
+  if [[ -n "$HOMEBREW_NO_WARN_UNSUPPORTED_MACOS" ]]
+  then
+    git config --file="$HOMEBREW_GIT_CONFIG_FILE" --replace-all homebrew.nowarnmacos "$HOMEBREW_MACOS_MAJOR_VERSION"
+    git config --file="$HOMEBREW_GIT_CONFIG_FILE" --replace-all homebrew.nowarnmacosepoch "$HOMEBREW_MACOS_WARNING_EPOCH"
+  else
+    # HOMEBREW_NO_WARN_UNSUPPORTED_MACOS environment variable not set. Try to
+    # retrieve the macOS version for which unsupported warnings has been
+    # suppressed. If it matches the current major macOS version and in addition
+    # the recorded warning epoch matches the current one, set
+    # HOMEBREW_NO_WARN_UNSUPPORTED_MACOS in order to suppress unsupported
+    # warnings later.
+    HOMEBREW_GIT_CONFIG_NOWARNMACOS="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.nowarnmacos)"
+    if [[ "$HOMEBREW_GIT_CONFIG_NOWARNMACOS" == "$HOMEBREW_MACOS_MAJOR_VERSION" ]]
+    then
+      HOMEBREW_GIT_CONFIG_NOWARNMACOSEPOCH="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.nowarnmacosepoch)"
+      if [[ "$HOMEBREW_GIT_CONFIG_NOWARNMACOSEPOCH" == "$HOMEBREW_MACOS_WARNING_EPOCH" ]]
+      then
+        export HOMEBREW_NO_WARN_UNSUPPORTED_MACOS="1"
+      fi
+    fi
+  fi
 fi
 
 # Many Pathname operations use getwd when they shouldn't, and then throw
