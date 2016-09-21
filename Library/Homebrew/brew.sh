@@ -59,6 +59,8 @@ then
   odie "Cowardly refusing to continue at this prefix: $HOMEBREW_PREFIX"
 fi
 
+HOMEBREW_GIT_CONFIG_FILE="$HOMEBREW_REPOSITORY/.git/config"
+
 # Save value to use for installing gems
 export GEM_OLD_HOME="$GEM_HOME"
 export GEM_OLD_PATH="$GEM_PATH"
@@ -120,6 +122,7 @@ export HOMEBREW_LIBRARY
 export HOMEBREW_VERSION
 export HOMEBREW_CACHE
 export HOMEBREW_CELLAR
+export HOMEBREW_GIT_CONFIG_FILE
 export HOMEBREW_SYSTEM
 export HOMEBREW_CURL
 export HOMEBREW_PROCESSOR
@@ -197,7 +200,6 @@ esac
 
 if [[ -z "$HOMEBREW_DEVELOPER" ]]
 then
-  export HOMEBREW_GIT_CONFIG_FILE="$HOMEBREW_REPOSITORY/.git/config"
   HOMEBREW_GIT_CONFIG_DEVELOPERMODE="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.devcmdrun)"
   if [[ "$HOMEBREW_GIT_CONFIG_DEVELOPERMODE" = "true" ]]
   then
