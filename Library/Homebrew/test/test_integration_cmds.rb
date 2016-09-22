@@ -304,6 +304,7 @@ class IntegrationCommandTests < Homebrew::TestCase
       cmd("install", "testball2")
 
     setup_test_formula "testball3"
+    cmd("unlink", "testball1") # prevent link failure, as testball1 is built earlier
     assert_match "testball3: --with-fo is invalid for this formula and will be ignored!",
       cmd("install", "testball3", "--with-fo")
   end
