@@ -294,8 +294,6 @@ class IntegrationCommandTests < Homebrew::TestCase
     assert_match "No available formula", cmd_fail("install", "formula")
     assert_match "This similarly named formula was found",
       cmd_fail("install", "testball")
-    assert_match "testball1: --with-fo is invalid for this formula and will be ignored!",
-      cmd("install", "testball1", "--with-fo")
 
     setup_test_formula "testball2"
     assert_match "These similarly named formulae were found",
@@ -304,6 +302,10 @@ class IntegrationCommandTests < Homebrew::TestCase
     install_and_rename_coretap_formula "testball1", "testball2"
     assert_match "testball1 already installed, it's just not migrated",
       cmd("install", "testball2")
+
+    setup_test_formula "testball3"
+    assert_match "testball3: --with-fo is invalid for this formula and will be ignored!",
+      cmd("install", "testball3", "--with-fo")
   end
 
   def test_bottle
