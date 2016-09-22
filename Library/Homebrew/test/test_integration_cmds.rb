@@ -294,6 +294,8 @@ class IntegrationCommandTests < Homebrew::TestCase
     assert_match "No available formula", cmd_fail("install", "formula")
     assert_match "This similarly named formula was found",
       cmd_fail("install", "testball")
+    assert_match "testball1: --with-fo is invalid for this formula and will be ignored!",
+      cmd("install", "testball1", "--with-fo")
 
     setup_test_formula "testball2"
     assert_match "These similarly named formulae were found",
