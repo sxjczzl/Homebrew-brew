@@ -633,7 +633,6 @@ module Homebrew
           install_passed = steps.last.passed?
         end
       end
-      test "brew", "style", formula_name
       test "brew", "audit", *audit_args
       if install_passed
         if formula.stable? && !ARGV.include?("--fast") && !ARGV.include?("--no-bottle") && !formula.bottle_disabled?
@@ -739,7 +738,6 @@ module Homebrew
           test "brew", "cask-tests", *coverage_args
         end
       elsif @tap
-        test "brew", "style", @tap.name if @tap.name == "homebrew/core"
         test "brew", "readall", "--aliases", @tap.name
       end
     end
