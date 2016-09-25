@@ -26,7 +26,8 @@ module Homebrew
       end
 
       def check_for_unsupported_macos
-        return if ARGV.homebrew_developer?
+        return if ARGV.homebrew_developer? ||
+                  ARGV.suppress_unsupported_macos_warnings?
 
         who = "We"
         if OS::Mac.prerelease?

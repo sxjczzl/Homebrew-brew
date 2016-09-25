@@ -63,6 +63,8 @@ then
   odie "Cowardly refusing to continue at this prefix: $HOMEBREW_PREFIX"
 fi
 
+HOMEBREW_GIT_CONFIG_FILE="$HOMEBREW_REPOSITORY/.git/config"
+
 # Save value to use for installing gems
 export GEM_OLD_HOME="$GEM_HOME"
 export GEM_OLD_PATH="$GEM_PATH"
@@ -124,6 +126,7 @@ export HOMEBREW_LIBRARY
 export HOMEBREW_VERSION
 export HOMEBREW_CACHE
 export HOMEBREW_CELLAR
+export HOMEBREW_GIT_CONFIG_FILE
 export HOMEBREW_SYSTEM
 export HOMEBREW_CURL
 export HOMEBREW_PROCESSOR
@@ -161,6 +164,42 @@ EOS
 You have not agreed to the Xcode license. Please resolve this by running:
   sudo xcodebuild -license
 EOS
+    fi
+  fi
+
+  # Handle suppression of unsupported macOS (prerelease or outdated release)
+  # warnings. Remember the HOMEBREW_NO_WARN_UNSUPPORTED_MACOS environment
+  # variable through recording the target macOS major version (e.g. 10.9) as
+  # homebrew.nowarnmacos and the "warning epoch" as homebrew.nowarnmacosepoch
+  # in the Homebrew repository's git config.
+  #
+  # "Warning epoch" is a positive integer that should be bumped every time we
+  # add basic support for a new prerelease version of macOS or deprecate an old
+  # version. This ensures that a user who has suppressed warnings previously
+  # will start getting warnings again (if applicable) and will have to review
+  # their decision when one of the above happens.
+  [[ "$HOMEBREW_MACOS_VERSION" =~ ^[0-9]+\.[0-9]+ ]]
+  HOMEBREW_MACOS_MAJOR_VERSION="${BASH_REMATCH[0]}"
+  HOMEBREW_MACOS_WARNING_EPOCH="1"
+  if [[ -n "$HOMEBREW_NO_WARN_UNSUPPORTED_MACOS" ]]
+  then
+    git config --file="$HOMEBREW_GIT_CONFIG_FILE" --replace-all homebrew.nowarnmacos "$HOMEBREW_MACOS_MAJOR_VERSION"
+    git config --file="$HOMEBREW_GIT_CONFIG_FILE" --replace-all homebrew.nowarnmacosepoch "$HOMEBREW_MACOS_WARNING_EPOCH"
+  else
+    # HOMEBREW_NO_WARN_UNSUPPORTED_MACOS environment variable not set. Try to
+    # retrieve the macOS version for which unsupported warnings has been
+    # suppressed. If it matches the current major macOS version and in addition
+    # the recorded warning epoch matches the current one, set
+    # HOMEBREW_NO_WARN_UNSUPPORTED_MACOS in order to suppress unsupported
+    # warnings later.
+    HOMEBREW_GIT_CONFIG_NOWARNMACOS="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.nowarnmacos)"
+    if [[ "$HOMEBREW_GIT_CONFIG_NOWARNMACOS" == "$HOMEBREW_MACOS_MAJOR_VERSION" ]]
+    then
+      HOMEBREW_GIT_CONFIG_NOWARNMACOSEPOCH="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.nowarnmacosepoch)"
+      if [[ "$HOMEBREW_GIT_CONFIG_NOWARNMACOSEPOCH" == "$HOMEBREW_MACOS_WARNING_EPOCH" ]]
+      then
+        export HOMEBREW_NO_WARN_UNSUPPORTED_MACOS="1"
+      fi
     fi
   fi
 fi
@@ -201,7 +240,6 @@ esac
 
 if [[ -z "$HOMEBREW_DEVELOPER" ]]
 then
-  export HOMEBREW_GIT_CONFIG_FILE="$HOMEBREW_REPOSITORY/.git/config"
   HOMEBREW_GIT_CONFIG_DEVELOPERMODE="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.devcmdrun)"
   if [[ "$HOMEBREW_GIT_CONFIG_DEVELOPERMODE" = "true" ]]
   then
