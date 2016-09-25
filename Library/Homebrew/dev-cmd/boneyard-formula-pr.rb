@@ -30,7 +30,7 @@ module Homebrew
     boneyard_tap = Tap.fetch("homebrew", "boneyard")
     tap_migrations_path = formula.tap.path/"tap_migrations.json"
     if ARGV.dry_run?
-      puts "brew update"
+      puts "brew update" if ENV["HOMEBREW_NO_AUTO_UPDATE"].nil?
       puts "brew tap #{boneyard_tap.name}"
       puts "cd #{formula.tap.path}"
       cd formula.tap.path
@@ -43,7 +43,7 @@ module Homebrew
       puts "Loading tap_migrations.json"
       puts "Adding #{formula.name} to tap_migrations.json"
     else
-      safe_system HOMEBREW_BREW_FILE, "update"
+      safe_system HOMEBREW_BREW_FILE, "update" if ENV["HOMEBREW_NO_AUTO_UPDATE"].nil?
       safe_system HOMEBREW_BREW_FILE, "tap", boneyard_tap.name
       cd formula.tap.path
       cp formula_relpath, boneyard_tap.formula_dir
