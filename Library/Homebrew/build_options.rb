@@ -101,6 +101,15 @@ class BuildOptions
     @options - @args
   end
 
+  # @private
+  def invalid_options
+    (@options | @args) - @options
+  end
+
+  def invalid_flag_names
+    invalid_options.map(&:flag).sort
+  end
+
   private
 
   def option_defined?(name)

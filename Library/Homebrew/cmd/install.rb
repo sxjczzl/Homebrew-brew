@@ -271,7 +271,9 @@ module Homebrew
     f.print_tap_action
 
     fi = FormulaInstaller.new(f)
-    fi.options             = f.build.used_options
+    build_options = f.build
+    fi.options             = build_options.used_options
+    fi.invalid_flag_names  = build_options.invalid_flag_names
     fi.ignore_deps         = ARGV.ignore_deps?
     fi.only_deps           = ARGV.only_deps?
     fi.build_bottle        = ARGV.build_bottle?

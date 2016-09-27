@@ -37,6 +37,8 @@ class InstallTests < Homebrew::TestCase
   end
 
   def test_a_basic_install
+    # fail test if invalid option warnings change to fail, or need user input
+    ARGV << "--with-invalid_flag"
     temporary_install(Testball.new) do |f|
       # Test that things made it into the Keg
       assert_predicate f.prefix+"readme", :exist?

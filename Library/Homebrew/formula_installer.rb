@@ -32,7 +32,7 @@ class FormulaInstaller
   end
 
   attr_reader :formula
-  attr_accessor :options, :build_bottle
+  attr_accessor :options, :build_bottle, :invalid_flag_names
   mode_attr_accessor :show_summary_heading, :show_header
   mode_attr_accessor :build_from_source, :force_bottle
   mode_attr_accessor :ignore_deps, :only_deps, :interactive, :git
@@ -52,6 +52,7 @@ class FormulaInstaller
     @quieter = false
     @debug = false
     @options = Options.new
+    @invalid_flag_names = []
 
     @@attempted ||= Set.new
 
@@ -212,6 +213,10 @@ class FormulaInstaller
       old_flag = deprecated_option.old_flag
       new_flag = deprecated_option.current_flag
       opoo "#{formula.full_name}: #{old_flag} was deprecated; using #{new_flag} instead!"
+    end
+
+    invalid_flag_names.each do |flag|
+      opoo "#{formula.full_name}: #{flag} is invalid for this formula and will be ignored!"
     end
 
     oh1 "Installing #{Tty.green}#{formula.full_name}#{Tty.reset}" if show_header?
