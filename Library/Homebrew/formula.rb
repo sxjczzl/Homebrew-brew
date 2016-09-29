@@ -1558,6 +1558,9 @@ class Formula
     old_temp = ENV["TEMP"]
     old_tmp = ENV["TMP"]
     old_term = ENV["TERM"]
+    old_xdg_config_home = ENV.delete("XDG_CONFIG_HOME")
+    old_xdg_data_home = ENV.delete("XDG_DATA_HOME")
+    old_xdg_cache_home = ENV.delete("XDG_CACHE_HOME")
     ENV["CURL_HOME"] = old_curl_home || old_home
     ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
     ENV["TERM"] = "dumb"
@@ -1583,6 +1586,9 @@ class Formula
     ENV["TEMP"] = old_temp
     ENV["TMP"] = old_tmp
     ENV["TERM"] = old_term
+    ENV["XDG_CONFIG_HOME"] = old_xdg_config_home
+    ENV["XDG_DATA_HOME"] = old_xdg_data_home
+    ENV["XDG_CACHE_HOME"] = old_xdg_cache_home
   end
 
   # @private
