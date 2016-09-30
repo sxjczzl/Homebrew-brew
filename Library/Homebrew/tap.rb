@@ -230,6 +230,7 @@ class Tap
     end
 
     link_manpages
+    link_completions
 
     formula_count = formula_files.size
     puts "Tapped #{formula_count} formula#{plural(formula_count, "e")} (#{path.abv})" unless quiet
@@ -251,6 +252,18 @@ class Tap
     link_path_manpages(path, "brew tap --repair")
   end
 
+  def link_completions
+    link_completion("bash", "etc/bash_completion.d")
+    link_completion("zsh", "share/zsh/site-functions")
+    link_completion("fish", "share/fish/vendor_completions.d")
+  end
+
+  def link_completion(shell, dst)
+    command = "brew tap --repair"
+    link_src_dst_dirs(path/"completions"/shell,
+                      HOMEBREW_PREFIX/dst, command)
+  end
+
   # uninstall this {Tap}.
   def uninstall
     require "descriptions"
@@ -261,6 +274,7 @@ class Tap
     formula_count = formula_files.size
     Descriptions.uncache_formulae(formula_names)
     unlink_manpages
+    unlink_completions
     path.rmtree
     path.parent.rmdir_if_possible
     puts "Untapped #{formula_count} formula#{plural(formula_count, "e")}"
@@ -272,6 +286,22 @@ class Tap
     (path/"man").find do |src|
       next if src.directory?
       dst = HOMEBREW_PREFIX/"share"/src.relative_path_from(path)
+      dst.delete if dst.symlink? && src == dst.resolved_path
+      dst.parent.rmdir_if_possible
+    end
+  end
+
+  def unlink_completions
+    unlink_completion("bash", "etc/bash_completion.d")
+    unlink_completion("zsh", "share/zsh/site-functions")
+    unlink_completion("fish", "share/fish/vendor_completions.d")
+  end
+
+  def unlink_completion(shell, dst)
+    return unless (path/"completions"/shell).exist?
+    (path/"completions"/shell).find do |src|
+      next if src.directory?
+      dst = HOMEBREW_PREFIX/dst/src.basename
       dst.delete if dst.symlink? && src == dst.resolved_path
       dst.parent.rmdir_if_possible
     end
