@@ -281,6 +281,23 @@ module Homebrew
           We recommend only installing stable releases of XQuartz.
         EOS
       end
+
+      def check_for_sip_deleted_header_file_installed_by_xcode
+        # Starting in El Capitan the upgrade of macOS lead to the deletion of the
+        # /usr/include directory due to SIP.
+        return if MacOS::CLT.installed? && File.file?("/usr/include/zlib.h")
+
+        <<-EOS.undent
+          A header file installed by xcode is missing and can lead to builds failing.
+          Due to SIP (System Integrity Protection) this can occur after a macOS
+          system has been upgraded.
+
+          Please run:
+            xcode-select --install
+
+          to reinstall the header file.
+        EOS
+      end
     end
   end
 end
