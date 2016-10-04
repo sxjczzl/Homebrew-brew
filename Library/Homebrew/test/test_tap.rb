@@ -276,6 +276,26 @@ class TapTest < Homebrew::TestCase
     (HOMEBREW_PREFIX/"share").rmtree if (HOMEBREW_PREFIX/"share").exist?
   end
 
+  def test_repair_links
+    setup_tap_files
+    setup_git_repo
+    tap = Tap.new("Homebrew", "baz")
+    shutup { tap.install clone_target: @tap.path/".git" }
+    (HOMEBREW_PREFIX/"share/man/man1/brew-tap-cmd.1").delete
+    (HOMEBREW_PREFIX/"etc/bash_completion.d/brew-tap-cmd").delete
+    (HOMEBREW_PREFIX/"share/zsh/site-functions/_brew-tap-cmd").delete
+    (HOMEBREW_PREFIX/"share/fish/vendor_completions.d/brew-tap-cmd.fish").delete
+    shutup { tap.repair_links }
+    assert_predicate HOMEBREW_PREFIX/"share/man/man1/brew-tap-cmd.1", :file?
+    assert_predicate HOMEBREW_PREFIX/"etc/bash_completion.d/brew-tap-cmd", :file?
+    assert_predicate HOMEBREW_PREFIX/"share/zsh/site-functions/_brew-tap-cmd", :file?
+    assert_predicate HOMEBREW_PREFIX/"share/fish/vendor_completions.d/brew-tap-cmd.fish", :file?
+    shutup { tap.uninstall }
+  ensure
+    (HOMEBREW_PREFIX/"etc").rmtree if (HOMEBREW_PREFIX/"etc").exist?
+    (HOMEBREW_PREFIX/"share").rmtree if (HOMEBREW_PREFIX/"share").exist?
+  end
+
   def test_pin_and_unpin
     refute_predicate @tap, :pinned?
     assert_raises(TapPinStatusError) { @tap.unpin }

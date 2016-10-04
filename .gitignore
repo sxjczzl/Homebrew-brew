@@ -38,7 +38,7 @@
 # Unignore our documentation.
 !/.github
 !/docs
-!/manpages
+!/man
 
 # Unignore our shell completion
 !/completions

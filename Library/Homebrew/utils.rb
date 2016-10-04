@@ -541,8 +541,15 @@ def link_src_dst_dirs(src_dir, dst_dir, command, link_dir: false)
   EOS
 end
 
-def link_path_manpages(path, command)
-  link_src_dst_dirs(path/"man", HOMEBREW_PREFIX/"share/man", command)
+def unlink_src_dst_dirs(src_dir, dst_dir, unlink_dir: false)
+  return unless src_dir.exist?
+  src_paths = unlink_dir ? [src_dir] : src_dir.find
+  (src_paths).each do |src|
+    next if src.directory? && !unlink_dir
+    dst = dst_dir/src.relative_path_from(src_dir)
+    dst.delete if dst.symlink? && src == dst.resolved_path
+    dst.parent.rmdir_if_possible
+  end
 end
 
 def migrate_legacy_keg_symlinks_if_necessary

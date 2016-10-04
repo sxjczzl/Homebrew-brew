@@ -15,7 +15,7 @@ module Homebrew
   module_function
 
   SOURCE_PATH = HOMEBREW_LIBRARY_PATH/"manpages"
-  TARGET_MAN_PATH = HOMEBREW_REPOSITORY/"manpages"
+  TARGET_MAN_PATH = HOMEBREW_REPOSITORY/"man/man1"
   TARGET_DOC_PATH = HOMEBREW_REPOSITORY/"docs"
 
   def man
@@ -27,7 +27,7 @@ module Homebrew
       regenerate_man_pages
     end
 
-    if system "git", "-C", HOMEBREW_REPOSITORY, "diff", "--quiet", "docs/brew.1.html", "manpages"
+    if system "git", "-C", HOMEBREW_REPOSITORY, "diff", "--quiet", "docs/brew.1.html", "man"
       puts "No changes to manpage output detected."
     elsif ARGV.include?("--fail-if-changed")
       Homebrew.failed = true
