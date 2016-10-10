@@ -710,6 +710,15 @@ class FormulaAuditor
     when %r{^http://bugs\.debian\.org}
       problem "Patches from Debian should be https://, not http:\n#{patch.url}"
     end
+
+    return unless @online
+    audit_resource_checksum(patch.resource)
+  end
+
+  def audit_resource_checksum(resource)
+    nostdout { resource.verify_download_integrity(resource.fetch) }
+  rescue DownloadError, ChecksumMismatchError => e
+    problem e.message
   end
 
   def audit_text
