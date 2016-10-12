@@ -13,9 +13,7 @@ class AprRequirement < Requirement
   end
 
   env do
-    next if MacOS.version <= :leopard
-    next if MacOS.version >= :sierra
-    next if MacOS::CLT.installed?
+    next if MacOS.version > :leopard && MacOS.version < :sierra && MacOS::CLT.installed?
     ENV.prepend_path "PATH", Formula["apr-util"].opt_bin
     ENV.prepend_path "PATH", Formula["apr"].opt_bin
     ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["apr"].opt_libexec}/lib/pkgconfig"
