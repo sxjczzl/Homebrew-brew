@@ -236,7 +236,7 @@ class Tap
       raise
     end
 
-    link_manpages
+    repair_links
 
     formula_count = formula_files.size
     puts "Tapped #{formula_count} formula#{plural(formula_count, "e")} (#{path.abv})" unless quiet
@@ -254,8 +254,9 @@ class Tap
     EOS
   end
 
-  def link_manpages
-    link_path_manpages(path, "brew tap --repair")
+  def repair_links
+    Manpages.install(path, "brew tap --repair")
+    Completions.install(path, "brew tap --repair")
   end
 
   # uninstall this {Tap}.
@@ -267,21 +268,12 @@ class Tap
     unpin if pinned?
     formula_count = formula_files.size
     Descriptions.uncache_formulae(formula_names)
-    unlink_manpages
+    Manpages.uninstall(path)
+    Completions.uninstall(path)
     path.rmtree
     path.parent.rmdir_if_possible
     puts "Untapped #{formula_count} formula#{plural(formula_count, "e")}"
     clear_cache
-  end
-
-  def unlink_manpages
-    return unless (path/"man").exist?
-    (path/"man").find do |src|
-      next if src.directory?
-      dst = HOMEBREW_PREFIX/"share"/src.relative_path_from(path)
-      dst.delete if dst.symlink? && src == dst.resolved_path
-      dst.parent.rmdir_if_possible
-    end
   end
 
   # True if the {#remote} of {Tap} is customized.
@@ -635,5 +627,29 @@ class TapConfig
       safe_system "git", "config", "--local", "--replace-all", "homebrew.#{key}", value.to_s
     end
     value
+  end
+end
+
+class Manpages
+  def self.install(path, command)
+    link_src_dst_dirs(path/"man", HOMEBREW_PREFIX/"share/man", command)
+  end
+
+  def self.uninstall(path)
+    unlink_src_dst_dirs(path/"man", HOMEBREW_PREFIX/"share/man")
+  end
+end
+
+class Completions
+  def self.install(path, command)
+    link_src_dst_dirs(path/"completions/bash", HOMEBREW_PREFIX/"etc/bash_completion.d", command)
+    link_src_dst_dirs(path/"completions/zsh", HOMEBREW_PREFIX/"share/zsh/site-functions", command)
+    link_src_dst_dirs(path/"completions/fish", HOMEBREW_PREFIX/"share/fish/vendor_completions.d", command)
+  end
+
+  def self.uninstall(path)
+    unlink_src_dst_dirs(path/"completions/bash", HOMEBREW_PREFIX/"etc/bash_completion.d")
+    unlink_src_dst_dirs(path/"completions/zsh", HOMEBREW_PREFIX/"share/zsh/site-functions")
+    unlink_src_dst_dirs(path/"completions/fish", HOMEBREW_PREFIX/"share/fish/vendor_completions.d")
   end
 end

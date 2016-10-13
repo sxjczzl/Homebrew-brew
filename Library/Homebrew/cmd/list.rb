@@ -75,7 +75,8 @@ module Homebrew
     lib/ruby/gems/[12].*
     lib/ruby/site_ruby/[12].*
     lib/ruby/vendor_ruby/[12].*
-    manpages/brew.1
+    man/man1/brew.1
+    man/man1/brew-cask.1
     share/pypy/*
     share/pypy3/*
     share/info/dir

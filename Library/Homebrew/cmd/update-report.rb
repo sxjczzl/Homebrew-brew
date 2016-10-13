@@ -96,8 +96,8 @@ module Homebrew
       puts if ARGV.include?("--preinstall")
     end
 
-    link_completions_and_docs
-    Tap.each(&:link_manpages)
+    repair_links
+    Tap.each(&:repair_links)
 
     Homebrew.failed = true if ENV["HOMEBREW_UPDATE_FAILED"]
 
@@ -273,7 +273,7 @@ module Homebrew
       EOS
     end
 
-    link_completions_and_docs(new_homebrew_repository)
+    repair_links(new_homebrew_repository)
 
     ohai "Migrated HOMEBREW_REPOSITORY to #{new_homebrew_repository}!"
     puts <<-EOS.undent
@@ -294,16 +294,11 @@ module Homebrew
     $stderr.puts e.backtrace
   end
 
-  def link_completions_and_docs(repository = HOMEBREW_REPOSITORY)
+  def repair_links(repository = HOMEBREW_REPOSITORY)
     command = "brew update"
-    link_src_dst_dirs(repository/"completions/bash",
-                      HOMEBREW_PREFIX/"etc/bash_completion.d", command)
-    link_src_dst_dirs(repository/"docs",
-                      HOMEBREW_PREFIX/"share/doc/homebrew", command, link_dir: true)
-    link_src_dst_dirs(repository/"completions/zsh",
-                      HOMEBREW_PREFIX/"share/zsh/site-functions", command)
-    link_src_dst_dirs(repository/"manpages",
-                      HOMEBREW_PREFIX/"share/man/man1", command)
+    Completions.install(repository)
+    Manpages.install(repository)
+    Docs.install(repository)
   rescue => e
     ofail <<-EOS.undent
       Failed to link all completions, docs and manpages:
@@ -558,5 +553,15 @@ class ReporterHub
 
   def installed?(formula)
     (HOMEBREW_CELLAR/formula.split("/").last).directory?
+  end
+end
+
+class Docs
+  def self.install(path, command)
+    link_src_dst_dirs(path/"docs", HOMEBREW_PREFIX/"share/doc/homebrew", command, link_dir: true)
+  end
+
+  def self.uninstall(path)
+    unlink_src_dst_dirs(path/"docs", HOMEBREW_PREFIX/"share/doc/homebrew", unlink_dir: true)
   end
 end
