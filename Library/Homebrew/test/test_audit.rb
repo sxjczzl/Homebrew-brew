@@ -292,6 +292,46 @@ class FormulaAuditorTests < Homebrew::TestCase
       fa.problems
   end
 
+  def test_audit_patch_hexdigest_doesnt_match
+    patch_url = "file://#{File.expand_path(__FILE__)}"
+    fa = formula_auditor "foo", <<-EOS.undent, online: true
+      class Foo < Formula
+        url "http://example.com/foo-1.0.tgz"
+
+        patch do
+          url #{patch_url.inspect}
+          sha256 #{TEST_SHA256.inspect}
+        end
+      end
+    EOS
+    fa.audit_specs
+    assert_equal 1, fa.problems.count
+    assert_match "SHA256 mismatch", fa.problems.first
+  ensure
+    # Patch is downloaded to cache.
+    FileUtils.rm_rf HOMEBREW_CACHE.children
+  end
+
+  def test_audit_patch_unreachable
+    fa = formula_auditor "foo", <<-EOS.undent, online: true
+      class Foo < Formula
+        url "http://example.com/foo-1.0.tgz"
+
+        patch do
+          url "http://not a url"
+        end
+      end
+    EOS
+    fa.audit_specs
+    assert_equal [<<-PROBLEM.undent], fa.problems
+      Failed to download resource "foo--patch"
+      Download failed: http://not a url
+    PROBLEM
+  ensure
+    # Patch is downloaded to cache.
+    FileUtils.rm_rf HOMEBREW_CACHE.children
+  end
+
   def test_audit_line_pkgshare
     fa = formula_auditor "foo", <<-EOS.undent, strict: true
       class Foo < Formula

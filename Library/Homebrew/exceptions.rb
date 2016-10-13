@@ -464,14 +464,15 @@ class ChecksumMissingError < ArgumentError; end
 
 # raised by Pathname#verify_checksum when verification fails
 class ChecksumMismatchError < RuntimeError
-  attr_reader :expected, :hash_type
+  attr_reader :expected, :actual, :hash_type
 
   def initialize(fn, expected, actual)
     @expected = expected
+    @actual = actual
     @hash_type = expected.hash_type.to_s.upcase
 
     super <<-EOS.undent
-      #{@hash_type} mismatch
+      #{hash_type} mismatch
       Expected: #{expected}
       Actual: #{actual}
       Archive: #{fn}
