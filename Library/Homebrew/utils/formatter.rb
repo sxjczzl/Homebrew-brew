@@ -51,7 +51,7 @@ module Formatter
   private_class_method :prefix
 
   def columns(*objects, gap_size: 2)
-    objects = objects.flatten.map(&:to_s)
+    objects = objects.flat_map(&:to_s)
 
     fallback = proc do
       return objects.join("\n").concat("\n")
