@@ -1,7 +1,7 @@
 # Troubleshooting
 **Run `brew update` (twice) and `brew doctor` *before* creating an issue!**
 
-When creating a formula-related issue please include the link output by running:
+When creating a formula-related issue, please include **the full command line** that threw an error and the link printed by
 
 ```shell
 brew gist-logs <formula>
@@ -20,7 +20,7 @@ brew gist-logs <formula>
 * Make sure you check issues on the correct repository. If the formula that failed to build is part of a tap like [homebrew/science](https://github.com/Homebrew/homebrew-science) or [homebrew/dupes](https://github.com/Homebrew/homebrew-dupes) check there instead.
 
 ## Create an issue
-0. Upload debugging information to a [Gist](https://gist.github.com):
+1. Upload debugging information to a [gist](https://gist.github.com):
   - If you had a formula error: run `brew gist-logs <formula>` (where `<formula>` is the name of the formula that failed to build).
   - If you encountered a non-formula bug: upload the output of `brew config` and `brew doctor` to a new [Gist](https://gist.github.com).
-1. [Create a new issue](https://github.com/Homebrew/homebrew-core/issues/new) titled "\<formula name> failed to build on 10.x", where `<formula name>` is the name of the formula that failed to build, and `10.x` is the version of macOS you are using and including the link output by `brew gist-logs`
+2. [Create a new issue](https://github.com/Homebrew/homebrew-core/issues/new) titled "\<formula name> failed to build on 10.x", where `<formula name>` is the name of the formula that failed to build, and `10.x` is the version of macOS you are using. Always include the full command line that threw an error (e.g., `brew install git --with-gettext`) and the aforementioned gist link.
