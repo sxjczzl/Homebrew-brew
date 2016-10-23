@@ -27,6 +27,7 @@ module Homebrew
       end
 
       ENV["BUNDLE_GEMFILE"] = "#{Dir.pwd}/test/Gemfile"
+      ENV["BUNDLE_PATH"] = "#{Dir.pwd}/test/vendor/bundle"
 
       # Override author/committer as global settings might be invalid and thus
       # will cause silent failure during the setup of dummy Git repositories.
@@ -37,7 +38,7 @@ module Homebrew
 
       Homebrew.install_gem_setup_path! "bundler"
       unless quiet_system("bundle", "check")
-        system "bundle", "install", "--path", "vendor/bundle"
+        system "bundle", "install"
       end
 
       # Make it easier to reproduce test runs.
