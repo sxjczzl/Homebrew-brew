@@ -132,6 +132,9 @@ class Build
       else
         formula.prefix.mkpath
 
+        formula.logs.mkpath
+        FileUtils.cp formula.path, formula.logs/"00.#{formula.name}.rb"
+
         formula.install
 
         stdlibs = detect_stdlibs(ENV.compiler)
