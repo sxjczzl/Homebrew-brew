@@ -668,7 +668,7 @@ class FormulaAuditor
     end
 
     versions = attributes_map[:version].keys
-    if formula.version < versions.max
+    if !versions.empty? && formula.version < versions.max
       problem "version should not decrease"
     end
 
