@@ -1,3 +1,5 @@
+require "os/mac/linkage_checker"
+
 module FormulaCellarChecks
   def check_shadowed_headers
     return if ["libtool", "subversion", "berkeley-db"].any? do |formula_name|
@@ -27,13 +29,14 @@ module FormulaCellarChecks
     keg = Keg.new(formula.prefix)
     system_openssl = keg.mach_o_files.select do |obj|
       dlls = obj.dynamically_linked_libraries
-      dlls.any? { |dll| %r{/usr/lib/lib(crypto|ssl)\.(\d\.)*dylib}.match dll }
+      dlls.any? { |dll| %r{/usr/lib/lib(crypto|ssl|tls)\..*dylib}.match dll }
     end
     return if system_openssl.empty?
 
     <<-EOS.undent
       object files were linked against system openssl
-      These object files were linked against the deprecated system OpenSSL.
+      These object files were linked against the deprecated system OpenSSL or
+      the system's private LibreSSL.
       Adding `depends_on "openssl"` to the formula may help.
         #{system_openssl * "\n        "}
     EOS
@@ -56,10 +59,24 @@ module FormulaCellarChecks
     EOS
   end
 
+  def check_linkage
+    return unless formula.prefix.directory?
+    keg = Keg.new(formula.prefix)
+    checker = LinkageChecker.new(keg, formula)
+
+    return unless checker.broken_dylibs?
+    audit_check_output <<-EOS.undent
+      The installation was broken.
+      Broken dylib links found:
+        #{checker.broken_dylibs.to_a * "\n          "}
+    EOS
+  end
+
   def audit_installed
     generic_audit_installed
     audit_check_output(check_shadowed_headers)
     audit_check_output(check_openssl_links)
     audit_check_output(check_python_framework_links(formula.lib))
+    check_linkage
   end
 end

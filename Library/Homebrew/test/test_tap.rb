@@ -1,4 +1,34 @@
 require "testing_env"
+require "helper/integration_command_test_case"
+
+class IntegrationCommandTestTap < IntegrationCommandTestCase
+  def test_tap
+    path = Tap::TAP_DIRECTORY/"homebrew/homebrew-foo"
+    path.mkpath
+    path.cd do
+      shutup do
+        system "git", "init"
+        system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
+        FileUtils.touch "readme"
+        system "git", "add", "--all"
+        system "git", "commit", "-m", "init"
+      end
+    end
+
+    assert_match "homebrew/foo", cmd("tap")
+    assert_match "homebrew/versions", cmd("tap", "--list-official")
+    assert_match "2 taps", cmd("tap-info")
+    assert_match "https://github.com/Homebrew/homebrew-foo", cmd("tap-info", "homebrew/foo")
+    assert_match "https://github.com/Homebrew/homebrew-foo", cmd("tap-info", "--json=v1", "--installed")
+    assert_match "Pinned homebrew/foo", cmd("tap-pin", "homebrew/foo")
+    assert_match "homebrew/foo", cmd("tap", "--list-pinned")
+    assert_match "Unpinned homebrew/foo", cmd("tap-unpin", "homebrew/foo")
+    assert_match "Tapped", cmd("tap", "homebrew/bar", path/".git")
+    assert_match "Untapped", cmd("untap", "homebrew/bar")
+    assert_equal "", cmd("tap", "homebrew/bar", path/".git", "-q", "--full")
+    assert_match "Untapped", cmd("untap", "homebrew/bar")
+  end
+end
 
 class TapTest < Homebrew::TestCase
   include FileUtils
@@ -63,6 +93,13 @@ class TapTest < Homebrew::TestCase
     tap = Tap.fetch("Homebrew", "foo")
     assert_kind_of Tap, tap
     assert_equal "homebrew/foo", tap.name
+
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("foo") }.message
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("homebrew/homebrew/bar") }.message
+    assert_match "Invalid tap name",
+                 assert_raises { Tap.fetch("homebrew", "homebrew/baz") }.message
   ensure
     Tap.clear_cache
   end
@@ -154,7 +191,7 @@ class TapTest < Homebrew::TestCase
 
     assert_equal "e1893a6bd191ba895c71b652ff8376a6114c7fa7", @tap.git_head
     assert_equal "e189", @tap.git_short_head
-    assert_match %r{years ago}, @tap.git_last_commit
+    assert_match "years ago", @tap.git_last_commit
     assert_equal "2009-05-21", @tap.git_last_commit_date
   end
 
@@ -174,8 +211,8 @@ class TapTest < Homebrew::TestCase
     setup_git_repo
     already_tapped_tap = Tap.new("Homebrew", "foo")
     assert_equal true, already_tapped_tap.installed?
-    right_remote = "#{@tap.remote}"
-    assert_raises(TapAlreadyTappedError) { already_tapped_tap.install :clone_target => right_remote }
+    right_remote = @tap.remote
+    assert_raises(TapAlreadyTappedError) { already_tapped_tap.install clone_target: right_remote }
   end
 
   def test_install_tap_remote_mismatch_error
@@ -184,13 +221,13 @@ class TapTest < Homebrew::TestCase
     touch @tap.path/".git/shallow"
     assert_equal true, already_tapped_tap.installed?
     wrong_remote = "#{@tap.remote}-oops"
-    assert_raises(TapRemoteMismatchError) { already_tapped_tap.install :clone_target => wrong_remote, :full_clone => true }
+    assert_raises(TapRemoteMismatchError) { already_tapped_tap.install clone_target: wrong_remote, full_clone: true }
   end
 
   def test_install_tap_already_unshallow_error
     setup_git_repo
     already_tapped_tap = Tap.new("Homebrew", "foo")
-    assert_raises(TapAlreadyUnshallowError) { already_tapped_tap.install :full_clone => true }
+    assert_raises(TapAlreadyUnshallowError) { already_tapped_tap.install full_clone: true }
   end
 
   def test_uninstall_tap_unavailable_error
@@ -201,7 +238,7 @@ class TapTest < Homebrew::TestCase
   def test_install_git_error
     tap = Tap.new("user", "repo")
     assert_raises(ErrorDuringExecution) do
-      shutup { tap.install :clone_target => "file:///not/existed/remote/url" }
+      shutup { tap.install clone_target: "file:///not/existed/remote/url" }
     end
     refute_predicate tap, :installed?
     refute_predicate Tap::TAP_DIRECTORY/"user", :exist?
@@ -212,7 +249,7 @@ class TapTest < Homebrew::TestCase
     setup_git_repo
 
     tap = Tap.new("Homebrew", "bar")
-    shutup { tap.install :clone_target => @tap.path/".git" }
+    shutup { tap.install clone_target: @tap.path/".git" }
     assert_predicate tap, :installed?
     assert_predicate HOMEBREW_PREFIX/"share/man/man1/brew-tap-cmd.1", :file?
     shutup { tap.uninstall }

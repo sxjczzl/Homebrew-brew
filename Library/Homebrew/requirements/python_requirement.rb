@@ -5,22 +5,22 @@ class PythonRequirement < Requirement
   default_formula "python"
   cask "python"
 
-  satisfy :build_env => false do
+  satisfy build_env: false do
     python = which_python
     next unless python
     version = python_short_version
     next unless version
-    # Always use Python 2.7 for consistency on older versions of OSX.
-    version == Version.new("2.7")
+    # Always use Python 2.7 for consistency on older versions of Mac OS X.
+    version == Version.create("2.7")
   end
 
   env do
     short_version = python_short_version
 
-    if !system_python? && short_version == Version.new("2.7")
+    if !system_python? && short_version == Version.create("2.7")
       ENV.prepend_path "PATH", which_python.dirname
     # Homebrew Python should take precedence over older Pythons in the PATH
-    elsif short_version != Version.new("2.7")
+    elsif short_version != Version.create("2.7")
       ENV.prepend_path "PATH", Formula["python"].opt_bin
     end
 
@@ -50,7 +50,7 @@ class PythonRequirement < Requirement
   end
 
   # Deprecated
-  alias_method :to_s, :python_binary
+  alias to_s python_binary
 end
 
 class Python3Requirement < PythonRequirement
@@ -58,7 +58,7 @@ class Python3Requirement < PythonRequirement
   default_formula "python3"
   cask "python3"
 
-  satisfy(:build_env => false) { which_python }
+  satisfy(build_env: false) { which_python }
 
   def python_binary
     "python3"

@@ -10,6 +10,7 @@ class FormularyTest < Homebrew::TestCase
     assert_equal "SLang", Formulary.class_s("s-lang")
     assert_equal "PkgConfig", Formulary.class_s("pkg-config")
     assert_equal "FooBar", Formulary.class_s("foo_bar")
+    assert_equal "OpensslAT11", Formulary.class_s("openssl@1.1")
   end
 end
 
@@ -84,18 +85,26 @@ class FormularyFactoryTest < Homebrew::TestCase
   def test_factory_from_alias
     alias_dir = CoreTap.instance.alias_dir
     alias_dir.mkpath
-    FileUtils.ln_s @path, alias_dir/"foo"
-    assert_kind_of Formula, Formulary.factory("foo")
+    alias_path = alias_dir/"foo"
+    FileUtils.ln_s @path, alias_path
+    result = Formulary.factory("foo")
+    assert_kind_of Formula, result
+    assert_equal alias_path.to_s, result.alias_path
   ensure
     alias_dir.rmtree
   end
 
-  def test_factory_from_rack
+  def test_factory_from_rack_and_from_keg
     formula = Formulary.factory(@path)
     installer = FormulaInstaller.new(formula)
     shutup { installer.install }
     keg = Keg.new(formula.prefix)
-    assert_kind_of Formula, Formulary.from_rack(formula.rack)
+    f = Formulary.from_rack(formula.rack)
+    assert_kind_of Formula, f
+    assert_kind_of Tab, f.build
+    f = Formulary.from_keg(keg)
+    assert_kind_of Formula, f
+    assert_kind_of Tab, f.build
   ensure
     keg.unlink
     keg.uninstall
@@ -105,6 +114,15 @@ class FormularyFactoryTest < Homebrew::TestCase
 
   def test_load_from_contents
     assert_kind_of Formula, Formulary.from_contents(@name, @path, @path.read)
+  end
+
+  def test_to_rack
+    assert_equal HOMEBREW_CELLAR/@name, Formulary.to_rack(@name)
+    (HOMEBREW_CELLAR/@name).mkpath
+    assert_equal HOMEBREW_CELLAR/@name, Formulary.to_rack(@name)
+    assert_raises(TapFormulaUnavailableError) { Formulary.to_rack("a/b/#{@name}") }
+  ensure
+    FileUtils.rm_rf HOMEBREW_CELLAR/@name
   end
 end
 
@@ -126,7 +144,7 @@ class FormularyTapFactoryTest < Homebrew::TestCase
   end
 
   def test_factory_tap_formula
-    assert_kind_of Formula, Formulary.factory("#{@name}")
+    assert_kind_of Formula, Formulary.factory(@name)
   end
 
   def test_factory_tap_alias

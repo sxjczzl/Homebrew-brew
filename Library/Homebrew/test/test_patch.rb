@@ -21,13 +21,13 @@ class PatchTests < Homebrew::TestCase
     assert_equal :p1, patch.strip
   end
 
-  def test_create_DATA
+  def test_create_data
     patch = Patch.create(:p0, :DATA)
     assert_kind_of DATAPatch, patch
     assert_equal :p0, patch.strip
   end
 
-  def test_create_DATA_without_strip
+  def test_create_data_without_strip
     patch = Patch.create(:DATA, nil)
     assert_kind_of DATAPatch, patch
     assert_equal :p1, patch.strip
@@ -58,7 +58,7 @@ class LegacyPatchTests < Homebrew::TestCase
 
   def test_p0_hash_to_string
     patches = Patch.normalize_legacy_patches(
-      :p0 => "http://example.com/patch.diff"
+      p0: "http://example.com/patch.diff"
     )
 
     assert_equal 1, patches.length
@@ -67,7 +67,7 @@ class LegacyPatchTests < Homebrew::TestCase
 
   def test_p1_hash_to_string
     patches = Patch.normalize_legacy_patches(
-      :p1 => "http://example.com/patch.diff"
+      p1: "http://example.com/patch.diff"
     )
 
     assert_equal 1, patches.length
@@ -76,8 +76,8 @@ class LegacyPatchTests < Homebrew::TestCase
 
   def test_mixed_hash_to_strings
     patches = Patch.normalize_legacy_patches(
-      :p1 => "http://example.com/patch1.diff",
-      :p0 => "http://example.com/patch0.diff"
+      p1: "http://example.com/patch1.diff",
+      p0: "http://example.com/patch0.diff"
     )
     assert_equal 2, patches.length
     assert_equal 1, patches.count { |p| p.strip == :p0 }
@@ -86,10 +86,10 @@ class LegacyPatchTests < Homebrew::TestCase
 
   def test_mixed_hash_to_arrays
     patches = Patch.normalize_legacy_patches(
-      :p1 => ["http://example.com/patch10.diff",
-              "http://example.com/patch11.diff"],
-      :p0 => ["http://example.com/patch00.diff",
-              "http://example.com/patch01.diff"]
+      p1: ["http://example.com/patch10.diff",
+           "http://example.com/patch11.diff"],
+      p0: ["http://example.com/patch00.diff",
+           "http://example.com/patch01.diff"]
     )
 
     assert_equal 4, patches.length
@@ -112,7 +112,6 @@ end
 class ExternalPatchTests < Homebrew::TestCase
   def setup
     @p = ExternalPatch.new(:p1) { url "file:///my.patch" }
-
   end
 
   def test_url
@@ -120,7 +119,7 @@ class ExternalPatchTests < Homebrew::TestCase
   end
 
   def test_inspect
-    assert_equal %(#<ExternalPatch: :p1 "file:///my.patch">), @p.inspect
+    assert_equal '#<ExternalPatch: :p1 "file:///my.patch">', @p.inspect
   end
 
   def test_cached_download

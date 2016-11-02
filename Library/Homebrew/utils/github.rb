@@ -2,7 +2,8 @@ require "uri"
 require "tempfile"
 
 module GitHub
-  extend self
+  module_function
+
   ISSUES_URI = URI.parse("https://api.github.com/search/issues")
 
   Error = Class.new(RuntimeError)
@@ -13,7 +14,7 @@ module GitHub
       super <<-EOS.undent
         GitHub API Error: #{error}
         Try again in #{pretty_ratelimit_reset(reset)}, or create a personal access token:
-          #{Tty.em}https://github.com/settings/tokens/new?scopes=&description=Homebrew#{Tty.reset}
+          #{Formatter.url("https://github.com/settings/tokens/new?scopes=&description=Homebrew")}
         and then set the token as: export HOMEBREW_GITHUB_API_TOKEN="your_new_token"
       EOS
     end
@@ -29,15 +30,15 @@ module GitHub
       if ENV["HOMEBREW_GITHUB_API_TOKEN"]
         message << <<-EOS.undent
           HOMEBREW_GITHUB_API_TOKEN may be invalid or expired; check:
-          #{Tty.em}https://github.com/settings/tokens#{Tty.reset}
+          #{Formatter.url("https://github.com/settings/tokens")}
         EOS
       else
         message << <<-EOS.undent
-          The GitHub credentials in the OS X keychain may be invalid.
+          The GitHub credentials in the macOS keychain may be invalid.
           Clear them with:
             printf "protocol=https\\nhost=github.com\\n" | git credential-osxkeychain erase
           Or create a personal access token:
-            #{Tty.em}https://github.com/settings/tokens/new?scopes=&description=Homebrew#{Tty.reset}
+            #{Formatter.url("https://github.com/settings/tokens/new?scopes=&description=Homebrew")}
           and then set the token as: export HOMEBREW_GITHUB_API_TOKEN="your_new_token"
         EOS
       end
@@ -50,13 +51,9 @@ module GitHub
       if ENV["HOMEBREW_GITHUB_API_TOKEN"]
         ENV["HOMEBREW_GITHUB_API_TOKEN"]
       elsif ENV["HOMEBREW_GITHUB_API_USERNAME"] && ENV["HOMEBREW_GITHUB_API_PASSWORD"]
-        [ENV["HOMEBREW_GITHUB_API_USERNAME"], ENV["HOMEBREW_GITHUB_API_PASSWORD"]]
+        [ENV["HOMEBREW_GITHUB_API_PASSWORD"], ENV["HOMEBREW_GITHUB_API_USERNAME"]]
       else
-        github_credentials = Utils.popen("git credential-osxkeychain get", "w+") do |io|
-          io.puts "protocol=https\nhost=github.com"
-          io.close_write
-          io.read
-        end
+        github_credentials = api_credentials_from_keychain
         github_username = github_credentials[/username=(.+)/, 1]
         github_password = github_credentials[/password=(.+)/, 1]
         if github_username && github_password
@@ -66,6 +63,20 @@ module GitHub
         end
       end
     end
+  end
+
+  def api_credentials_from_keychain
+    Utils.popen(["git", "credential-osxkeychain", "get"], "w+") do |pipe|
+      pipe.write "protocol=https\nhost=github.com\n"
+      pipe.close_write
+      pipe.read
+    end
+  rescue Errno::EPIPE
+    # The above invocation via `Utils.popen` can fail, causing the pipe to be
+    # prematurely closed (before we can write to it) and thus resulting in a
+    # broken pipe error. The root cause is usually a missing or malfunctioning
+    # `git-credential-osxkeychain` helper.
+    ""
   end
 
   def api_credentials_type
@@ -93,16 +104,16 @@ module GitHub
         case GitHub.api_credentials_type
         when :keychain
           onoe <<-EOS.undent
-            Your OS X keychain GitHub credentials do not have sufficient scope!
+            Your macOS keychain GitHub credentials do not have sufficient scope!
             Scopes they have: #{credentials_scopes}
-            Create a personal access token: https://github.com/settings/tokens
+            Create a personal access token: #{Formatter.url("https://github.com/settings/tokens")}
             and then set HOMEBREW_GITHUB_API_TOKEN as the authentication method instead.
           EOS
         when :environment
           onoe <<-EOS.undent
             Your HOMEBREW_GITHUB_API_TOKEN does not have sufficient scope!
             Scopes it has: #{credentials_scopes}
-            Create a new personal access token: https://github.com/settings/tokens
+            Create a new personal access token: #{Formatter.url("https://github.com/settings/tokens")}
             and then set the new HOMEBREW_GITHUB_API_TOKEN as the authentication method instead.
           EOS
         end
@@ -111,7 +122,7 @@ module GitHub
     end
   end
 
-  def open(url, data=nil)
+  def open(url, data = nil)
     # This is a no-op if the user is opting out of using the GitHub API.
     return if ENV["HOMEBREW_NO_GITHUB_API"]
 
@@ -144,7 +155,7 @@ module GitHub
         args += ["--data", "@#{data_tmpfile.path}"]
       end
 
-      args += ["--dump-header", "#{headers_tmpfile.path}"]
+      args += ["--dump-header", headers_tmpfile.path.to_s]
 
       output, errors, status = curl_output(url.to_s, *args)
       output, _, http_code = output.rpartition("\n")
@@ -193,11 +204,15 @@ module GitHub
 
     case http_code
     when "401", "403"
-      raise AuthenticationFailedError.new(output)
+      raise AuthenticationFailedError, output
     when "404"
       raise HTTPNotFoundError, output
     else
-      error = Utils::JSON.load(output)["message"] rescue nil
+      error = begin
+        Utils::JSON.load(output)["message"]
+      rescue
+        nil
+      end
       error ||= "curl failed! #{errors}"
       raise Error, error
     end
@@ -221,8 +236,8 @@ module GitHub
 
   def build_search_qualifier_string(qualifiers)
     {
-      :repo => "Homebrew/homebrew-core",
-      :in => "title"
+      repo: "Homebrew/homebrew-core",
+      in: "title",
     }.update(qualifiers).map do |qualifier, value|
       "#{qualifier}:#{value}"
     end.join("+")
@@ -239,20 +254,20 @@ module GitHub
 
   def issues_for_formula(name, options = {})
     tap = options[:tap] || CoreTap.instance
-    issues_matching(name, :state => "open", :repo => "#{tap.user}/homebrew-#{tap.repo}")
+    issues_matching(name, state: "open", repo: "#{tap.user}/homebrew-#{tap.repo}")
   end
 
   def print_pull_requests_matching(query)
     return [] if ENV["HOMEBREW_NO_GITHUB_API"]
     ohai "Searching pull requests..."
 
-    open_or_closed_prs = issues_matching(query, :type => "pr")
+    open_or_closed_prs = issues_matching(query, type: "pr")
 
     open_prs = open_or_closed_prs.select { |i| i["state"] == "open" }
-    if open_prs.any?
+    if !open_prs.empty?
       puts "Open pull requests:"
       prs = open_prs
-    elsif open_or_closed_prs.any?
+    elsif !open_or_closed_prs.empty?
       puts "Closed pull requests:"
       prs = open_or_closed_prs
     else

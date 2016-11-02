@@ -1,5 +1,7 @@
+require "utils/shell"
+
 module FormulaCellarChecks
-  def check_PATH(bin)
+  def check_env_path(bin)
     # warn the user if stuff was installed outside of their PATH
     return unless bin.directory?
     return if bin.children.empty?
@@ -12,7 +14,7 @@ module FormulaCellarChecks
 
     <<-EOS.undent
       #{prefix_bin} is not in your PATH
-      You can amend this by altering your #{shell_profile} file
+      You can amend this by altering your #{Utils::Shell.shell_profile} file
     EOS
   end
 

@@ -15,8 +15,8 @@ class SoftwareSpec
   PREDEFINED_OPTIONS = {
     :universal => Option.new("universal", "Build a universal binary"),
     :cxx11     => Option.new("c++11", "Build using C++11 mode"),
-    "32-bit"   => Option.new("32-bit", "Build 32-bit only")
-  }
+    "32-bit"   => Option.new("32-bit", "Build 32-bit only"),
+  }.freeze
 
   attr_reader :name, :full_name, :owner
   attr_reader :build, :resources, :patches, :options
@@ -29,6 +29,7 @@ class SoftwareSpec
   def_delegators :@resource, :cached_download, :clear_cache
   def_delegators :@resource, :checksum, :mirrors, :specs, :using
   def_delegators :@resource, :version, :mirror, *Checksum::TYPES
+  def_delegators :@resource, :downloader
 
   def initialize
     @resource = Resource.new
@@ -52,7 +53,7 @@ class SoftwareSpec
     @resource.owner = self
     resources.each_value do |r|
       r.owner     = self
-      r.version ||= version
+      r.version ||= (version.head? ? Version.create("HEAD") : version.dup)
     end
     patches.each { |p| p.owner = self }
   end
@@ -64,19 +65,18 @@ class SoftwareSpec
   end
 
   def bottle_unneeded?
-    !!@bottle_disable_reason && @bottle_disable_reason.unneeded?
+    return false unless @bottle_disable_reason
+    @bottle_disable_reason.unneeded?
   end
 
   def bottle_disabled?
-    !!@bottle_disable_reason
+    @bottle_disable_reason ? true : false
   end
 
-  def bottle_disable_reason
-    @bottle_disable_reason
-  end
+  attr_reader :bottle_disable_reason
 
   def bottle_defined?
-    bottle_specification.collector.keys.any?
+    !bottle_specification.collector.keys.empty?
   end
 
   def bottled?
@@ -84,7 +84,7 @@ class SoftwareSpec
       (bottle_specification.compatible_cellar? || ARGV.force_bottle?)
   end
 
-  def bottle(disable_type = nil, disable_reason = nil,  &block)
+  def bottle(disable_type = nil, disable_reason = nil, &block)
     if disable_type
       @bottle_disable_reason = BottleDisableReason.new(disable_type, disable_reason)
     else
@@ -98,7 +98,7 @@ class SoftwareSpec
 
   def resource(name, klass = Resource, &block)
     if block_given?
-      raise DuplicateResourceError.new(name) if resource_defined?(name)
+      raise DuplicateResourceError, name if resource_defined?(name)
       res = klass.new(name, &block)
       resources[name] = res
       dependency_collector.add(res)
@@ -117,12 +117,12 @@ class SoftwareSpec
 
   def option(name, description = "")
     opt = PREDEFINED_OPTIONS.fetch(name) do
-      if Symbol === name
+      if name.is_a?(Symbol)
         opoo "Passing arbitrary symbols to `option` is deprecated: #{name.inspect}"
         puts "Symbols are reserved for future use, please pass a string instead"
         name = name.to_s
       end
-      unless String === name
+      unless name.is_a?(String)
         raise ArgumentError, "option name must be string or symbol; got a #{name.class}: #{name}"
       end
       raise ArgumentError, "option name is required" if name.empty?
@@ -143,11 +143,10 @@ class SoftwareSpec
 
           old_flag = deprecated_option.old_flag
           new_flag = deprecated_option.current_flag
-          if @flags.include? old_flag
-            @flags -= [old_flag]
-            @flags |= [new_flag]
-            @deprecated_flags << deprecated_option
-          end
+          next unless @flags.include? old_flag
+          @flags -= [old_flag]
+          @flags |= [new_flag]
+          @deprecated_flags << deprecated_option
         end
       end
     end
@@ -203,7 +202,7 @@ end
 class HeadSoftwareSpec < SoftwareSpec
   def initialize
     super
-    @resource.version = Version.new("HEAD")
+    @resource.version = Version.create("HEAD")
   end
 
   def verify_download_integrity(_fn)
@@ -213,37 +212,37 @@ end
 
 class Bottle
   class Filename
-    attr_reader :name, :version, :tag, :revision
+    attr_reader :name, :version, :tag, :rebuild
 
-    def self.create(formula, tag, revision)
-      new(formula.name, formula.pkg_version, tag, revision)
+    def self.create(formula, tag, rebuild)
+      new(formula.name, formula.pkg_version, tag, rebuild)
     end
 
-    def initialize(name, version, tag, revision)
+    def initialize(name, version, tag, rebuild)
       @name = name
       @version = version
       @tag = tag
-      @revision = revision
+      @rebuild = rebuild
     end
 
     def to_s
       prefix + suffix
     end
-    alias_method :to_str, :to_s
+    alias to_str to_s
 
     def prefix
       "#{name}-#{version}.#{tag}"
     end
 
     def suffix
-      s = revision > 0 ? ".#{revision}" : ""
+      s = rebuild > 0 ? ".#{rebuild}" : ""
       ".bottle#{s}.tar.gz"
     end
   end
 
   extend Forwardable
 
-  attr_reader :name, :resource, :prefix, :cellar, :revision
+  attr_reader :name, :resource, :prefix, :cellar, :rebuild
 
   def_delegators :resource, :url, :fetch, :verify_download_integrity
   def_delegators :resource, :cached_download, :clear_cache
@@ -256,14 +255,14 @@ class Bottle
 
     checksum, tag = spec.checksum_for(Utils::Bottles.tag)
 
-    filename = Filename.create(formula, tag, spec.revision)
+    filename = Filename.create(formula, tag, spec.rebuild)
     @resource.url(build_url(spec.root_url, filename))
     @resource.download_strategy = CurlBottleDownloadStrategy
     @resource.version = formula.pkg_version
     @resource.checksum = checksum
     @prefix = spec.prefix
     @cellar = spec.cellar
-    @revision = spec.revision
+    @rebuild = spec.rebuild
   end
 
   def compatible_cellar?
@@ -291,12 +290,12 @@ class BottleSpecification
   DEFAULT_CELLAR = "/usr/local/Cellar".freeze
   DEFAULT_DOMAIN = (ENV["HOMEBREW_BOTTLE_DOMAIN"] || "https://homebrew.bintray.com").freeze
 
-  attr_rw :prefix, :cellar, :revision
+  attr_rw :prefix, :cellar, :rebuild
   attr_accessor :tap
   attr_reader :checksum, :collector
 
   def initialize
-    @revision = 0
+    @rebuild = 0
     @prefix = DEFAULT_PREFIX
     @cellar = DEFAULT_CELLAR
     @collector = Utils::Bottles::Collector.new
@@ -320,7 +319,7 @@ class BottleSpecification
   end
 
   def tag?(tag)
-    !!checksum_for(tag)
+    checksum_for(tag) ? true : false
   end
 
   # Checksum methods in the DSL's bottle block optionally take
@@ -339,12 +338,18 @@ class BottleSpecification
   def checksums
     checksums = {}
     os_versions = collector.keys
-    os_versions.map! { |osx| MacOS::Version.from_symbol osx rescue nil }.compact!
+    os_versions.map! do |macos|
+      begin
+        MacOS::Version.from_symbol macos
+      rescue
+        nil
+      end
+    end.compact!
     os_versions.sort.reverse_each do |os_version|
-      osx = os_version.to_sym
-      checksum = collector[osx]
+      macos = os_version.to_sym
+      checksum = collector[macos]
       checksums[checksum.hash_type] ||= []
-      checksums[checksum.hash_type] << { checksum => osx }
+      checksums[checksum.hash_type] << { checksum => macos }
     end
     checksums
   end

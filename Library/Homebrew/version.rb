@@ -33,7 +33,7 @@ class Version
       when NullToken
         0
       when NumericToken
-        other.value == 0 ? 0 : -1
+        other.value.zero? ? 0 : -1
       when AlphaToken, BetaToken, RCToken
         1
       else
@@ -95,7 +95,7 @@ class Version
   end
 
   class AlphaToken < CompositeToken
-    PATTERN = /a(?:lpha)?[0-9]*/i
+    PATTERN = /alpha[0-9]*|a[0-9]+/i
 
     def <=>(other)
       case other
@@ -108,7 +108,7 @@ class Version
   end
 
   class BetaToken < CompositeToken
-    PATTERN = /b(?:eta)?[0-9]*/i
+    PATTERN = /beta[0-9]*|b[0-9]+/i
 
     def <=>(other)
       case other
@@ -179,12 +179,23 @@ class Version
     end
   end
 
-  def initialize(val)
-    if val.respond_to?(:to_str)
-      @version = val.to_str
-    else
+  def self.create(val)
+    unless val.respond_to?(:to_str)
       raise TypeError, "Version value must be a string; got a #{val.class} (#{val})"
     end
+
+    if val.to_str.start_with?("HEAD")
+      HeadVersion.new(val)
+    else
+      Version.new(val)
+    end
+  end
+
+  def initialize(val)
+    unless val.respond_to?(:to_str)
+      raise TypeError, "Version value must be a string; got a #{val.class} (#{val})"
+    end
+    @version = val.to_str
   end
 
   def detected_from_url?
@@ -192,14 +203,15 @@ class Version
   end
 
   def head?
-    version == "HEAD"
+    false
   end
 
   def <=>(other)
-    return unless Version === other
+    return unless other.is_a?(Version)
     return 0 if version == other.version
     return 1 if head? && !other.head?
     return -1 if !head? && other.head?
+    return 0 if head? && other.head?
 
     ltokens = tokens
     rtokens = other.tokens
@@ -229,7 +241,7 @@ class Version
 
     0
   end
-  alias_method :eql?, :==
+  alias eql? ==
 
   def hash
     version.hash
@@ -238,7 +250,7 @@ class Version
   def to_s
     version.dup
   end
-  alias_method :to_str, :to_s
+  alias to_str to_s
 
   protected
 
@@ -279,8 +291,10 @@ class Version
 
     stem = if spec.directory?
       spec.basename.to_s
-    elsif %r{((?:sourceforge\.net|sf\.net)/.*)/download$}.match(spec_s)
+    elsif %r{((?:sourceforge\.net|sf\.net)/.*)/download$} =~ spec_s
       Pathname.new(spec.dirname).stem
+    elsif /\.[^a-zA-Z]+$/ =~ spec_s
+      Pathname.new(spec_s).basename
     else
       spec.stem
     end
@@ -325,8 +339,8 @@ class Version
     m = /-((?:\d+\.)*\d+(?:[abc]|rc|RC)\d*)$/.match(stem)
     return m.captures.first unless m.nil?
 
-    # e.g. foobar-4.5.0-beta1, or foobar-4.50-beta
-    m = /-((?:\d+\.)*\d+-beta\d*)$/.match(stem)
+    # e.g. foobar-4.5.0-alpha5, foobar-4.5.0-beta1, or foobar-4.50-beta
+    m = /-((?:\d+\.)*\d+-(?:alpha|beta|rc)\d*)$/.match(stem)
     return m.captures.first unless m.nil?
 
     # e.g. http://ftpmirror.gnu.org/libidn/libidn-1.29-win64.zip
@@ -371,11 +385,33 @@ class Version
 
     # e.g. http://mirrors.jenkins-ci.org/war/1.486/jenkins.war
     # e.g. https://github.com/foo/bar/releases/download/0.10.11/bar.phar
-    m = /\/(\d\.\d+(\.\d+)?)\//.match(spec_s)
+    m = %r{/(\d\.\d+(\.\d+)?)}.match(spec_s)
     return m.captures.first unless m.nil?
 
     # e.g. http://www.ijg.org/files/jpegsrc.v8d.tar.gz
     m = /\.v(\d+[a-z]?)/.match(stem)
     return m.captures.first unless m.nil?
+  end
+end
+
+class HeadVersion < Version
+  attr_reader :commit
+
+  def initialize(val)
+    super
+    @commit = @version[/^HEAD-(.+)$/, 1]
+  end
+
+  def update_commit(commit)
+    @commit = commit
+    @version = if commit
+      "HEAD-#{commit}"
+    else
+      "HEAD"
+    end
+  end
+
+  def head?
+    true
   end
 end

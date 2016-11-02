@@ -3,9 +3,27 @@ require "tempfile"
 
 class Sandbox
   SANDBOX_EXEC = "/usr/bin/sandbox-exec".freeze
+  SANDBOXED_TAPS = %w[
+    homebrew/core
+    homebrew/dupes
+    homebrew/fuse
+    homebrew/devel-only
+    homebrew/tex
+  ].freeze
 
   def self.available?
-    OS.mac? && File.executable?(SANDBOX_EXEC)
+    OS.mac? && OS::Mac.version >= "10.6" && File.executable?(SANDBOX_EXEC)
+  end
+
+  def self.formula?(formula)
+    return false unless available?
+    return false if ARGV.no_sandbox?
+    ARGV.sandbox? || SANDBOXED_TAPS.include?(formula.tap.to_s)
+  end
+
+  def self.test?
+    return false unless available?
+    !ARGV.no_sandbox?
   end
 
   def self.print_sandbox_message
@@ -28,25 +46,25 @@ class Sandbox
   end
 
   def allow_write(path, options = {})
-    add_rule :allow => true, :operation => "file-write*", :filter => path_filter(path, options[:type])
+    add_rule allow: true, operation: "file-write*", filter: path_filter(path, options[:type])
   end
 
   def deny_write(path, options = {})
-    add_rule :allow => false, :operation => "file-write*", :filter => path_filter(path, options[:type])
+    add_rule allow: false, operation: "file-write*", filter: path_filter(path, options[:type])
   end
 
   def allow_write_path(path)
-    allow_write path, :type => :subpath
+    allow_write path, type: :subpath
   end
 
   def deny_write_path(path)
-    deny_write path, :type => :subpath
+    deny_write path, type: :subpath
   end
 
   def allow_write_temp_and_cache
     allow_write_path "/private/tmp"
     allow_write_path "/private/var/tmp"
-    allow_write "^/private/var/folders/[^/]+/[^/]+/[C,T]/", :type => :regex
+    allow_write "^/private/var/folders/[^/]+/[^/]+/[C,T]/", type: :regex
     allow_write_path HOMEBREW_TEMP
     allow_write_path HOMEBREW_CACHE
   end
@@ -59,17 +77,21 @@ class Sandbox
 
   # Xcode projects expect access to certain cache/archive dirs.
   def allow_write_xcode
-    allow_write_path "/Users/#{ENV["USER"]}/Library/Developer/Xcode/DerivedData/"
+    allow_write_path "/Users/#{ENV["USER"]}/Library/Developer"
   end
 
   def allow_write_log(formula)
     allow_write_path formula.logs
   end
 
-  def deny_write_homebrew_library
-    deny_write_path HOMEBREW_LIBRARY
-    deny_write_path HOMEBREW_REPOSITORY/".git"
+  def deny_write_homebrew_repository
     deny_write HOMEBREW_BREW_FILE
+    if HOMEBREW_PREFIX.to_s != HOMEBREW_REPOSITORY.to_s
+      deny_write_path HOMEBREW_REPOSITORY
+    else
+      deny_write_path HOMEBREW_LIBRARY
+      deny_write_path HOMEBREW_REPOSITORY/".git"
+    end
   end
 
   def exec(*args)
@@ -95,6 +117,10 @@ class Sandbox
       -k Sender sandboxd
     ]
     logs = Utils.popen_read("syslog", *syslog_args)
+
+    # These messages are confusing and non-fatal, so don't report them.
+    logs = logs.lines.reject { |l| l.match(/^.*Python\(\d+\) deny file-write.*pyc$/) }.join
+
     unless logs.empty?
       if @logfile
         log = open(@logfile, "w")

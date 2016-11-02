@@ -1,6 +1,5 @@
 OFFICIAL_TAPS = %w[
   apache
-  binary
   completions
   devel-only
   dupes
@@ -18,7 +17,7 @@ OFFICIAL_TAPS = %w[
 ].freeze
 
 OFFICIAL_CMD_TAPS = {
-  "caskroom/cask" => ["cask"],
   "homebrew/bundle" => ["bundle"],
+  "homebrew/test-bot" => ["test-bot"],
   "homebrew/services" => ["services"],
 }.freeze

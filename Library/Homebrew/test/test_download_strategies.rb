@@ -21,7 +21,7 @@ class AbstractDownloadStrategyTests < Homebrew::TestCase
   end
 
   def test_expand_safe_system_args_with_explicit_quiet_flag
-    @args << { :quiet_flag => "--flag" }
+    @args << { quiet_flag: "--flag" }
     expanded_args = @strategy.expand_safe_system_args(@args)
     assert_equal %w[foo bar baz --flag], expanded_args
   end
@@ -39,8 +39,8 @@ class AbstractDownloadStrategyTests < Homebrew::TestCase
 
   def test_source_modified_time
     mktemp "mtime" do
-      touch "foo", :mtime => Time.now - 10
-      touch "bar", :mtime => Time.now - 100
+      touch "foo", mtime: Time.now - 10
+      touch "bar", mtime: Time.now - 100
       ln_s "not-exist", "baz"
       assert_equal File.mtime("foo"), @strategy.source_modified_time
     end
@@ -69,7 +69,6 @@ class GitDownloadStrategyTests < Homebrew::TestCase
     @strategy = GitDownloadStrategy.new("baz", resource)
     @cached_location = @strategy.cached_location
     mkpath @cached_location
-    touch @cached_location/"README"
   end
 
   def teardown
@@ -84,42 +83,80 @@ class GitDownloadStrategyTests < Homebrew::TestCase
     end
   end
 
-  def inside_repo_using_git_env
+  def using_git_env
     initial_env = ENV.to_hash
     %w[AUTHOR COMMITTER].each do |role|
       ENV["GIT_#{role}_NAME"] = "brew tests"
       ENV["GIT_#{role}_EMAIL"] = "brew-tests@localhost"
       ENV["GIT_#{role}_DATE"] = "Thu May 21 00:04:11 2009 +0100"
     end
-    @cached_location.cd do
-      yield
-    end
+    yield
   ensure
     ENV.replace(initial_env)
   end
 
   def setup_git_repo
-    inside_repo_using_git_env do
-      shutup do
-        system "git", "init"
-        system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
+    using_git_env do
+      @cached_location.cd do
+        shutup do
+          system "git", "init"
+          system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
+        end
+        touch "README"
+        git_commit_all
       end
-      git_commit_all
     end
+  end
+
+  def test_github_git_download_strategy_user_repo
+    resource = ResourceDouble.new("https://github.com/homebrew/brew.git")
+    strategy = GitHubGitDownloadStrategy.new("brew", resource)
+
+    assert_equal strategy.instance_variable_get(:@user), "homebrew"
+    assert_equal strategy.instance_variable_get(:@repo), "brew"
   end
 
   def test_source_modified_time
     setup_git_repo
-    assert_equal 1242860651, @strategy.source_modified_time.to_i
+    assert_equal 1_242_860_651, @strategy.source_modified_time.to_i
   end
 
   def test_last_commit
     setup_git_repo
-    inside_repo_using_git_env do
-      touch "LICENSE"
-      git_commit_all
+    using_git_env do
+      @cached_location.cd do
+        touch "LICENSE"
+        git_commit_all
+      end
     end
     assert_equal "c50c79b", @strategy.last_commit
+  end
+
+  def test_fetch_last_commit
+    remote_repo = HOMEBREW_PREFIX.join("remote_repo")
+    remote_repo.mkdir
+
+    resource = ResourceDouble.new("file://#{remote_repo}")
+    resource.instance_variable_set(:@version, Version.create("HEAD"))
+    @strategy = GitDownloadStrategy.new("baz", resource)
+
+    using_git_env do
+      remote_repo.cd do
+        shutup do
+          system "git", "init"
+          system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
+        end
+        touch "README"
+        git_commit_all
+        touch "LICENSE"
+        git_commit_all
+      end
+    end
+
+    @strategy.shutup!
+    assert_equal "c50c79b", @strategy.fetch_last_commit
+  ensure
+    remote_repo.rmtree if remote_repo.directory?
   end
 end
 
@@ -131,6 +168,11 @@ class DownloadStrategyDetectorTests < Homebrew::TestCase
   def test_detect_git_download_startegy
     @d = DownloadStrategyDetector.detect("git://example.com/foo.git")
     assert_equal GitDownloadStrategy, @d
+  end
+
+  def test_detect_github_git_download_strategy
+    @d = DownloadStrategyDetector.detect("https://github.com/homebrew/brew.git")
+    assert_equal GitHubGitDownloadStrategy, @d
   end
 
   def test_default_to_curl_strategy

@@ -1,13 +1,13 @@
 #:  * `gist-logs` [`--new-issue`|`-n`] <formula>:
-#:     Upload logs for a failed build of <formula> to a new Gist.
+#:    Upload logs for a failed build of <formula> to a new Gist.
 #:
-#:     <formula> is usually the name of the formula to install, but it can be specified
-#:     in several different ways. See [SPECIFYING FORMULAE][].
+#:    <formula> is usually the name of the formula to install, but it can be specified
+#:    in several different ways. See [SPECIFYING FORMULAE][].
 #:
-#:     If `--new-issue` is passed, automatically create a new issue in the appropriate
-#:     GitHub repository as well as creating the Gist.
+#:    If `--new-issue` is passed, automatically create a new issue in the appropriate
+#:    GitHub repository as well as creating the Gist.
 #:
-#:     If no logs are found, an error message is presented.
+#:    If no logs are found, an error message is presented.
 
 require "formula"
 require "system_config"
@@ -15,6 +15,8 @@ require "stringio"
 require "socket"
 
 module Homebrew
+  module_function
+
   def gistify_logs(f)
     files = load_logs(f.logs)
     build_time = f.logs.ctime
@@ -23,16 +25,16 @@ module Homebrew
     s = StringIO.new
     SystemConfig.dump_verbose_config s
     # Dummy summary file, asciibetically first, to control display title of gist
-    files["# #{f.name} - #{timestamp}.txt"] = { :content => brief_build_info(f) }
-    files["00.config.out"] = { :content => s.string }
-    files["00.doctor.out"] = { :content => `brew doctor 2>&1` }
+    files["# #{f.name} - #{timestamp}.txt"] = { content: brief_build_info(f) }
+    files["00.config.out"] = { content: s.string }
+    files["00.doctor.out"] = { content: `brew doctor 2>&1` }
     unless f.core_formula?
       tap = <<-EOS.undent
         Formula: #{f.name}
         Tap: #{f.tap}
         Path: #{f.path}
       EOS
-      files["00.tap.out"] = { :content => tap }
+      files["00.tap.out"] = { content: tap }
     end
 
     # Description formatted to work well as page title when viewing gist
@@ -93,8 +95,8 @@ module Homebrew
       contents = file.size? ? file.read : "empty log"
       # small enough to avoid GitHub "unicorn" page-load-timeout errors
       max_file_size = 1_000_000
-      contents = truncate_text_to_approximate_size(contents, max_file_size, :front_weight => 0.2)
-      logs[file.basename.to_s] = { :content => contents }
+      contents = truncate_text_to_approximate_size(contents, max_file_size, front_weight: 0.2)
+      logs[file.basename.to_s] = { content: contents }
     end if dir.exist?
     raise "No logs." if logs.empty?
     logs

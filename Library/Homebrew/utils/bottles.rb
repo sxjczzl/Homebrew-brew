@@ -5,7 +5,7 @@ module Utils
   class Bottles
     class << self
       def tag
-        @bottle_tag ||= "#{ENV["HOMEBREW_SYSTEM"]}-#{ENV["HOMEBREW_PROCESSOR"]}".downcase.to_sym
+        @bottle_tag ||= "#{ENV["HOMEBREW_SYSTEM"]}_#{ENV["HOMEBREW_PROCESSOR"]}".downcase.to_sym
       end
 
       def built_as?(f)
@@ -29,7 +29,9 @@ module Utils
       end
 
       def receipt_path(bottle_file)
-        Utils.popen_read("/usr/bin/tar", "-tzf", bottle_file, "*/*/INSTALL_RECEIPT.json").chomp
+        Utils.popen_read("tar", "-tzf", bottle_file).lines.map(&:chomp).find do |line|
+          line =~ %r{.+/.+/INSTALL_RECEIPT.json}
+        end
       end
 
       def resolve_formula_names(bottle_file)
@@ -54,7 +56,10 @@ module Utils
 
     class Bintray
       def self.package(formula_name)
-        formula_name.to_s.tr("+", "x")
+        package_name = formula_name.to_s.dup
+        package_name.tr!("+", "x")
+        package_name.sub!(/(.)@(\d)/, "\\1:\\2") # Handle foo@1.2 style formulae.
+        package_name
       end
 
       def self.repository(tap = nil)

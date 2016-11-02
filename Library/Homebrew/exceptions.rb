@@ -56,6 +56,8 @@ end
 
 class FormulaSpecificationError < StandardError; end
 
+class MethodDeprecatedError < StandardError; end
+
 class FormulaUnavailableError < RuntimeError
   attr_reader :name
   attr_accessor :dependent
@@ -292,6 +294,17 @@ class FormulaConflictError < RuntimeError
   end
 end
 
+class FormulaAmbiguousPythonError < RuntimeError
+  def initialize(formula)
+    super <<-EOS.undent
+      The version of python to use with the virtualenv in the `#{formula.full_name}` formula
+      cannot be guessed automatically. If the simultaneous use of python and python3
+      is intentional, please add `:using => "python"` or `:using => "python3"` to
+      `virtualenv_install_with_resources` to resolve the ambiguity manually.
+    EOS
+  end
+end
+
 class BuildError < RuntimeError
   attr_reader :formula, :env
 
@@ -307,7 +320,7 @@ class BuildError < RuntimeError
   end
 
   def fetch_issues
-    GitHub.issues_for_formula(formula.name, :tap => formula.tap)
+    GitHub.issues_for_formula(formula.name, tap: formula.tap)
   rescue GitHub::RateLimitExceededError => e
     opoo e.message
     []
@@ -316,7 +329,7 @@ class BuildError < RuntimeError
   def dump
     if !ARGV.verbose?
       puts
-      puts "#{Tty.red}READ THIS#{Tty.reset}: #{Tty.em}#{OS::ISSUES_URL}#{Tty.reset}"
+      puts Formatter.error(Formatter.url(OS::ISSUES_URL), label: "READ THIS")
       if formula.tap
         case formula.tap.name
         when "homebrew/boneyard"
@@ -325,7 +338,7 @@ class BuildError < RuntimeError
         else
           if issues_url = formula.tap.issues_url
             puts "If reporting this issue please do so at (not Homebrew/brew):"
-            puts "  #{issues_url}"
+            puts "  #{Formatter.url(issues_url)}"
           end
         end
       end
@@ -348,14 +361,14 @@ class BuildError < RuntimeError
       end
     end
     puts
-    if RUBY_VERSION >= "1.8.7" && issues && issues.any?
+    if issues && !issues.empty?
       puts "These open issues may also help:"
       puts issues.map { |i| "#{i["title"]} #{i["html_url"]}" }.join("\n")
     end
 
     require "diagnostic"
-    unsupported_osx = Homebrew::Diagnostic::Checks.new.check_for_unsupported_osx
-    opoo unsupported_osx if unsupported_osx
+    unsupported_macos = Homebrew::Diagnostic::Checks.new.check_for_unsupported_macos
+    opoo unsupported_macos if unsupported_macos
   end
 end
 
@@ -372,36 +385,11 @@ class BuildToolsError < RuntimeError
       package_text = "a binary package"
     end
 
-    if MacOS.version >= "10.10"
-      xcode_text = <<-EOS.undent
-        To continue, you must install Xcode from the App Store,
-        or the CLT by running:
-          xcode-select --install
-      EOS
-    elsif MacOS.version == "10.9"
-      xcode_text = <<-EOS.undent
-        To continue, you must install Xcode from:
-          https://developer.apple.com/downloads/
-        or the CLT by running:
-          xcode-select --install
-      EOS
-    elsif MacOS.version >= "10.7"
-      xcode_text = <<-EOS.undent
-        To continue, you must install Xcode or the CLT from:
-          https://developer.apple.com/downloads/
-      EOS
-    else
-      xcode_text = <<-EOS.undent
-        To continue, you must install Xcode from:
-          https://developer.apple.com/xcode/downloads/
-      EOS
-    end
-
     super <<-EOS.undent
       The following #{formula_text}:
         #{formulae.join(", ")}
       cannot be installed as #{package_text} and must be built from source.
-      #{xcode_text}
+      #{DevelopmentTools.installation_instructions}
     EOS
   end
 end
@@ -419,36 +407,12 @@ class BuildFlagsError < RuntimeError
       require_text = "requires"
     end
 
-    if MacOS.version >= "10.10"
-      xcode_text = <<-EOS.undent
-        or install Xcode from the App Store, or the CLT by running:
-          xcode-select --install
-      EOS
-    elsif MacOS.version == "10.9"
-      xcode_text = <<-EOS.undent
-        or install Xcode from:
-          https://developer.apple.com/downloads/
-        or the CLT by running:
-          xcode-select --install
-      EOS
-    elsif MacOS.version >= "10.7"
-      xcode_text = <<-EOS.undent
-        or install Xcode or the CLT from:
-          https://developer.apple.com/downloads/
-      EOS
-    else
-      xcode_text = <<-EOS.undent
-        or install Xcode from:
-          https://developer.apple.com/xcode/downloads/
-      EOS
-    end
-
     super <<-EOS.undent
       The following #{flag_text}:
         #{flags.join(", ")}
       #{require_text} building tools, but none are installed.
-      Either remove the #{flag_text} to attempt bottle installation,
-      #{xcode_text}
+      #{DevelopmentTools.installation_instructions}
+      Alternatively, remove the #{flag_text} to attempt bottle installation.
     EOS
   end
 end
@@ -457,23 +421,10 @@ end
 # the compilers available on the user's system
 class CompilerSelectionError < RuntimeError
   def initialize(formula)
-    if MacOS.version > :tiger
-      super <<-EOS.undent
-        #{formula.full_name} cannot be built with any available compilers.
-        To install this formula, you may need to:
-          brew install gcc
-        EOS
-    # Tiger doesn't ship with apple-gcc42, and this is required to build
-    # some software that doesn't build properly with FSF GCC.
-    else
-      super <<-EOS.undent
-        #{formula.full_name} cannot be built with any available compilers.
-        To install this formula, you may need to either:
-          brew install apple-gcc42
-        or:
-          brew install gcc
-        EOS
-    end
+    super <<-EOS.undent
+      #{formula.full_name} cannot be built with any available compilers.
+      #{DevelopmentTools.custom_installation_instructions}
+    EOS
   end
 end
 
@@ -542,7 +493,7 @@ class DuplicateResourceError < ArgumentError
 end
 
 # raised when a single patch file is not found and apply hasn't been specified
-class MissingApplyError < RuntimeError ; end
+class MissingApplyError < RuntimeError; end
 
 class BottleVersionMismatchError < RuntimeError
   def initialize(bottle_file, bottle_version, formula, formula_version)

@@ -1,12 +1,12 @@
-# Mirrors the stable URL for a formula on Bintray.
-#
-# Usage: brew mirror <formula> [<formula> ...]
+#: @hide_from_man_page
+#:  * `mirror` [`--test`] <formula-name> [<formula-name> ...]:
+#:    Reuploads the stable URL for a formula to Bintray to use it as a mirror.
 
 module Homebrew
+  module_function
+
   def mirror
-    if ARGV.named.empty?
-      odie "This command requires at least formula argument!"
-    end
+    odie "This command requires at least formula argument!" if ARGV.named.empty?
 
     bintray_user = ENV["BINTRAY_USER"]
     bintray_key = ENV["BINTRAY_KEY"]

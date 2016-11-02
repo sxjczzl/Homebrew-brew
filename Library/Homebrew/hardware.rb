@@ -9,10 +9,10 @@ module Hardware
 
     class << self
       OPTIMIZATION_FLAGS = {
-        :penryn => "-march=core2 -msse4.1",
-        :core2 => "-march=core2",
-        :core => "-march=prescott",
-        :dunno => "",
+        penryn: "-march=core2 -msse4.1",
+        core2: "-march=core2",
+        core: "-march=prescott",
+        dunno: "",
       }.freeze
 
       def optimization_flags
@@ -28,7 +28,11 @@ module Hardware
       end
 
       def type
-        :dunno
+        case RUBY_PLATFORM
+        when /x86_64/, /i\d86/ then :intel
+        when /ppc\d+/ then :ppc
+        else :dunno
+        end
       end
 
       def family
@@ -40,7 +44,14 @@ module Hardware
       end
 
       def bits
-        64
+        case RUBY_PLATFORM
+        when /x86_64/, /ppc64/ then 64
+        when /i\d86/, /ppc/ then 32
+        end
+      end
+
+      def sse4?
+        RUBY_PLATFORM.to_s.include?("x86_64")
       end
 
       def is_32_bit?
@@ -57,6 +68,10 @@ module Hardware
 
       def ppc?
         type == :ppc
+      end
+
+      def arm?
+        type == :arm
       end
 
       def features

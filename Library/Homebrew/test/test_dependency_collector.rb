@@ -7,7 +7,7 @@ class DependencyCollectorTests < Homebrew::TestCase
   end
 
   def find_requirement(klass)
-    @d.requirements.find { |req| klass === req }
+    @d.requirements.find { |req| req.is_a? klass }
   end
 
   def setup
@@ -48,8 +48,8 @@ class DependencyCollectorTests < Homebrew::TestCase
   end
 
   def test_requirement_tags
-    @d.add :x11 => "2.5.1"
-    @d.add :xcode => :build
+    @d.add x11: "2.5.1"
+    @d.add xcode: :build
     assert_empty find_requirement(X11Requirement).tags
     assert_predicate find_requirement(XcodeRequirement), :build?
   end
@@ -60,30 +60,25 @@ class DependencyCollectorTests < Homebrew::TestCase
   end
 
   def test_x11_min_version
-    @d.add :x11 => "2.5.1"
+    @d.add x11: "2.5.1"
     assert_equal "2.5.1", find_requirement(X11Requirement).min_version.to_s
   end
 
   def test_x11_tag
-    @d.add :x11 => :optional
+    @d.add x11: :optional
     assert_predicate find_requirement(X11Requirement), :optional?
   end
 
   def test_x11_min_version_and_tag
-    @d.add :x11 => ["2.5.1", :optional]
+    @d.add x11: ["2.5.1", :optional]
     dep = find_requirement(X11Requirement)
     assert_equal "2.5.1", dep.min_version.to_s
     assert_predicate dep, :optional?
   end
 
-  def test_ld64_dep_pre_leopard
-    MacOS.stubs(:version).returns(MacOS::Version.new("10.4"))
-    assert_equal LD64Dependency.new, @d.build(:ld64)
-  end
-
-  def test_ld64_dep_leopard_or_newer
-    MacOS.stubs(:version).returns(MacOS::Version.new("10.5"))
-    assert_nil @d.build(:ld64)
+  def test_ant_dep
+    @d.add ant: :build
+    assert_equal find_dependency("ant"), Dependency.new("ant", [:build])
   end
 
   def test_raises_typeerror_for_unknown_classes
@@ -117,12 +112,6 @@ class DependencyCollectorTests < Homebrew::TestCase
     resource = Resource.new
     resource.url("http://example.com/foo.tar.gz")
     assert_nil @d.add(resource)
-  end
-
-  def test_resource_dep_xz_url
-    resource = Resource.new
-    resource.url("http://example.com/foo.tar.xz")
-    assert_equal Dependency.new("xz", [:build]), @d.add(resource)
   end
 
   def test_resource_dep_lz_url

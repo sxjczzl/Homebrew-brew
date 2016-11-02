@@ -1,11 +1,15 @@
 require "testing_env"
 require "utils"
 require "tempfile"
+require "utils/shell"
 
 class TtyTests < Homebrew::TestCase
   def test_strip_ansi
-    assert_equal "hello",
-      Tty.strip_ansi("\033\[36;7mhello\033\[0m")
+    assert_equal "hello", Tty.strip_ansi("\033\[36;7mhello\033\[0m")
+  end
+
+  def test_width
+    assert_kind_of Integer, Tty.width
   end
 
   def test_truncate
@@ -20,15 +24,26 @@ class TtyTests < Homebrew::TestCase
 
   def test_no_tty_formatting
     $stdout.stubs(:tty?).returns false
-    assert_nil Tty.blue
-    assert_nil Tty.white
-    assert_nil Tty.red
-    assert_nil Tty.green
-    assert_nil Tty.gray
-    assert_nil Tty.yellow
-    assert_nil Tty.reset
-    assert_nil Tty.em
-    assert_nil Tty.highlight
+    assert_equal "", Tty.to_s
+    assert_equal "", Tty.red.to_s
+    assert_equal "", Tty.green.to_s
+    assert_equal "", Tty.yellow.to_s
+    assert_equal "", Tty.blue.to_s
+    assert_equal "", Tty.magenta.to_s
+    assert_equal "", Tty.cyan.to_s
+    assert_equal "", Tty.default.to_s
+  end
+
+  def test_formatting
+    $stdout.stubs(:tty?).returns(true)
+    assert_equal "",         Tty.to_s
+    assert_equal "\033[31m", Tty.red.to_s
+    assert_equal "\033[32m", Tty.green.to_s
+    assert_equal "\033[33m", Tty.yellow.to_s
+    assert_equal "\033[34m", Tty.blue.to_s
+    assert_equal "\033[35m", Tty.magenta.to_s
+    assert_equal "\033[36m", Tty.cyan.to_s
+    assert_equal "\033[39m", Tty.default.to_s
   end
 end
 
@@ -45,7 +60,7 @@ class UtilTests < Homebrew::TestCase
 
   def test_ofail
     shutup { ofail "foo" }
-    assert Homebrew.failed
+    assert Homebrew.failed?
   ensure
     Homebrew.failed = false
   end
@@ -78,6 +93,14 @@ class UtilTests < Homebrew::TestCase
     end
   end
 
+  def test_with_custom_locale
+    ENV["LC_ALL"] = "en_US.UTF-8"
+    with_custom_locale("C") do
+      assert_equal "C", ENV["LC_ALL"]
+    end
+    assert_equal "en_US.UTF-8", ENV["LC_ALL"]
+  end
+
   def test_run_as_not_developer
     ENV["HOMEBREW_DEVELOPER"] = "foo"
     run_as_not_developer do
@@ -87,8 +110,12 @@ class UtilTests < Homebrew::TestCase
   end
 
   def test_put_columns_empty
-    # Issue #217 put columns with no results fails.
-    assert_silent { puts_columns [] }
+    out, err = capture_io do
+      puts Formatter.columns([])
+    end
+
+    assert_equal out, "\n"
+    assert_equal err, ""
   end
 
   def test_which
@@ -149,25 +176,25 @@ class UtilTests < Homebrew::TestCase
 
   def test_shell_profile
     ENV["SHELL"] = "/bin/sh"
-    assert_equal "~/.bash_profile", shell_profile
+    assert_equal "~/.bash_profile", Utils::Shell.shell_profile
     ENV["SHELL"] = "/bin/bash"
-    assert_equal "~/.bash_profile", shell_profile
+    assert_equal "~/.bash_profile", Utils::Shell.shell_profile
     ENV["SHELL"] = "/bin/another_shell"
-    assert_equal "~/.bash_profile", shell_profile
+    assert_equal "~/.bash_profile", Utils::Shell.shell_profile
     ENV["SHELL"] = "/bin/zsh"
-    assert_equal "~/.zshrc", shell_profile
+    assert_equal "~/.zshrc", Utils::Shell.shell_profile
     ENV["SHELL"] = "/bin/ksh"
-    assert_equal "~/.kshrc", shell_profile
+    assert_equal "~/.kshrc", Utils::Shell.shell_profile
   end
 
   def test_popen_read
-    out = Utils.popen_read("/bin/sh", "-c", "echo success").chomp
+    out = Utils.popen_read("sh", "-c", "echo success").chomp
     assert_equal "success", out
     assert_predicate $?, :success?
   end
 
   def test_popen_read_with_block
-    out = Utils.popen_read("/bin/sh", "-c", "echo success") do |pipe|
+    out = Utils.popen_read("sh", "-c", "echo success") do |pipe|
       pipe.read.chomp
     end
     assert_equal "success", out
@@ -175,7 +202,7 @@ class UtilTests < Homebrew::TestCase
   end
 
   def test_popen_write_with_block
-    Utils.popen_write("/usr/bin/grep", "-q", "success") do |pipe|
+    Utils.popen_write("grep", "-q", "success") do |pipe|
       pipe.write("success\n")
     end
     assert_predicate $?, :success?
@@ -218,9 +245,31 @@ class UtilTests < Homebrew::TestCase
     s = truncate_text_to_approximate_size(long_s, n)
     assert_equal n, s.length
     assert_match(/^x+#{Regexp.escape(glue)}x+$/, s)
-    s = truncate_text_to_approximate_size(long_s, n, :front_weight => 0.0)
+    s = truncate_text_to_approximate_size(long_s, n, front_weight: 0.0)
     assert_equal glue + ("x" * (n - glue.length)), s
-    s = truncate_text_to_approximate_size(long_s, n, :front_weight => 1.0)
+    s = truncate_text_to_approximate_size(long_s, n, front_weight: 1.0)
     assert_equal(("x" * (n - glue.length)) + glue, s)
+  end
+
+  def test_odeprecated
+    ARGV.stubs(:homebrew_developer?).returns false
+    e = assert_raises(MethodDeprecatedError) do
+      odeprecated("method", "replacement",
+        caller: ["#{HOMEBREW_LIBRARY}/Taps/homebrew/homebrew-core/"],
+        die: true)
+    end
+    assert_match "method", e.message
+    assert_match "replacement", e.message
+    assert_match "homebrew/homebrew-core", e.message
+    assert_match "homebrew/core", e.message
+  end
+
+  def test_bottles_bintray
+    assert_equal "openssl:1.1", Utils::Bottles::Bintray.package("openssl@1.1")
+    assert_equal "gtkx", Utils::Bottles::Bintray.package("gtk+")
+    assert_equal "llvm", Utils::Bottles::Bintray.package("llvm")
+
+    tap = Tap.new("homebrew", "bintray-test")
+    assert_equal "bottles-bintray-test", Utils::Bottles::Bintray.repository(tap)
   end
 end

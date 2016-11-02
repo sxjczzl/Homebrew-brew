@@ -20,7 +20,7 @@ module DiskUsageExtension
     out = ""
     compute_disk_usage
     out << "#{number_readable(@file_count)} files, " if @file_count > 1
-    out << "#{disk_usage_readable(@disk_usage)}"
+    out << disk_usage_readable(@disk_usage).to_s
   end
 
   private
@@ -71,13 +71,13 @@ class Pathname
       when Array
         if src.empty?
           opoo "tried to install empty array to #{self}"
-          return
+          break
         end
         src.each { |s| install_p(s, File.basename(s)) }
       when Hash
         if src.empty?
           opoo "tried to install empty hash to #{self}"
-          return
+          break
         end
         src.each { |s, new_basename| install_p(s, new_basename) }
       else
@@ -132,7 +132,7 @@ class Pathname
 
   if method_defined?(:write)
     # @private
-    alias_method :old_write, :write
+    alias old_write write
   end
 
   # we assume this pathname object is a file obviously
@@ -153,7 +153,7 @@ class Pathname
   end unless method_defined?(:binwrite)
 
   def binread(*open_args)
-    open("rb", *open_args) { |f| f.read }
+    open("rb", *open_args, &:read)
   end unless method_defined?(:binread)
 
   # NOTE always overwrites
@@ -196,7 +196,7 @@ class Pathname
 
   # @private
   def cp_path_sub(pattern, replacement)
-    raise "#{self} does not exist" unless self.exist?
+    raise "#{self} does not exist" unless exist?
 
     dst = sub(pattern, replacement)
 
@@ -212,14 +212,14 @@ class Pathname
   end
 
   # @private
-  alias_method :extname_old, :extname
+  alias extname_old extname
 
   # extended to support common double extensions
   def extname(path = to_s)
-    BOTTLE_EXTNAME_RX.match(path)
-    return $1 if $1
-    /(\.(tar|cpio|pax)\.(gz|bz2|lz|xz|Z))$/.match(path)
-    return $1 if $1
+    bottle_ext = path[BOTTLE_EXTNAME_RX, 1]
+    return bottle_ext if bottle_ext
+    archive_ext = path[/(\.(tar|cpio|pax)\.(gz|bz2|lz|xz|Z))$/, 1]
+    return archive_ext if archive_ext
     File.extname(path)
   end
 
@@ -295,7 +295,7 @@ class Pathname
 
   # @private
   def text_executable?
-    /^#!\s*\S+/ === open("r") { |f| f.read(1024) }
+    /^#!\s*\S+/ =~ open("r") { |f| f.read(1024) }
   end
 
   # @private
@@ -322,7 +322,7 @@ class Pathname
   end
 
   # FIXME: eliminate the places where we rely on this method
-  alias_method :to_str, :to_s unless method_defined?(:to_str)
+  alias to_str to_s unless method_defined?(:to_str)
 
   def cd
     Dir.chdir(self) { yield }
@@ -334,7 +334,7 @@ class Pathname
 
   # @private
   def resolved_path
-    self.symlink? ? dirname+readlink : self
+    symlink? ? dirname+readlink : self
   end
 
   # @private
@@ -445,40 +445,8 @@ class Pathname
     end
   end
 
-  # We redefine these private methods in order to add the /o modifier to
-  # the Regexp literals, which forces string interpolation to happen only
-  # once instead of each time the method is called. This is fixed in 1.9+.
-  if RUBY_VERSION <= "1.8.7"
-    # @private
-    alias_method :old_chop_basename, :chop_basename
-
-    def chop_basename(path)
-      base = File.basename(path)
-      if /\A#{Pathname::SEPARATOR_PAT}?\z/o =~ base
-        return nil
-      else
-        return path[0, path.rindex(base)], base
-      end
-    end
-    private :chop_basename
-
-    # @private
-    alias_method :old_prepend_prefix, :prepend_prefix
-
-    def prepend_prefix(prefix, relpath)
-      if relpath.empty?
-        File.dirname(prefix)
-      elsif /#{SEPARATOR_PAT}/o =~ prefix
-        prefix = File.dirname(prefix)
-        prefix = File.join(prefix, "") if File.basename(prefix + "a") != "a"
-        prefix + relpath
-      else
-        prefix + relpath
-      end
-    end
-    private :prepend_prefix
-  elsif RUBY_VERSION == "2.0.0"
-    # https://bugs.ruby-lang.org/issues/9915
+  # https://bugs.ruby-lang.org/issues/9915
+  if RUBY_VERSION == "2.0.0"
     prepend Module.new {
       def inspect
         super.force_encoding(@path.encoding)

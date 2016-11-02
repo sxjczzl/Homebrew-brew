@@ -4,8 +4,8 @@ class FormulaVersions
   IGNORED_EXCEPTIONS = [
     ArgumentError, NameError, SyntaxError, TypeError,
     FormulaSpecificationError, FormulaValidationError,
-    ErrorDuringExecution, LoadError
-  ]
+    ErrorDuringExecution, LoadError, MethodDeprecatedError
+  ].freeze
 
   attr_reader :name, :path, :repository, :entry_name
 
@@ -34,6 +34,7 @@ class FormulaVersions
     contents = file_contents_at_revision(rev)
 
     begin
+      Homebrew.raise_deprecation_exceptions = true
       nostdout { yield Formulary.from_contents(name, path, contents) }
     rescue *IGNORED_EXCEPTIONS => e
       # We rescue these so that we can skip bad versions and
@@ -41,6 +42,8 @@ class FormulaVersions
       ohai "#{e} in #{name} at revision #{rev}", e.backtrace if ARGV.debug?
     rescue FormulaUnavailableError
       # Suppress this error
+    ensure
+      Homebrew.raise_deprecation_exceptions = false
     end
   end
 
@@ -49,22 +52,28 @@ class FormulaVersions
     rev_list(branch) do |rev|
       formula_at_revision(rev) do |f|
         bottle = f.bottle_specification
-        unless bottle.checksums.empty?
-          map[f.pkg_version] << bottle.revision
-        end
+        map[f.pkg_version] << bottle.rebuild unless bottle.checksums.empty?
       end
     end
     map
   end
 
-  def revision_map(branch)
-    map = Hash.new { |h, k| h[k] = [] }
+  def version_attributes_map(attributes, branch)
+    attributes_map = {}
+    return attributes_map if attributes.empty?
+    attributes.each do |attribute|
+      attributes_map[attribute] = Hash.new { |h, k| h[k] = [] }
+    end
+
     rev_list(branch) do |rev|
       formula_at_revision(rev) do |f|
-        map[f.stable.version] << f.revision if f.stable
-        map[f.devel.version] << f.revision if f.devel
+        attributes.each do |attribute|
+          map = attributes_map[attribute]
+          map[f.stable.version] << f.send(attribute) if f.stable
+          map[f.devel.version] << f.send(attribute) if f.devel
+        end
       end
     end
-    map
+    attributes_map
   end
 end

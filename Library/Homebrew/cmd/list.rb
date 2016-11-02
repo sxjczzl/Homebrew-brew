@@ -1,6 +1,7 @@
 #:  * `list`, `ls` [`--full-name`]:
-#:    List all installed formulae. If `--full-name` is passed, print formulae with
-#:    full-qualified names.
+#:    List all installed formulae. If `--full-name` is passed, print formulae
+#:    with fully-qualified names. If `--full-name` is not passed, any other
+#:    options (e.g. `-t`) are passed to `ls` which produces the actual output.
 #:
 #:  * `list`, `ls` `--unbrewed`:
 #:    List all files in the Homebrew prefix not installed by Homebrew.
@@ -21,6 +22,8 @@ require "metafiles"
 require "formula"
 
 module Homebrew
+  module_function
+
   def list
     # Use of exec means we don't explicitly exit
     list_unbrewed if ARGV.flag? "--unbrewed"
@@ -28,7 +31,7 @@ module Homebrew
     # Unbrewed uses the PREFIX, which will exist
     # Things below use the CELLAR, which doesn't until the first formula is installed.
     unless HOMEBREW_CELLAR.exist?
-      raise NoSuchKegError.new(ARGV.named.first) if ARGV.named.any?
+      raise NoSuchKegError, ARGV.named.first unless ARGV.named.empty?
       return
     end
 
@@ -45,7 +48,8 @@ module Homebrew
             a <=> b
           end
         end
-        puts_columns full_names
+        return if full_names.empty?
+        puts Formatter.columns(full_names)
       else
         ENV["CLICOLOR"] = nil
         exec "ls", *ARGV.options_only << HOMEBREW_CELLAR
@@ -57,12 +61,12 @@ module Homebrew
     end
   end
 
-  private
-
-  UNBREWED_EXCLUDE_FILES = %w[.DS_Store]
+  UNBREWED_EXCLUDE_FILES = %w[.DS_Store].freeze
   UNBREWED_EXCLUDE_PATHS = %w[
     .github/*
     bin/brew
+    completions/zsh/_brew
+    docs/*
     lib/gdk-pixbuf-2.0/*
     lib/gio/*
     lib/node_modules/*
@@ -72,14 +76,12 @@ module Homebrew
     lib/ruby/gems/[12].*
     lib/ruby/site_ruby/[12].*
     lib/ruby/vendor_ruby/[12].*
+    manpages/brew.1
     share/pypy/*
     share/pypy3/*
-    share/doc/homebrew/*
     share/info/dir
-    share/man/man1/brew.1
     share/man/whatis
-    share/zsh/site-functions/_brew
-  ]
+  ].freeze
 
   def list_unbrewed
     dirs  = HOMEBREW_PREFIX.subdirs.map { |dir| dir.basename.to_s }
@@ -105,18 +107,22 @@ module Homebrew
     names = if ARGV.named.empty?
       Formula.racks
     else
-      ARGV.named.map { |n| HOMEBREW_CELLAR+n }.select(&:exist?)
+      racks = ARGV.named.map { |n| HOMEBREW_CELLAR+n }
+      racks.select do |rack|
+        Homebrew.failed = true unless rack.exist?
+        rack.exist?
+      end
     end
     if ARGV.include? "--pinned"
       pinned_versions = {}
       names.each do |d|
-        keg_pin = (HOMEBREW_LIBRARY/"PinnedKegs"/d.basename.to_s)
+        keg_pin = (HOMEBREW_PINNED_KEGS/d.basename.to_s)
         if keg_pin.exist? || keg_pin.symlink?
           pinned_versions[d] = keg_pin.readlink.basename.to_s
         end
       end
       pinned_versions.each do |d, version|
-        puts "#{d.basename}".concat(ARGV.include?("--versions") ? " #{version}" : "")
+        puts d.basename.to_s.concat(ARGV.include?("--versions") ? " #{version}" : "")
       end
     else # --versions without --pinned
       names.each do |d|
@@ -139,6 +145,8 @@ class PrettyListing
           # dylibs have multiple symlinks and we don't care about them
           (pnn.extname == ".dylib" || pnn.extname == ".pc") && !pnn.symlink?
         end
+      when ".brew"
+        # Ignore .brew
       else
         if pn.directory?
           if pn.symlink?

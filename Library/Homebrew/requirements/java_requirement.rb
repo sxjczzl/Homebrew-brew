@@ -5,11 +5,11 @@ class JavaRequirement < Requirement
   cask "java"
   download "http://www.oracle.com/technetwork/java/javase/downloads/index.html"
 
-  satisfy :build_env => false do
+  satisfy build_env: false do
     next false unless File.executable? "/usr/libexec/java_home"
 
     args = %w[--failfast]
-    args << "--version" << "#{@version}" if @version
+    args << "--version" << @version.to_s if @version
     @java_home = Utils.popen_read("/usr/libexec/java_home", *args).chomp
     $?.success?
   end
@@ -27,7 +27,7 @@ class JavaRequirement < Requirement
   end
 
   def initialize(tags)
-    @version = tags.shift if /(\d\.)+\d/ === tags.first
+    @version = tags.shift if /(\d\.)+\d/ =~ tags.first
     super
   end
 
@@ -41,5 +41,20 @@ class JavaRequirement < Requirement
 
   def inspect
     "#<#{self.class.name}: #{name.inspect} #{tags.inspect} version=#{@version.inspect}>"
+  end
+
+  def display_s
+    if @version
+      if @version[-1] == "+"
+        op = ">="
+        version = @version[0, @version.length-1]
+      else
+        op = "="
+        version = @version
+      end
+      "#{name} #{op} #{version}"
+    else
+      name
+    end
   end
 end

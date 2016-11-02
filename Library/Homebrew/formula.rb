@@ -3,6 +3,7 @@ require "formula_lock"
 require "formula_pin"
 require "hardware"
 require "utils/bottles"
+require "utils/shell"
 require "build_environment"
 require "build_options"
 require "formulary"
@@ -25,7 +26,7 @@ require "migrator"
 # @see SharedEnvExtension
 # @see FileUtils
 # @see Pathname
-# @see http://www.rubydoc.info/github/Homebrew/brew/file/share/doc/homebrew/Formula-Cookbook.md Formula Cookbook
+# @see http://www.rubydoc.info/github/Homebrew/brew/file/docs/Formula-Cookbook.md Formula Cookbook
 # @see https://github.com/styleguide/ruby Ruby Style Guide
 #
 # <pre>class Wget < Formula
@@ -41,6 +42,7 @@ require "migrator"
 class Formula
   include FileUtils
   include Utils::Inreplace
+  include Utils::Shell
   extend Enumerable
 
   # @!method inreplace(paths, before = nil, after = nil)
@@ -58,10 +60,23 @@ class Formula
   # e.g. `this-formula`
   attr_reader :name
 
+  # The path to the alias that was used to identify this {Formula}.
+  # e.g. `/usr/local/Library/Taps/homebrew/homebrew-core/Aliases/another-name-for-this-formula`
+  attr_reader :alias_path
+
+  # The name of the alias that was used to identify this {Formula}.
+  # e.g. `another-name-for-this-formula`
+  attr_reader :alias_name
+
   # The fully-qualified name of this {Formula}.
   # For core formula it's the same as {#name}.
   # e.g. `homebrew/tap-name/this-formula`
   attr_reader :full_name
+
+  # The fully-qualified alias referring to this {Formula}.
+  # For core formula it's the same as {#alias_name}.
+  # e.g. `homebrew/tap-name/another-name-for-this-formula`
+  attr_reader :full_alias_name
 
   # The full path to this {Formula}.
   # e.g. `/usr/local/Library/Taps/homebrew/homebrew-core/Formula/this-formula.rb`
@@ -114,6 +129,9 @@ class Formula
   # @see .revision
   attr_reader :revision
 
+  # Used to change version schemes for packages
+  attr_reader :version_scheme
+
   # The current working directory during builds.
   # Will only be non-`nil` inside {#install}.
   attr_reader :buildpath
@@ -127,6 +145,11 @@ class Formula
   # @private
   attr_accessor :local_bottle_path
 
+  # When performing a build, test, or other loggable action, indicates which
+  # log file location to use.
+  # @private
+  attr_reader :active_log_type
+
   # The {BuildOptions} for this {Formula}. Lists the arguments passed and any
   # {#options} in the {Formula}. Note that these may differ at different times
   # during the installation of a {Formula}. This is annoying but the result of
@@ -134,26 +157,34 @@ class Formula
   # @return [BuildOptions]
   attr_accessor :build
 
+  # A {Boolean} indicating whether this formula should be considered outdated
+  # if the target of the alias it was installed with has since changed.
+  # Defaults to true.
+  # @return [Boolean]
+  attr_accessor :follow_installed_alias
+  alias follow_installed_alias? follow_installed_alias
+
   # @private
-  def initialize(name, path, spec)
+  def initialize(name, path, spec, alias_path: nil)
     @name = name
     @path = path
+    @alias_path = alias_path
+    @alias_name = File.basename(alias_path) if alias_path
     @revision = self.class.revision || 0
+    @version_scheme = self.class.version_scheme || 0
 
-    if path == Formulary.core_path(name)
-      @tap = CoreTap.instance
-      @full_name = name
+    @tap = if path == Formulary.core_path(name)
+      CoreTap.instance
     elsif path.to_s =~ HOMEBREW_TAP_PATH_REGEX
-      @tap = Tap.fetch($1, $2)
-      @full_name = "#{@tap}/#{name}"
-    else
-      @tap = nil
-      @full_name = name
+      Tap.fetch($1, $2)
     end
 
-    set_spec :stable
-    set_spec :devel
-    set_spec :head
+    @full_name = full_name_with_optional_tap(name)
+    @full_alias_name = full_name_with_optional_tap(@alias_name)
+
+    spec_eval :stable
+    spec_eval :devel
+    spec_eval :head
 
     @active_spec = determine_active_spec(spec)
     @active_spec_sym = if head?
@@ -166,10 +197,11 @@ class Formula
     validate_attributes!
     @build = active_spec.build
     @pin = FormulaPin.new(self)
+    @follow_installed_alias = true
   end
 
   # @private
-  def set_active_spec(spec_sym)
+  def active_spec=(spec_sym)
     spec = send(spec_sym)
     raise FormulaSpecificationError, "#{spec_sym} spec is not available for #{full_name}" unless spec
     @active_spec = spec
@@ -180,12 +212,21 @@ class Formula
 
   private
 
-  def set_spec(name)
-    spec = self.class.send(name)
-    if spec.url
-      spec.owner = self
-      instance_variable_set("@#{name}", spec)
+  # Allow full name logic to be re-used between names, aliases,
+  # and installed aliases.
+  def full_name_with_optional_tap(name)
+    if name.nil? || @tap.nil? || @tap.core_tap?
+      name
+    else
+      "#{@tap}/#{name}"
     end
+  end
+
+  def spec_eval(name)
+    spec = self.class.send(name)
+    return unless spec.url
+    spec.owner = self
+    instance_variable_set("@#{name}", spec)
   end
 
   def determine_active_spec(requested)
@@ -204,12 +245,52 @@ class Formula
     end
 
     val = version.respond_to?(:to_str) ? version.to_str : version
-    if val.nil? || val.empty? || val =~ /\s/
-      raise FormulaValidationError.new(full_name, :version, val)
-    end
+    return unless val.nil? || val.empty? || val =~ /\s/
+    raise FormulaValidationError.new(full_name, :version, val)
   end
 
   public
+
+  # The alias path that was used to install this formula, if present.
+  # Can differ from alias_path, which is the alias used to find the formula,
+  # and is specified to this instance.
+  def installed_alias_path
+    path = build.source["path"] if build.is_a?(Tab)
+    path if path =~ %r{#{HOMEBREW_TAP_DIR_REGEX}/Aliases}
+  end
+
+  def installed_alias_name
+    File.basename(installed_alias_path) if installed_alias_path
+  end
+
+  def full_installed_alias_name
+    full_name_with_optional_tap(installed_alias_name)
+  end
+
+  # The path that was specified to find this formula.
+  def specified_path
+    alias_path || path
+  end
+
+  # The name specified to find this formula.
+  def specified_name
+    alias_name || name
+  end
+
+  # The name (including tap) specified to find this formula.
+  def full_specified_name
+    full_alias_name || full_name
+  end
+
+  # The name specified to install this formula.
+  def installed_specified_name
+    installed_alias_name || name
+  end
+
+  # The name (including tap) specified to install this formula.
+  def full_installed_specified_name
+    full_installed_alias_name || full_name
+  end
 
   # Is the currently active {SoftwareSpec} a {#stable} build?
   # @private
@@ -287,6 +368,14 @@ class Formula
     active_spec.version
   end
 
+  def update_head_version
+    return unless head?
+    return unless head.downloader.is_a?(VCSDownloadStrategy)
+    return unless head.downloader.cached_location.exist?
+
+    head.version.update_commit(head.downloader.last_commit)
+  end
+
   # The {PkgVersion} for this formula with {version} and {#revision} information.
   def pkg_version
     PkgVersion.new(version, revision)
@@ -304,9 +393,7 @@ class Formula
   def oldname
     @oldname ||= if tap
       formula_renames = tap.formula_renames
-      if formula_renames.value?(name)
-        formula_renames.to_a.rassoc(name).first
-      end
+      formula_renames.to_a.rassoc(name).first if formula_renames.value?(name)
     end
   end
 
@@ -388,7 +475,7 @@ class Formula
   # exists and is not empty.
   # @private
   def installed?
-    (dir = installed_prefix).directory? && dir.children.length > 0
+    (dir = installed_prefix).directory? && !dir.children.empty?
   end
 
   # If at least one version of {Formula} is installed.
@@ -399,18 +486,51 @@ class Formula
   end
 
   # @private
-  # The `LinkedKegs` directory for this {Formula}.
+  # The link status symlink directory for this {Formula}.
   # You probably want {#opt_prefix} instead.
   def linked_keg
-    Pathname.new("#{HOMEBREW_LIBRARY}/LinkedKegs/#{name}")
+    HOMEBREW_LINKED_KEGS/name
+  end
+
+  def latest_head_version
+    head_versions = installed_prefixes.map do |pn|
+      pn_pkgversion = PkgVersion.parse(pn.basename.to_s)
+      pn_pkgversion if pn_pkgversion.head?
+    end.compact
+
+    head_versions.max_by do |pn_pkgversion|
+      [Tab.for_keg(prefix(pn_pkgversion)).source_modified_time, pn_pkgversion.revision]
+    end
+  end
+
+  def latest_head_prefix
+    head_version = latest_head_version
+    prefix(head_version) if head_version
+  end
+
+  def head_version_outdated?(version, options = {})
+    tab = Tab.for_keg(prefix(version))
+
+    return true if tab.version_scheme < version_scheme
+    return true if stable && tab.stable_version && tab.stable_version < stable.version
+    return true if devel && tab.devel_version && tab.devel_version < devel.version
+
+    if options[:fetch_head]
+      return false unless head && head.downloader.is_a?(VCSDownloadStrategy)
+      downloader = head.downloader
+      downloader.shutup! unless ARGV.verbose?
+      downloader.commit_outdated?(version.version.commit)
+    else
+      false
+    end
   end
 
   # The latest prefix for this formula. Checks for {#head}, then {#devel}
   # and then {#stable}'s {#prefix}
   # @private
   def installed_prefix
-    if head && (head_prefix = prefix(PkgVersion.new(head.version, revision))).directory?
-      head_prefix
+    if head && (head_version = latest_head_version) && !head_version_outdated?(head_version)
+      latest_head_prefix
     elsif devel && (devel_prefix = prefix(PkgVersion.new(devel.version, revision))).directory?
       devel_prefix
     elsif stable && (stable_prefix = prefix(PkgVersion.new(stable.version, revision))).directory?
@@ -440,13 +560,13 @@ class Formula
     prefix.parent
   end
 
-  # All of current installed prefix directories.
+  # All currently installed prefix directories.
   # @private
   def installed_prefixes
     rack.directory? ? rack.subdirs : []
   end
 
-  # All of current installed kegs.
+  # All currently installed kegs.
   # @private
   def installed_kegs
     installed_prefixes.map { |dir| Keg.new(dir) }
@@ -690,10 +810,28 @@ class Formula
     prefix+".bottle"
   end
 
-  # The directory where the formula's installation logs will be written.
+  # The directory where the formula's installation or test logs will be written.
   # @private
   def logs
     HOMEBREW_LOGS+name
+  end
+
+  # The prefix, if any, to use in filenames for logging current activity
+  def active_log_prefix
+    if active_log_type
+      "#{active_log_type}."
+    else
+      ""
+    end
+  end
+
+  # Runs a block with the given log type in effect for its duration
+  def with_logging(log_type)
+    old_log_type = @active_log_type
+    @active_log_type = log_type
+    yield
+  ensure
+    @active_log_type = old_log_type
   end
 
   # This method can be overridden to provide a plist.
@@ -721,7 +859,7 @@ class Formula
   #    <string>/dev/null</string>
   #  </plist>
   #  EOS
-  #end</pre>
+  # end</pre>
   def plist
     nil
   end
@@ -818,10 +956,20 @@ class Formula
 
   # @private
   def run_post_install
-    build, self.build = self.build, Tab.for_formula(self)
-    post_install
+    build = self.build
+    self.build = Tab.for_formula(self)
+    old_tmpdir = ENV["TMPDIR"]
+    old_temp = ENV["TEMP"]
+    old_tmp = ENV["TMP"]
+    ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
+    with_logging("post_install") do
+      post_install
+    end
   ensure
     self.build = build
+    ENV["TMPDIR"] = old_tmpdir
+    ENV["TEMP"] = old_temp
+    ENV["TMP"] = old_tmp
   end
 
   # Tell the user about any caveats regarding this package.
@@ -900,7 +1048,7 @@ class Formula
     self.class.link_overwrite_paths.any? do |p|
       p == to_check ||
         to_check.start_with?(p.chomp("/") + "/") ||
-        /^#{Regexp.escape(p).gsub('\*', ".*?")}$/ === to_check
+        to_check =~ /^#{Regexp.escape(p).gsub('\*', ".*?")}$/
     end
   end
 
@@ -915,10 +1063,9 @@ class Formula
 
   # @private
   def patch
-    unless patchlist.empty?
-      ohai "Patching"
-      patchlist.each(&:apply)
-    end
+    return if patchlist.empty?
+    ohai "Patching"
+    patchlist.each(&:apply)
   end
 
   # yields |self,staging| with current working directory set to the uncompressed tarball
@@ -944,10 +1091,11 @@ class Formula
   def lock
     @lock = FormulaLock.new(name)
     @lock.lock
-    if oldname && (oldname_rack = HOMEBREW_CELLAR/oldname).exist? && oldname_rack.resolved_path == rack
-      @oldname_lock = FormulaLock.new(oldname)
-      @oldname_lock.lock
-    end
+    return unless oldname
+    return unless (oldname_rack = HOMEBREW_CELLAR/oldname).exist?
+    return unless oldname_rack.resolved_path == rack
+    @oldname_lock = FormulaLock.new(oldname)
+    @oldname_lock.lock
   end
 
   # @private
@@ -968,25 +1116,88 @@ class Formula
   end
 
   # @private
-  def outdated_versions
-    @outdated_versions ||= begin
-      all_versions = []
+  def outdated_kegs(options = {})
+    @outdated_kegs ||= Hash.new do |cache, key|
+      raise Migrator::MigrationNeededError, self if migration_needed?
+      cache[key] = _outdated_kegs(key)
+    end
+    @outdated_kegs[options]
+  end
 
-      raise Migrator::MigrationNeededError.new(self) if migration_needed?
+  def _outdated_kegs(options = {})
+    all_kegs = []
 
-      installed_kegs.each do |keg|
-        version = keg.version
-        all_versions << version
-        return [] if pkg_version <= version
-      end
+    installed_kegs.each do |keg|
+      all_kegs << keg
+      version = keg.version
+      next if version.head?
 
-      all_versions.sort!
+      tab = Tab.for_keg(keg)
+      next if version_scheme > tab.version_scheme
+      next if version_scheme == tab.version_scheme && pkg_version > version
+
+      # don't consider this keg current if there's a newer formula available
+      next if follow_installed_alias? && new_formula_available?
+
+      return [] # this keg is the current version of the formula, so it's not outdated
+    end
+
+    # Even if this formula hasn't been installed, there may be installations
+    # of other formulae which used to be targets of the alias currently
+    # targetting this formula. These should be counted as outdated versions.
+    all_kegs.concat old_installed_formulae.flat_map(&:installed_kegs)
+
+    head_version = latest_head_version
+    if head_version && !head_version_outdated?(head_version, options)
+      []
+    else
+      all_kegs.sort_by(&:version)
     end
   end
 
+  def new_formula_available?
+    installed_alias_target_changed? && !latest_formula.installed?
+  end
+
+  def current_installed_alias_target
+    Formulary.factory(installed_alias_path) if installed_alias_path
+  end
+
+  # Has the target of the alias used to install this formula changed?
+  # Returns false if the formula wasn't installed with an alias.
+  def installed_alias_target_changed?
+    target = current_installed_alias_target
+    target && target.name != name
+  end
+
+  # Is this formula the target of an alias used to install an old formula?
+  def supersedes_an_installed_formula?
+    old_installed_formulae.any?
+  end
+
+  # Has the alias used to install the formula changed, or are different
+  # formulae already installed with this alias?
+  def alias_changed?
+    installed_alias_target_changed? || supersedes_an_installed_formula?
+  end
+
+  # If the alias has changed value, return the new formula.
+  # Otherwise, return self.
+  def latest_formula
+    installed_alias_target_changed? ? current_installed_alias_target : self
+  end
+
+  def old_installed_formulae
+    # If this formula isn't the current target of the alias,
+    # it doesn't make sense to say that other formulae are older versions of it
+    # because we don't know which came first.
+    return [] if alias_path.nil? || installed_alias_target_changed?
+    self.class.installed_with_alias_path(alias_path).reject { |f| f.name == name }
+  end
+
   # @private
-  def outdated?
-    outdated_versions.any?
+  def outdated?(options = {})
+    !outdated_kegs(options).empty?
   rescue Migrator::MigrationNeededError
     true
   end
@@ -1022,7 +1233,7 @@ class Formula
       name == other.name &&
       active_spec == other.active_spec
   end
-  alias_method :eql?, :==
+  alias eql? ==
 
   # @private
   def hash
@@ -1031,7 +1242,7 @@ class Formula
 
   # @private
   def <=>(other)
-    return unless Formula === other
+    return unless other.is_a?(Formula)
     name <=> other.name
   end
 
@@ -1051,7 +1262,7 @@ class Formula
   # Note: there isn't a std_autotools variant because autotools is a lot
   # less consistent and the standard parameters are more memorable.
   def std_cmake_args
-    %W[
+    args = %W[
       -DCMAKE_C_FLAGS_RELEASE=-DNDEBUG
       -DCMAKE_CXX_FLAGS_RELEASE=-DNDEBUG
       -DCMAKE_INSTALL_PREFIX=#{prefix}
@@ -1060,6 +1271,14 @@ class Formula
       -DCMAKE_VERBOSE_MAKEFILE=ON
       -Wno-dev
     ]
+
+    # Avoid false positives for clock_gettime support on 10.11.
+    # CMake cache entries for other weak symbols may be added here as needed.
+    if MacOS.version == "10.11" && MacOS::Xcode.installed? && MacOS::Xcode.version >= "8.0"
+      args << "-DHAVE_CLOCK_GETTIME:INTERNAL=0"
+    end
+
+    args
   end
 
   # an array of all core {Formula} names
@@ -1141,6 +1360,11 @@ class Formula
     end.compact
   end
 
+  def self.installed_with_alias_path(alias_path)
+    return [] if alias_path.nil?
+    installed.select { |f| f.installed_alias_path == alias_path }
+  end
+
   # an array of all alias files of core {Formula}
   # @private
   def self.core_alias_files
@@ -1201,10 +1425,9 @@ class Formula
 
   # @private
   def print_tap_action(options = {})
-    if tap?
-      verb = options[:verb] || "Installing"
-      ohai "#{verb} #{name} from #{tap}"
-    end
+    return unless tap?
+    verb = options[:verb] || "Installing"
+    ohai "#{verb} #{name} from #{tap}"
   end
 
   # @private
@@ -1230,6 +1453,12 @@ class Formula
     Requirement.expand(self, &block)
   end
 
+  # Returns a list of Dependency objects that are required at runtime.
+  # @private
+  def runtime_dependencies
+    recursive_dependencies.reject(&:build?)
+  end
+
   # @private
   def to_hash
     hsh = {
@@ -1243,9 +1472,10 @@ class Formula
         "stable" => (stable.version.to_s if stable),
         "bottle" => bottle ? true : false,
         "devel" => (devel.version.to_s if devel),
-        "head" => (head.version.to_s if head)
+        "head" => (head.version.to_s if head),
       },
       "revision" => revision,
+      "version_scheme" => version_scheme,
       "installed" => [],
       "linked_keg" => (linked_keg.resolved_path.basename.to_s if linked_keg.exist?),
       "pinned" => pinned?,
@@ -1256,7 +1486,7 @@ class Formula
       "optional_dependencies" => deps.select(&:optional?).map(&:name).uniq,
       "build_dependencies" => deps.select(&:build?).map(&:name).uniq,
       "conflicts_with" => conflicts.map(&:name),
-      "caveats" => caveats
+      "caveats" => caveats,
     }
 
     hsh["requirements"] = requirements.map do |req|
@@ -1264,7 +1494,7 @@ class Formula
         "name" => req.name,
         "default_formula" => req.default_formula,
         "cask" => req.cask,
-        "download" => req.download
+        "download" => req.download,
       }
     end
 
@@ -1278,9 +1508,8 @@ class Formula
       next unless spec.bottle_defined?
       bottle_spec = spec.bottle_specification
       bottle_info = {
-        "revision" => bottle_spec.revision,
-        "cellar" => (cellar = bottle_spec.cellar).is_a?(Symbol) ? \
-                    cellar.inspect : cellar,
+        "rebuild" => bottle_spec.rebuild,
+        "cellar" => (cellar = bottle_spec.cellar).is_a?(Symbol) ? cellar.inspect : cellar,
         "prefix" => bottle_spec.prefix,
         "root_url" => bottle_spec.root_url,
       }
@@ -1288,7 +1517,7 @@ class Formula
       bottle_spec.collector.keys.each do |os|
         checksum = bottle_spec.collector[os]
         bottle_info["files"][os] = {
-          "url" => "#{bottle_spec.root_url}/#{Bottle::Filename.create(self, os, bottle_spec.revision)}",
+          "url" => "#{bottle_spec.root_url}/#{Bottle::Filename.create(self, os, bottle_spec.rebuild)}",
           checksum.hash_type.to_s => checksum.hexdigest,
         }
       end
@@ -1302,11 +1531,11 @@ class Formula
         "version" => keg.version.to_s,
         "used_options" => tab.used_options.as_flags,
         "built_as_bottle" => tab.built_as_bottle,
-        "poured_from_bottle" => tab.poured_from_bottle
+        "poured_from_bottle" => tab.poured_from_bottle,
       }
     end
 
-    hsh["installed"] = hsh["installed"].sort_by { |i| Version.new(i["version"]) }
+    hsh["installed"] = hsh["installed"].sort_by { |i| Version.create(i["version"]) }
 
     hsh
   end
@@ -1324,14 +1553,23 @@ class Formula
   # @private
   def run_test
     old_home = ENV["HOME"]
-    build, self.build = self.build, Tab.for_formula(self)
+    old_curl_home = ENV["CURL_HOME"]
+    old_tmpdir = ENV["TMPDIR"]
+    old_temp = ENV["TEMP"]
+    old_tmp = ENV["TMP"]
+    old_term = ENV["TERM"]
+    ENV["CURL_HOME"] = old_curl_home || old_home
+    ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
+    ENV["TERM"] = "dumb"
     mktemp("#{name}-test") do |staging|
       staging.retain! if ARGV.keep_tmp?
       @testpath = staging.tmpdir
       ENV["HOME"] = @testpath
       setup_home @testpath
       begin
-        test
+        with_logging("test") do
+          test
+        end
       rescue Exception
         staging.retain! if ARGV.debug?
         raise
@@ -1339,8 +1577,12 @@ class Formula
     end
   ensure
     @testpath = nil
-    self.build = build
     ENV["HOME"] = old_home
+    ENV["CURL_HOME"] = old_curl_home
+    ENV["TMPDIR"] = old_tmpdir
+    ENV["TEMP"] = old_temp
+    ENV["TMP"] = old_tmp
+    ENV["TERM"] = old_term
   end
 
   # @private
@@ -1354,7 +1596,7 @@ class Formula
 
   # @private
   def test_fixtures(file)
-    HOMEBREW_LIBRARY.join("Homebrew", "test", "fixtures", file)
+    HOMEBREW_LIBRARY_PATH.join("test", "fixtures", file)
   end
 
   # This method is overriden in {Formula} subclasses to provide the installation instructions.
@@ -1423,7 +1665,7 @@ class Formula
 
     @exec_count ||= 0
     @exec_count += 1
-    logfn = "#{logs}/%02d.%s" % [@exec_count, File.basename(cmd).split(" ").first]
+    logfn = format("#{logs}/#{active_log_prefix}%02d.%s", @exec_count, File.basename(cmd).split(" ").first)
     logs.mkpath
 
     File.open(logfn, "w") do |log|
@@ -1445,11 +1687,10 @@ class Formula
             while buf = rd.gets
               log.puts buf
               # make sure dots printed with interval of at least 1 min.
-              if (Time.now - last_dot) > 60
-                print "."
-                $stdout.flush
-                last_dot = Time.now
-              end
+              next unless (Time.now - last_dot) > 60
+              print "."
+              $stdout.flush
+              last_dot = Time.now
             end
             puts
           else
@@ -1498,17 +1739,24 @@ class Formula
   def eligible_kegs_for_cleanup
     eligible_for_cleanup = []
     if installed?
-      eligible_kegs = installed_kegs.select { |k| pkg_version > k.version }
-      if eligible_kegs.any?
+      eligible_kegs = if head? && (head_prefix = latest_head_prefix)
+        installed_kegs - [Keg.new(head_prefix)]
+      else
+        installed_kegs.select { |k| pkg_version > k.version }
+      end
+
+      unless eligible_kegs.empty?
         eligible_kegs.each do |keg|
           if keg.linked?
             opoo "Skipping (old) #{keg} due to it being linked"
+          elsif pinned? && keg == Keg.new(@pin.path.resolved_path)
+            opoo "Skipping (old) #{keg} due to it being pinned"
           else
             eligible_for_cleanup << keg
           end
         end
       end
-    elsif installed_prefixes.any? && !pinned?
+    elsif !installed_prefixes.empty? && !pinned?
       # If the cellar only has one version installed, don't complain
       # that we can't tell which one to keep. Don't complain at all if the
       # only installed version is a pinned formula.
@@ -1523,9 +1771,7 @@ class Formula
     ENV["HOMEBREW_CC_LOG_PATH"] = logfn
 
     # TODO: system "xcodebuild" is deprecated, this should be removed soon.
-    if cmd.to_s.start_with? "xcodebuild"
-      ENV.remove_cc_etc
-    end
+    ENV.remove_cc_etc if cmd.to_s.start_with? "xcodebuild"
 
     # Turn on argument filtering in the superenv compiler wrapper.
     # We should probably have a better mechanism for this than adding
@@ -1533,16 +1779,18 @@ class Formula
     if cmd == "python"
       setup_py_in_args = %w[setup.py build.py].include?(args.first)
       setuptools_shim_in_args = args.any? { |a| a.to_s.start_with? "import setuptools" }
-      if setup_py_in_args || setuptools_shim_in_args
-        ENV.refurbish_args
-      end
+      ENV.refurbish_args if setup_py_in_args || setuptools_shim_in_args
     end
 
     $stdout.reopen(out)
     $stderr.reopen(out)
     out.close
     args.collect!(&:to_s)
-    exec(cmd, *args) rescue nil
+    begin
+      exec(cmd, *args)
+    rescue
+      nil
+    end
     puts "Failed to execute: #{cmd}"
     exit! 1 # never gets here unless exec threw or failed
   end
@@ -1554,7 +1802,10 @@ class Formula
       env_home = buildpath/".brew_home"
       mkdir_p env_home
 
-      old_home, ENV["HOME"] = ENV["HOME"], env_home
+      old_home = ENV["HOME"]
+      ENV["HOME"] = env_home
+      old_curl_home = ENV["CURL_HOME"]
+      ENV["CURL_HOME"] = old_curl_home || old_home
       setup_home env_home
 
       begin
@@ -1562,6 +1813,7 @@ class Formula
       ensure
         @buildpath = nil
         ENV["HOME"] = old_home
+        ENV["CURL_HOME"] = old_curl_home
       end
     end
   end
@@ -1644,6 +1896,18 @@ class Formula
     # <pre>revision 1</pre>
     attr_rw :revision
 
+    # @!attribute [w] version_scheme
+    # Used for creating new Homebrew versions schemes. For example, if we want
+    # to change version scheme from one to another, then we may need to update
+    # `version_scheme` of this {Formula} to be able to use new version scheme.
+    # E.g. to move from 20151020 scheme to 1.0.0 we need to increment
+    # `version_scheme`. Without this, the prior scheme will always equate to a
+    # higher version.
+    # `0` if unset.
+    #
+    # <pre>version_scheme 1</pre>
+    attr_rw :version_scheme
+
     # A list of the {.stable}, {.devel} and {.head} {SoftwareSpec}s.
     # @private
     def specs
@@ -1708,7 +1972,7 @@ class Formula
     # and you haven't passed or previously used any options on this formula.
     #
     # If you maintain your own repository, you can add your own bottle links.
-    # https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Bottles.md
+    # https://github.com/Homebrew/brew/blob/master/docs/Bottles.md
     # You can ignore this block entirely if submitting to Homebrew/Homebrew, It'll be
     # handled for you by the Brew Test Bot.
     #
@@ -1716,7 +1980,7 @@ class Formula
     #   root_url "https://example.com" # Optional root to calculate bottle URLs
     #   prefix "/opt/homebrew" # Optional HOMEBREW_PREFIX in which the bottles were built.
     #   cellar "/opt/homebrew/Cellar" # Optional HOMEBREW_CELLAR in which the bottles were built.
-    #   revision 1 # Making the old bottle outdated without bumping the version/revision of the formula.
+    #   rebuild 1 # Making the old bottle outdated without bumping the version/revision of the formula.
     #   sha256 "4355a46b19d348dc2f57c046f8ef63d4538ebb936000f3c9ee954a27460dd865" => :el_capitan
     #   sha256 "53c234e5e8472b6ac51c1ae1cab3fe06fad053beb8ebfd8977b010655bfdd3c3" => :yosemite
     #   sha256 "1121cfccd5913f0a63fec40a6ffd44ea64f9dc135c66634ba001d10bcf4302a2" => :mavericks
@@ -1844,7 +2108,7 @@ class Formula
     # depends_on :fortran # Checks that `gfortran` is available or `FC` is set.
     # depends_on :mpi => :cc # Needs MPI with `cc`
     # depends_on :mpi => [:cc, :cxx, :optional] # Is optional. MPI with `cc` and `cxx`.
-    # depends_on :macos => :lion # Needs at least Mac OS X "Lion" aka. 10.7.
+    # depends_on :macos => :lion # Needs at least OS X Lion (10.7).
     # depends_on :apr # If a formula requires the CLT-provided apr library to exist.
     # depends_on :arch => :intel # If this formula only builds on Intel architecture.
     # depends_on :arch => :x86_64 # If this formula only builds on Intel x86 64-bit.
@@ -1860,7 +2124,7 @@ class Formula
     # depends_on :postgresql if build.without? "sqlite"
     # depends_on :hg # Mercurial (external or brewed) is needed</pre>
     #
-    # <pre># If any Python >= 2.7 < 3.x is okay (either from OS X or brewed):
+    # <pre># If any Python >= 2.7 < 3.x is okay (either from macOS or brewed):
     # depends_on :python</pre>
     # <pre># to depend on Python >= 2.7 but use system Python where possible
     # depends_on :python if MacOS.version <= :snow_leopard</pre>
@@ -1939,7 +2203,7 @@ class Formula
     # <pre>plist_options :manual => "foo"</pre>
     #
     # Or perhaps you'd like to give the user a choice? Ooh fancy.
-    # <pre>plist_options :startup => "true", :manual => "foo start"</pre>
+    # <pre>plist_options :startup => true, :manual => "foo start"</pre>
     def plist_options(options)
       @plist_startup = options[:startup]
       @plist_manual = options[:manual]
@@ -1953,7 +2217,7 @@ class Formula
     # If this formula conflicts with another one.
     # <pre>conflicts_with "imagemagick", :because => "because this is just a stupid example"</pre>
     def conflicts_with(*names)
-      opts = Hash === names.last ? names.pop : {}
+      opts = names.last.is_a?(Hash) ? names.pop : {}
       names.each { |name| conflicts << FormulaConflict.new(name, opts[:because]) }
     end
 
@@ -1973,8 +2237,8 @@ class Formula
     # add the necessary includes and libs (etc.) during the brewing of that
     # other formula. But generally, keg_only formulae are not in your PATH
     # and not seen by compilers if you build your own software outside of
-    # Homebrew. This way, we don't shadow software provided by OS X.
-    # <pre>keg_only :provided_by_osx</pre>
+    # Homebrew. This way, we don't shadow software provided by macOS.
+    # <pre>keg_only :provided_by_macos</pre>
     # <pre>keg_only "because I want it so"</pre>
     def keg_only(reason, explanation = "")
       @keg_only_reason = KegOnlyReason.new(reason, explanation)

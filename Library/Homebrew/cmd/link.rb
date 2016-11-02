@@ -15,6 +15,8 @@
 require "ostruct"
 
 module Homebrew
+  module_function
+
   def link
     raise KegUnspecifiedError if ARGV.named.empty?
 
@@ -24,11 +26,22 @@ module Homebrew
     mode.dry_run = true if ARGV.dry_run?
 
     ARGV.kegs.each do |keg|
-      if keg.linked?
+      keg_only = keg_only?(keg.rack)
+      if HOMEBREW_PREFIX.to_s == "/usr/local" && keg_only &&
+         keg.name.start_with?("openssl", "libressl")
+        opoo <<-EOS.undent
+          Refusing to link: #{keg.name}
+          Linking keg-only #{keg.name} means you may end up linking against the insecure,
+          deprecated system OpenSSL while using the headers from Homebrew's #{keg.name}.
+          Instead, pass the full include/library paths to your compiler e.g.:
+            -I#{HOMEBREW_PREFIX}/opt/#{keg.name}/include -L#{HOMEBREW_PREFIX}/opt/#{keg.name}/lib
+        EOS
+        next
+      elsif keg.linked?
         opoo "Already linked: #{keg}"
         puts "To relink: brew unlink #{keg.name} && brew link #{keg.name}"
         next
-      elsif keg_only?(keg.rack) && !ARGV.force?
+      elsif keg_only && !ARGV.force?
         opoo "#{keg.name} is keg-only and must be linked with --force"
         puts "Note that doing so can interfere with building software."
         next
@@ -59,8 +72,6 @@ module Homebrew
       end
     end
   end
-
-  private
 
   def keg_only?(rack)
     Formulary.from_rack(rack).keg_only?

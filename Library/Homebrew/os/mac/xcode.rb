@@ -1,10 +1,10 @@
 module OS
   module Mac
     module Xcode
-      extend self
+      module_function
 
-      V4_BUNDLE_ID = "com.apple.dt.Xcode"
-      V3_BUNDLE_ID = "com.apple.Xcode"
+      V4_BUNDLE_ID = "com.apple.dt.Xcode".freeze
+      V3_BUNDLE_ID = "com.apple.Xcode".freeze
 
       def latest_version
         case MacOS.version
@@ -15,16 +15,19 @@ module OS
         when "10.8"  then "5.1.1"
         when "10.9"  then "6.2"
         when "10.10" then "7.2.1"
-        when "10.11" then "7.3.1"
-        when "10.12" then "8.0"
+        when "10.11" then "8.1"
+        when "10.12" then "8.1"
         else
-          # Default to newest known version of Xcode for unreleased OSX versions.
-          if OS::Mac.prerelease?
-            "8.0"
-          else
-            raise "OS X '#{MacOS.version}' is invalid"
-          end
+          raise "macOS '#{MacOS.version}' is invalid" unless OS::Mac.prerelease?
+
+          # Default to newest known version of Xcode for unreleased macOS versions.
+          "8.1"
         end
+      end
+
+      def prerelease?
+        # TODO: bump to version >= "8.3" after Xcode 8.2 is stable.
+        version >= "8.2"
       end
 
       def outdated?
@@ -67,6 +70,19 @@ module OS
         !prefix.nil?
       end
 
+      def update_instructions
+        if MacOS.version >= "10.9" && !OS::Mac.prerelease?
+          <<-EOS.undent
+            Xcode can be updated from the App Store.
+          EOS
+        else
+          <<-EOS.undent
+            Xcode can be updated from
+              https://developer.apple.com/xcode/downloads/
+          EOS
+        end
+      end
+
       def version
         # may return a version string
         # that is guessed based on the compiler, so do not
@@ -86,18 +102,17 @@ module OS
           #{prefix}/usr/bin/xcodebuild
           #{which("xcodebuild")}
         ].uniq.each do |xcodebuild_path|
-          if File.executable? xcodebuild_path
-            xcodebuild_output = Utils.popen_read(xcodebuild_path, "-version")
-            next unless $?.success?
+          next unless File.executable? xcodebuild_path
+          xcodebuild_output = Utils.popen_read(xcodebuild_path, "-version")
+          next unless $?.success?
 
-            xcode_version = xcodebuild_output[/Xcode (\d(\.\d)*)/, 1]
-            return xcode_version if xcode_version
+          xcode_version = xcodebuild_output[/Xcode (\d(\.\d)*)/, 1]
+          return xcode_version if xcode_version
 
-            # Xcode 2.x's xcodebuild has a different version string
-            case xcodebuild_output[/DevToolsCore-(\d+\.\d)/, 1]
-            when "515.0" then return "2.0"
-            when "798.0" then return "2.5"
-            end
+          # Xcode 2.x's xcodebuild has a different version string
+          case xcodebuild_output[/DevToolsCore-(\d+\.\d)/, 1]
+          when "515.0" then return "2.0"
+          when "798.0" then return "2.5"
           end
         end
 
@@ -107,34 +122,34 @@ module OS
         # be removed in a future version. To remain compatible, guard usage of
         # Xcode.version with an Xcode.installed? check.
         case (DevelopmentTools.clang_version.to_f * 10).to_i
-          when 0       then "dunno"
-          when 1..14   then "3.2.2"
-          when 15      then "3.2.4"
-          when 16      then "3.2.5"
-          when 17..20  then "4.0"
-          when 21      then "4.1"
-          when 22..30  then "4.2"
-          when 31      then "4.3"
-          when 40      then "4.4"
-          when 41      then "4.5"
-          when 42      then "4.6"
-          when 50      then "5.0"
-          when 51      then "5.1"
-          when 60      then "6.0"
-          when 61      then "6.1"
-          when 70      then "7.0"
-          when 73      then "7.3"
-          when 80      then "8.0"
-          else "8.0"
+        when 0       then "dunno"
+        when 1..14   then "3.2.2"
+        when 15      then "3.2.4"
+        when 16      then "3.2.5"
+        when 17..20  then "4.0"
+        when 21      then "4.1"
+        when 22..30  then "4.2"
+        when 31      then "4.3"
+        when 40      then "4.4"
+        when 41      then "4.5"
+        when 42      then "4.6"
+        when 50      then "5.0"
+        when 51      then "5.1"
+        when 60      then "6.0"
+        when 61      then "6.1"
+        when 70      then "7.0"
+        when 73      then "7.3"
+        when 80      then "8.0"
+        else "8.0"
         end
       end
 
       def provides_gcc?
-        version < "4.3"
+        installed? && version < "4.3"
       end
 
       def provides_cvs?
-        version < "5.0"
+        installed? && version < "5.0"
       end
 
       def default_prefix?
@@ -149,21 +164,38 @@ module OS
     module CLT
       extend self
 
-      STANDALONE_PKG_ID = "com.apple.pkg.DeveloperToolsCLILeo"
-      FROM_XCODE_PKG_ID = "com.apple.pkg.DeveloperToolsCLI"
-      MAVERICKS_PKG_ID = "com.apple.pkg.CLTools_Executables"
-      MAVERICKS_NEW_PKG_ID = "com.apple.pkg.CLTools_Base" # obsolete
-      MAVERICKS_PKG_PATH = "/Library/Developer/CommandLineTools"
+      STANDALONE_PKG_ID = "com.apple.pkg.DeveloperToolsCLILeo".freeze
+      FROM_XCODE_PKG_ID = "com.apple.pkg.DeveloperToolsCLI".freeze
+      MAVERICKS_PKG_ID = "com.apple.pkg.CLTools_Executables".freeze
+      MAVERICKS_NEW_PKG_ID = "com.apple.pkg.CLTools_Base".freeze # obsolete
+      MAVERICKS_PKG_PATH = "/Library/Developer/CommandLineTools".freeze
 
       # Returns true even if outdated tools are installed, e.g.
       # tools from Xcode 4.x on 10.9
       def installed?
-        !!detect_version
+        !detect_version.nil?
+      end
+
+      def update_instructions
+        if MacOS.version >= "10.9"
+          <<-EOS.undent
+            Update them from Software Update in the App Store.
+          EOS
+        elsif MacOS.version == "10.8" || MacOS.version == "10.7"
+          <<-EOS.undent
+            The standalone package can be obtained from
+              https://developer.apple.com/downloads
+            or it can be installed via Xcode's preferences.
+          EOS
+        end
       end
 
       def latest_version
+        # As of Xcode 8 CLT releases are no longer in sync with Xcode releases
+        # on the older supported platform for that Xcode release, i.e there's no
+        # CLT package for 10.11 that contains the Clang version from Xcode 8.
         case MacOS.version
-        when "10.12" then "800.0.31"
+        when "10.12" then "800.0.38"
         when "10.11" then "703.0.31"
         when "10.10" then "700.1.81"
         when "10.9"  then "600.0.57"
@@ -175,9 +207,9 @@ module OS
 
       def outdated?
         if MacOS.version >= :mavericks
-          version = `#{MAVERICKS_PKG_PATH}/usr/bin/clang --version`
+          version = Utils.popen_read("#{MAVERICKS_PKG_PATH}/usr/bin/clang --version")
         else
-          version = `/usr/bin/clang --version`
+          version = Utils.popen_read("/usr/bin/clang --version")
         end
         version = version[/clang-(\d+\.\d+\.\d+(\.\d+)?)/, 1] || "0"
         version < latest_version

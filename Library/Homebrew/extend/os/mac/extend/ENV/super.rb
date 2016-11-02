@@ -3,8 +3,11 @@ module Superenv
   def self.bin
     return unless DevelopmentTools.installed?
 
-    bin = HOMEBREW_ENV_PATH.subdirs.reject { |d| d.basename.to_s > MacOS::Xcode.version }.max
-    bin.realpath unless bin.nil?
+    (HOMEBREW_SHIMS_PATH/"super").realpath
+  end
+
+  def effective_sysroot
+    MacOS::Xcode.without_clt? ? MacOS.sdk_path.to_s : nil
   end
 
   def homebrew_extra_paths
@@ -22,7 +25,8 @@ module Superenv
 
   # @private
   def homebrew_extra_pkg_config_paths
-    paths = ["#{HOMEBREW_ENV_PATH}/pkgconfig/#{MacOS.version}"]
+    paths = \
+      ["#{HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/#{MacOS.version}"]
     paths << "#{MacOS::X11.lib}/pkgconfig" << "#{MacOS::X11.share}/pkgconfig" if x11?
     paths
   end
@@ -51,6 +55,7 @@ module Superenv
 
   def homebrew_extra_cmake_include_paths
     paths = []
+    paths << "#{effective_sysroot}/usr/include/libxml2" unless deps.any? { |d| d.name == "libxml2" }
     paths << "#{effective_sysroot}/usr/include/apache2" if MacOS::Xcode.without_clt?
     paths << MacOS::X11.include.to_s << "#{MacOS::X11.include}/freetype2" if x11?
     paths << "#{effective_sysroot}/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers"
@@ -89,6 +94,20 @@ module Superenv
       self["SDKROOT"] = MacOS.sdk_path
     end
 
+    # Filter out symbols known not to be defined on 10.11 since GNU Autotools
+    # can't reliably figure this out with Xcode 8 on its own yet.
+    if MacOS.version == "10.11" && MacOS::Xcode.installed? && MacOS::Xcode.version >= "8.0"
+      %w[basename_r clock_getres clock_gettime clock_settime dirname_r
+         getentropy mkostemp mkostemps timingsafe_bcmp].each do |s|
+        ENV["ac_cv_func_#{s}"] = "no"
+      end
+
+      ENV["ac_cv_search_clock_gettime"] = "no"
+
+      # works around libev.m4 unsetting ac_cv_func_clock_gettime
+      ENV["ac_have_clock_syscall"] = "no"
+    end
+
     # On 10.9, the tools in /usr/bin proxy to the active developer directory.
     # This means we can use them for any combination of CLT and Xcode.
     self["HOMEBREW_PREFER_CLT_PROXIES"] = "1" if MacOS.version >= "10.9"
@@ -98,8 +117,12 @@ module Superenv
     ENV.x11 = MacOS::X11.installed?
   end
 
+  def no_weak_imports
+    append "HOMEBREW_CCCFG", "w" if no_weak_imports_support?
+  end
+
   # These methods are no longer necessary under superenv, but are needed to
   # maintain an interface compatible with stdenv.
-  alias_method :macosxsdk, :noop
-  alias_method :remove_macosxsdk, :noop
+  alias macosxsdk noop
+  alias remove_macosxsdk noop
 end

@@ -38,7 +38,7 @@ class BuildOptions
   end
 
   # True if a {Formula} is being built without a specific option.
-  # <pre>args << "--no-spam-plz" if build.without? "spam"
+  # <pre>args << "--no-spam-plz" if build.without? "spam"</pre>
   def without?(val)
     !with?(val)
   end
@@ -47,6 +47,7 @@ class BuildOptions
   def bottle?
     include? "build-bottle"
   end
+  alias build_bottle? bottle?
 
   # True if a {Formula} is being built with {Formula.head} instead of {Formula.stable}.
   # <pre>args << "--some-new-stuff" if build.head?</pre>

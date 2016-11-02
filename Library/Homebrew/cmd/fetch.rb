@@ -19,11 +19,13 @@
 #:    bottle.
 #:
 #:    If `--force-bottle` is passed, download a bottle if it exists for the current
-#:    version of OS X, even if it would not be used during installation.
+#:    version of macOS, even if it would not be used during installation.
 
 require "formula"
 
 module Homebrew
+  module_function
+
   def fetch
     raise FormulaUnspecifiedError if ARGV.named.empty?
 
@@ -40,7 +42,7 @@ module Homebrew
 
     puts "Fetching: #{bucket * ", "}" if bucket.size > 1
     bucket.each do |f|
-      f.print_tap_action :verb => "Fetching"
+      f.print_tap_action verb: "Fetching"
 
       fetched_bottle = false
       if fetch_bottle?(f)
@@ -56,11 +58,10 @@ module Homebrew
         end
       end
 
-      unless fetched_bottle
-        fetch_formula(f)
-        f.resources.each { |r| fetch_resource(r) }
-        f.patchlist.each { |p| fetch_patch(p) if p.external? }
-      end
+      next if fetched_bottle
+      fetch_formula(f)
+      f.resources.each { |r| fetch_resource(r) }
+      f.patchlist.each { |p| fetch_patch(p) if p.external? }
     end
   end
 
@@ -93,8 +94,6 @@ module Homebrew
     Homebrew.failed = true
     opoo "Patch reports different #{e.hash_type}: #{e.expected}"
   end
-
-  private
 
   def retry_fetch?(f)
     @fetch_failed ||= Set.new

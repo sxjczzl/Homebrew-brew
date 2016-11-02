@@ -9,7 +9,7 @@
 #
 # When done, regenerate the man page and its HTML version by running `brew man`.
 %>
-brew(1) -- The missing package manager for OS X
+brew(1) -- The missing package manager for macOS
 ===============================================
 
 ## SYNOPSIS
@@ -20,7 +20,7 @@ brew(1) -- The missing package manager for OS X
 ## DESCRIPTION
 
 Homebrew is the easiest and most flexible way to install the UNIX tools Apple
-didn't include with OS X.
+didn't include with macOS.
 
 ## ESSENTIAL COMMANDS
 
@@ -50,7 +50,25 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
 
 <%= commands.join("\n") %>
 
-## EXTERNAL COMMANDS
+## DEVELOPER COMMANDS
+
+<%= developer_commands.join("\n") %>
+
+## OFFICIAL EXTERNAL COMMANDS
+
+  * `bundle`:
+    Bundler for non-Ruby dependencies from Homebrew:
+    <https://github.com/Homebrew/homebrew-bundle>
+
+  * `cask`:
+    Install macOS applications distributed as binaries:
+    <https://github.com/caskroom/homebrew-cask>
+
+  * `services`:
+    Integrates Homebrew formulae with macOS's `launchctl` manager:
+    <https://github.com/Homebrew/homebrew-services>
+
+## CUSTOM EXTERNAL COMMANDS
 
 Homebrew, like `git`(1), supports external commands. These are executable
 scripts that reside somewhere in the `PATH`, named `brew-`<cmdname> or
@@ -58,7 +76,7 @@ scripts that reside somewhere in the `PATH`, named `brew-`<cmdname> or
 to create your own commands without modifying Homebrew's internals.
 
 Instructions for creating your own commands can be found in the docs:
-<https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/External-Commands.md>
+<https://github.com/Homebrew/brew/blob/master/docs/External-Commands.md>
 
 ## SPECIFYING FORMULAE
 
@@ -108,6 +126,11 @@ can take several different forms:
   * `HOMEBREW_ARTIFACT_DOMAIN`:
     If set, instructs Homebrew to use the given URL as a download mirror for bottles and binaries.
 
+  * `HOMEBREW_AUTO_UPDATE_SECS`:
+    If set, Homebrew will only check for autoupdates once per this seconds interval.
+
+    *Default:* `60`.
+
   * `HOMEBREW_BROWSER`:
     If set, uses this setting as the browser when opening project homepages,
     instead of the OS default browser.
@@ -140,8 +163,8 @@ can take several different forms:
     of the formula being brewed.
 
   * `HOMEBREW_DEVELOPER`:
-    If set, Homebrew will print warnings that are only relevant to Homebrew
-    developers (active or budding).
+    If set, Homebrew will tweak behaviour to be more relevant for Homebrew
+    developers (active or budding) e.g. turning warnings into errors.
 
   * `HOMEBREW_EDITOR`:
     If set, Homebrew will use this editor when editing a single formula, or
@@ -150,6 +173,10 @@ can take several different forms:
     *Note:* `brew edit` will open all of Homebrew as discontinuous files and
     directories. TextMate can handle this correctly in project mode, but many
     editors will do strange things in this case.
+
+  * `HOMEBREW_FORCE_VENDOR_RUBY`:
+    If set, Homebrew will always use its vendored, relocatable Ruby 2.0 version
+    even if the system version of Ruby is >=2.0.
 
   * `HOMEBREW_GITHUB_API_TOKEN`:
     A personal access token for the GitHub API, which you can create at
@@ -170,7 +197,11 @@ can take several different forms:
     *Default:* the number of available CPU cores.
 
   * `HOMEBREW_NO_ANALYTICS`:
-    If set, Homebrew will not send analytics. See: <https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Analytics.md#analytics>
+    If set, Homebrew will not send analytics. See: <https://github.com/Homebrew/brew/blob/master/docs/Analytics.md#analytics>
+
+  * `HOMEBREW_NO_AUTO_UPDATE`:
+    If set, Homebrew will not auto-update before running `brew install`,
+    `brew upgrade` or `brew tap`.
 
   * `HOMEBREW_NO_EMOJI`:
     If set, Homebrew will not print the `HOMEBREW_INSTALL_BADGE` on a
@@ -203,7 +234,7 @@ can take several different forms:
   * `HOMEBREW_TEMP`:
     If set, instructs Homebrew to use `HOMEBREW_TEMP` as the temporary directory
     for building packages. This may be needed if your system temp directory and
-    Homebrew Prefix are on different volumes, as OS X has trouble moving
+    Homebrew Prefix are on different volumes, as macOS has trouble moving
     symlinks across volumes when the target does not yet exist.
 
     This issue typically occurs when using FileVault or custom SSD
@@ -232,15 +263,17 @@ If your proxy requires authentication:
 
 ## SEE ALSO
 
-Homebrew Documentation: <https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/>
+Homebrew Documentation: <https://github.com/Homebrew/brew/blob/master/docs/>
 
-`git`(1), `git-log`(1)
+`brew-cask`(1), `git`(1), `git-log`(1)
 
 ## AUTHORS
 
-Homebrew's current maintainers are <%= maintainers[0...-1].join(", ") %> and <%= maintainers[-1] %>.
+<%= lead_maintainer.concat("\n") %>
 
-Former maintainers with significant contributions include Jack Nagel, Adam Vandenberg and Homebrew's creator: Max Howell.
+<%= maintainers.concat("\n") %>
+
+<%= former_maintainers.concat("\n") %>
 
 ## BUGS
 

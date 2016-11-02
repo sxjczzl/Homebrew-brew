@@ -31,9 +31,8 @@ class Build
   def post_superenv_hacks
     # Only allow Homebrew-approved directories into the PATH, unless
     # a formula opts-in to allowing the user's path.
-    if formula.env.userpaths? || reqs.any? { |rq| rq.env.userpaths? }
-      ENV.userpaths!
-    end
+    return unless formula.env.userpaths? || reqs.any? { |rq| rq.env.userpaths? }
+    ENV.userpaths!
   end
 
   def effective_build_options_for(dependent)
@@ -103,6 +102,11 @@ class Build
       end
     end
 
+    old_tmpdir = ENV["TMPDIR"]
+    old_temp = ENV["TEMP"]
+    old_tmp = ENV["TMP"]
+    ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
+
     formula.extend(Debrew::Formula) if ARGV.debug?
 
     formula.brew do |_formula, staging|
@@ -139,6 +143,10 @@ class Build
         formula.prefix.install_metafiles formula.libexec if formula.libexec.exist?
       end
     end
+  ensure
+    ENV["TMPDIR"] = old_tmpdir
+    ENV["TEMP"] = old_temp
+    ENV["TMP"] = old_tmp
   end
 
   def detect_stdlibs(compiler)
@@ -148,7 +156,7 @@ class Build
     # The stdlib recorded in the install receipt is used during dependency
     # compatibility checks, so we only care about the stdlib that libraries
     # link against.
-    keg.detect_cxx_stdlibs(:skip_executables => true)
+    keg.detect_cxx_stdlibs(skip_executables: true)
   end
 
   def fixopt(f)

@@ -1,9 +1,9 @@
 module Utils
   class InreplaceError < RuntimeError
     def initialize(errors)
-      super errors.inject("inreplace failed\n") { |s, (path, errs)|
+      super errors.inject("inreplace failed\n") do |s, (path, errs)|
         s << "#{path}:\n" << errs.map { |e| "  #{e}\n" }.join
-      }
+      end
     end
   end
 
@@ -15,7 +15,7 @@ module Utils
     # HOMEBREW_PREFIX is available in the embedded patch.
     # inreplace supports regular expressions.
     # <pre>inreplace "somefile.cfg", /look[for]what?/, "replace by #{bin}/tool"</pre>
-    def inreplace(paths, before = nil, after = nil)
+    def inreplace(paths, before = nil, after = nil, audit_result = true)
       errors = {}
 
       Array(paths).each do |path|
@@ -24,16 +24,16 @@ module Utils
         if before.nil? && after.nil?
           yield s
         else
-          after = after.to_s if Symbol === after
-          s.gsub!(before, after)
+          after = after.to_s if after.is_a? Symbol
+          s.gsub!(before, after, audit_result)
         end
 
-        errors[path] = s.errors if s.errors.any?
+        errors[path] = s.errors unless s.errors.empty?
 
         Pathname(path).atomic_write(s)
       end
 
-      raise InreplaceError.new(errors) if errors.any?
+      raise InreplaceError, errors unless errors.empty?
     end
     module_function :inreplace
   end

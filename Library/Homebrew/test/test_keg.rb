@@ -154,7 +154,7 @@ class LinkTests < Homebrew::TestCase
     refute_predicate HOMEBREW_PREFIX/"lib/foo", :directory?
   end
 
-  def test_unlink_ignores_DS_Store_when_pruning_empty_dirs
+  def test_unlink_ignores_ds_store_when_pruning_empty_dirs
     mkpath HOMEBREW_PREFIX/"lib/foo/bar"
     touch HOMEBREW_PREFIX/"lib/foo/.DS_Store"
     mkpath @keg/"lib/foo/bar"
@@ -300,37 +300,6 @@ class LinkTests < Homebrew::TestCase
     link.make_symlink(@nonexistent)
 
     keg.link
-  ensure
-    keg.unlink
-    keg.uninstall
-  end
-
-  def test_mach_o_files_skips_hardlinks
-    a = HOMEBREW_CELLAR/"a/1.0"
-    (a/"lib").mkpath
-    FileUtils.cp dylib_path("i386"), a/"lib/i386.dylib"
-    FileUtils.ln a/"lib/i386.dylib", a/"lib/i386_link.dylib"
-
-    keg = Keg.new(a)
-    keg.link
-
-    assert_equal 1, keg.mach_o_files.size
-  ensure
-    keg.unlink
-    keg.uninstall
-  end
-
-  def test_mach_o_files_isnt_confused_by_symlinks
-    a = HOMEBREW_CELLAR/"a/1.0"
-    (a/"lib").mkpath
-    FileUtils.cp dylib_path("i386"), a/"lib/i386.dylib"
-    FileUtils.ln a/"lib/i386.dylib", a/"lib/i386_link.dylib"
-    FileUtils.ln_s a/"lib/i386.dylib", a/"lib/1.dylib"
-
-    keg = Keg.new(a)
-    keg.link
-
-    assert_equal 1, keg.mach_o_files.size
   ensure
     keg.unlink
     keg.uninstall

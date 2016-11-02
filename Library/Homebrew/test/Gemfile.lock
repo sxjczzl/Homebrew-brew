@@ -1,50 +1,44 @@
 GIT
-  remote: https://github.com/Homebrew/simplecov.git
-  revision: 4c7642496e902ba9028a74500971e40b3e3aaa29
-  branch: tracked-files-root-fix
+  remote: https://github.com/colszowka/simplecov.git
+  revision: 83d8031ddde0927f87ef9327200a98583ca18d77
+  ref: 83d8031ddde0927f87ef9327200a98583ca18d77
+  branch: master
   specs:
-    simplecov (0.11.2)
+    simplecov (0.12.0)
       docile (~> 1.1.0)
-      json (~> 1.8)
+      json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
 
 GEM
   remote: https://rubygems.org/
   specs:
-    coveralls (0.8.10)
-      json (~> 1.8)
-      rest-client (>= 1.6.8, < 2)
-      simplecov (~> 0.11.0)
-      term-ansicolor (~> 1.3)
-      thor (~> 0.19.1)
-      tins (~> 1.6.0)
+    codecov (0.1.6)
+      json
+      simplecov
+      url
     docile (1.1.5)
-    json (1.8.3)
+    json (2.0.2)
     metaclass (0.0.4)
-    mime-types (1.25.1)
-    minitest (5.8.4)
-    mocha (1.1.0)
+    minitest (5.9.1)
+    mocha (1.2.1)
       metaclass (~> 0.0.1)
+    parallel (1.9.0)
+    parallel_tests (2.10.0)
+      parallel
     rake (10.5.0)
-    rest-client (1.6.9)
-      mime-types (~> 1.16)
     simplecov-html (0.10.0)
-    term-ansicolor (1.3.2)
-      tins (~> 1.0)
-    thor (0.19.1)
-    tins (1.6.0)
+    url (0.3.2)
 
 PLATFORMS
   ruby
 
 DEPENDENCIES
-  coveralls (= 0.8.10)
-  mime-types (~> 1.16)
+  codecov
   minitest (~> 5.3)
   mocha (~> 1.1)
+  parallel_tests (~> 2.9)
   rake (~> 10.3)
-  rest-client (= 1.6.9)
-  simplecov (= 0.11.2)!
+  simplecov (= 0.12.0)!
 
 BUNDLED WITH
-   1.11.2
+   1.13.6

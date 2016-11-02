@@ -1,10 +1,12 @@
-#:  * `log` [`git-log-options`] <formula> ...:
+#:  * `log` [<git-log-options>] <formula> ...:
 #:    Show the git log for the given formulae. Options that `git-log`(1)
 #:    recognizes can be passed before the formula list.
 
 require "formula"
 
 module Homebrew
+  module_function
+
   def log
     if ARGV.named.empty?
       cd HOMEBREW_REPOSITORY
@@ -16,9 +18,7 @@ module Homebrew
     end
   end
 
-  private
-
-  def git_log(path=nil)
+  def git_log(path = nil)
     if File.exist? "#{`git rev-parse --show-toplevel`.chomp}/.git/shallow"
       opoo <<-EOS.undent
         The git repository is a shallow clone therefore the filtering may be incorrect.

@@ -16,7 +16,7 @@ class DiagnosticChecksTest < Homebrew::TestCase
   def test_inject_file_list
     assert_equal "foo:\n",
       @checks.inject_file_list([], "foo:\n")
-    assert_equal "foo:\n    /a\n    /b\n",
+    assert_equal "foo:\n  /a\n  /b\n",
       @checks.inject_file_list(%w[/a /b], "foo:\n")
   end
 
@@ -42,19 +42,6 @@ class DiagnosticChecksTest < Homebrew::TestCase
       assert_match "Anaconda",
         @checks.check_for_anaconda
     end
-  end
-
-  def test_check_for_other_package_managers
-    MacOS.stubs(:macports_or_fink).returns ["fink"]
-    assert_match "You have MacPorts or Fink installed:",
-      @checks.check_for_other_package_managers
-  end
-
-  def test_check_for_unsupported_osx
-    ARGV.stubs(:homebrew_developer?).returns false
-    OS::Mac.stubs(:prerelease?).returns true
-    assert_match "We do not provide support for this pre-release version.",
-      @checks.check_for_unsupported_osx
   end
 
   def test_check_access_homebrew_repository
@@ -96,20 +83,9 @@ class DiagnosticChecksTest < Homebrew::TestCase
     HOMEBREW_CELLAR.chmod mod
   end
 
-  def test_check_access_prefix_opt
-    opt = HOMEBREW_PREFIX.join("opt")
-    opt.mkpath
-    opt.chmod 0555
-
-    assert_match "#{opt} isn't writable.",
-      @checks.check_access_prefix_opt
-  ensure
-    opt.unlink
-  end
-
   def test_check_homebrew_prefix
     # the integration tests are run in a special prefix
-    assert_match "Your Homebrew is not installed to /usr/local",
+    assert_match "Your Homebrew's prefix is not /usr/local.",
       @checks.check_homebrew_prefix
   end
 
@@ -118,11 +94,11 @@ class DiagnosticChecksTest < Homebrew::TestCase
     sep = File::PATH_SEPARATOR
     # ensure /usr/bin is before HOMEBREW_PREFIX/bin in the PATH
     ENV["PATH"] = "/usr/bin#{sep}#{bin}#{sep}" +
-      ENV["PATH"].gsub(%r{(?:^|#{sep})(?:/usr/bin|#{bin})}, "")
+                  ENV["PATH"].gsub(%r{(?:^|#{sep})(?:/usr/bin|#{bin})}, "")
 
     # ensure there's at least one file with the same name in both /usr/bin/ and
     # HOMEBREW_PREFIX/bin/
-    (bin/"#{File.basename Dir["/usr/bin/*"].first}").mkpath
+    (bin/File.basename(Dir["/usr/bin/*"].first)).mkpath
 
     assert_match "/usr/bin occurs before #{HOMEBREW_PREFIX}/bin",
       @checks.check_user_path_1
@@ -142,7 +118,7 @@ class DiagnosticChecksTest < Homebrew::TestCase
   def test_check_user_path_sbin
     sbin = HOMEBREW_PREFIX/"sbin"
     ENV["PATH"] = "#{HOMEBREW_PREFIX}/bin#{File::PATH_SEPARATOR}" +
-      ENV["PATH"].gsub(%r{(?:^|#{File::PATH_SEPARATOR})#{sbin}}, "")
+                  ENV["PATH"].gsub(/(?:^|#{Regexp.escape(File::PATH_SEPARATOR)})#{Regexp.escape(sbin)}/, "")
     (sbin/"something").mkpath
 
     assert_nil @checks.check_user_path_1
@@ -163,14 +139,6 @@ class DiagnosticChecksTest < Homebrew::TestCase
     end
   end
 
-  def test_check_for_unsupported_curl_vars
-    MacOS.stubs(:version).returns OS::Mac::Version.new("10.10")
-    ENV["SSL_CERT_DIR"] = "/some/path"
-
-    assert_match "SSL_CERT_DIR support was removed from Apple's curl.",
-      @checks.check_for_unsupported_curl_vars
-  end
-
   def test_check_for_config_scripts
     mktmpdir do |path|
       file = "#{path}/foo-config"
@@ -178,15 +146,15 @@ class DiagnosticChecksTest < Homebrew::TestCase
       FileUtils.chmod 0755, file
       ENV["PATH"] = "#{path}#{File::PATH_SEPARATOR}#{ENV["PATH"]}"
 
-      assert_match %("config" scripts exist),
+      assert_match '"config" scripts exist',
         @checks.check_for_config_scripts
     end
   end
 
-  def test_check_DYLD_vars
+  def test_check_dyld_vars
     ENV["DYLD_INSERT_LIBRARIES"] = "foo"
     assert_match "Setting DYLD_INSERT_LIBRARIES",
-      @checks.check_DYLD_vars
+      @checks.check_dyld_vars
   end
 
   def test_check_for_symlinked_cellar
@@ -225,10 +193,5 @@ class DiagnosticChecksTest < Homebrew::TestCase
           @checks.check_for_external_cmd_name_conflict
       end
     end
-  end
-
-  def test_check_for_beta_xquartz
-    MacOS::XQuartz.stubs(:version).returns("2.7.10_beta2")
-    assert_match "The following beta release of XQuartz is installed: 2.7.10_beta2", @checks.check_for_beta_xquartz
   end
 end

@@ -34,7 +34,7 @@
 #:
 #     Hidden developer option:
 #     If `--force-bottle` is passed, install from a bottle if it exists
-#    for the current version of OS X, even if custom options are given.
+#    for the current version of macOS, even if custom options are given.
 #
 #:    If `--devel` is passed, and <formula> defines it, install the development version.
 #:
@@ -61,8 +61,11 @@ require "cmd/search"
 require "formula_installer"
 require "tap"
 require "hardware"
+require "development_tools"
 
 module Homebrew
+  module_function
+
   def install
     raise FormulaUnspecifiedError if ARGV.named.empty?
 
@@ -70,18 +73,21 @@ module Homebrew
       raise "Specify `--HEAD` in uppercase to build from trunk."
     end
 
-    ARGV.named.each do |name|
-      if !File.exist?(name) &&
-         (name =~ HOMEBREW_TAP_FORMULA_REGEX || name =~ HOMEBREW_CASK_TAP_FORMULA_REGEX)
+    unless ARGV.force?
+      ARGV.named.each do |name|
+        next if File.exist?(name)
+        if name !~ HOMEBREW_TAP_FORMULA_REGEX && name !~ HOMEBREW_CASK_TAP_CASK_REGEX
+          next
+        end
         tap = Tap.fetch($1, $2)
         tap.install unless tap.installed?
       end
-    end unless ARGV.force?
+    end
 
     begin
       formulae = []
 
-      if ARGV.casks.any?
+      unless ARGV.casks.empty?
         args = []
         args << "--force" if ARGV.force?
         args << "--debug" if ARGV.debug?
@@ -129,9 +135,14 @@ module Homebrew
           raise "No devel block is defined for #{f.full_name}"
         end
 
-        if f.installed?
-          msg = "#{f.full_name}-#{f.installed_version} already installed"
-          msg << ", it's just not linked" unless f.linked_keg.symlink? || f.keg_only?
+        current = f if f.installed?
+        current ||= f.old_installed_formulae.first
+
+        if current
+          msg = "#{current.full_name}-#{current.installed_version} already installed"
+          unless current.linked_keg.symlink? || current.keg_only?
+            msg << ", it's just not linked"
+          end
           opoo msg
         elsif f.migration_needed? && !ARGV.force?
           # Check if the formula we try to install is the same as installed
@@ -155,6 +166,8 @@ module Homebrew
     rescue FormulaUnavailableError => e
       if (blacklist = blacklisted?(e.name))
         ofail "#{e.message}\n#{blacklist}"
+      elsif e.name == "updog"
+        ofail "What's updog?"
       else
         ofail e.message
         query = query_regexp(e.name)
@@ -166,11 +179,11 @@ module Homebrew
           ofail "No similarly named formulae found."
         when 1
           puts "This similarly named formula was found:"
-          puts_columns(formulae_search_results)
+          puts formulae_search_results
           puts "To install it, run:\n  brew install #{formulae_search_results.first}"
         else
           puts "These similarly named formulae were found:"
-          puts_columns(formulae_search_results)
+          puts Formatter.columns(formulae_search_results)
           puts "To install one of them, run (for example):\n  brew install #{formulae_search_results.first}"
         end
 
@@ -181,23 +194,12 @@ module Homebrew
           ofail "No formulae found in taps."
         when 1
           puts "This formula was found in a tap:"
-          puts_columns(taps_search_results)
+          puts taps_search_results
           puts "To install it, run:\n  brew install #{taps_search_results.first}"
         else
           puts "These formulae were found in taps:"
-          puts_columns(taps_search_results)
+          puts Formatter.columns(taps_search_results)
           puts "To install one of them, run (for example):\n  brew install #{taps_search_results.first}"
-        end
-
-        # If they haven't updated in 48 hours (172800 seconds), that
-        # might explain the error
-        master = HOMEBREW_REPOSITORY/".git/refs/heads/master"
-        if master.exist? && (Time.now.to_i - File.mtime(master).to_i) > 172800
-          ohai "You haven't updated Homebrew in a while."
-          puts <<-EOS.undent
-            A formula for #{e.name} might have been added recently.
-            Run `brew update` to get the latest Homebrew updates!
-          EOS
         end
       end
     end
@@ -220,18 +222,25 @@ module Homebrew
 
   def check_development_tools
     checks = Diagnostic::Checks.new
-    checks.all_development_tools_checks.each do |check|
+    all_development_tools_checks = checks.development_tools_checks +
+                                   checks.fatal_development_tools_checks
+    all_development_tools_checks.each do |check|
       out = checks.send(check)
-      opoo out unless out.nil?
+      next if out.nil?
+      if checks.fatal_development_tools_checks.include?(check)
+        odie out
+      else
+        opoo out
+      end
     end
   end
 
   def check_macports
-    unless MacOS.macports_or_fink.empty?
-      opoo "It appears you have MacPorts or Fink installed."
-      puts "Software installed with other package managers causes known problems for"
-      puts "Homebrew. If a formula fails to build, uninstall MacPorts/Fink and try again."
-    end
+    return if MacOS.macports_or_fink.empty?
+
+    opoo "It appears you have MacPorts or Fink installed."
+    puts "Software installed with other package managers causes known problems for"
+    puts "Homebrew. If a formula fails to build, uninstall MacPorts/Fink and try again."
   end
 
   def check_cellar

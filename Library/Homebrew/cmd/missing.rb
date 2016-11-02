@@ -1,13 +1,14 @@
 #:  * `missing` [<formulae>]:
-#:    Check the given <formulae> for missing dependencies.
-#:
-#:    If no <formulae> are given, check all installed brews.
+#:    Check the given <formulae> for missing dependencies. If no <formulae> are
+#:    given, check all installed brews.
 
 require "formula"
 require "tab"
 require "diagnostic"
 
 module Homebrew
+  module_function
+
   def missing
     return unless HOMEBREW_CELLAR.exist?
 
@@ -19,7 +20,7 @@ module Homebrew
 
     Diagnostic.missing_deps(ff) do |name, missing|
       print "#{name}: " if ff.size > 1
-      puts "#{missing * " "}"
+      puts missing.join(" ")
     end
   end
 end

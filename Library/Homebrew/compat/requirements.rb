@@ -3,11 +3,11 @@ require "requirements"
 XcodeDependency            = XcodeRequirement
 MysqlDependency            = MysqlRequirement
 PostgresqlDependency       = PostgresqlRequirement
-GPGDependency              = GPGRequirement
+GPGDependency              = GPG2Requirement
+GPGRequirement             = GPG2Requirement
 TeXDependency              = TeXRequirement
 MercurialDependency        = MercurialRequirement
 GitDependency              = GitRequirement
-AprDependency              = AprRequirement
 FortranDependency          = FortranRequirement
 JavaDependency             = JavaRequirement
 LanguageModuleDependency   = LanguageModuleRequirement

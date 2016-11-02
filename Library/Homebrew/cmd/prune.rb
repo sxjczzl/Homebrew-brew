@@ -12,6 +12,8 @@ require "cmd/tap"
 require "cmd/unlinkapps"
 
 module Homebrew
+  module_function
+
   def prune
     ObserverPathnameExtension.reset_counts!
 
@@ -47,15 +49,17 @@ module Homebrew
       end
     end
 
-    if ObserverPathnameExtension.total.zero?
-      puts "Nothing pruned" if ARGV.verbose?
-    else
-      n, d = ObserverPathnameExtension.counts
-      print "Pruned #{n} symbolic links "
-      print "and #{d} directories " if d > 0
-      puts "from #{HOMEBREW_PREFIX}"
-    end unless ARGV.dry_run?
+    unless ARGV.dry_run?
+      if ObserverPathnameExtension.total.zero?
+        puts "Nothing pruned" if ARGV.verbose?
+      else
+        n, d = ObserverPathnameExtension.counts
+        print "Pruned #{n} symbolic links "
+        print "and #{d} directories " if d > 0
+        puts "from #{HOMEBREW_PREFIX}"
+      end
+    end
 
-    unlinkapps_prune(:dry_run => ARGV.dry_run?, :quiet => true)
+    unlinkapps_prune(dry_run: ARGV.dry_run?, quiet: true)
   end
 end

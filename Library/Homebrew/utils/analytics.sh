@@ -7,7 +7,7 @@ migrate-legacy-uuid-file() {
     local analytics_uuid="$(<"$legacy_uuid_file")"
     if [[ -n "$analytics_uuid" ]]
     then
-      git config --file="$HOMEBREW_REPOSITORY/.git/config" --replace-all homebrew.analyticsuuid "$analytics_uuid"
+      git config --file="$HOMEBREW_REPOSITORY/.git/config" --replace-all homebrew.analyticsuuid "$analytics_uuid" 2>/dev/null
     fi
     rm -f "$legacy_uuid_file"
   fi
@@ -23,8 +23,8 @@ setup-analytics() {
     return
   fi
 
-  local message_seen="$(git config --file="$git_config_file" --get homebrew.analyticsmessage)"
-  local analytics_disabled="$(git config --file="$git_config_file" --get homebrew.analyticsdisabled)"
+  local message_seen="$(git config --file="$git_config_file" --get homebrew.analyticsmessage 2>/dev/null)"
+  local analytics_disabled="$(git config --file="$git_config_file" --get homebrew.analyticsdisabled 2>/dev/null)"
   if [[ "$message_seen" != "true" || "$analytics_disabled" = "true" ]]
   then
     # Internal variable for brew's use, to differentiate from user-supplied setting
@@ -32,12 +32,15 @@ setup-analytics() {
     return
   fi
 
-  HOMEBREW_ANALYTICS_USER_UUID="$(git config --file="$git_config_file" --get homebrew.analyticsuuid)"
+  HOMEBREW_ANALYTICS_USER_UUID="$(git config --file="$git_config_file" --get homebrew.analyticsuuid 2>/dev/null)"
   if [[ -z "$HOMEBREW_ANALYTICS_USER_UUID" ]]
   then
     if [[ -n "$HOMEBREW_LINUX" ]]
     then
-      HOMEBREW_ANALYTICS_USER_UUID="$(tr a-f A-F < /proc/sys/kernel/random/uuid)"
+      HOMEBREW_ANALYTICS_USER_UUID="$(tr a-f A-F </proc/sys/kernel/random/uuid)"
+    elif [[ -n "$HOMEBREW_MACOS" ]]
+    then
+      HOMEBREW_ANALYTICS_USER_UUID="$(/usr/bin/uuidgen)"
     else
       HOMEBREW_ANALYTICS_USER_UUID="$(uuidgen)"
     fi
@@ -48,7 +51,7 @@ setup-analytics() {
       export HOMEBREW_NO_ANALYTICS_THIS_RUN="1"
       return
     fi
-    git config --file="$git_config_file" --replace-all homebrew.analyticsuuid "$HOMEBREW_ANALYTICS_USER_UUID"
+    git config --file="$git_config_file" --replace-all homebrew.analyticsuuid "$HOMEBREW_ANALYTICS_USER_UUID" 2>/dev/null
   fi
 
   if [[ -n "$HOMEBREW_LINUX" ]]
@@ -66,6 +69,9 @@ setup-analytics() {
 
 report-analytics-screenview-command() {
   [[ -n "$HOMEBREW_NO_ANALYTICS" || -n "$HOMEBREW_NO_ANALYTICS_THIS_RUN" ]] && return
+
+  # Don't report commands that are invoked as part of other commands.
+  [[ "$HOMEBREW_COMMAND_DEPTH" != 1 ]] && return
 
   # Don't report non-official commands.
   if ! [[ "$HOMEBREW_COMMAND" = "bundle"   ||
@@ -88,20 +94,20 @@ report-analytics-screenview-command() {
   esac
 
   local args=(
-    --max-time 3 \
-    --user-agent "$HOMEBREW_USER_AGENT_CURL" \
-    -d v=1 \
-    -d tid="$HOMEBREW_ANALYTICS_ID" \
-    -d cid="$HOMEBREW_ANALYTICS_USER_UUID" \
-    -d aip=1 \
-    -d an="$HOMEBREW_PRODUCT" \
-    -d av="$HOMEBREW_VERSION" \
-    -d t=screenview \
-    -d cd="$HOMEBREW_COMMAND" \
+    --max-time 3
+    --user-agent "$HOMEBREW_USER_AGENT_CURL"
+    --data v=1
+    --data aip=1
+    --data t=screenview
+    --data tid="$HOMEBREW_ANALYTICS_ID"
+    --data cid="$HOMEBREW_ANALYTICS_USER_UUID"
+    --data an="$HOMEBREW_PRODUCT"
+    --data av="$HOMEBREW_VERSION"
+    --data cd="$HOMEBREW_COMMAND"
   )
 
   # Send analytics. Don't send or store any personally identifiable information.
-  # https://github.com/Homebrew/brew/blob/master/share/doc/homebrew/Analytics.md
+  # https://github.com/Homebrew/brew/blob/master/docs/Analytics.md
   # https://developers.google.com/analytics/devguides/collection/protocol/v1/devguide#screenView
   # https://developers.google.com/analytics/devguides/collection/protocol/v1/parameters
   if [[ -z "$HOMEBREW_ANALYTICS_DEBUG" ]]
@@ -110,7 +116,8 @@ report-analytics-screenview-command() {
       "${args[@]}" \
       --silent --output /dev/null &>/dev/null & disown
   else
-    "$HOMEBREW_CURL" https://www.google-analytics.com/debug/collect \
-      "${args[@]}"
+    local url="https://www.google-analytics.com/debug/collect"
+    echo "$HOMEBREW_CURL $url ${args[*]}"
+    "$HOMEBREW_CURL" "$url" "${args[@]}"
   fi
 }

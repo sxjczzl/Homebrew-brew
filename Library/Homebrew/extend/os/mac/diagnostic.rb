@@ -1,17 +1,31 @@
 module Homebrew
   module Diagnostic
     class Checks
-      def all_development_tools_checks
+      def development_tools_checks
         %w[
-          check_for_unsupported_osx
+          check_for_unsupported_macos
+          check_for_prerelease_xcode
           check_for_bad_install_name_tool
           check_for_installed_developer_tools
           check_xcode_license_approved
           check_for_osx_gcc_installer
+          check_xcode_8_without_clt_on_el_capitan
         ]
       end
 
-      def check_for_unsupported_osx
+      def fatal_development_tools_checks
+        if MacOS.version >= :sierra && ENV["CI"].nil?
+          %w[
+            check_xcode_up_to_date
+            check_clt_up_to_date
+          ]
+        else
+          %w[
+          ]
+        end
+      end
+
+      def check_for_unsupported_macos
         return if ARGV.homebrew_developer?
 
         who = "We"
@@ -25,111 +39,69 @@ module Homebrew
         end
 
         <<-EOS.undent
-          You are using OS X #{MacOS.version}.
+          You are using macOS #{MacOS.version}.
           #{who} do not provide support for this #{what}.
           You may encounter build failures or other breakages.
           Please create pull-requests instead of filing issues.
         EOS
       end
 
-      # TODO: distill down into single method definition a la BuildToolsError
-      if MacOS.version >= "10.9"
-        def check_for_installed_developer_tools
-          return if MacOS::Xcode.installed? || MacOS::CLT.installed?
+      def check_for_prerelease_xcode
+        return if ARGV.homebrew_developer?
+        # Running a pre-release Xcode on a pre-release OS is expected
+        # and likely to cause less problems than a stable Xcode will.
+        return if OS::Mac.prerelease?
+        return unless MacOS::Xcode.installed?
+        return unless MacOS::Xcode.prerelease?
 
-          <<-EOS.undent
-            No developer tools installed.
-            Install the Command Line Tools:
-              xcode-select --install
-          EOS
-        end
+        <<-EOS.undent
+          You are using a pre-release version of Xcode.
+          You may encounter build failures or other breakages.
+          Please create pull-requests instead of filing issues.
+        EOS
+      end
+
+      def check_xcode_up_to_date
+        return unless MacOS::Xcode.installed? && MacOS::Xcode.outdated?
+
+        message = <<-EOS.undent
+          Your Xcode (#{MacOS::Xcode.version}) is outdated.
+          Please update to Xcode #{MacOS::Xcode.latest_version} (or delete it).
+          #{MacOS::Xcode.update_instructions}
+        EOS
 
         if OS::Mac.prerelease?
-          def check_xcode_up_to_date
-            return unless MacOS::Xcode.installed? && MacOS::Xcode.outdated?
-
-            <<-EOS.undent
-              Your Xcode (#{MacOS::Xcode.version}) is outdated
-              Please update to Xcode #{MacOS::Xcode.latest_version}.
-              Xcode can be updated from
-                https://developer.apple.com/xcode/downloads/
-            EOS
-          end
-        else
-          def check_xcode_up_to_date
-            return unless MacOS::Xcode.installed? && MacOS::Xcode.outdated?
-
-            <<-EOS.undent
-              Your Xcode (#{MacOS::Xcode.version}) is outdated
-              Please update to Xcode #{MacOS::Xcode.latest_version}.
-              Xcode can be updated from the App Store.
-            EOS
-          end
-        end
-
-        def check_clt_up_to_date
-          return unless MacOS::CLT.installed? && MacOS::CLT.outdated?
-
-          <<-EOS.undent
-            A newer Command Line Tools release is available.
-            Update them from Software Update in the App Store.
+          current_path = Utils.popen_read("/usr/bin/xcode-select", "-p")
+          message += <<-EOS.undent
+            If #{MacOS::Xcode.latest_version} is installed, you may need to:
+              sudo xcode-select --switch /Applications/Xcode.app
+            Current developer directory is:
+              #{current_path}
           EOS
         end
-      elsif MacOS.version == "10.8" || MacOS.version == "10.7"
-        def check_for_installed_developer_tools
-          return if MacOS::Xcode.installed? || MacOS::CLT.installed?
+        message
+      end
 
-          <<-EOS.undent
-            No developer tools installed.
-            You should install the Command Line Tools.
-            The standalone package can be obtained from
-              https://developer.apple.com/downloads
-            or it can be installed via Xcode's preferences.
-          EOS
-        end
+      def check_clt_up_to_date
+        return unless MacOS::CLT.installed? && MacOS::CLT.outdated?
 
-        def check_xcode_up_to_date
-          return unless MacOS::Xcode.installed? && MacOS::Xcode.outdated?
+        <<-EOS.undent
+          A newer Command Line Tools release is available.
+          #{MacOS::CLT.update_instructions}
+        EOS
+      end
 
-          <<-EOS.undent
-            Your Xcode (#{MacOS::Xcode.version}) is outdated
-            Please update to Xcode #{MacOS::Xcode.latest_version}.
-            Xcode can be updated from
-              https://developer.apple.com/xcode/downloads/
-          EOS
-        end
+      def check_xcode_8_without_clt_on_el_capitan
+        return unless MacOS::Xcode.without_clt?
+        # Scope this to Xcode 8 on El Cap for now
+        return unless MacOS.version == :el_capitan && MacOS::Xcode.version >= "8"
 
-        def check_clt_up_to_date
-          return unless MacOS::CLT.installed? && MacOS::CLT.outdated?
-
-          <<-EOS.undent
-            A newer Command Line Tools release is available.
-            The standalone package can be obtained from
-              https://developer.apple.com/downloads
-            or it can be installed via Xcode's preferences.
-          EOS
-        end
-      else
-        def check_for_installed_developer_tools
-          return if MacOS::Xcode.installed?
-
-          <<-EOS.undent
-            Xcode is not installed. Most formulae need Xcode to build.
-            It can be installed from
-              https://developer.apple.com/xcode/downloads/
-          EOS
-        end
-
-        def check_xcode_up_to_date
-          return unless MacOS::Xcode.installed? && MacOS::Xcode.outdated?
-
-          <<-EOS.undent
-            Your Xcode (#{MacOS::Xcode.version}) is outdated
-            Please update to Xcode #{MacOS::Xcode.latest_version}.
-            Xcode can be updated from
-              https://developer.apple.com/xcode/downloads/
-          EOS
-        end
+        <<-EOS.undent
+          You have Xcode 8 installed without the CLT;
+          this causes certain builds to fail on OS X El Capitan (10.11).
+          Please install the CLT via:
+            sudo xcode-select --install
+        EOS
       end
 
       def check_for_osx_gcc_installer
@@ -178,7 +150,7 @@ module Homebrew
           You have an outdated version of /usr/bin/install_name_tool installed.
           This will cause binary package installations to fail.
           This can happen if you install osx-gcc-installer or RailsInstaller.
-          To restore it, you must reinstall OS X or restore the binary from
+          To restore it, you must reinstall macOS or restore the binary from
           the OS packages.
         EOS
       end
@@ -199,8 +171,7 @@ module Homebrew
       end
 
       def check_ruby_version
-        ruby_version = MacOS.version >= "10.9" ? "2.0" : "1.8"
-        return if RUBY_VERSION[/\d\.\d/] == ruby_version
+        return if RUBY_VERSION[/\d\.\d/] == "2.0"
 
         <<-EOS.undent
           Ruby version #{RUBY_VERSION} is unsupported on #{MacOS.version}. Homebrew
@@ -267,7 +238,7 @@ module Homebrew
           SSL_CERT_DIR support was removed from Apple's curl.
           If fetching formulae fails you should:
             unset SSL_CERT_DIR
-          and remove it from #{shell_profile} if present.
+          and remove it from #{Utils::Shell.shell_profile} if present.
         EOS
       end
 
@@ -287,13 +258,13 @@ module Homebrew
         return unless MacOS::XQuartz.version
         return if MacOS::XQuartz.provided_by_apple?
 
-        installed_version = Version.new(MacOS::XQuartz.version)
-        latest_version = Version.new(MacOS::XQuartz.latest_version)
+        installed_version = Version.create(MacOS::XQuartz.version)
+        latest_version = Version.create(MacOS::XQuartz.latest_version)
         return if installed_version >= latest_version
 
         <<-EOS.undent
-          Your XQuartz (#{installed_version}) is outdated
-          Please install XQuartz #{latest_version}:
+          Your XQuartz (#{installed_version}) is outdated.
+          Please install XQuartz #{latest_version} (or delete it):
             https://xquartz.macosforge.org
         EOS
       end
