@@ -48,6 +48,15 @@ class LinkTests < Homebrew::TestCase
     assert_predicate @keg, :empty_installation?
   end
 
+  def test_missing_metafiles
+    assert_predicate @keg, :exist?
+    assert_predicate @keg, :directory?
+    assert_predicate @keg, :missing_metafiles?
+
+    touch @keg/"README"
+    refute_predicate @keg, :missing_metafiles?
+  end
+
   def test_linking_keg
     assert_equal 3, @keg.link
     (HOMEBREW_PREFIX/"bin").children.each { |c| assert_predicate c.readlink, :relative? }
