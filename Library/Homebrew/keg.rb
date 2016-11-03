@@ -168,6 +168,18 @@ class Keg
     true
   end
 
+  def missing_metafiles?
+    Pathname.glob(path.children) do |file|
+      next if file.directory?
+      basename = file.basename.to_s
+      next if %w[.DS_Store INSTALL_RECEIPT.json].include?(basename)
+      Metafiles.copy?(basename)
+      return false
+    end
+
+    true
+  end
+
   def /(other)
     path / other
   end
