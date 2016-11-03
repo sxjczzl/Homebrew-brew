@@ -1,5 +1,3 @@
-require "language/node"
-
 class NodeRequirement < Requirement
   fatal true
   default_formula "node"
