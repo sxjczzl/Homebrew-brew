@@ -1024,6 +1024,21 @@ class FormulaAuditor
     EOS
   end
 
+  def audit_prefix_has_metafiles
+    # Probably needs some form of whitelist really. There are semi-valid
+    # use cases where you wouldn't necessarily have metafiles installed.
+    return unless @strict
+    return unless formula.prefix.directory?
+    return unless Keg.new(formula.prefix).missing_metafiles?
+
+    problem <<-EOS.undent
+      Metafiles such as README, LICENSE or COPYING do not seem
+      to have been installed. Please ensure this is correct
+      otherwise you may need to add `prefix.install_metafiles`
+      to the formula.
+    EOS
+  end
+
   def audit_conditional_dep(dep, condition, line)
     quoted_dep = quote_dep(dep)
     dep = Regexp.escape(dep.to_s)
@@ -1063,6 +1078,7 @@ class FormulaAuditor
     text.without_patch.split("\n").each_with_index { |line, lineno| audit_line(line, lineno+1) }
     audit_installed
     audit_prefix_has_contents
+    audit_prefix_has_metafiles
     audit_reverse_migration
     audit_style
   end
