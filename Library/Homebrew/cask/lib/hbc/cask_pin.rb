@@ -10,7 +10,8 @@ class CaskPin
   end
 
   def pin
-    FileUtils.touch path
+    f = File.new(path,"w")
+    f.puts @c.installed_latest_version
   end
 
   def unpin
