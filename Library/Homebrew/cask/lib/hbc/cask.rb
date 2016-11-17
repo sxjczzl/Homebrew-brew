@@ -123,6 +123,10 @@ module Hbc
       @token
     end
 
+    def auto_update?
+      auto_updates == true
+    end
+
     def dumpcask
       return unless Hbc.respond_to?(:debug)
       return unless Hbc.debug
