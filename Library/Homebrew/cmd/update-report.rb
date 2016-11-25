@@ -30,6 +30,8 @@ module Homebrew
         ohai "Homebrew has enabled anonymous aggregate user behaviour analytics"
         puts "Read the analytics documentation (and how to opt-out) here:"
         puts "  https://git.io/brew-analytics"
+        puts "Sleeping for 10 seconds. Press CTRL+C if you'd like to configure analytics"
+        sleep 10
 
         # Consider the message possibly missed if not a TTY.
         if $stdout.tty?
