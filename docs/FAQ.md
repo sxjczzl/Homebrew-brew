@@ -70,6 +70,24 @@ Be careful as this is a destructive operation.
 
 Which is usually: `~/Library/Caches/Homebrew`
 
+### How do I opt out of Homebrew's anonymous user data aggregation?
+
+Homebrew has begun gathering anonymous aggregate user behaviour analytics and
+reporting these to Google Analytics. Users are notified of this when they first 
+run `brew update` or install Homebrew.
+
+Homebrew analytics helps the maintainers and leaving it on is appreciated.
+However, if you want to opt out of Homebrew's analytics, you can set this variable
+in your environment:
+
+`export HOMEBREW_NO_ANALYTICS=1`
+
+Alternatively, this will prevent analytics from ever being sent:
+
+`brew analytics off`
+
+See the [Analytics page](https://github.com/Homebrew/brew/blob/master/docs/Analytics.md) in our documentation for more.
+
 ### My Mac `.app`s don’t find `/usr/local/bin` utilities!
 GUI apps on macOS don’t have `/usr/local/bin` in their `PATH` by default.
 If you’re on Mountain Lion, you can fix this by running
