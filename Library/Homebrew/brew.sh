@@ -191,6 +191,11 @@ do
   then
     export HOMEBREW_HELP="1"
     break
+  elif [[ $arg = "--ask" ]]
+  then
+    export HOMEBREW_ASK="1"
+    shift
+    break
   fi
 done
 

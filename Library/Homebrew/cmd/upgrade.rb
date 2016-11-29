@@ -75,12 +75,24 @@ module Homebrew
       puts pinned.map { |f| "#{f.full_specified_name} #{f.pkg_version}" } * ", "
     end
 
+    if ENV["HOMEBREW_ASK"]
+      choice = prompt "y", "Do you want to proceed [Y/n] "
+
+      exit 0 if choice.downcase == "n"
+    end
+
     formulae_to_install.each do |f|
       upgrade_formula(f)
       next unless ARGV.include?("--cleanup")
       next unless f.installed?
       Homebrew::Cleanup.cleanup_formula f
     end
+  end
+
+  def prompt(default, *args)
+    print(*args)
+    result = gets.strip
+    return result.empty? ? default : result
   end
 
   def upgrade_pinned?
