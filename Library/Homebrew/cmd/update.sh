@@ -393,8 +393,15 @@ EOS
       odie "Git must be installed and in your PATH!"
     fi
   fi
-  export GIT_TERMINAL_PROMPT="0"
-  export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
+
+  if [[ -z "$GIT_TERMINAL_PROMPT" ]]
+  then
+    export GIT_TERMINAL_PROMPT="0"
+  fi
+  if [[ -z "$GIT_SSH_COMMAND" ]]
+  then
+    export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
+  fi
 
   if [[ -z "$HOMEBREW_VERBOSE" ]]
   then
