@@ -394,14 +394,8 @@ EOS
     fi
   fi
 
-  if [[ -z "$GIT_TERMINAL_PROMPT" ]]
-  then
-    export GIT_TERMINAL_PROMPT="0"
-  fi
-  if [[ -z "$GIT_SSH_COMMAND" ]]
-  then
-    export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
-  fi
+  export GIT_TERMINAL_PROMPT=${GIT_TERMINAL_PROMPT:-"0"}
+  export GIT_SSH_COMMAND=${GIT_SSH_COMMAND:-"ssh -oBatchMode=yes"}
 
   if [[ -z "$HOMEBREW_VERBOSE" ]]
   then
