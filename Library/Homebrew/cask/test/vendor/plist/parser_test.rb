@@ -60,6 +60,6 @@ describe Plist do
   end
 
   it "does not choke on empty input" do
-    Plist.parse_xml("").must_equal {}
+    expect(Plist.parse_xml("")).must_be_nil
   end
 end
