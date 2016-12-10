@@ -1,9 +1,6 @@
 $LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"))
 $LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/support/lib"))
 
-require "bundler"
-require "bundler/setup"
-
 require "simplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
 require "global"
 
@@ -56,5 +53,3 @@ require "test/support/helper/cask/file_helper"
 require "test/support/helper/cask/install_helper"
 require "test/support/helper/cask/cleanup"
 require "test/support/helper/cask/never_sudo_system_command"
-require "tmpdir"
-require "tempfile"
