@@ -16,6 +16,14 @@ BREW_FILE_DIRECTORY="$(quiet_cd "${0%/*}/" && pwd -P)"
 HOMEBREW_BREW_FILE="${BREW_FILE_DIRECTORY%/}/${0##*/}"
 HOMEBREW_PREFIX="${HOMEBREW_BREW_FILE%/*/*}"
 
+# bail if inside virtualenv
+if [[ -n "${VIRTUAL_ENV+x}" ]]
+then
+    printf '%s\n' 'Cowardly refusing to run inside virtualenv, please deactivate'
+    exit 1
+fi
+
+
 # Default to / prefix if unset or the bin/brew file.
 if [[ -z "$HOMEBREW_PREFIX" || "$HOMEBREW_PREFIX" = "$HOMEBREW_BREW_FILE" ]]
 then
