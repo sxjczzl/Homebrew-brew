@@ -57,7 +57,7 @@ class SystemConfig
     end
 
     def describe_perl
-      describe_path(which "perl")
+      describe_path(which("perl"))
     end
 
     def describe_python
@@ -108,7 +108,7 @@ class SystemConfig
     end
 
     def describe_java
-      # java_home doesn't exist on all OS Xs; it might be missing on older versions.
+      # java_home doesn't exist on all macOSs; it might be missing on older versions.
       return "N/A" unless File.executable? "/usr/libexec/java_home"
 
       java_xml = Utils.popen_read("/usr/libexec/java_home", "--xml", "--failfast")
@@ -143,16 +143,16 @@ class SystemConfig
       f.puts "HOMEBREW_BOTTLE_DOMAIN: #{BottleSpecification::DEFAULT_DOMAIN}"
       f.puts hardware if hardware
       f.puts "Homebrew Ruby: #{describe_homebrew_ruby}"
-      f.puts "GCC-4.0: build #{gcc_40}" if gcc_40
-      f.puts "GCC-4.2: build #{gcc_42}" if gcc_42
-      f.puts "Clang: #{clang ? "#{clang} build #{clang_build}" : "N/A"}"
+      f.puts "GCC-4.0: build #{gcc_40}" unless gcc_40.null?
+      f.puts "GCC-4.2: build #{gcc_42}" unless gcc_42.null?
+      f.puts "Clang: #{clang.null? ? "N/A" : "#{clang} build #{clang_build}"}"
       f.puts "Git: #{describe_git}"
       f.puts "Perl: #{describe_perl}"
       f.puts "Python: #{describe_python}"
       f.puts "Ruby: #{describe_ruby}"
       f.puts "Java: #{describe_java}"
     end
-    alias_method :dump_generic_verbose_config, :dump_verbose_config
+    alias dump_generic_verbose_config dump_verbose_config
   end
 end
 

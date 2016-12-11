@@ -1,94 +1,20 @@
 require "pathname"
 require "emoji"
 require "exceptions"
+require "utils/analytics"
+require "utils/curl"
+require "utils/fork"
+require "utils/formatter"
+require "utils/git"
+require "utils/github"
 require "utils/hash"
-require "utils/json"
 require "utils/inreplace"
 require "utils/popen"
-require "utils/fork"
-require "utils/git"
-require "utils/analytics"
-require "utils/github"
-require "utils/curl"
-
-class Tty
-  class << self
-    def strip_ansi(string)
-      string.gsub(/\033\[\d+(;\d+)*m/, "")
-    end
-
-    def blue
-      bold 34
-    end
-
-    def white
-      bold 39
-    end
-
-    def magenta
-      bold 35
-    end
-
-    def red
-      underline 31
-    end
-
-    def yellow
-      underline 33
-    end
-
-    def reset
-      escape 0
-    end
-
-    def em
-      underline 39
-    end
-
-    def green
-      bold 32
-    end
-
-    def gray
-      bold 30
-    end
-
-    def highlight
-      bold 39
-    end
-
-    def width
-      `/usr/bin/tput cols`.strip.to_i
-    end
-
-    def truncate(str)
-      w = width
-      w > 10 ? str.to_s[0, w - 4] : str
-    end
-
-    private
-
-    def color(n)
-      escape "0;#{n}"
-    end
-
-    def bold(n)
-      escape "1;#{n}"
-    end
-
-    def underline(n)
-      escape "4;#{n}"
-    end
-
-    def escape(n)
-      "\033[#{n}m" if $stdout.tty?
-    end
-  end
-end
+require "utils/tty"
 
 def ohai(title, *sput)
   title = Tty.truncate(title) if $stdout.tty? && !ARGV.verbose?
-  puts "#{Tty.blue}==>#{Tty.white} #{title}#{Tty.reset}"
+  puts Formatter.headline(title, color: :blue)
   puts sput
 end
 
@@ -96,16 +22,16 @@ def oh1(title, options = {})
   if $stdout.tty? && !ARGV.verbose? && options.fetch(:truncate, :auto) == :auto
     title = Tty.truncate(title)
   end
-  puts "#{Tty.green}==>#{Tty.white} #{title}#{Tty.reset}"
+  puts Formatter.headline(title, color: :green)
 end
 
 # Print a warning (do this rarely)
-def opoo(warning)
-  $stderr.puts "#{Tty.yellow}Warning#{Tty.reset}: #{warning}"
+def opoo(message)
+  $stderr.puts Formatter.warning(message, label: "Warning")
 end
 
-def onoe(error)
-  $stderr.puts "#{Tty.red}Error#{Tty.reset}: #{error}"
+def onoe(message)
+  $stderr.puts Formatter.error(message, label: "Error")
 end
 
 def ofail(error)
@@ -138,11 +64,10 @@ def odeprecated(method, replacement = nil, options = {})
   backtrace = options.fetch(:caller, caller)
   tap_message = nil
   caller_message = backtrace.detect do |line|
-    if line =~ %r{^#{Regexp.escape HOMEBREW_LIBRARY}/Taps/([^/]+/[^/]+)/}
-      tap = Tap.fetch $1
-      tap_message = "\nPlease report this to the #{tap} tap!"
-      true
-    end
+    next unless line =~ %r{^#{Regexp.escape HOMEBREW_LIBRARY}/Taps/([^/]+/[^/]+)/}
+    tap = Tap.fetch $1
+    tap_message = "\nPlease report this to the #{tap} tap!"
+    true
   end
   caller_message ||= backtrace.detect do |line|
     !line.start_with?("#{HOMEBREW_LIBRARY_PATH}/compat/")
@@ -157,34 +82,34 @@ def odeprecated(method, replacement = nil, options = {})
 
   if ARGV.homebrew_developer? || options[:die] ||
      Homebrew.raise_deprecation_exceptions?
-    raise FormulaMethodDeprecatedError, message
+    raise MethodDeprecatedError, message
   else
     opoo "#{message}\n"
   end
 end
 
 def odisabled(method, replacement = nil, options = {})
-  options = { :die => true, :caller => caller }.merge(options)
+  options = { die: true, caller: caller }.merge(options)
   odeprecated(method, replacement, options)
 end
 
 def pretty_installed(f)
   if !$stdout.tty?
-    "#{f}"
+    f.to_s
   elsif Emoji.enabled?
-    "#{Tty.highlight}#{f} #{Tty.green}#{Emoji.tick}#{Tty.reset}"
+    "#{Tty.bold}#{f} #{Formatter.success(Emoji.tick)}#{Tty.reset}"
   else
-    "#{Tty.highlight}#{Tty.green}#{f} (installed)#{Tty.reset}"
+    Formatter.success("#{Tty.bold}#{f} (installed)#{Tty.reset}")
   end
 end
 
 def pretty_uninstalled(f)
   if !$stdout.tty?
-    "#{f}"
+    f.to_s
   elsif Emoji.enabled?
-    "#{f} #{Tty.red}#{Emoji.cross}#{Tty.reset}"
+    "#{Tty.bold}#{f} #{Formatter.error(Emoji.cross)}#{Tty.reset}"
   else
-    "#{Tty.red}#{f} (uninstalled)#{Tty.reset}"
+    Formatter.error("#{Tty.bold}#{f} (uninstalled)#{Tty.reset}")
   end
 end
 
@@ -196,7 +121,7 @@ def pretty_duration(s)
     m = s / 60
     s %= 60
     res = "#{m} minute#{plural m}"
-    return res if s == 0
+    return res if s.zero?
     res << " "
   end
 
@@ -204,7 +129,7 @@ def pretty_duration(s)
 end
 
 def plural(n, s = "s")
-  (n == 1) ? "" : s
+  n == 1 ? "" : s
 end
 
 def interactive_shell(f = nil)
@@ -219,65 +144,53 @@ def interactive_shell(f = nil)
 
   Process.wait fork { exec ENV["SHELL"] }
 
-  if $?.success?
-    return
-  elsif $?.exited?
-    raise "Aborted due to non-zero exit status (#{$?.exitstatus})"
-  else
-    raise $?.inspect
-  end
+  return if $?.success?
+  raise "Aborted due to non-zero exit status (#{$?.exitstatus})" if $?.exited?
+  raise $?.inspect
 end
 
 module Homebrew
-  def self._system(cmd, *args)
+  module_function
+
+  def _system(cmd, *args)
     pid = fork do
       yield if block_given?
       args.collect!(&:to_s)
-      exec(cmd, *args) rescue nil
+      begin
+        exec(cmd, *args)
+      rescue
+        nil
+      end
       exit! 1 # never gets here unless exec failed
     end
     Process.wait(pid)
     $?.success?
   end
 
-  def self.system(cmd, *args)
+  def system(cmd, *args)
     puts "#{cmd} #{args*" "}" if ARGV.verbose?
     _system(cmd, *args)
   end
 
-  def self.homebrew_version_string
-    if pretty_revision = HOMEBREW_REPOSITORY.git_short_head
-      last_commit = HOMEBREW_REPOSITORY.git_last_commit_date
-      "#{HOMEBREW_VERSION} (git revision #{pretty_revision}; last commit #{last_commit})"
-    else
-      "#{HOMEBREW_VERSION} (no git repository)"
-    end
-  end
+  def install_gem_setup_path!(name, version = nil, executable = name)
+    # Respect user's preferences for where gems should be installed.
+    ENV["GEM_HOME"] = ENV["GEM_OLD_HOME"].to_s
+    ENV["GEM_HOME"] = Gem.user_dir if ENV["GEM_HOME"].empty?
+    ENV["GEM_PATH"] = ENV["GEM_OLD_PATH"] unless ENV["GEM_OLD_PATH"].to_s.empty?
 
-  def self.core_tap_version_string
-    require "tap"
-    tap = CoreTap.instance
-    return "N/A" unless tap.installed?
-    if pretty_revision = tap.git_short_head
-      last_commit = tap.git_last_commit_date
-      "(git revision #{pretty_revision}; last commit #{last_commit})"
-    else
-      "(no git repository)"
-    end
-  end
-
-  def self.install_gem_setup_path!(name, version = nil, executable = name)
-    require "rubygems"
+    # Make rubygems notice env changes.
+    Gem.clear_paths
+    Gem::Specification.reset
 
     # Add Gem binary directory and (if missing) Ruby binary directory to PATH.
     path = ENV["PATH"].split(File::PATH_SEPARATOR)
     path.unshift(RUBY_BIN) if which("ruby") != RUBY_PATH
-    path.unshift("#{Gem.user_dir}/bin")
+    path.unshift("#{Gem.dir}/bin")
     ENV["PATH"] = path.join(File::PATH_SEPARATOR)
 
     if Gem::Specification.find_all_by_name(name, version).empty?
       ohai "Installing or updating '#{name}' gem"
-      install_args = %W[--no-ri --no-rdoc --user-install #{name}]
+      install_args = %W[--no-ri --no-rdoc #{name}]
       install_args << "--version" << version if version
 
       # Do `gem install [...]` without having to spawn a separate process or
@@ -291,23 +204,22 @@ module Homebrew
       rescue Gem::SystemExitException => e
         exit_code = e.exit_code
       end
-      odie "Failed to install/update the '#{name}' gem." if exit_code != 0
+      odie "Failed to install/update the '#{name}' gem." if exit_code.nonzero?
     end
 
-    unless which executable
-      odie <<-EOS.undent
-        The '#{name}' gem is installed but couldn't find '#{executable}' in the PATH:
-        #{ENV["PATH"]}
-      EOS
-    end
+    return if which(executable)
+    odie <<-EOS.undent
+      The '#{name}' gem is installed but couldn't find '#{executable}' in the PATH:
+      #{ENV["PATH"]}
+    EOS
   end
 
   # Hash of Module => Set(method_names)
-  @@injected_dump_stat_modules = {}
+  @injected_dump_stat_modules = {}
 
   def inject_dump_stats!(the_module, pattern)
-    @@injected_dump_stat_modules[the_module] ||= []
-    injected_methods = @@injected_dump_stat_modules[the_module]
+    @injected_dump_stat_modules[the_module] ||= []
+    injected_methods = @injected_dump_stat_modules[the_module]
     the_module.module_eval do
       instance_methods.grep(pattern).each do |name|
         next if injected_methods.include? name
@@ -324,13 +236,12 @@ module Homebrew
       end
     end
 
-    if $times.nil?
-      $times = {}
-      at_exit do
-        col_width = [$times.keys.map(&:size).max + 2, 15].max
-        $times.sort_by { |_k, v| v }.each do |method, time|
-          puts format("%-*s %0.4f sec", col_width, "#{method}:", time)
-        end
+    return unless $times.nil?
+    $times = {}
+    at_exit do
+      col_width = [$times.keys.map(&:size).max + 2, 15].max
+      $times.sort_by { |_k, v| v }.each do |method, time|
+        puts format("%-*s %0.4f sec", col_width, "#{method}:", time)
       end
     end
   end
@@ -371,43 +282,6 @@ def quiet_system(cmd, *args)
     # will fail to execute if they can't write to an open stream.
     $stdout.reopen("/dev/null")
     $stderr.reopen("/dev/null")
-  end
-end
-
-def puts_columns(items)
-  return if items.empty?
-
-  unless $stdout.tty?
-    puts items
-    return
-  end
-
-  # TTY case: If possible, output using multiple columns.
-  console_width = Tty.width
-  console_width = 80 if console_width <= 0
-  plain_item_lengths = items.map { |s| Tty.strip_ansi(s).length }
-  max_len = plain_item_lengths.max
-  col_gap = 2 # number of spaces between columns
-  gap_str = " " * col_gap
-  cols = (console_width + col_gap) / (max_len + col_gap)
-  cols = 1 if cols < 1
-  rows = (items.size + cols - 1) / cols
-  cols = (items.size + rows - 1) / rows # avoid empty trailing columns
-
-  if cols >= 2
-    col_width = (console_width + col_gap) / cols - col_gap
-    items = items.each_with_index.map do |item, index|
-      item + "".ljust(col_width - plain_item_lengths[index])
-    end
-  end
-
-  if cols == 1
-    puts items
-  else
-    rows.times do |row_index|
-      item_indices_for_row = row_index.step(items.size - 1, rows).to_a
-      puts items.values_at(*item_indices_for_row).join(gap_str)
-    end
   end
 end
 
@@ -501,6 +375,15 @@ ensure
   trap("INT", std_trap)
 end
 
+def capture_stderr
+  old = $stderr
+  $stderr = StringIO.new
+  yield
+  $stderr.string
+ensure
+  $stderr = old
+end
+
 def nostdout
   if ARGV.verbose?
     yield
@@ -542,10 +425,10 @@ def disk_usage_readable(size_in_bytes)
   end
 
   # avoid trailing zero after decimal point
-  if (size * 10).to_i % 10 == 0
+  if ((size * 10).to_i % 10).zero?
     "#{size.to_i}#{unit}"
   else
-    "#{"%.1f" % size}#{unit}"
+    "#{format("%.1f", size)}#{unit}"
   end
 end
 
@@ -572,10 +455,10 @@ def truncate_text_to_approximate_size(s, max_bytes, options = {})
   glue_bytes = glue.encode("BINARY")
   n_front_bytes = (max_bytes_in * front_weight).floor
   n_back_bytes = max_bytes_in - n_front_bytes
-  if n_front_bytes == 0
+  if n_front_bytes.zero?
     front = bytes[1..0]
     back = bytes[-max_bytes_in..-1]
-  elsif n_back_bytes == 0
+  elsif n_back_bytes.zero?
     front = bytes[0..(max_bytes_in - 1)]
     back = bytes[1..0]
   else
@@ -584,30 +467,78 @@ def truncate_text_to_approximate_size(s, max_bytes, options = {})
   end
   out = front + glue_bytes + back
   out.force_encoding("UTF-8")
-  out.encode!("UTF-16", :invalid => :replace)
+  out.encode!("UTF-16", invalid: :replace)
   out.encode!("UTF-8")
   out
 end
 
-def link_path_manpages(path, command)
-  return unless (path/"man").exist?
+def link_src_dst_dirs(src_dir, dst_dir, command, link_dir: false)
+  return unless src_dir.exist?
   conflicts = []
-  (path/"man").find do |src|
-    next if src.directory?
-    dst = HOMEBREW_PREFIX/"share"/src.relative_path_from(path)
-    next if dst.symlink? && src == dst.resolved_path
+  src_paths = link_dir ? [src_dir] : src_dir.find
+  src_paths.each do |src|
+    next if src.directory? && !link_dir
+    dst = dst_dir/src.relative_path_from(src_dir)
+    if dst.symlink?
+      next if src == dst.resolved_path
+      dst.unlink
+    end
     if dst.exist?
       conflicts << dst
       next
     end
+    dst_dir.parent.mkpath
     dst.make_relative_symlink(src)
   end
-  unless conflicts.empty?
-    onoe <<-EOS.undent
-      Could not link #{name} manpages to:
-      #{conflicts.join("\n")}
 
-      Please delete these files and run `#{command}`.
-    EOS
+  return if conflicts.empty?
+  onoe <<-EOS.undent
+    Could not link:
+    #{conflicts.join("\n")}
+
+    Please delete these paths and run `#{command}`.
+  EOS
+end
+
+def link_path_manpages(path, command)
+  link_src_dst_dirs(path/"man", HOMEBREW_PREFIX/"share/man", command)
+end
+
+def migrate_legacy_keg_symlinks_if_necessary
+  legacy_linked_kegs = HOMEBREW_LIBRARY/"LinkedKegs"
+  return unless legacy_linked_kegs.directory?
+
+  HOMEBREW_LINKED_KEGS.mkpath unless legacy_linked_kegs.children.empty?
+  legacy_linked_kegs.children.each do |link|
+    name = link.basename.to_s
+    src = begin
+      link.realpath
+    rescue Errno::ENOENT
+      begin
+        (HOMEBREW_PREFIX/"opt/#{name}").realpath
+      rescue Errno::ENOENT
+        begin
+          Formulary.factory(name).installed_prefix
+        rescue
+          next
+        end
+      end
+    end
+    dst = HOMEBREW_LINKED_KEGS/name
+    dst.unlink if dst.exist?
+    FileUtils.ln_sf(src.relative_path_from(dst.parent), dst)
   end
+  FileUtils.rm_rf legacy_linked_kegs
+
+  legacy_pinned_kegs = HOMEBREW_LIBRARY/"PinnedKegs"
+  return unless legacy_pinned_kegs.directory?
+
+  HOMEBREW_PINNED_KEGS.mkpath unless legacy_pinned_kegs.children.empty?
+  legacy_pinned_kegs.children.each do |link|
+    name = link.basename.to_s
+    src = link.realpath
+    dst = HOMEBREW_PINNED_KEGS/name
+    FileUtils.ln_sf(src.relative_path_from(dst.parent), dst)
+  end
+  FileUtils.rm_rf legacy_pinned_kegs
 end

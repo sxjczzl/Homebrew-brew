@@ -3,11 +3,11 @@ module OS
     X11 = XQuartz = Module.new
 
     module XQuartz
-      extend self
+      module_function
 
-      FORGE_BUNDLE_ID = "org.macosforge.xquartz.X11"
-      APPLE_BUNDLE_ID = "org.x.X11"
-      FORGE_PKG_ID = "org.macosforge.xquartz.pkg"
+      FORGE_BUNDLE_ID = "org.macosforge.xquartz.X11".freeze
+      APPLE_BUNDLE_ID = "org.x.X11".freeze
+      FORGE_PKG_ID = "org.macosforge.xquartz.pkg".freeze
 
       PKGINFO_VERSION_MAP = {
         "2.6.34" => "2.6.3",

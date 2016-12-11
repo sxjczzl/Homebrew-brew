@@ -6,13 +6,15 @@
 #:    If `--patch` is passed, patches for <formulae> will be applied to the
 #:    unpacked source.
 #:
-#:    If `--git` is passed, a Git repository will be initalized in the unpacked
+#:    If `--git` is passed, a Git repository will be initialized in the unpacked
 #:    source. This is useful for creating patches for the software.
 
 require "stringio"
 require "formula"
 
 module Homebrew
+  module_function
+
   def unpack
     formulae = ARGV.formulae
     raise FormulaUnspecifiedError if formulae.empty?
@@ -39,17 +41,16 @@ module Homebrew
       ENV["VERBOSE"] = "1" # show messages about tar
       f.brew do
         f.patch if ARGV.flag?("--patch")
-        cp_r getwd, stage_dir, :preserve => true
+        cp_r getwd, stage_dir, preserve: true
       end
       ENV["VERBOSE"] = nil
 
-      if ARGV.git?
-        ohai "Setting up git repository"
-        cd stage_dir
-        system "git", "init", "-q"
-        system "git", "add", "-A"
-        system "git", "commit", "-q", "-m", "brew-unpack"
-      end
+      next unless ARGV.git?
+      ohai "Setting up git repository"
+      cd stage_dir
+      system "git", "init", "-q"
+      system "git", "add", "-A"
+      system "git", "commit", "-q", "-m", "brew-unpack"
     end
   end
 end

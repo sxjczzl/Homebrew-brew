@@ -4,8 +4,8 @@ class FormulaVersions
   IGNORED_EXCEPTIONS = [
     ArgumentError, NameError, SyntaxError, TypeError,
     FormulaSpecificationError, FormulaValidationError,
-    ErrorDuringExecution, LoadError, FormulaMethodDeprecatedError
-  ]
+    ErrorDuringExecution, LoadError, MethodDeprecatedError
+  ].freeze
 
   attr_reader :name, :path, :repository, :entry_name
 
@@ -52,9 +52,7 @@ class FormulaVersions
     rev_list(branch) do |rev|
       formula_at_revision(rev) do |f|
         bottle = f.bottle_specification
-        unless bottle.checksums.empty?
-          map[f.pkg_version] << bottle.rebuild
-        end
+        map[f.pkg_version] << bottle.rebuild unless bottle.checksums.empty?
       end
     end
     map
@@ -63,19 +61,28 @@ class FormulaVersions
   def version_attributes_map(attributes, branch)
     attributes_map = {}
     return attributes_map if attributes.empty?
+
     attributes.each do |attribute|
-      attributes_map[attribute] = Hash.new { |h, k| h[k] = [] }
+      attributes_map[attribute] ||= {}
     end
 
     rev_list(branch) do |rev|
       formula_at_revision(rev) do |f|
         attributes.each do |attribute|
           map = attributes_map[attribute]
-          map[f.stable.version] << f.send(attribute) if f.stable
-          map[f.devel.version] << f.send(attribute) if f.devel
+          if f.stable
+            map[:stable] ||= {}
+            map[:stable][f.stable.version] ||= []
+            map[:stable][f.stable.version] << f.send(attribute)
+          end
+          next unless f.devel
+          map[:devel] ||= {}
+          map[:devel][f.devel.version] ||= []
+          map[:devel][f.devel.version] << f.send(attribute)
         end
       end
     end
+
     attributes_map
   end
 end

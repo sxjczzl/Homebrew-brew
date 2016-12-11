@@ -5,24 +5,29 @@ require "formula_installer"
 require "development_tools"
 
 module Homebrew
+  module_function
+
   def reinstall
     FormulaInstaller.prevent_build_flags unless DevelopmentTools.installed?
 
-    ARGV.resolved_formulae.each { |f| reinstall_formula(f) }
+    ARGV.resolved_formulae.each do |f|
+      if f.pinned?
+        onoe "#{f.full_name} is pinned. You must unpin it to reinstall."
+        next
+      end
+      reinstall_formula(f)
+    end
   end
 
   def reinstall_formula(f)
-    options = BuildOptions.new(Options.create(ARGV.flags_only), f.options).used_options
-    options |= f.build.used_options
-
-    notice  = "Reinstalling #{f.full_name}"
-    notice += " with #{options * ", "}" unless options.empty?
-    oh1 notice
-
     if f.opt_prefix.directory?
       keg = Keg.new(f.opt_prefix.resolved_path)
       backup keg
     end
+
+    options = BuildOptions.new(Options.create(ARGV.flags_only), f.options).used_options
+    options |= f.build.used_options
+    options &= f.options
 
     fi = FormulaInstaller.new(f)
     fi.options             = options
@@ -34,6 +39,9 @@ module Homebrew
     fi.verbose             = ARGV.verbose?
     fi.debug               = ARGV.debug?
     fi.prelude
+
+    oh1 "Reinstalling #{f.full_name} #{options.to_a.join " "}"
+
     fi.install
     fi.finish
   rescue FormulaInstallationAlreadyAttemptedError
@@ -52,10 +60,11 @@ module Homebrew
 
   def restore_backup(keg, formula)
     path = backup_path(keg)
-    if path.directory?
-      path.rename keg
-      keg.link unless formula.keg_only?
-    end
+
+    return unless path.directory?
+
+    path.rename keg
+    keg.link unless formula.keg_only?
   end
 
   def backup_path(path)

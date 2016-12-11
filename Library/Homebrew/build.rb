@@ -31,9 +31,8 @@ class Build
   def post_superenv_hacks
     # Only allow Homebrew-approved directories into the PATH, unless
     # a formula opts-in to allowing the user's path.
-    if formula.env.userpaths? || reqs.any? { |rq| rq.env.userpaths? }
-      ENV.userpaths!
-    end
+    return unless formula.env.userpaths? || reqs.any? { |rq| rq.env.userpaths? }
+    ENV.userpaths!
   end
 
   def effective_build_options_for(dependent)
@@ -133,6 +132,8 @@ class Build
       else
         formula.prefix.mkpath
 
+        (formula.logs/"00.options.out").write \
+          "#{formula.full_name} #{formula.build.used_options.sort.join(" ")}".strip
         formula.install
 
         stdlibs = detect_stdlibs(ENV.compiler)
@@ -157,7 +158,7 @@ class Build
     # The stdlib recorded in the install receipt is used during dependency
     # compatibility checks, so we only care about the stdlib that libraries
     # link against.
-    keg.detect_cxx_stdlibs(:skip_executables => true)
+    keg.detect_cxx_stdlibs(skip_executables: true)
   end
 
   def fixopt(f)

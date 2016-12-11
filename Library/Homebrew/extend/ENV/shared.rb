@@ -12,9 +12,9 @@ module SharedEnvExtension
   include CompilerConstants
 
   # @private
-  CC_FLAG_VARS = %w[CFLAGS CXXFLAGS OBJCFLAGS OBJCXXFLAGS]
+  CC_FLAG_VARS = %w[CFLAGS CXXFLAGS OBJCFLAGS OBJCXXFLAGS].freeze
   # @private
-  FC_FLAG_VARS = %w[FCFLAGS FFLAGS]
+  FC_FLAG_VARS = %w[FCFLAGS FFLAGS].freeze
   # @private
   SANITIZED_VARS = %w[
     CDPATH GREP_OPTIONS CLICOLOR_FORCE
@@ -25,7 +25,7 @@ module SharedEnvExtension
     CMAKE_PREFIX_PATH CMAKE_INCLUDE_PATH CMAKE_FRAMEWORK_PATH
     GOBIN GOPATH GOROOT PERL_MB_OPT PERL_MM_OPT
     LIBRARY_PATH
-  ]
+  ].freeze
 
   # @private
   def setup_build_environment(formula = nil)
@@ -98,11 +98,12 @@ module SharedEnvExtension
   end
 
   def remove(keys, value)
+    return if value.nil?
     Array(keys).each do |key|
       next unless self[key]
       self[key] = self[key].sub(value, "")
       delete(key) if self[key].empty?
-    end if value
+    end
   end
 
   def cc
@@ -193,13 +194,19 @@ module SharedEnvExtension
   def userpaths!
     paths = self["PATH"].split(File::PATH_SEPARATOR)
     # put Superenv.bin and opt path at the first
-    new_paths = paths.select { |p| p.start_with?("#{HOMEBREW_REPOSITORY}/Library/ENV") || p.start_with?("#{HOMEBREW_PREFIX}/opt") }
+    new_paths = paths.select { |p| p.start_with?("#{HOMEBREW_REPOSITORY}/Library/ENV", "#{HOMEBREW_PREFIX}/opt") }
     # XXX hot fix to prefer brewed stuff (e.g. python) over /usr/bin.
     new_paths << "#{HOMEBREW_PREFIX}/bin"
     # reset of self["PATH"]
     new_paths += paths
     # user paths
-    new_paths += ORIGINAL_PATHS.map { |p| p.realpath.to_s rescue nil } - %w[/usr/X11/bin /opt/X11/bin]
+    new_paths += ORIGINAL_PATHS.map do |p|
+      begin
+        p.realpath.to_s
+      rescue
+        nil
+      end
+    end - %w[/usr/X11/bin /opt/X11/bin]
     self["PATH"] = new_paths.uniq.join(File::PATH_SEPARATOR)
   end
 
@@ -283,12 +290,11 @@ module SharedEnvExtension
       EOS
     end
 
-    unless gcc_formula.opt_prefix.exist?
-      raise <<-EOS.undent
-      The requested Homebrew GCC was not installed. You must:
-        brew install #{gcc_formula.full_name}
-      EOS
-    end
+    return if gcc_formula.opt_prefix.exist?
+    raise <<-EOS.undent
+    The requested Homebrew GCC was not installed. You must:
+      brew install #{gcc_formula.full_name}
+    EOS
   end
 
   def permit_arch_flags; end
@@ -322,9 +328,8 @@ module SharedEnvExtension
   end
 
   def check_for_compiler_universal_support
-    if homebrew_cc =~ GNU_GCC_REGEXP
-      raise "Non-Apple GCC can't build universal binaries"
-    end
+    return unless homebrew_cc =~ GNU_GCC_REGEXP
+    raise "Non-Apple GCC can't build universal binaries"
   end
 
   def gcc_with_cxx11_support?(cc)

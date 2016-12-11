@@ -20,7 +20,7 @@ module DiskUsageExtension
     out = ""
     compute_disk_usage
     out << "#{number_readable(@file_count)} files, " if @file_count > 1
-    out << "#{disk_usage_readable(@disk_usage)}"
+    out << disk_usage_readable(@disk_usage).to_s
   end
 
   private
@@ -71,13 +71,13 @@ class Pathname
       when Array
         if src.empty?
           opoo "tried to install empty array to #{self}"
-          return
+          break
         end
         src.each { |s| install_p(s, File.basename(s)) }
       when Hash
         if src.empty?
           opoo "tried to install empty hash to #{self}"
-          return
+          break
         end
         src.each { |s, new_basename| install_p(s, new_basename) }
       else
@@ -132,7 +132,7 @@ class Pathname
 
   if method_defined?(:write)
     # @private
-    alias_method :old_write, :write
+    alias old_write write
   end
 
   # we assume this pathname object is a file obviously
@@ -148,13 +148,17 @@ class Pathname
     open("a", *open_args) { |f| f.puts(content) }
   end
 
-  def binwrite(contents, *open_args)
-    open("wb", *open_args) { |f| f.write(contents) }
-  end unless method_defined?(:binwrite)
+  unless method_defined?(:binwrite)
+    def binwrite(contents, *open_args)
+      open("wb", *open_args) { |f| f.write(contents) }
+    end
+  end
 
-  def binread(*open_args)
-    open("rb", *open_args) { |f| f.read }
-  end unless method_defined?(:binread)
+  unless method_defined?(:binread)
+    def binread(*open_args)
+      open("rb", *open_args, &:read)
+    end
+  end
 
   # NOTE always overwrites
   def atomic_write(content)
@@ -196,7 +200,7 @@ class Pathname
 
   # @private
   def cp_path_sub(pattern, replacement)
-    raise "#{self} does not exist" unless self.exist?
+    raise "#{self} does not exist" unless exist?
 
     dst = sub(pattern, replacement)
 
@@ -212,7 +216,7 @@ class Pathname
   end
 
   # @private
-  alias_method :extname_old, :extname
+  alias extname_old extname
 
   # extended to support common double extensions
   def extname(path = to_s)
@@ -295,7 +299,7 @@ class Pathname
 
   # @private
   def text_executable?
-    /^#!\s*\S+/ === open("r") { |f| f.read(1024) }
+    /^#!\s*\S+/ =~ open("r") { |f| f.read(1024) }
   end
 
   # @private
@@ -322,7 +326,7 @@ class Pathname
   end
 
   # FIXME: eliminate the places where we rely on this method
-  alias_method :to_str, :to_s unless method_defined?(:to_str)
+  alias to_str to_s unless method_defined?(:to_str)
 
   def cd
     Dir.chdir(self) { yield }
@@ -334,7 +338,7 @@ class Pathname
 
   # @private
   def resolved_path
-    self.symlink? ? dirname+readlink : self
+    symlink? ? dirname+readlink : self
   end
 
   # @private
@@ -353,13 +357,15 @@ class Pathname
     File.symlink(src.relative_path_from(dirname), self)
   end
 
-  def /(other)
-    unless other.respond_to?(:to_str) || other.respond_to?(:to_path)
-      opoo "Pathname#/ called on #{inspect} with #{other.inspect} as an argument"
-      puts "This behavior is deprecated, please pass either a String or a Pathname"
+  unless method_defined?(:/)
+    def /(other)
+      unless other.respond_to?(:to_str) || other.respond_to?(:to_path)
+        opoo "Pathname#/ called on #{inspect} with #{other.inspect} as an argument"
+        puts "This behavior is deprecated, please pass either a String or a Pathname"
+      end
+      self + other.to_s
     end
-    self + other.to_s
-  end unless method_defined?(:/)
+  end
 
   # @private
   def ensure_writable

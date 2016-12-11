@@ -8,3 +8,16 @@ def shell_profile
   else "~/.bash_profile"
   end
 end
+
+module Tty
+  module_function
+
+  def white
+    reset.bold
+  end
+end
+
+def puts_columns(items)
+  odeprecated "puts_columns", "puts Formatter.columns"
+  puts Formatter.columns(items)
+end

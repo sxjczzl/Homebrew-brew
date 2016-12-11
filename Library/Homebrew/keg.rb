@@ -62,11 +62,17 @@ class Keg
   end
 
   # locale-specific directories have the form language[_territory][.codeset][@modifier]
-  LOCALEDIR_RX = /(locale|man)\/([a-z]{2}|C|POSIX)(_[A-Z]{2})?(\.[a-zA-Z\-0-9]+(@.+)?)?/
+  LOCALEDIR_RX = %r{(locale|man)/([a-z]{2}|C|POSIX)(_[A-Z]{2})?(\.[a-zA-Z\-0-9]+(@.+)?)?}
   INFOFILE_RX = %r{info/([^.].*?\.info|dir)$}
-  TOP_LEVEL_DIRECTORIES = %w[bin etc include lib sbin share var Frameworks]
-  PRUNEABLE_DIRECTORIES = %w[bin etc include lib sbin share Frameworks LinkedKegs].map do |d|
-    case d when "LinkedKegs" then HOMEBREW_LIBRARY/d else HOMEBREW_PREFIX/d end
+  TOP_LEVEL_DIRECTORIES = %w[bin etc include lib sbin share var Frameworks].freeze
+  ALL_TOP_LEVEL_DIRECTORIES = (TOP_LEVEL_DIRECTORIES + %w[lib/pkgconfig share/locale share/man opt]).freeze
+  PRUNEABLE_DIRECTORIES = %w[bin etc include lib sbin share opt Frameworks LinkedKegs var/homebrew/linked].map do |dir|
+    case dir
+    when "LinkedKegs"
+      HOMEBREW_LIBRARY/dir
+    else
+      HOMEBREW_PREFIX/dir
+    end
   end
 
   # These paths relative to the keg's share directory should always be real
@@ -79,7 +85,49 @@ class Keg
     man/cat5 man/cat6 man/cat7 man/cat8
     applications gnome gnome/help icons
     mime-info pixmaps sounds postgresql
-  ]
+  ].freeze
+
+  # Will return some kegs, and some dependencies, if they're present.
+  # For efficiency, we don't bother trying to get complete data.
+  def self.find_some_installed_dependents(kegs)
+    # First, check in the tabs of installed Formulae.
+    kegs.each do |keg|
+      dependents = keg.installed_dependents - kegs
+      dependents.map! { |d| "#{d.name} #{d.version}" }
+      return [keg], dependents if dependents.any?
+    end
+
+    # Some kegs won't have modern Tabs with the dependencies listed.
+    # In this case, fall back to Formula#missing_dependencies.
+
+    # Find formulae that didn't have dependencies saved in all of their kegs,
+    # so need them to be calculated now.
+    #
+    # This happens after the initial dependency check because it's sloooow.
+    remaining_formulae = Formula.installed.select do |f|
+      f.installed_kegs.any? { |k| Tab.for_keg(k).runtime_dependencies.nil? }
+    end
+
+    keg_names = kegs.map(&:name)
+    kegs_by_source = kegs.group_by { |k| [k.name, Tab.for_keg(k).tap] }
+
+    remaining_formulae.each do |dependent|
+      required = dependent.missing_dependencies(hide: keg_names)
+
+      required_kegs = required.map do |f|
+        f_kegs = kegs_by_source[[f.name, f.tap]]
+        next unless f_kegs
+
+        f_kegs.sort_by(&:version).last
+      end
+
+      next unless required_kegs.any?
+
+      return required_kegs, [dependent.to_s]
+    end
+
+    nil
+  end
 
   # if path is a file in a keg then this will return the containing Keg object
   def self.for(path)
@@ -99,8 +147,8 @@ class Keg
     raise "#{path} is not a directory" unless path.directory?
     @path = path
     @name = path.parent.basename.to_s
-    @linked_keg_record = HOMEBREW_LIBRARY.join("LinkedKegs", name)
-    @opt_record = HOMEBREW_PREFIX.join("opt", name)
+    @linked_keg_record = HOMEBREW_LINKED_KEGS/name
+    @opt_record = HOMEBREW_PREFIX/"opt/#{name}"
   end
 
   def to_s
@@ -112,9 +160,9 @@ class Keg
   end
 
   if Pathname.method_defined?(:to_path)
-    alias_method :to_path, :to_s
+    alias to_path to_s
   else
-    alias_method :to_str, :to_s
+    alias to_str to_s
   end
 
   def inspect
@@ -124,7 +172,7 @@ class Keg
   def ==(other)
     instance_of?(other.class) && path == other.path
   end
-  alias_method :eql?, :==
+  alias eql? ==
 
   def hash
     path.hash
@@ -215,17 +263,16 @@ class Keg
         dirs << dst if dst.directory? && !dst.symlink?
 
         # check whether the file to be unlinked is from the current keg first
-        if dst.symlink? && src == dst.resolved_path
-          if mode.dry_run
-            puts dst
-            Find.prune if src.directory?
-            next
-          end
-
-          dst.uninstall_info if dst.to_s =~ INFOFILE_RX
-          dst.unlink
+        next unless dst.symlink? && src == dst.resolved_path
+        if mode.dry_run
+          puts dst
           Find.prune if src.directory?
+          next
         end
+
+        dst.uninstall_info if dst.to_s =~ INFOFILE_RX
+        dst.unlink
+        Find.prune if src.directory?
       end
     end
 
@@ -249,10 +296,15 @@ class Keg
 
   def completion_installed?(shell)
     dir = case shell
-          when :bash then path.join("etc", "bash_completion.d")
-          when :zsh  then path.join("share", "zsh", "site-functions")
-          when :fish then path.join("share", "fish", "vendor_completions.d")
-          end
+    when :bash then path.join("etc", "bash_completion.d")
+    when :zsh  then path.join("share", "zsh", "site-functions")
+    when :fish then path.join("share", "fish", "vendor_completions.d")
+    end
+    dir && dir.directory? && !dir.children.empty?
+  end
+
+  def fish_functions_installed?
+    dir = path.join("share", "fish", "vendor_functions.d")
     dir && dir.directory? && !dir.children.empty?
   end
 
@@ -287,6 +339,23 @@ class Keg
     PkgVersion.parse(path.basename.to_s)
   end
 
+  def to_formula
+    Formulary.from_keg(self)
+  end
+
+  def installed_dependents
+    Formula.installed.flat_map(&:installed_kegs).select do |keg|
+      tab = Tab.for_keg(keg)
+      next if tab.runtime_dependencies.nil? # no dependency information saved.
+      tab.runtime_dependencies.any? do |dep|
+        # Resolve formula rather than directly comparing names
+        # in case of conflicts between formulae from different taps.
+        dep_formula = Formulary.factory(dep["full_name"])
+        dep_formula == to_formula && dep["version"] == version.to_s
+      end
+    end
+  end
+
   def find(*args, &block)
     path.find(*args, &block)
   end
@@ -300,7 +369,7 @@ class Keg
   end
 
   def link(mode = OpenStruct.new)
-    raise AlreadyLinkedError.new(self) if linked_keg_record.directory?
+    raise AlreadyLinkedError, self if linked_keg_record.directory?
 
     ObserverPathnameExtension.reset_counts!
 
@@ -318,14 +387,15 @@ class Keg
       when "locale/locale.alias" then :skip_file
       when INFOFILE_RX then :info
       when LOCALEDIR_RX then :mkpath
-      when *SHARE_PATHS then :mkpath
-      when /^icons\/.*\/icon-theme\.cache$/ then :skip_file
+      when %r{^icons/.*/icon-theme\.cache$} then :skip_file
       # all icons subfolders should also mkpath
-      when /^icons\// then :mkpath
+      when %r{^icons/} then :mkpath
       when /^zsh/ then :mkpath
       when /^fish/ then :mkpath
       # Lua, Lua51, Lua53 all need the same handling.
-      when /^lua\// then :mkpath
+      when %r{^lua/} then :mkpath
+      when %r{^guile/} then :mkpath
+      when *SHARE_PATHS then :mkpath
       else :link
       end
     end
@@ -361,7 +431,7 @@ class Keg
       # the :link strategy. However, for Foo.framework and
       # Foo.framework/Versions we have to use :mkpath so that multiple formulae
       # can link their versions into it and `brew [un]link` works.
-      if relative_path.to_s =~ /[^\/]*\.framework(\/Versions)?$/
+      if relative_path.to_s =~ %r{[^/]*\.framework(/Versions)?$}
         :mkpath
       else
         :link
@@ -388,10 +458,9 @@ class Keg
     opt_record.delete if opt_record.symlink? || opt_record.exist?
     make_relative_symlink(opt_record, path, mode)
 
-    if oldname_opt_record
-      oldname_opt_record.delete
-      make_relative_symlink(oldname_opt_record, path, mode)
-    end
+    return unless oldname_opt_record
+    oldname_opt_record.delete
+    make_relative_symlink(oldname_opt_record, path, mode)
   end
 
   def delete_pyc_files!
@@ -417,18 +486,19 @@ class Keg
       return
     end
 
-    if stat.directory?
-      begin
-        keg = Keg.for(src)
-      rescue NotAKegError
-        puts "Won't resolve conflicts for symlink #{dst} as it doesn't resolve into the Cellar" if ARGV.verbose?
-        return
+    return unless stat.directory?
+    begin
+      keg = Keg.for(src)
+    rescue NotAKegError
+      if ARGV.verbose?
+        puts "Won't resolve conflicts for symlink #{dst} as it doesn't resolve into the Cellar"
       end
-
-      dst.unlink unless mode.dry_run
-      keg.link_dir(src, mode) { :mkpath }
-      return true
+      return
     end
+
+    dst.unlink unless mode.dry_run
+    keg.link_dir(src, mode) { :mkpath }
+    true
   end
 
   def make_relative_symlink(dst, src, mode)
@@ -456,9 +526,8 @@ class Keg
     dst.delete if mode.overwrite && (dst.exist? || dst.symlink?)
     dst.make_relative_symlink(src)
   rescue Errno::EEXIST => e
-    if dst.exist?
-      raise ConflictError.new(self, src.relative_path_from(path), dst, e)
-    elsif dst.symlink?
+    raise ConflictError.new(self, src.relative_path_from(path), dst, e) if dst.exist?
+    if dst.symlink?
       dst.unlink
       retry
     end

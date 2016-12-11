@@ -1,4 +1,14 @@
-HOMEBREW_VERSION="0.9.9"
+HOMEBREW_VERSION="$(git -C "$HOMEBREW_REPOSITORY" describe --tags --dirty 2>/dev/null)"
+HOMEBREW_USER_AGENT_VERSION="$HOMEBREW_VERSION"
+if [[ -z "$HOMEBREW_VERSION" ]]
+then
+  HOMEBREW_VERSION=">1.1.0 (no git repository)"
+  HOMEBREW_USER_AGENT_VERSION="1.X.Y"
+fi
+
+# A depth of 1 means this command was directly invoked by a user.
+# Higher depths mean this command was invoked by another Homebrew command.
+export HOMEBREW_COMMAND_DEPTH=$((HOMEBREW_COMMAND_DEPTH + 1))
 
 onoe() {
   if [[ -t 2 ]] # check whether stderr is a tty.
@@ -59,6 +69,10 @@ then
   odie "Cowardly refusing to continue at this prefix: $HOMEBREW_PREFIX"
 fi
 
+# Save value to use for installing gems
+export GEM_OLD_HOME="$GEM_HOME"
+export GEM_OLD_PATH="$GEM_PATH"
+
 # Users may have these set, pointing the system Ruby
 # at non-system gem paths
 unset GEM_HOME
@@ -70,23 +84,23 @@ unset BASH_ENV
 
 HOMEBREW_SYSTEM="$(uname -s)"
 case "$HOMEBREW_SYSTEM" in
-  Darwin) HOMEBREW_OSX="1" ;;
+  Darwin) HOMEBREW_MACOS="1" ;;
   Linux)  HOMEBREW_LINUX="1" ;;
 esac
 
 HOMEBREW_CURL="/usr/bin/curl"
-if [[ -n "$HOMEBREW_OSX" ]]
+if [[ -n "$HOMEBREW_MACOS" ]]
 then
   HOMEBREW_PROCESSOR="$(uname -p)"
   HOMEBREW_PRODUCT="Homebrew"
   HOMEBREW_SYSTEM="Macintosh"
   # This is i386 even on x86_64 machines
   [[ "$HOMEBREW_PROCESSOR" = "i386" ]] && HOMEBREW_PROCESSOR="Intel"
-  HOMEBREW_OSX_VERSION="$(/usr/bin/sw_vers -productVersion)"
-  HOMEBREW_OS_VERSION="Mac OS X $HOMEBREW_OSX_VERSION"
+  HOMEBREW_MACOS_VERSION="$(/usr/bin/sw_vers -productVersion)"
+  HOMEBREW_OS_VERSION="macOS $HOMEBREW_MACOS_VERSION"
 
-  printf -v HOMEBREW_OSX_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_OSX_VERSION//./ }
-  if [[ "$HOMEBREW_OSX_VERSION_NUMERIC" -lt "100900" &&
+  printf -v HOMEBREW_MACOS_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_MACOS_VERSION//./ }
+  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "100900" &&
         -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]]
   then
     HOMEBREW_CURL="$HOMEBREW_PREFIX/opt/curl/bin/curl"
@@ -97,7 +111,7 @@ else
   [[ -n "$HOMEBREW_LINUX" ]] && HOMEBREW_OS_VERSION="$(lsb_release -sd 2>/dev/null)"
   : "${HOMEBREW_OS_VERSION:=$(uname -r)}"
 fi
-HOMEBREW_USER_AGENT="$HOMEBREW_PRODUCT/$HOMEBREW_VERSION ($HOMEBREW_SYSTEM; $HOMEBREW_PROCESSOR $HOMEBREW_OS_VERSION)"
+HOMEBREW_USER_AGENT="$HOMEBREW_PRODUCT/$HOMEBREW_USER_AGENT_VERSION ($HOMEBREW_SYSTEM; $HOMEBREW_PROCESSOR $HOMEBREW_OS_VERSION)"
 HOMEBREW_CURL_VERSION="$("$HOMEBREW_CURL" --version 2>/dev/null | head -n1 | /usr/bin/awk '{print $1"/"$2}')"
 HOMEBREW_USER_AGENT_CURL="$HOMEBREW_USER_AGENT $HOMEBREW_CURL_VERSION"
 
@@ -121,11 +135,11 @@ export HOMEBREW_CURL
 export HOMEBREW_PROCESSOR
 export HOMEBREW_PRODUCT
 export HOMEBREW_OS_VERSION
-export HOMEBREW_OSX_VERSION
+export HOMEBREW_MACOS_VERSION
 export HOMEBREW_USER_AGENT
 export HOMEBREW_USER_AGENT_CURL
 
-if [[ -n "$HOMEBREW_OSX" ]]
+if [[ -n "$HOMEBREW_MACOS" ]]
 then
   XCODE_SELECT_PATH=$('/usr/bin/xcode-select' --print-path 2>/dev/null)
   if [[ "$XCODE_SELECT_PATH" = "/" ]]
@@ -151,7 +165,7 @@ EOS
     then
       odie <<EOS
 You have not agreed to the Xcode license. Please resolve this by running:
-  sudo xcodebuild -license
+  sudo xcodebuild -license accept
 EOS
     fi
   fi
@@ -170,6 +184,15 @@ then
   shift
   set -- "$@" -v
 fi
+
+for arg in "$@"
+do
+  if [[ $arg = "--help" || $arg = "-h" || $arg = "--usage" || $arg = "-?" ]]
+  then
+    export HOMEBREW_HELP="1"
+    break
+  fi
+done
 
 HOMEBREW_ARG_COUNT="$#"
 HOMEBREW_COMMAND="$1"
@@ -191,52 +214,58 @@ case "$HOMEBREW_COMMAND" in
   --config)    HOMEBREW_COMMAND="config" ;;
 esac
 
+if [[ -z "$HOMEBREW_DEVELOPER" ]]
+then
+  export HOMEBREW_GIT_CONFIG_FILE="$HOMEBREW_REPOSITORY/.git/config"
+  HOMEBREW_GIT_CONFIG_DEVELOPERMODE="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.devcmdrun 2>/dev/null)"
+  if [[ "$HOMEBREW_GIT_CONFIG_DEVELOPERMODE" = "true" ]]
+  then
+    export HOMEBREW_DEV_CMD_RUN="1"
+  fi
+fi
+
 if [[ -f "$HOMEBREW_LIBRARY/Homebrew/cmd/$HOMEBREW_COMMAND.sh" ]]
 then
   HOMEBREW_BASH_COMMAND="$HOMEBREW_LIBRARY/Homebrew/cmd/$HOMEBREW_COMMAND.sh"
-elif [[ -n "$HOMEBREW_DEVELOPER" && -f "$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOMEBREW_COMMAND.sh" ]]
+elif [[ -f "$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOMEBREW_COMMAND.sh" ]]
 then
+  if [[ -z "$HOMEBREW_DEVELOPER" ]]
+  then
+    git config --file="$HOMEBREW_GIT_CONFIG_FILE" --replace-all homebrew.devcmdrun true 2>/dev/null
+    export HOMEBREW_DEV_CMD_RUN="1"
+  fi
   HOMEBREW_BASH_COMMAND="$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOMEBREW_COMMAND.sh"
 fi
 
 check-run-command-as-root() {
   [[ "$(id -u)" = 0 ]] || return
-  export HOMEBREW_NO_SANDBOX="1"
 
-  [[ "$HOMEBREW_COMMAND" = "cask" ]] && return
+  # Homebrew Services may need `sudo` for system-wide daemons.
   [[ "$HOMEBREW_COMMAND" = "services" ]] && return
 
-  onoe <<EOS
-Running Homebrew as root is extremely dangerous. As Homebrew does not
-drop privileges on installation you are giving all build scripts full access
-to your system. As a result of the OS X sandbox not handling the root user
-correctly HOMEBREW_NO_SANDBOX has been set so the sandbox will not be used. If
-we have not merged a pull request to add privilege dropping by November 1st
-2016 running Homebrew as root will be disabled. No Homebrew maintainers plan
-to work on this functionality.
-EOS
+  # It's fine to run this as root as it's not changing anything.
+  [[ "$HOMEBREW_COMMAND" = "--prefix" ]] && return
 
-  case "$HOMEBREW_COMMAND" in
-    analytics|create|install|link|migrate|pin|postinstall|reinstall|switch|tap|\
-    tap-pin|update|upgrade|vendor-install)
-      ;;
-    *)
-      return
-      ;;
-  esac
-
-  local brew_file_ls_info=($(ls -nd "$HOMEBREW_BREW_FILE"))
-  if [[ "${brew_file_ls_info[2]}" != 0 ]]
-  then
-    odie <<EOS
-Cowardly refusing to 'sudo brew $HOMEBREW_COMMAND'
-You can use brew with sudo, but only if the brew executable is owned by root.
-However, this is both not recommended and completely unsupported so do so at
-your own risk.
+  odie <<EOS
+Running Homebrew as root is extremely dangerous and no longer supported.
+As Homebrew does not drop privileges on installation you would be giving all
+build scripts full access to your system.
 EOS
-  fi
 }
 check-run-command-as-root
+
+if [[ "$HOMEBREW_PREFIX" = "/usr/local" &&
+      "$HOMEBREW_PREFIX" != "$HOMEBREW_REPOSITORY" &&
+      "$HOMEBREW_CELLAR" = "$HOMEBREW_REPOSITORY/Cellar" ]]
+then
+  cat >&2 <<EOS
+Warning: your HOMEBREW_PREFIX is set to /usr/local but HOMEBREW_CELLAR is set
+to $HOMEBREW_CELLAR. Your current HOMEBREW_CELLAR location will stop
+you being able to use all the binary packages (bottles) Homebrew provides. We
+recommend you move your HOMEBREW_CELLAR to /usr/local/Cellar which will get you
+access to all bottles."
+EOS
+fi
 
 # Hide shellcheck complaint:
 # shellcheck source=/dev/null
@@ -244,13 +273,47 @@ source "$HOMEBREW_LIBRARY/Homebrew/utils/analytics.sh"
 setup-analytics
 report-analytics-screenview-command
 
+# Let user know we're still updating Homebrew if brew update --preinstall
+# exceeds 3 seconds.
+update-preinstall-timer() {
+  sleep 3
+  echo 'Updating Homebrew...' >&2
+}
+
 update-preinstall() {
+  [[ -z "$HOMEBREW_HELP" ]] || return
   [[ -z "$HOMEBREW_NO_AUTO_UPDATE" ]] || return
   [[ -z "$HOMEBREW_UPDATE_PREINSTALL" ]] || return
 
+  # Allow auto-update migration now we have a fix in place (below in this function).
+  export HOMEBREW_ENABLE_AUTO_UPDATE_MIGRATION="1"
+
   if [[ "$HOMEBREW_COMMAND" = "install" || "$HOMEBREW_COMMAND" = "upgrade" || "$HOMEBREW_COMMAND" = "tap" ]]
   then
+    if [[ -z "$HOMEBREW_VERBOSE" ]]
+    then
+      update-preinstall-timer &
+      timer_pid=$!
+    fi
+
     brew update --preinstall
+
+    if [[ -n "$timer_pid" ]]
+    then
+      kill "$timer_pid" 2>/dev/null
+      wait "$timer_pid" 2>/dev/null
+    fi
+  fi
+
+  # If brew update --preinstall did a migration then export the new locations.
+  if [[ "$HOMEBREW_REPOSITORY" = "/usr/local" &&
+        ! -d "$HOMEBREW_REPOSITORY/.git" &&
+        -d "/usr/local/Homebrew/.git" ]]
+  then
+    HOMEBREW_REPOSITORY="/usr/local/Homebrew"
+    HOMEBREW_LIBRARY="$HOMEBREW_REPOSITORY/Library"
+    export HOMEBREW_REPOSITORY
+    export HOMEBREW_LIBRARY
   fi
 
   # If we've checked for updates, we don't need to check again.

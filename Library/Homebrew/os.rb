@@ -13,13 +13,16 @@ module OS
 
   if OS.mac?
     require "os/mac"
-    ISSUES_URL = "https://git.io/brew-troubleshooting".freeze
+    # Don't tell people to report issues on unsupported versions of macOS.
+    if !OS::Mac.prerelease? && !OS::Mac.outdated_release?
+      ISSUES_URL = "https://git.io/brew-troubleshooting".freeze
+    end
     PATH_OPEN = "/usr/bin/open".freeze
     # compatibility
     ::MACOS_FULL_VERSION = OS::Mac.full_version.to_s.freeze
     ::MACOS_VERSION = OS::Mac.version.to_s.freeze
   elsif OS.linux?
-    ISSUES_URL = "https://github.com/Homebrew/linuxbrew/wiki/troubleshooting".freeze
+    ISSUES_URL = "https://github.com/Linuxbrew/brew/wiki/troubleshooting".freeze
     PATH_OPEN = "xdg-open".freeze
   end
 end

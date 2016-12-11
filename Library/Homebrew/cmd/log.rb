@@ -5,6 +5,8 @@
 require "formula"
 
 module Homebrew
+  module_function
+
   def log
     if ARGV.named.empty?
       cd HOMEBREW_REPOSITORY
@@ -16,9 +18,7 @@ module Homebrew
     end
   end
 
-  private
-
-  def git_log(path=nil)
+  def git_log(path = nil)
     if File.exist? "#{`git rev-parse --show-toplevel`.chomp}/.git/shallow"
       opoo <<-EOS.undent
         The git repository is a shallow clone therefore the filtering may be incorrect.

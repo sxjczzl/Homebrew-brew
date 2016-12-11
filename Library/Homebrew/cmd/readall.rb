@@ -1,11 +1,16 @@
-# `brew readall` tries to import all formulae one-by-one.
-# This can be useful for debugging issues across all formulae
-# when making significant changes to formula.rb,
-# or to determine if any current formulae have Ruby issues
+#: @hide_from_man_page
+#:  * `readall` [tap]:
+#:    Import all formulae in a tap (defaults to core tap).
+#:
+#:    This can be useful for debugging issues across all formulae
+#:    when making significant changes to `formula.rb`,
+#:    or to determine if any current formulae have Ruby issues
 
 require "readall"
 
 module Homebrew
+  module_function
+
   def readall
     if ARGV.include?("--syntax")
       ruby_files = []
@@ -22,7 +27,7 @@ module Homebrew
       Homebrew.failed = true unless Readall.valid_ruby_syntax?(ruby_files)
     end
 
-    options = { :aliases => ARGV.include?("--aliases") }
+    options = { aliases: ARGV.include?("--aliases") }
     taps = if ARGV.named.empty?
       Tap
     else

@@ -1,7 +1,7 @@
 require "cxxstdlib"
 require "ostruct"
 require "options"
-require "utils/json"
+require "json"
 require "development_tools"
 
 # Inherit from OpenStruct to gain a generic initialization method that takes a
@@ -9,16 +9,18 @@ require "development_tools"
 # should not be called directly, instead use one of the class methods like
 # `Tab.create`.
 class Tab < OpenStruct
-  FILENAME = "INSTALL_RECEIPT.json"
+  FILENAME = "INSTALL_RECEIPT.json".freeze
   CACHE = {}
 
   def self.clear_cache
     CACHE.clear
   end
 
+  # Instantiates a Tab for a new installation of a formula.
   def self.create(formula, compiler, stdlib)
     build = formula.build
     attributes = {
+      "homebrew_version" => HOMEBREW_VERSION,
       "used_options" => build.used_options.as_flags,
       "unused_options" => build.unused_options.as_flags,
       "tabfile" => formula.prefix.join(FILENAME),
@@ -29,8 +31,12 @@ class Tab < OpenStruct
       "HEAD" => HOMEBREW_REPOSITORY.git_head,
       "compiler" => compiler,
       "stdlib" => stdlib,
+      "runtime_dependencies" => formula.runtime_dependencies.map do |dep|
+        f = dep.to_formula
+        { "full_name" => f.full_name, "version" => f.version.to_s }
+      end,
       "source" => {
-        "path" => formula.path.to_s,
+        "path" => formula.specified_path.to_s,
         "tap" => formula.tap ? formula.tap.name : nil,
         "spec" => formula.active_spec_sym.to_s,
         "versions" => {
@@ -38,19 +44,22 @@ class Tab < OpenStruct
           "devel" => formula.devel ? formula.devel.version.to_s : nil,
           "head" => formula.head ? formula.head.version.to_s : nil,
           "version_scheme" => formula.version_scheme,
-        }
-      }
+        },
+      },
     }
 
     new(attributes)
   end
 
+  # Returns the Tab for an install receipt at `path`.
+  # Results are cached.
   def self.from_file(path)
     CACHE.fetch(path) { |p| CACHE[p] = from_file_content(File.read(p), p) }
   end
 
+  # Like Tab.from_file, but bypass the cache.
   def self.from_file_content(content, path)
-    attributes = Utils::JSON.load(content)
+    attributes = JSON.parse(content)
     attributes["tabfile"] = path
     attributes["source_modified_time"] ||= 0
     attributes["source"] ||= {}
@@ -61,7 +70,7 @@ class Tab < OpenStruct
     end
 
     if attributes["source"]["tap"] == "mxcl/master" ||
-      attributes["source"]["tap"] == "Homebrew/homebrew"
+       attributes["source"]["tap"] == "Homebrew/homebrew"
       attributes["source"]["tap"] = "homebrew/core"
     end
 
@@ -96,6 +105,8 @@ class Tab < OpenStruct
     end
   end
 
+  # Returns a tab for the named formula's installation,
+  # or a fake one if the formula is not installed.
   def self.for_name(name)
     for_formula(Formulary.factory(name))
   end
@@ -110,6 +121,8 @@ class Tab < OpenStruct
     options
   end
 
+  # Returns a Tab for an already installed formula,
+  # or a fake one if the formula is not installed.
   def self.for_formula(f)
     paths = []
 
@@ -134,10 +147,11 @@ class Tab < OpenStruct
       used_options = remap_deprecated_options(f.deprecated_options, tab.used_options)
       tab.used_options = used_options.as_flags
     else
+      # Formula is not installed. Return a fake tab.
       tab = empty
       tab.unused_options = f.options.as_flags
       tab.source = {
-        "path" => f.path.to_s,
+        "path" => f.specified_path.to_s,
         "tap" => f.tap ? f.tap.name : f.tap,
         "spec" => f.active_spec_sym.to_s,
         "versions" => {
@@ -145,7 +159,7 @@ class Tab < OpenStruct
           "devel" => f.devel ? f.devel.version.to_s : nil,
           "head" => f.head ? f.head.version.to_s : nil,
           "version_scheme" => f.version_scheme,
-        }
+        },
       }
     end
 
@@ -163,6 +177,7 @@ class Tab < OpenStruct
       "HEAD" => nil,
       "stdlib" => nil,
       "compiler" => DevelopmentTools.default_compiler,
+      "runtime_dependencies" => [],
       "source" => {
         "path" => nil,
         "tap" => nil,
@@ -172,8 +187,8 @@ class Tab < OpenStruct
           "devel" => nil,
           "head" => nil,
           "version_scheme" => 0,
-        }
-      }
+        },
+      },
     }
 
     new(attributes)
@@ -285,22 +300,29 @@ class Tab < OpenStruct
 
   def to_json
     attributes = {
+      "homebrew_version" => homebrew_version,
       "used_options" => used_options.as_flags,
       "unused_options" => unused_options.as_flags,
       "built_as_bottle" => built_as_bottle,
       "poured_from_bottle" => poured_from_bottle,
+      "changed_files" => changed_files && changed_files.map(&:to_s),
       "time" => time,
       "source_modified_time" => source_modified_time.to_i,
       "HEAD" => self.HEAD,
       "stdlib" => (stdlib.to_s if stdlib),
       "compiler" => (compiler.to_s if compiler),
-      "source" => source
+      "runtime_dependencies" => runtime_dependencies,
+      "source" => source,
     }
 
-    Utils::JSON.dump(attributes)
+    JSON.generate(attributes)
   end
 
   def write
+    # If this is a new installation, the cache of installed formulae
+    # will no longer be valid.
+    Formula.clear_installed_formulae_cache unless tabfile.exist?
+
     CACHE[tabfile] = self
     tabfile.atomic_write(to_json)
   end
@@ -312,9 +334,9 @@ class Tab < OpenStruct
     else
       s << "Built from source"
     end
-    if time
-      s << Time.at(time).strftime("on %Y-%m-%d at %H:%M:%S")
-    end
+
+    s << Time.at(time).strftime("on %Y-%m-%d at %H:%M:%S") if time
+
     unless used_options.empty?
       s << "with:"
       s << used_options.to_a.join(" ")

@@ -1,10 +1,10 @@
 module OS
   module Mac
     module Xcode
-      extend self
+      module_function
 
-      V4_BUNDLE_ID = "com.apple.dt.Xcode"
-      V3_BUNDLE_ID = "com.apple.Xcode"
+      V4_BUNDLE_ID = "com.apple.dt.Xcode".freeze
+      V3_BUNDLE_ID = "com.apple.Xcode".freeze
 
       def latest_version
         case MacOS.version
@@ -15,29 +15,38 @@ module OS
         when "10.8"  then "5.1.1"
         when "10.9"  then "6.2"
         when "10.10" then "7.2.1"
-        when "10.11" then "7.3.1"
-        when "10.12" then "8.0"
+        when "10.11" then "8.1"
+        when "10.12" then "8.1"
         else
-          # Default to newest known version of Xcode for unreleased OSX versions.
-          if OS::Mac.prerelease?
-            "8.0"
-          else
-            raise "OS X '#{MacOS.version}' is invalid"
-          end
+          raise "macOS '#{MacOS.version}' is invalid" unless OS::Mac.prerelease?
+
+          # Default to newest known version of Xcode for unreleased macOS versions.
+          "8.1"
         end
       end
 
+      def minimum_version
+        case MacOS.version
+        when "10.12" then "8.0"
+        else "2.0"
+        end
+      end
+
+      def minimum_version?
+        version < minimum_version
+      end
+
       def prerelease?
-        # TODO: bump to version >= "8.1" after Xcode 8.0 is stable.
-        version > "7.3.1"
+        # TODO: bump to version >= "8.3" after Xcode 8.2 is stable.
+        Version.new(version) >= "8.2"
       end
 
       def outdated?
-        version < latest_version
+        Version.new(version) < latest_version
       end
 
       def without_clt?
-        installed? && version >= "4.3" && !MacOS::CLT.installed?
+        installed? && Version.new(version) >= "4.3" && !MacOS::CLT.installed?
       end
 
       # Returns a Pathname object corresponding to Xcode.app's Developer
@@ -58,7 +67,9 @@ module OS
       end
 
       def toolchain_path
-        Pathname.new("#{prefix}/Toolchains/XcodeDefault.xctoolchain") if installed? && version >= "4.3"
+        return unless installed?
+        return if Version.new(version) < "4.3"
+        Pathname.new("#{prefix}/Toolchains/XcodeDefault.xctoolchain")
       end
 
       # Ask Spotlight where Xcode is. If the user didn't install the
@@ -104,18 +115,17 @@ module OS
           #{prefix}/usr/bin/xcodebuild
           #{which("xcodebuild")}
         ].uniq.each do |xcodebuild_path|
-          if File.executable? xcodebuild_path
-            xcodebuild_output = Utils.popen_read(xcodebuild_path, "-version")
-            next unless $?.success?
+          next unless File.executable? xcodebuild_path
+          xcodebuild_output = Utils.popen_read(xcodebuild_path, "-version")
+          next unless $?.success?
 
-            xcode_version = xcodebuild_output[/Xcode (\d(\.\d)*)/, 1]
-            return xcode_version if xcode_version
+          xcode_version = xcodebuild_output[/Xcode (\d(\.\d)*)/, 1]
+          return xcode_version if xcode_version
 
-            # Xcode 2.x's xcodebuild has a different version string
-            case xcodebuild_output[/DevToolsCore-(\d+\.\d)/, 1]
-            when "515.0" then return "2.0"
-            when "798.0" then return "2.5"
-            end
+          # Xcode 2.x's xcodebuild has a different version string
+          case xcodebuild_output[/DevToolsCore-(\d+\.\d)/, 1]
+          when "515.0" then return "2.0"
+          when "798.0" then return "2.5"
           end
         end
 
@@ -125,41 +135,47 @@ module OS
         # be removed in a future version. To remain compatible, guard usage of
         # Xcode.version with an Xcode.installed? check.
         case (DevelopmentTools.clang_version.to_f * 10).to_i
-          when 0       then "dunno"
-          when 1..14   then "3.2.2"
-          when 15      then "3.2.4"
-          when 16      then "3.2.5"
-          when 17..20  then "4.0"
-          when 21      then "4.1"
-          when 22..30  then "4.2"
-          when 31      then "4.3"
-          when 40      then "4.4"
-          when 41      then "4.5"
-          when 42      then "4.6"
-          when 50      then "5.0"
-          when 51      then "5.1"
-          when 60      then "6.0"
-          when 61      then "6.1"
-          when 70      then "7.0"
-          when 73      then "7.3"
-          when 80      then "8.0"
-          else "8.0"
+        when 0       then "dunno"
+        when 1..14   then "3.2.2"
+        when 15      then "3.2.4"
+        when 16      then "3.2.5"
+        when 17..20  then "4.0"
+        when 21      then "4.1"
+        when 22..30  then "4.2"
+        when 31      then "4.3"
+        when 40      then "4.4"
+        when 41      then "4.5"
+        when 42      then "4.6"
+        when 50      then "5.0"
+        when 51      then "5.1"
+        when 60      then "6.0"
+        when 61      then "6.1"
+        when 70      then "7.0"
+        when 73      then "7.3"
+        when 80      then "8.0"
+        else "8.0"
         end
       end
 
       def provides_gcc?
-        installed? && version < "4.3"
+        installed? && Version.new(version) < "4.3"
       end
 
       def provides_cvs?
-        installed? && version < "5.0"
+        installed? && Version.new(version) < "5.0"
       end
 
       def default_prefix?
-        if version < "4.3"
+        if Version.new(version) < "4.3"
           prefix.to_s.start_with? "/Developer"
         else
           prefix.to_s == "/Applications/Xcode.app/Contents/Developer"
+        end
+      end
+
+      class Version < ::Version
+        def <=>(other)
+          super(Version.new(other))
         end
       end
     end
@@ -167,16 +183,16 @@ module OS
     module CLT
       extend self
 
-      STANDALONE_PKG_ID = "com.apple.pkg.DeveloperToolsCLILeo"
-      FROM_XCODE_PKG_ID = "com.apple.pkg.DeveloperToolsCLI"
-      MAVERICKS_PKG_ID = "com.apple.pkg.CLTools_Executables"
-      MAVERICKS_NEW_PKG_ID = "com.apple.pkg.CLTools_Base" # obsolete
-      MAVERICKS_PKG_PATH = "/Library/Developer/CommandLineTools"
+      STANDALONE_PKG_ID = "com.apple.pkg.DeveloperToolsCLILeo".freeze
+      FROM_XCODE_PKG_ID = "com.apple.pkg.DeveloperToolsCLI".freeze
+      MAVERICKS_PKG_ID = "com.apple.pkg.CLTools_Executables".freeze
+      MAVERICKS_NEW_PKG_ID = "com.apple.pkg.CLTools_Base".freeze # obsolete
+      MAVERICKS_PKG_PATH = "/Library/Developer/CommandLineTools".freeze
 
       # Returns true even if outdated tools are installed, e.g.
       # tools from Xcode 4.x on 10.9
       def installed?
-        !!detect_version
+        !detect_version.nil?
       end
 
       def update_instructions
@@ -194,8 +210,11 @@ module OS
       end
 
       def latest_version
+        # As of Xcode 8 CLT releases are no longer in sync with Xcode releases
+        # on the older supported platform for that Xcode release, i.e there's no
+        # CLT package for 10.11 that contains the Clang version from Xcode 8.
         case MacOS.version
-        when "10.12" then "800.0.38"
+        when "10.12" then "800.0.42.1"
         when "10.11" then "703.0.31"
         when "10.10" then "700.1.81"
         when "10.9"  then "600.0.57"
@@ -205,14 +224,25 @@ module OS
         end
       end
 
+      def minimum_version
+        case MacOS.version
+        when "10.12" then "8.0.0"
+        else "4.0.0"
+        end
+      end
+
+      def minimum_version?
+        version < minimum_version
+      end
+
       def outdated?
         if MacOS.version >= :mavericks
-          version = `#{MAVERICKS_PKG_PATH}/usr/bin/clang --version`
+          version = Utils.popen_read("#{MAVERICKS_PKG_PATH}/usr/bin/clang --version")
         else
-          version = `/usr/bin/clang --version`
+          version = Utils.popen_read("/usr/bin/clang --version")
         end
         version = version[/clang-(\d+\.\d+\.\d+(\.\d+)?)/, 1] || "0"
-        version < latest_version
+        Xcode::Version.new(version) < latest_version
       end
 
       # Version string (a pretty long one) of the CLT package.
@@ -225,7 +255,9 @@ module OS
       def detect_version
         # CLT isn't a distinct entity pre-4.3, and pkgutil doesn't exist
         # at all on Tiger, so just count it as installed if Xcode is installed
-        return MacOS::Xcode.version if MacOS::Xcode.installed? && MacOS::Xcode.version < "3.0"
+        if MacOS::Xcode.installed? && Xcode::Version.new(MacOS::Xcode.version) < "3.0"
+          return MacOS::Xcode.version
+        end
 
         [MAVERICKS_PKG_ID, MAVERICKS_NEW_PKG_ID, STANDALONE_PKG_ID, FROM_XCODE_PKG_ID].find do |id|
           if MacOS.version >= :mavericks

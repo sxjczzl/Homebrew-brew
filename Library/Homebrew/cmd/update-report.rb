@@ -1,10 +1,17 @@
+#: @hide_from_man_page
+#:  * `update_report`:
+#:    The Ruby implementation of `brew update`. Never called manually.
+
 require "formula_versions"
 require "migrator"
 require "formulary"
 require "descriptions"
 require "cleanup"
+require "utils"
 
 module Homebrew
+  module_function
+
   def update_preinstall_header
     @header_already_printed ||= begin
       ohai "Auto-updated Homebrew!" if ARGV.include?("--preinstall")
@@ -18,11 +25,19 @@ module Homebrew
         Utils.popen_read("git", "config", "--local", "--get", "homebrew.analyticsmessage").chuzzle
       analytics_disabled = \
         Utils.popen_read("git", "config", "--local", "--get", "homebrew.analyticsdisabled").chuzzle
-      if analytics_message_displayed != "true" && analytics_disabled != "true" && !ENV["HOMEBREW_NO_ANALYTICS"]
+      if analytics_message_displayed != "true" && analytics_disabled != "true" &&
+         !ENV["HOMEBREW_NO_ANALYTICS"] && !ENV["HOMEBREW_NO_ANALYTICS_MESSAGE_OUTPUT"]
         ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] = "1"
-        ohai "Homebrew has enabled anonymous aggregate user behaviour analytics"
-        puts "Read the analytics documentation (and how to opt-out) here:"
-        puts "  https://git.io/brew-analytics"
+        # Use the shell's audible bell.
+        print "\a"
+
+        # Use an extra newline and bold to avoid this being missed.
+        ohai "Homebrew has enabled anonymous aggregate user behaviour analytics."
+        puts <<-EOS.undent
+          #{Tty.bold}Read the analytics documentation (and how to opt-out) here:
+            #{Formatter.url("https://git.io/brew-analytics")}#{Tty.reset}
+
+        EOS
 
         # Consider the message possibly missed if not a TTY.
         if $stdout.tty?
@@ -71,6 +86,7 @@ module Homebrew
     end
 
     migrate_legacy_cache_if_necessary
+    migrate_legacy_keg_symlinks_if_necessary
 
     if !updated
       if !ARGV.include?("--preinstall") && !ENV["HOMEBREW_UPDATE_FAILED"]
@@ -88,22 +104,27 @@ module Homebrew
       puts if ARGV.include?("--preinstall")
     end
 
-    link_manpages
+    link_completions_and_docs
     Tap.each(&:link_manpages)
 
     Homebrew.failed = true if ENV["HOMEBREW_UPDATE_FAILED"]
-  end
 
-  private
+    # This should always be the last thing to run (but skip on auto-update).
+    if !ARGV.include?("--preinstall") ||
+       ENV["HOMEBREW_ENABLE_AUTO_UPDATE_MIGRATION"]
+      migrate_legacy_repository_if_necessary
+    end
+  end
 
   def shorten_revision(revision)
     Utils.popen_read("git", "-C", HOMEBREW_REPOSITORY, "rev-parse", "--short", revision).chomp
   end
 
   def install_core_tap_if_necessary
+    return if ENV["HOMEBREW_UPDATE_TEST"]
     core_tap = CoreTap.instance
     return if core_tap.installed?
-    CoreTap.ensure_installed! :quiet => false
+    CoreTap.ensure_installed! quiet: false
     revision = core_tap.git_head
     ENV["HOMEBREW_UPDATE_BEFORE_HOMEBREW_HOMEBREW_CORE"] = revision
     ENV["HOMEBREW_UPDATE_AFTER_HOMEBREW_HOMEBREW_CORE"] = revision
@@ -130,13 +151,13 @@ module Homebrew
     world_writable = legacy_cache.stat.mode & 0777 == 0777
     return if world_writable
     return if legacy_cache.symlink?
-    return if !legacy_cache.owned? && legacy_cache.lstat.uid != 0
+    return if !legacy_cache.owned? && legacy_cache.lstat.uid.nonzero?
 
     ohai "Migrating #{legacy_cache} to #{HOMEBREW_CACHE}..."
     HOMEBREW_CACHE.mkpath
     legacy_cache.cd do
       legacy_cache.entries.each do |f|
-        next if [".", "..", ".migration_attempted"].include? "#{f}"
+        next if [".", "..", ".migration_attempted"].include? f.to_s
         begin
           FileUtils.cp_r f, HOMEBREW_CACHE
         rescue
@@ -163,9 +184,139 @@ module Homebrew
     end
   end
 
-  def link_manpages
-    return if HOMEBREW_PREFIX.to_s == HOMEBREW_REPOSITORY.to_s
-    link_path_manpages(HOMEBREW_REPOSITORY/"share", "brew update")
+  def migrate_legacy_repository_if_necessary
+    return unless HOMEBREW_PREFIX.to_s == "/usr/local"
+    return unless HOMEBREW_REPOSITORY.to_s == "/usr/local"
+
+    ohai "Migrating HOMEBREW_REPOSITORY (please wait)..."
+
+    unless HOMEBREW_PREFIX.writable_real?
+      ofail <<-EOS.undent
+        #{HOMEBREW_PREFIX} is not writable.
+
+        You should change the ownership and permissions of #{HOMEBREW_PREFIX}
+        temporarily back to your user account so we can complete the Homebrew
+        repository migration:
+          sudo chown -R $(whoami) #{HOMEBREW_PREFIX}
+      EOS
+      return
+    end
+
+    new_homebrew_repository = Pathname.new "/usr/local/Homebrew"
+    if new_homebrew_repository.exist?
+      ofail <<-EOS.undent
+        #{new_homebrew_repository} already exists.
+        Please remove it manually or uninstall and reinstall Homebrew into a new
+        location as the migration cannot be done automatically.
+      EOS
+      return
+    end
+    new_homebrew_repository.mkpath
+
+    repo_files = HOMEBREW_REPOSITORY.cd do
+      Utils.popen_read("git ls-files").lines.map(&:chomp)
+    end
+
+    unless Utils.popen_read("git status --untracked-files=all --porcelain").empty?
+      HOMEBREW_REPOSITORY.cd do
+        quiet_system "git", "merge", "--abort"
+        quiet_system "git", "rebase", "--abort"
+        quiet_system "git", "reset", "--mixed"
+        safe_system "git", "-c", "user.email=brew-update@localhost",
+                           "-c", "user.name=brew update",
+                           "stash", "save", "--include-untracked"
+      end
+      stashed = true
+    end
+
+    FileUtils.cp_r "#{HOMEBREW_REPOSITORY}/.git", "#{new_homebrew_repository}/.git"
+    new_homebrew_repository.cd do
+      safe_system "git", "checkout", "--force", "."
+      safe_system "git", "stash", "pop" if stashed
+    end
+
+    if (HOMEBREW_REPOSITORY/"Library/Locks").exist?
+      FileUtils.cp_r "#{HOMEBREW_REPOSITORY}/Library/Locks", "#{new_homebrew_repository}/Library/Locks"
+    end
+
+    if (HOMEBREW_REPOSITORY/"Library/Taps").exist?
+      FileUtils.cp_r "#{HOMEBREW_REPOSITORY}/Library/Taps", "#{new_homebrew_repository}/Library/Taps"
+    end
+
+    unremovable_paths = []
+    extra_remove_paths = [".git", "Library/Locks", "Library/Taps",
+                          "Library/Homebrew/cask", "Library/Homebrew/test"]
+    (repo_files + extra_remove_paths).each do |file|
+      path = Pathname.new "#{HOMEBREW_REPOSITORY}/#{file}"
+      begin
+        FileUtils.rm_rf path
+      rescue Errno::EACCES
+        unremovable_paths << path
+      end
+      quiet_system "rmdir", "-p", path.parent if path.parent.exist?
+    end
+
+    unless unremovable_paths.empty?
+      ofail <<-EOS.undent
+        Could not remove old HOMEBREW_REPOSITORY paths!
+        Please do this manually with:
+          sudo rm -rf #{unremovable_paths.join " "}
+      EOS
+    end
+
+    (Keg::ALL_TOP_LEVEL_DIRECTORIES + ["Cellar"]).each do |dir|
+      FileUtils.mkdir_p "#{HOMEBREW_PREFIX}/#{dir}"
+    end
+
+    src = Pathname.new("#{new_homebrew_repository}/bin/brew")
+    dst = Pathname.new("#{HOMEBREW_PREFIX}/bin/brew")
+    begin
+      FileUtils.ln_s(src.relative_path_from(dst.parent), dst)
+    rescue Errno::EACCES, Errno::ENOENT
+      ofail <<-EOS.undent
+        Could not create symlink at #{dst}!
+        Please do this manually with:
+          sudo ln -sf #{src} #{dst}
+          sudo chown $(whoami) #{dst}
+      EOS
+    end
+
+    link_completions_and_docs(new_homebrew_repository)
+
+    ohai "Migrated HOMEBREW_REPOSITORY to #{new_homebrew_repository}!"
+    puts <<-EOS.undent
+      Homebrew no longer needs to have ownership of /usr/local. If you wish you can
+      return /usr/local to its default ownership with:
+        sudo chown root:wheel #{HOMEBREW_PREFIX}
+    EOS
+  rescue => e
+    ofail <<-EOS.undent
+      #{Tty.bold}Failed to migrate HOMEBREW_REPOSITORY to #{new_homebrew_repository}!#{Tty.reset}
+      The error was:
+        #{e}
+      Please try to resolve this error yourself and then run `brew update` again to
+      complete the migration. If you need help please +1 an existing error or comment
+      with your new error in issue:
+        #{Formatter.url("https://github.com/Homebrew/brew/issues/987")}
+    EOS
+    $stderr.puts e.backtrace
+  end
+
+  def link_completions_and_docs(repository = HOMEBREW_REPOSITORY)
+    command = "brew update"
+    link_src_dst_dirs(repository/"completions/bash",
+                      HOMEBREW_PREFIX/"etc/bash_completion.d", command)
+    link_src_dst_dirs(repository/"docs",
+                      HOMEBREW_PREFIX/"share/doc/homebrew", command, link_dir: true)
+    link_src_dst_dirs(repository/"completions/zsh",
+                      HOMEBREW_PREFIX/"share/zsh/site-functions", command)
+    link_src_dst_dirs(repository/"manpages",
+                      HOMEBREW_PREFIX/"share/man/man1", command)
+  rescue => e
+    ofail <<-EOS.undent
+      Failed to link all completions, docs and manpages:
+        #{e}
+    EOS
   end
 end
 
@@ -272,7 +423,7 @@ class Reporter
 
       # This means it is a Cask
       if report[:DC].include? full_name
-        next unless (HOMEBREW_REPOSITORY/"Caskroom"/name).exist?
+        next unless (HOMEBREW_PREFIX/"Caskroom"/name).exist?
         new_tap = Tap.fetch(new_tap_name)
         new_tap.install unless new_tap.installed?
         ohai "#{name} has been moved to Homebrew.", <<-EOS.undent
@@ -299,8 +450,8 @@ class Reporter
       new_tap = Tap.fetch(new_tap_name)
       # For formulae migrated to cask: Auto-install cask or provide install instructions.
       if new_tap_name == "caskroom/cask"
-        if new_tap.installed? && (HOMEBREW_REPOSITORY/"Caskroom").directory?
-          ohai "#{name} has been moved to Homebrew Cask."
+        if new_tap.installed? && (HOMEBREW_PREFIX/"Caskroom").directory?
+          ohai "#{name} has been moved to Homebrew-Cask."
           ohai "brew uninstall --force #{name}"
           system HOMEBREW_BREW_FILE, "uninstall", "--force", name
           ohai "brew prune"
@@ -308,7 +459,7 @@ class Reporter
           ohai "brew cask install #{name}"
           system HOMEBREW_BREW_FILE, "cask", "install", name
         else
-          ohai "#{name} has been moved to Homebrew Cask.", <<-EOS.undent
+          ohai "#{name} has been moved to Homebrew-Cask.", <<-EOS.undent
             To uninstall the formula and install the cask run:
               brew uninstall --force #{name}
               brew cask install #{name}
@@ -348,10 +499,10 @@ class Reporter
   private
 
   def repo_var
-    @repo_var ||= tap.path.to_s.
-        strip_prefix(Tap::TAP_DIRECTORY.to_s).
-        tr("^A-Za-z0-9", "_").
-        upcase
+    @repo_var ||= tap.path.to_s
+                     .strip_prefix(Tap::TAP_DIRECTORY.to_s)
+                     .tr("^A-Za-z0-9", "_")
+                     .upcase
   end
 
   def diff
@@ -376,7 +527,7 @@ class ReporterHub
 
   def add(reporter)
     @reporters << reporter
-    report = reporter.report.delete_if { |k,v| v.empty? }
+    report = reporter.report.delete_if { |_k, v| v.empty? }
     @hash.update(report) { |_key, oldval, newval| oldval.concat(newval) }
   end
 
@@ -407,11 +558,10 @@ class ReporterHub
       end
     end
 
-    unless formulae.empty?
-      # Dump formula list.
-      ohai title
-      puts_columns(formulae)
-    end
+    return if formulae.empty?
+    # Dump formula list.
+    ohai title
+    puts Formatter.columns(formulae)
   end
 
   def installed?(formula)

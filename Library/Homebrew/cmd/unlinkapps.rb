@@ -12,18 +12,18 @@
 require "cmd/linkapps"
 
 module Homebrew
-  def unlinkapps
-    target_dir = linkapps_target(:local => ARGV.include?("--local"))
+  module_function
 
-    unlinkapps_from_dir(target_dir, :dry_run => ARGV.dry_run?)
+  def unlinkapps
+    target_dir = linkapps_target(local: ARGV.include?("--local"))
+
+    unlinkapps_from_dir(target_dir, dry_run: ARGV.dry_run?)
   end
 
-  private
-
   def unlinkapps_prune(opts = {})
-    opts = opts.merge(:prune => true)
-    unlinkapps_from_dir(linkapps_target(:local => false), opts)
-    unlinkapps_from_dir(linkapps_target(:local => true), opts)
+    opts = opts.merge(prune: true)
+    unlinkapps_from_dir(linkapps_target(local: false), opts)
+    unlinkapps_from_dir(linkapps_target(local: true), opts)
   end
 
   def unlinkapps_from_dir(target_dir, opts = {})
@@ -65,7 +65,7 @@ module Homebrew
 
   def unlinkapps_unlink?(target_app, opts = {})
     # Skip non-symlinks and symlinks that don't point into the Homebrew prefix.
-    app = "#{target_app.readlink}" if target_app.symlink?
+    app = target_app.readlink.to_s if target_app.symlink?
     return false unless app && app.start_with?(*UNLINKAPPS_PREFIXES)
 
     if opts.fetch(:prune, false)
