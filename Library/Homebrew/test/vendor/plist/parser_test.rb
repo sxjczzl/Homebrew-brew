@@ -1,4 +1,5 @@
-require "test_helper"
+require "testing_env"
+require "vendor/plist/plist"
 
 describe Plist do
   it "parses some hdiutil output okay" do
@@ -50,13 +51,14 @@ describe Plist do
 
     parsed = Plist.parse_xml(hdiutil_output)
 
-    parsed.keys.must_equal ["system-entities"]
-    parsed["system-entities"].length.must_equal 3
-    parsed["system-entities"].map { |e| e["dev-entry"] }.must_equal %w[
-      /dev/disk3s1
-      /dev/disk3
-      /dev/disk3s2
-    ]
+    expect(parsed).must_be_kind_of(Hash)
+    expect(parsed.keys).must_equal(["system-entities"])
+    expect(parsed["system-entities"].length).must_equal(3)
+    expect(parsed["system-entities"].map { |e| e["dev-entry"] }).must_equal([
+      "/dev/disk3s1",
+      "/dev/disk3",
+      "/dev/disk3s2",
+    ])
   end
 
   it "does not choke on empty input" do
