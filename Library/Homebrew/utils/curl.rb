@@ -8,10 +8,9 @@ def curl_args(extra_args = [])
 
   flags = HOMEBREW_CURL_ARGS
   flags -= ["--progress-bar"] if ARGV.verbose?
-
   args = [curl.to_s] + flags + extra_args
   args << "--verbose" if ENV["HOMEBREW_CURL_VERBOSE"]
-  args << "--silent" if !$stdout.tty? || ENV["TRAVIS"]
+  args << "--silent" if !$stdout.tty? || ENV["TRAVIS"] || Tty.width < 80
   args
 end
 
