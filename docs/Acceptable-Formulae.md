@@ -85,9 +85,9 @@ foo-ruby foo-perl etc. sucks.
 
 ### Niche (or self-submitted) Stuff<a name="Niche_Stuff"></a>
 The software in question must be
-* maintained (e.g. upstream is still making new releases)
+* maintained (i.e. upstream is still making new releases)
 * known
-* stable (e.g. not declared "unstable" or "beta" by upstream)
+* stable (i.e. not declared "unstable" or "beta" by upstream)
 * used
 * have a homepage
 
