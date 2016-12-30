@@ -9,6 +9,14 @@ module Hbc
       end
 
       def extension(regex)
+        effective_filename = @command.run!("/usr/bin/xattr", args: ["-p", "curl.filename_effective", @path]).stdout.chomp
+
+        path = if effective_filename.empty?
+          @path
+        else
+          Pathname.new(effective_filename)
+        end
+
         path.extname.sub(/^\./, "") =~ Regexp.new(regex.source, regex.options | Regexp::IGNORECASE)
       end
 

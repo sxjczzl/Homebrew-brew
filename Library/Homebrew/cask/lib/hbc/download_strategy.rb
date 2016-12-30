@@ -108,6 +108,9 @@ module Hbc
           File.open(temporary_path, "a+") do |f|
             f.flock(File::LOCK_EX)
             _fetch
+            unless (effective_filename = curl_effective_filename).nil?
+              @command.run!("/usr/bin/xattr", args: ["-w", "curl.filename_effective", effective_filename, temporary_path])
+            end
             f.flock(File::LOCK_UN)
           end
         rescue ErrorDuringExecution
@@ -135,6 +138,19 @@ module Hbc
     end
 
     private
+
+    def curl_effective_filename
+      out, err, status = Dir.mktmpdir do |tmpdir|
+        Dir.chdir(tmpdir)
+        curl_output(*user_agent_args,
+                    *cookies_args,
+                    *referer_args,
+                    "--silent", "-I", "--remote-name", "--remote-header-name", "-O",
+                    "--write-out", "%{filename_effective}", url)
+      end
+
+      out.lines.last.chomp if status.success? && err.chomp.empty?
+    end
 
     def cask_curl_args
       default_curl_args.tap do |args|
