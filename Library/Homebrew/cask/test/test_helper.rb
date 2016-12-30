@@ -17,8 +17,7 @@ end
 # add Homebrew-Cask to load path
 $LOAD_PATH.push(HOMEBREW_LIBRARY_PATH.join("cask", "lib").to_s)
 
-require "test/support/helper/shutup"
-include Test::Helper::Shutup
+require "test/support/helper/minitest/spec"
 
 def sudo(*args)
   %w[/usr/bin/sudo -E --] + args.flatten
@@ -42,8 +41,8 @@ FileUtils.ln_s Pathname.new(ENV["HOMEBREW_LIBRARY"]).join("Taps", "caskroom", "h
 
 # Extend MiniTest API with support for RSpec-style shared examples
 require "test/support/helper/cask/shared_examples"
-require "test/support/helper/cask/shared_examples/dsl_base.rb"
-require "test/support/helper/cask/shared_examples/staged.rb"
+require "test/support/helper/cask/shared_examples/dsl_base"
+require "test/support/helper/cask/shared_examples/staged"
 
 require "test/support/helper/cask/fake_dirs"
 require "test/support/helper/cask/fake_system_command"
