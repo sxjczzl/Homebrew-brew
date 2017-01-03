@@ -13,6 +13,7 @@
 #:  * `search` (`--debian`|`--fedora`|`--fink`|`--macports`|`--opensuse`|`--ubuntu`) <text>:
 #:    Search for <text> in the given package manager's list.
 
+require "hbc"
 require "formula"
 require "blacklist"
 require "utils"
@@ -126,8 +127,7 @@ module Homebrew
   def search_tap(user, repo, regex_or_string)
     regex = regex_or_string.is_a?(String) ? /^#{Regexp.escape(regex_or_string)}$/ : regex_or_string
 
-    if (HOMEBREW_LIBRARY/"Taps/#{user.downcase}/homebrew-#{repo.downcase}").directory? && \
-       user != "Caskroom"
+    if (HOMEBREW_LIBRARY/"Taps/#{user.downcase}/homebrew-#{repo.downcase}").directory?
       return []
     end
 
@@ -166,7 +166,7 @@ module Homebrew
 
   def search_formulae(regex)
     aliases = Formula.alias_full_names
-    results = (Formula.full_names+aliases).grep(regex).sort
+    results = (Formula.full_names+aliases+Hbc.all_tokens).grep(regex).sort
 
     results.map do |name|
       begin
@@ -174,17 +174,27 @@ module Homebrew
         canonical_name = formula.name
         canonical_full_name = formula.full_name
       rescue
+        cask = Hbc.load(name)
+        canonical_name = cask.token
+        canonical_full_name = name
+      rescue
         canonical_name = canonical_full_name = name
       end
 
       # Ignore aliases from results when the full name was also found
       next if aliases.include?(name) && results.include?(canonical_full_name)
 
-      if (HOMEBREW_CELLAR/canonical_name).directory?
+      if installed?(canonical_name)
         pretty_installed(name)
       else
         name
       end
     end.compact
+  end
+
+  def installed?(canonical_name)
+    return true if (HOMEBREW_CELLAR/canonical_name).directory?
+    return true if (Hbc.caskroom/canonical_name).directory?
+    false
   end
 end
