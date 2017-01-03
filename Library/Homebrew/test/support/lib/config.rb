@@ -8,7 +8,7 @@ require "pathname"
 HOMEBREW_BREW_FILE = Pathname.new(ENV["HOMEBREW_BREW_FILE"])
 
 TEST_TMPDIR = ENV.fetch("HOMEBREW_TEST_TMPDIR") do |k|
-  dir = Dir.mktmpdir("homebrew-tests-", ENV["HOMEBREW_TEMP"] || "/tmp")
+  dir = Dir.mktmpdir("homebrew-tests-", File.realpath(ENV["HOMEBREW_TEMP"] || "/tmp"))
   at_exit { FileUtils.remove_entry(dir) }
   ENV[k] = dir
 end
