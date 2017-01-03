@@ -75,6 +75,8 @@ module Homebrew
       puts pinned.map { |f| "#{f.full_specified_name} #{f.pkg_version}" } * ", "
     end
 
+    @linked_kegs_by_formula = linked_kegs_by_formula(formulae_to_install)
+
     formulae_to_install.each do |f|
       upgrade_formula(f)
       next unless ARGV.include?("--cleanup")
@@ -88,11 +90,7 @@ module Homebrew
   end
 
   def upgrade_formula(f)
-    formulae_maybe_with_kegs = [f] + f.old_installed_formulae
-    outdated_kegs = formulae_maybe_with_kegs
-                    .map(&:linked_keg)
-                    .select(&:directory?)
-                    .map { |k| Keg.new(k.resolved_path) }
+    outdated_kegs = @linked_kegs_by_formula[f]
 
     fi = FormulaInstaller.new(f)
     fi.options             = f.build.used_options
@@ -138,5 +136,15 @@ module Homebrew
     rescue
       nil
     end
+  end
+
+  def linked_kegs_by_formula(formulae)
+    kegs = Keg.linked.group_by do |keg|
+      begin
+        keg.to_formula.latest_formula
+      rescue FormulaUnavailableError
+      end
+    end
+    Hash[formulae.map { |f| [f, kegs[f] || []] }]
   end
 end

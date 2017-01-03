@@ -52,6 +52,13 @@ class LinkTests < LinkTestCase
     assert_equal [@keg], Keg.all
   end
 
+  def test_linked
+    assert_empty Keg.linked
+
+    @keg.link
+    assert_equal [@keg], Keg.linked
+  end
+
   def test_empty_installation
     %w[.DS_Store INSTALL_RECEIPT.json LICENSE.txt].each do |file|
       touch @keg/file
