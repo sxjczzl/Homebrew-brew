@@ -127,6 +127,7 @@ class DependencyCollector
     when :tuntap     then TuntapRequirement.new(tags)
     when :ant        then ant_dep(tags)
     when :emacs      then EmacsRequirement.new(tags)
+    when :gfortran   then GfortranRequirement.new(tags)
     # Tiger's ld is too old to properly link some software
     when :ld64       then LD64Dependency.new if MacOS.version < :leopard
     # Tiger doesn't ship expat in /usr/lib
