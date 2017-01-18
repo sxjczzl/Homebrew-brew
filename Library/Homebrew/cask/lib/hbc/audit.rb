@@ -135,7 +135,7 @@ module Hbc
       odebug "Verifying appcast checkpoint is accurate"
       result = @command.run("/usr/bin/curl", args: ["--compressed", "--location", "--user-agent", URL::FAKE_USER_AGENT, cask.appcast], print_stderr: false)
       if result.success?
-        processed_appcast_text = result.stdout.gsub(%r{<pubDate>[^<]*</pubDate>}, "")
+        processed_appcast_text = result.stdout.gsub("\n", "").gsub(%r{<pubDate>[^<]*</pubDate>}, "")
         # This step is necessary to replicate running `sed` from the command line
         processed_appcast_text << "\n" unless processed_appcast_text.end_with?("\n")
         expected = cask.appcast.checkpoint
