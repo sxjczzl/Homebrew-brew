@@ -344,4 +344,26 @@ describe Tab do
     expect(remapped_options).to include(Option.new("without-bar"))
     expect(remapped_options).to include(Option.new("with-foo-new"))
   end
+
+  specify "#might_be?" do
+    tab = Tab.new
+    expect(tab).to be_might_be(:foo)
+
+    tab.foo = true
+    expect(tab).to be_might_be(:foo)
+
+    tab.foo = false
+    expect(tab).not_to be_might_be(:foo)
+  end
+
+  specify "#definitely_not?" do
+    tab = Tab.new
+    expect(tab).not_to be_definitely_not(:foo)
+
+    tab.foo = true
+    expect(tab).not_to be_definitely_not(:foo)
+
+    tab.foo = false
+    expect(tab).to be_definitely_not(:foo)
+  end
 end

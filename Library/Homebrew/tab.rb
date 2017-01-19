@@ -344,6 +344,20 @@ class Tab < OpenStruct
     tabfile.atomic_write(to_json)
   end
 
+  # Helper method for checking truthiness of a value that may not be specified.
+  # `Tab.might_be?(:foo)` differs from `tab.foo` in that if `foo` is not
+  # specified `#might_be?` will return true.
+  def might_be?(key)
+    !definitely_not?(key)
+  end
+
+  # Helper method for checking falsiness of a value that may not be specified.
+  # `Tab.definitely_not?(:foo)` differs from `tab.foo` in that if `foo` is not
+  # specified `#definitely_not?` will return false.
+  def definitely_not?(key)
+    __send__(key) == false
+  end
+
   def to_s
     s = []
     if poured_from_bottle
