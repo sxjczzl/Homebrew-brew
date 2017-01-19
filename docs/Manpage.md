@@ -532,6 +532,10 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
   * `untap` `tap`:
     Remove a tapped repository.
 
+  * `unused`:
+    Lists kegs that were installed as dependencies of other kegs, but are no
+    longer required for any explicitly-installed keg.
+
   * `update` [`--merge`] [`--force`]:
     Fetch the newest version of Homebrew and all formulae from GitHub using
     `git`(1) and perform any necessary migrations.

@@ -1,5 +1,6 @@
 require "extend/pathname"
 require "keg_relocate"
+require "formula"
 require "formula_lock"
 require "ostruct"
 
@@ -155,6 +156,17 @@ class Keg
     end
 
     nil
+  end
+
+  # Finds kegs that were installed as dependencies of other kegs,
+  # but that are no longer required by any explicitly-installed kegs.
+  def self.unused(*args)
+    all.select { |k| k.unused?(*args) }
+  end
+
+  # Pass a :needed proc to customise which kegs are determined to be unused.
+  def unused?(needed: ->(k) { k.might_have_been? :installed_on_request })
+    !needed.call(self) && installed_dependents.none?(&needed)
   end
 
   def might_have_been?(key)
