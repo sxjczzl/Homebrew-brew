@@ -17,6 +17,13 @@ describe Keg do
     keg
   end
 
+  def alter_tab(keg)
+    tab = Tab.for_keg(keg)
+    tab.tabfile ||= keg/Tab::FILENAME
+    yield tab
+    tab.write
+  end
+
   around(:each) do |example|
     begin
       @old_stdout = $stdout
@@ -47,6 +54,26 @@ describe Keg do
   specify "::all" do
     Formula.clear_racks_cache
     expect(described_class.all).to eq([keg])
+  end
+
+  specify "#might_have_been?" do
+    expect(keg).to be_might_have_been(:foo)
+
+    alter_tab(keg) { |t| t.foo = true }
+    expect(keg).to be_might_have_been(:foo)
+
+    alter_tab(keg) { |t| t.foo = false }
+    expect(keg).not_to be_might_have_been(:foo)
+  end
+
+  specify "#definitely_was_not?" do
+    expect(keg).not_to be_definitely_was_not(:foo)
+
+    alter_tab(keg) { |t| t.foo = true }
+    expect(keg).not_to be_definitely_was_not(:foo)
+
+    alter_tab(keg) { |t| t.foo = false }
+    expect(keg).to be_definitely_was_not(:foo)
   end
 
   specify "#empty_installation?" do
@@ -349,16 +376,10 @@ describe Keg do
       keg.link
     end
 
-    def alter_tab(keg = dependent)
-      tab = Tab.for_keg(keg)
-      yield tab
-      tab.write
-    end
-
     # 1.1.6 is the earliest version of Homebrew that generates correct runtime
     # dependency lists in Tabs.
     def dependencies(deps, homebrew_version: "1.1.6")
-      alter_tab do |tab|
+      alter_tab dependent do |tab|
         tab.homebrew_version = homebrew_version
         tab.tabfile = dependent/Tab::FILENAME
         tab.runtime_dependencies = deps

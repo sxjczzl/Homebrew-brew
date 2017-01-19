@@ -157,6 +157,14 @@ class Keg
     nil
   end
 
+  def might_have_been?(key)
+    Tab.for_keg(self).might_be?(key)
+  end
+
+  def definitely_was_not?(key)
+    Tab.for_keg(self).definitely_not?(key)
+  end
+
   # if path is a file in a keg then this will return the containing Keg object
   def self.for(path)
     path = path.realpath
