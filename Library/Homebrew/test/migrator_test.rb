@@ -93,6 +93,8 @@ class MigratorTests < Homebrew::TestCase
     @new_f.unpin
 
     HOMEBREW_LOCK_DIR.children.each(&:unlink)
+
+    Tab.clear_cache
   end
 
   def test_move_cellar
