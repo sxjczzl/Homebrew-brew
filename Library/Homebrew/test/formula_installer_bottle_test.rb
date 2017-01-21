@@ -29,6 +29,7 @@ class InstallBottleTests < Homebrew::TestCase
       keg.uninstall
       formula.clear_cache
       formula.bottle.clear_cache
+      Tab.clear_cache
     end
 
     refute_predicate keg, :exist?
