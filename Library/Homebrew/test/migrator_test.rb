@@ -33,6 +33,7 @@ class MigratorErrorsTests < Homebrew::TestCase
     assert_raises(Migrator::MigratorDifferentTapsError) { Migrator.new(@new_f) }
   ensure
     keg.parent.rmtree
+    Tab.clear_cache
   end
 end
 
@@ -93,6 +94,8 @@ class MigratorTests < Homebrew::TestCase
     @new_f.unpin
 
     HOMEBREW_LOCK_DIR.children.each(&:unlink)
+
+    Tab.clear_cache
   end
 
   def test_move_cellar
