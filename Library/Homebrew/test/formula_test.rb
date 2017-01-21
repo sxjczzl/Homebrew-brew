@@ -206,6 +206,7 @@ class FormulaTests < Homebrew::TestCase
   ensure
     oldname_prefix.parent.rmtree
     newname_prefix.parent.rmtree
+    Tab.clear_cache
   end
 
   def test_installed?
@@ -291,6 +292,7 @@ class FormulaTests < Homebrew::TestCase
     assert_equal HOMEBREW_CELLAR/"#{f.name}/#{f.version}", f.installed_prefix
   ensure
     f.rack.rmtree
+    Tab.clear_cache
   end
 
   def test_installed_prefix_outdated_devel_head_installed
@@ -313,6 +315,7 @@ class FormulaTests < Homebrew::TestCase
     assert_equal HOMEBREW_CELLAR/"#{f.name}/#{f.version}", f.installed_prefix
   ensure
     f.rack.rmtree
+    Tab.clear_cache
   end
 
   def test_installed_prefix_head
@@ -360,6 +363,7 @@ class FormulaTests < Homebrew::TestCase
     assert_equal prefix, f.latest_head_prefix
   ensure
     f.rack.rmtree
+    Tab.clear_cache
   end
 
   def test_equality
@@ -823,6 +827,7 @@ class FormulaTests < Homebrew::TestCase
     assert_equal eligible_kegs, f.eligible_kegs_for_cleanup
   ensure
     f.rack.rmtree
+    Tab.clear_cache
   end
 
   def test_pour_bottle
@@ -976,6 +981,8 @@ class OutdatedVersionsTests < Homebrew::TestCase
     tab.source_modified_time = options[:source_modified_time].to_i
     tab.write unless options[:no_write]
     tab
+  ensure
+    Tab.clear_cache
   end
 
   def reset_outdated_kegs
@@ -1120,6 +1127,8 @@ class OutdatedVersionsTests < Homebrew::TestCase
     reset_outdated_kegs
 
     assert_predicate f.outdated_kegs, :empty?
+  ensure
+    Tab.clear_cache
   end
 
   def test_outdated_fetch_head
