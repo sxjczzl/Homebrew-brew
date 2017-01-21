@@ -33,6 +33,7 @@ class MigratorErrorsTests < Homebrew::TestCase
     assert_raises(Migrator::MigratorDifferentTapsError) { Migrator.new(@new_f) }
   ensure
     keg.parent.rmtree
+    Tab.clear_cache
   end
 end
 
