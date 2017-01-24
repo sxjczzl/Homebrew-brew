@@ -4,6 +4,16 @@ $LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/su
 require "simplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
 require "global"
 
+begin
+  require "minitest/autorun"
+  require "minitest/reporters"
+  Minitest::Reporters.use! Minitest::Reporters::DefaultReporter.new(color: true)
+  require "parallel_tests/test/runtime_logger"
+  require "mocha/setup"
+rescue LoadError
+  abort "Run `bundle install` or install the mocha and minitest gems before running the tests"
+end
+
 # add Homebrew-Cask to load path
 $LOAD_PATH.push(HOMEBREW_LIBRARY_PATH.join("cask", "lib").to_s)
 
@@ -13,18 +23,6 @@ include Test::Helper::Shutup
 def sudo(*args)
   %w[/usr/bin/sudo -E --] + args.flatten
 end
-
-# must be called after testing_env so at_exit hooks are in proper order
-require "minitest/autorun"
-require "minitest/reporters"
-Minitest::Reporters.use! Minitest::Reporters::DefaultReporter.new(color: true)
-
-require "parallel_tests/test/runtime_logger"
-
-# Force mocha to patch MiniTest since we have both loaded thanks to homebrew's testing_env
-require "mocha/api"
-require "mocha/integration/mini_test"
-Mocha::Integration::MiniTest.activate
 
 # our baby
 require "hbc"
