@@ -9,7 +9,7 @@ describe Hbc::Artifact::Suite do
   let(:source_path) { cask.staged_path.join("Caffeine") }
 
   before do
-    TestHelper.install_without_artifacts(cask)
+    InstallHelper.install_without_artifacts(cask)
   end
 
   it "moves the suite to the proper directory" do
@@ -20,7 +20,7 @@ describe Hbc::Artifact::Suite do
     end
 
     target_path.must_be :directory?
-    TestHelper.valid_alias?(target_path).must_equal false
+    FileHelper.valid_alias?(target_path).must_equal false
     source_path.wont_be :exist?
   end
 

@@ -10,7 +10,7 @@ describe Hbc::Artifact::Zap do
 
   before do
     shutup do
-      TestHelper.install_without_artifacts(cask)
+      InstallHelper.install_without_artifacts(cask)
     end
   end
 

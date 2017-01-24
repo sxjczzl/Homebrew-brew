@@ -12,7 +12,7 @@ describe Hbc::Artifact::App do
     let(:target_path) { Hbc.appdir.join("AnotherName.app") }
 
     before do
-      TestHelper.install_without_artifacts(cask)
+      InstallHelper.install_without_artifacts(cask)
     end
 
     it "installs the given apps using the proper target directory" do

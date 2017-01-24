@@ -13,7 +13,7 @@ describe Hbc::Artifact::App do
   let(:uninstall_phase) { -> { app.uninstall_phase } }
 
   before do
-    TestHelper.install_without_artifacts(cask)
+    InstallHelper.install_without_artifacts(cask)
   end
 
   describe "install_phase" do

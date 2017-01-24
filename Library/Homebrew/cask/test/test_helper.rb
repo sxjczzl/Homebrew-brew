@@ -1,13 +1,10 @@
+$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"))
+$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/support/lib"))
+
 require "bundler"
 require "bundler/setup"
-require "pathname"
 
 require "simplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
-
-# add Homebrew to load path
-$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_REPOSITORY"]}/Library/Homebrew"))
-$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_REPOSITORY"]}/Library/Homebrew/test/support/lib"))
-
 require "global"
 
 # add Homebrew-Cask to load path
@@ -48,57 +45,16 @@ end
 # pretend that the caskroom/cask Tap is installed
 FileUtils.ln_s Pathname.new(ENV["HOMEBREW_LIBRARY"]).join("Taps", "caskroom", "homebrew-cask"), Tap.fetch("caskroom", "cask").path
 
-class TestHelper
-  # helpers for test Casks to reference local files easily
-  def self.local_binary_path(name)
-    File.expand_path(File.join(File.dirname(__FILE__), "support", "binaries", name))
-  end
-
-  def self.local_binary_url(name)
-    "file://" + local_binary_path(name)
-  end
-
-  def self.valid_alias?(candidate)
-    return false unless candidate.symlink?
-    candidate.readlink.exist?
-  end
-
-  def self.install_without_artifacts(cask)
-    Hbc::Installer.new(cask).tap do |i|
-      shutup do
-        i.download
-        i.extract_primary_container
-      end
-    end
-  end
-
-  def self.install_with_caskfile(cask)
-    Hbc::Installer.new(cask).tap do |i|
-      shutup do
-        i.save_caskfile
-      end
-    end
-  end
-
-  def self.install_without_artifacts_with_caskfile(cask)
-    Hbc::Installer.new(cask).tap do |i|
-      shutup do
-        i.download
-        i.extract_primary_container
-        i.save_caskfile
-      end
-    end
-  end
-end
-
 # Extend MiniTest API with support for RSpec-style shared examples
-require "support/shared_examples"
-require "support/shared_examples/dsl_base.rb"
-require "support/shared_examples/staged.rb"
+require "test/support/helper/cask/shared_examples"
+require "test/support/helper/cask/shared_examples/dsl_base.rb"
+require "test/support/helper/cask/shared_examples/staged.rb"
 
-require "support/fake_dirs"
-require "support/fake_system_command"
-require "support/cleanup"
-require "support/never_sudo_system_command"
+require "test/support/helper/cask/fake_dirs"
+require "test/support/helper/cask/fake_system_command"
+require "test/support/helper/cask/file_helper"
+require "test/support/helper/cask/install_helper"
+require "test/support/helper/cask/cleanup"
+require "test/support/helper/cask/never_sudo_system_command"
 require "tmpdir"
 require "tempfile"

@@ -13,6 +13,7 @@ Style/BlockDelimiters:
   Exclude:
     - '**/cask/spec/**/*'
     - '**/cask/test/**/*'
+    - '**/test/**/*'
 
 # so many of these in formulae but none in here
 Lint/AmbiguousRegexpLiteral:
