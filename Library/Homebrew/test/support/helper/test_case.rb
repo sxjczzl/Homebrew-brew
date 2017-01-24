@@ -1,8 +1,15 @@
 require "formulary"
 require "tap"
+require "minitest/spec"
 
 module Homebrew
   class TestCase < ::Minitest::Test
+    extend MiniTest::Spec::DSL
+
+    register_spec_type(self) do |desc|
+      desc.is_a?(Module)
+    end
+
     require "test/support/helper/fs_leak_logger"
     require "test/support/helper/lifecycle_enforcer"
     require "test/support/helper/shutup"
