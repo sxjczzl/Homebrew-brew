@@ -1,3 +1,4 @@
+$:.unshift File.expand_path("../../cask/lib", __FILE__)
 $:.unshift File.expand_path("../..", __FILE__)
 $:.unshift File.expand_path("../support/lib", __FILE__)
 
