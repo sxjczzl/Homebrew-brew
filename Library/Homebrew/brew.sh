@@ -1,4 +1,4 @@
-if [[ $(git -C "$HOMEBREW_REPOSITORY" status) ]]
+if [[ -d "$HOMEBREW_REPOSITORY"/.git ]]
 then
   HOMEBREW_VERSION="$(git -C "$HOMEBREW_REPOSITORY" describe --tags --dirty 2>/dev/null)"
   HOMEBREW_USER_AGENT_VERSION="$HOMEBREW_VERSION"
