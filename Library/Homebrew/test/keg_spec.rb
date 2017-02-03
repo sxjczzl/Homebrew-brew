@@ -59,7 +59,7 @@ describe Keg do
     expect(described_class.all).to eq([keg])
   end
 
-  describe "unused" do
+  describe "orphaned" do
     def make_dependent(keg)
       keg.optlink unless keg.optlinked?
       dependent = setup_test_keg("#{keg.name}_dependent", "1.0")
@@ -74,36 +74,28 @@ describe Keg do
 
     it "does not include kegs that were installed on request" do
       alter_tab(keg) { |t| t.installed_on_request = true }
-      expect(keg).not_to be_unused
-      expect(Keg.unused).to be_empty
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
     end
 
     it "does not include kegs that did not record whether they were installed" do
       alter_tab(keg) { |t| t.delete_field :installed_on_request }
-      expect(keg).not_to be_unused
-      expect(Keg.unused).to be_empty
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
     end
 
     it "includes kegs that were definitely not installed on request" do
       alter_tab(keg) { |t| t.installed_on_request = false }
-      expect(keg).to be_unused
-      expect(Keg.unused).to contain_exactly(keg)
-    end
-
-    it "allows the definition of 'needed' to be overridden" do
-      expect(keg).to be_unused(needed: proc { false })
-      expect(Keg.unused(needed: proc { false })).to contain_exactly(keg)
-
-      expect(keg).not_to be_unused(needed: proc { true })
-      expect(Keg.unused(needed: proc { true })).to be_empty
+      expect(keg).to be_orphaned
+      expect(Keg.orphaned).to contain_exactly(keg)
     end
 
     it "does not include kegs that have dependents that were installed on request" do
       dependent = make_dependent(keg)
       alter_tab(dependent) { |t| t.installed_on_request = true }
       alter_tab(keg) { |t| t.installed_on_request = false }
-      expect(keg).not_to be_unused
-      expect(Keg.unused).to be_empty
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
     end
 
     it "does not include kegs that have dependents that did not record " \
@@ -111,16 +103,16 @@ describe Keg do
       dependent = make_dependent(keg)
       alter_tab(dependent) { |t| t.delete_field :installed_on_request }
       alter_tab(keg) { |t| t.installed_on_request = false }
-      expect(keg).not_to be_unused
-      expect(Keg.unused).to be_empty
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
     end
 
-    it "includes kegs that are only depended on by other unused kegs" do
+    it "includes kegs that are only depended on by other orphaned kegs" do
       dependent = make_dependent(keg)
       alter_tab(dependent) { |t| t.installed_on_request = false }
       alter_tab(keg) { |t| t.installed_on_request = false }
-      expect(keg).to be_unused
-      expect(Keg.unused).to contain_exactly(keg, dependent)
+      expect(keg).to be_orphaned
+      expect(Keg.orphaned).to contain_exactly(keg, dependent)
     end
   end
 

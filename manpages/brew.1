@@ -355,6 +355,10 @@ If \fB\-\-all\fR is passed, show options for all formulae\.
 If \fB\-\-installed\fR is passed, show options for all installed formulae\.
 .
 .TP
+\fBorphaned\fR
+Lists kegs that were installed as dependencies of other kegs, but are no longer required for any explicitly\-installed keg\.
+.
+.TP
 \fBoutdated\fR [\fB\-\-quiet\fR|\fB\-\-verbose\fR|\fB\-\-json=\fR\fIversion\fR] [\fB\-\-fetch\-HEAD\fR]
 Show formulae that have an updated version available\.
 .
@@ -551,10 +555,6 @@ Unpin \fIformulae\fR, allowing them to be upgraded by \fBbrew upgrade\fR\. See a
 .TP
 \fBuntap\fR \fItap\fR
 Remove a tapped repository\.
-.
-.TP
-\fBunused\fR
-Lists kegs that were installed as dependencies of other kegs, but are no longer required for any explicitly\-installed keg\.
 .
 .TP
 \fBupdate\fR [\fB\-\-merge\fR] [\fB\-\-force\fR]
