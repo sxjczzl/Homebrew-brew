@@ -1,15 +1,11 @@
+$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"))
+$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/support/lib"))
+
 require "pathname"
 require "rspec/its"
 require "rspec/wait"
 
-if ENV["HOMEBREW_TESTS_COVERAGE"]
-  require "simplecov"
-end
-
-# add Homebrew to load path
-$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_REPOSITORY"]}/Library/Homebrew"))
-$LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_REPOSITORY"]}/Library/Homebrew/test/support/lib"))
-
+require "simplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
 require "global"
 
 # add Homebrew-Cask to load path
@@ -17,7 +13,12 @@ $LOAD_PATH.push(HOMEBREW_LIBRARY_PATH.join("cask", "lib").to_s)
 
 require "test/support/helper/shutup"
 
-Pathname.glob(HOMEBREW_LIBRARY_PATH.join("cask", "spec", "support", "*.rb")).each(&method(:require))
+require "test/support/helper/cask/audit_matchers"
+require "test/support/helper/cask/expectations_hash_helper"
+require "test/support/helper/cask/file_helper"
+require "test/support/helper/cask/install_helper"
+require "test/support/helper/cask/kernel_at_exit_hacks"
+require "test/support/helper/cask/sha256_helper"
 
 require "hbc"
 

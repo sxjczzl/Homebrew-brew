@@ -11,7 +11,7 @@ describe Hbc::Artifact::Artifact do
   let(:target_path) { Hbc.appdir.join("Caffeine.app") }
 
   before do
-    TestHelper.install_without_artifacts(cask)
+    InstallHelper.install_without_artifacts(cask)
   end
 
   describe "with no target" do

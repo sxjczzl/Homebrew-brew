@@ -1,5 +1,3 @@
-require "test_helper"
-
 shared_examples_for Hbc::Staged do
   let(:fake_pathname_exists) {
     fake_pathname = Pathname("/path/to/file/that/exists")

@@ -5,7 +5,7 @@ describe Hbc::CLI::List do
     casks = %w[local-caffeine local-transmission].map { |c| Hbc.load(c) }
 
     casks.each do |c|
-      TestHelper.install_with_caskfile(c)
+      InstallHelper.install_with_caskfile(c)
     end
 
     lambda {
@@ -26,7 +26,7 @@ describe Hbc::CLI::List do
     }
 
     before(:each) do
-      casks.map(&Hbc.method(:load)).each(&TestHelper.method(:install_with_caskfile))
+      casks.map(&Hbc.method(:load)).each(&InstallHelper.method(:install_with_caskfile))
     end
 
     it "of all installed Casks" do
@@ -69,7 +69,7 @@ describe Hbc::CLI::List do
     let(:casks) { [caffeine, transmission] }
 
     it "lists the installed files for those Casks" do
-      casks.each(&TestHelper.method(:install_without_artifacts_with_caskfile))
+      casks.each(&InstallHelper.method(:install_without_artifacts_with_caskfile))
 
       shutup do
         Hbc::Artifact::App.new(transmission).install_phase

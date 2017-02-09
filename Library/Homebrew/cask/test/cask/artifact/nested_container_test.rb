@@ -4,7 +4,7 @@ describe Hbc::Artifact::NestedContainer do
   describe "install" do
     it "extracts the specified paths as containers" do
       cask = Hbc::CaskLoader.load_from_file(TEST_FIXTURE_DIR/"cask/Casks/nested-app.rb").tap do |c|
-        TestHelper.install_without_artifacts(c)
+        InstallHelper.install_without_artifacts(c)
       end
 
       shutup do

@@ -1,79 +1,113 @@
 require "testing_env"
 require "extend/ARGV"
 
-class ArgvExtensionTests < Homebrew::TestCase
-  def setup
-    super
-    @argv = [].extend(HomebrewArgvExtension)
+describe HomebrewArgvExtension do
+  subject { argv.extend(HomebrewArgvExtension) }
+
+  describe "#formulae" do
+    let(:argv) { ["mxcl"] }
+
+    it do
+      expect { subject.formulae }.must_raise FormulaUnavailableError
+    end
   end
 
-  def test_argv_formulae
-    @argv.unshift "mxcl"
-    assert_raises(FormulaUnavailableError) { @argv.formulae }
+  describe "#casks" do
+    let(:argv) { ["mxcl"] }
+
+    it do
+      expect(subject.casks).must_equal []
+    end
   end
 
-  def test_argv_casks
-    @argv.unshift "mxcl"
-    assert_equal [], @argv.casks
+  describe "#kegs" do
+    let(:argv) { ["mxcl"] }
+
+    before do
+      keg = HOMEBREW_CELLAR + "mxcl/10.0"
+      keg.mkpath
+    end
+
+    it do
+      expect(subject.kegs.length).must_equal 1
+    end
   end
 
-  def test_argv_kegs
-    keg = HOMEBREW_CELLAR + "mxcl/10.0"
-    keg.mkpath
-    @argv << "mxcl"
-    assert_equal 1, @argv.kegs.length
+  describe "#named" do
+    let(:argv) { ["foo", "--debug", "-v"] }
+
+    it do
+      expect(subject.named).must_equal ["foo"]
+    end
   end
 
-  def test_argv_named
-    @argv << "foo" << "--debug" << "-v"
-    assert_equal %w[foo], @argv.named
+  describe "#options_only" do
+    let(:argv) { ["--foo", "-vds", "a", "b", "cdefg"] }
+
+    it do
+      expect(subject.options_only).must_equal ["--foo", "-vds"]
+    end
   end
 
-  def test_options_only
-    @argv << "--foo" << "-vds" << "a" << "b" << "cdefg"
-    assert_equal %w[--foo -vds], @argv.options_only
+  describe "#flags_only" do
+    let(:argv) { ["--foo", "-vds", "a", "b", "cdefg"] }
+
+    it do
+      expect(subject.flags_only).must_equal ["--foo"]
+    end
   end
 
-  def test_flags_only
-    @argv << "--foo" << "-vds" << "a" << "b" << "cdefg"
-    assert_equal %w[--foo], @argv.flags_only
+  describe "#empty?" do
+    let(:argv) { [] }
+
+    it do
+      expect(subject.named).must_be :empty?
+      expect(subject.kegs).must_be :empty?
+      expect(subject.formulae).must_be :empty?
+      expect(subject).must_be :empty?
+    end
   end
 
-  def test_empty_argv
-    assert_empty @argv.named
-    assert_empty @argv.kegs
-    assert_empty @argv.formulae
-    assert_empty @argv
+  describe "#switch?" do
+    let(:argv) { ["-ns", "-i", "--bar", "-a-bad-arg"] }
+
+    it do
+      %w[n s i].each { |s| assert subject.switch?(s) }
+      %w[b ns bar --bar -n a bad arg].each { |s| assert !subject.switch?(s) }
+    end
   end
 
-  def test_switch?
-    @argv << "-ns" << "-i" << "--bar" << "-a-bad-arg"
-    %w[n s i].each { |s| assert @argv.switch?(s) }
-    %w[b ns bar --bar -n a bad arg].each { |s| assert !@argv.switch?(s) }
+  describe "#flag?" do
+    let(:argv) { ["--foo", "-bq", "--bar"] }
+
+    it do
+      expect(subject.flag?("--foo")).must_equal true
+      expect(subject.flag?("--bar")).must_equal true
+      expect(subject.flag?("--baz")).must_equal true
+      expect(subject.flag?("--qux")).must_equal true
+      expect(subject.flag?("--frotz")).must_equal false
+      expect(subject.flag?("--debug")).must_equal false
+    end
   end
 
-  def test_flag?
-    @argv << "--foo" << "-bq" << "--bar"
-    assert @argv.flag?("--foo")
-    assert @argv.flag?("--bar")
-    assert @argv.flag?("--baz")
-    assert @argv.flag?("--qux")
-    assert !@argv.flag?("--frotz")
-    assert !@argv.flag?("--debug")
+  describe "#value" do
+    let(:argv) { ["--foo=", "--bar=ab"] }
+
+    it do
+      expect(subject.value("foo")).must_equal ""
+      expect(subject.value("bar")).must_equal "ab"
+      expect(subject.value("baz")).must_be_nil
+    end
   end
 
-  def test_value
-    @argv << "--foo=" << "--bar=ab"
-    assert_equal "", @argv.value("foo")
-    assert_equal "ab", @argv.value("bar")
-    assert_nil @argv.value("baz")
-  end
+  describe "#values" do
+    let(:argv) { ["--foo=", "--bar=a", "--baz=b,c"] }
 
-  def test_values
-    @argv << "--foo=" << "--bar=a" << "--baz=b,c"
-    assert_equal [], @argv.values("foo")
-    assert_equal ["a"], @argv.values("bar")
-    assert_equal ["b", "c"], @argv.values("baz")
-    assert_nil @argv.values("qux")
+    it do
+      expect(subject.values("foo")).must_equal []
+      expect(subject.values("bar")).must_equal ["a"]
+      expect(subject.values("baz")).must_equal ["b", "c"]
+      expect(subject.values("qux")).must_be_nil
+    end
   end
 end

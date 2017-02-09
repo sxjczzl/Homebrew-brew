@@ -1,5 +1,3 @@
-require "test_helper"
-
 shared_examples_for Hbc::DSL::Base do
   it "supports the token method" do
     dsl.token.must_equal cask.token

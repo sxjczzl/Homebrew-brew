@@ -14,5 +14,6 @@ $LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/su
 
 require "global"
 
+require "test/support/helper/minitest/assertions"
 require "test/support/helper/test_case"
 require "test/support/helper/integration_command_test_case"
