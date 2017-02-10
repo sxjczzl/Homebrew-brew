@@ -1,6 +1,16 @@
 module Hardware
   class CPU
     class << self
+      LINUX_OPTIMIZATION_FLAGS = {
+        core2: OPTIMIZATION_FLAGS[:core2],
+        core: OPTIMIZATION_FLAGS[:core],
+        dunno: "-march=native",
+      }.freeze
+
+      def optimization_flags
+        LINUX_OPTIMIZATION_FLAGS
+      end
+
       def universal_archs
         [].extend ArchitectureListExtension
       end
