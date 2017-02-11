@@ -1,5 +1,5 @@
 #:  * `orphaned`:
-#:    Lists kegs that were installed as dependencies of other kegs, but are no
+#:    List kegs that were installed as dependencies of other kegs, but are no
 #:    longer required for any explicitly-installed keg.
 
 require "keg"
