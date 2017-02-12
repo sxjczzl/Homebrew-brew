@@ -307,7 +307,7 @@ class Tap
   # an array of all {Formula} files of this {Tap}.
   def formula_files
     @formula_files ||= if formula_dir
-      formula_dir.children.select(&method(:formula_file?))
+      formula_dir.children.select(&method(:formula_file?)).sort
     else
       []
     end
@@ -316,7 +316,7 @@ class Tap
   # an array of all {Cask} files of this {Tap}.
   def cask_files
     @cask_files ||= if cask_dir
-      cask_dir.children.select(&method(:cask_file?))
+      cask_dir.children.select(&method(:cask_file?)).sort
     else
       []
     end
