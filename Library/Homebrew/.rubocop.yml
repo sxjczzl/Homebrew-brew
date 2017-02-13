@@ -11,8 +11,8 @@ AllCops:
 
 Style/BlockDelimiters:
   Exclude:
-    - '**/cask/spec/**/*'
-    - '**/cask/test/**/*'
+    - '**/spec/**/*'
+    - '**/test/**/*'
 
 # so many of these in formulae but none in here
 Lint/AmbiguousRegexpLiteral:

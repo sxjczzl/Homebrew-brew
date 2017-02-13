@@ -1,8 +1,21 @@
 require "formulary"
 require "tap"
+require "minitest/spec"
+
+require "test/support/helper/assertions"
 
 module Homebrew
   class TestCase < ::Minitest::Test
+    extend MiniTest::Spec::DSL
+
+    class << self
+      alias context describe
+    end
+
+    register_spec_type(self) do |desc|
+      desc.is_a?(Module)
+    end
+
     require "test/support/helper/fs_leak_logger"
     require "test/support/helper/lifecycle_enforcer"
     require "test/support/helper/shutup"
@@ -11,6 +24,7 @@ module Homebrew
     include Test::Helper::LifecycleEnforcer
     include Test::Helper::Shutup
     include Test::Helper::VersionAssertions
+    include Test::Helper::Assertions
 
     TEST_DIRECTORIES = [
       CoreTap.instance.path/"Formula",
@@ -76,22 +90,6 @@ module Homebrew
 
     def needs_python
       skip "Requires Python" unless which("python")
-    end
-
-    def assert_nothing_raised
-      yield
-    end
-
-    def assert_eql(exp, act, msg = nil)
-      msg = message(msg, "") { diff exp, act }
-      assert exp.eql?(act), msg
-    end
-
-    def refute_eql(exp, act, msg = nil)
-      msg = message(msg) do
-        "Expected #{mu_pp(act)} to not be eql to #{mu_pp(exp)}"
-      end
-      refute exp.eql?(act), msg
     end
 
     def dylib_path(name)
