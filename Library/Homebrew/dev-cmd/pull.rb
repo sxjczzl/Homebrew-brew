@@ -248,7 +248,6 @@ module Homebrew
       changed_formulae_names.each do |name|
         f = Formula[name]
         next if f.bottle_unneeded? || f.bottle_disabled?
-        ohai "Publishing on Bintray: #{f.name} #{f.pkg_version}"
         publish_bottle_file_on_bintray(f, bintray_creds)
         published << f.full_name
       end
@@ -377,7 +376,7 @@ module Homebrew
           subject_strs << "remove stable"
           formula_name_str += ":" # just for cosmetics
         else
-          subject_strs << formula.version.to_s
+          subject_strs << new[:stable]
         end
       end
       if old[:devel] != new[:devel]
@@ -388,7 +387,7 @@ module Homebrew
             formula_name_str += ":" # just for cosmetics
           end
         else
-          subject_strs << "#{formula.devel.version} (devel)"
+          subject_strs << "#{new[:devel]} (devel)"
         end
       end
       subject = subject_strs.empty? ? nil : "#{formula_name_str} #{subject_strs.join(", ")}"
@@ -408,7 +407,12 @@ module Homebrew
     if info.nil?
       raise "Failed publishing bottle: failed reading formula info for #{f.full_name}"
     end
+    unless info.bottle_info_any
+      opoo "No bottle defined in formula #{package}"
+      return
+    end
     version = info.pkg_version
+    ohai "Publishing on Bintray: #{package} #{version}"
     curl "-w", '\n', "--silent", "--fail",
          "-u#{creds[:user]}:#{creds[:key]}", "-X", "POST",
          "-H", "Content-Type: application/json",

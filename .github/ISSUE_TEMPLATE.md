@@ -4,14 +4,14 @@ If Homebrew was updated on Aug 10-11th 2016 and `brew update` always says `Alrea
 
 - [ ] Ran `brew update` and retried your prior step?
 - [ ] Ran `brew doctor`, fixed as many issues as possible and retried your prior step?
-- [ ] If you're seeing permission errors tried running `sudo chown -R $(whoami) $(brew --prefix)`?
+- [ ] Confirmed this is problem with Homebrew/brew and not specific formulae? If it's a formulae-specific problem please file this issue at https://github.com/Homebrew/homebrew-core/issues/new
 
 _You can erase any parts of this template not applicable to your Issue._
 
 ### Bug reports:
 
-Please replace this line with a brief summary of your issue.
+Please replace this section with a brief summary of your issue **AND** the output of `brew config` and `brew doctor`. Please note we may immediately close your issue without comment if you do not fill out the issue template and provide the requested information.
 
 ### Propose a feature:
 
-Instead of creating an issue here, please create a pull request with your change proposal in the [Homebrew Evolution](https://github.com/Homebrew/brew-evolution) repository using the [proposal template](https://github.com/Homebrew/brew-evolution/blob/master/proposal_template.md).
+Please replace this section with a detailed description of your proposed feature, the motivation for it and alternatives considered. Please note we may close this issue or ask you to create a pull-request if it's something we're not actively planning to work on.
