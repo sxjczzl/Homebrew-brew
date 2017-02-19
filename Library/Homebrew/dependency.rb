@@ -89,12 +89,12 @@ class Dependency
           next
         when :skip
           next if @expand_stack.include? dep.name
-          expanded_deps.concat(expand(dep.to_formula, &block))
+          expanded_deps.concat(expand_dependency(dep, &block))
         when :keep_but_prune_recursive_deps
           expanded_deps << dep
         else
           next if @expand_stack.include? dep.name
-          expanded_deps.concat(expand(dep.to_formula, &block))
+          expanded_deps.concat(expand_dependency(dep, &block))
           expanded_deps << dep
         end
       end
@@ -167,6 +167,16 @@ class Dependency
       else
         [] # Means both build and runtime dependency.
       end
+    end
+
+    def expand_dependency(dependency)
+      formula = begin
+        dependency.to_formula
+      rescue FormulaUnavailableError
+        return []
+      end
+
+      expand(formula)
     end
   end
 end
