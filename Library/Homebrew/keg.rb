@@ -171,6 +171,11 @@ class Keg
     Formula.racks.flat_map(&:subdirs).map { |d| new(d) }
   end
 
+  def self.linked
+    return [] unless HOMEBREW_LINKED_KEGS.directory?
+    HOMEBREW_LINKED_KEGS.subdirs.map(&method(:for))
+  end
+
   attr_reader :path, :name, :linked_keg_record, :opt_record
   protected :path
 
