@@ -13,3 +13,8 @@
        end
  
        perform_preinstall_checks
+https://github.com/sportngin/brew-gem/blob/
+install-uninstall/bin/brew-gem
+mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
+
+
