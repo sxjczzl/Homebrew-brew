@@ -14,13 +14,13 @@ module Homebrew
   def sh
     ENV.activate_extensions!
 
-    if superenv?
+    if ENV.superenv?
       ENV.set_x11_env_if_installed
       ENV.deps = Formula.installed.select { |f| f.keg_only? && f.opt_prefix.directory? }
     end
     ENV.setup_build_environment
-    if superenv?
-      # superenv stopped adding brew's bin but generally user's will want it
+    if ENV.superenv?
+      # superenv stopped adding brew's bin but generally users will want it
       ENV["PATH"] = ENV["PATH"].split(File::PATH_SEPARATOR).insert(1, "#{HOMEBREW_PREFIX}/bin").join(File::PATH_SEPARATOR)
     end
     ENV["PS1"] = 'brew \[\033[1;32m\]\w\[\033[0m\]$ '
