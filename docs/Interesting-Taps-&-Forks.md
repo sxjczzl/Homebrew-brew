@@ -1,21 +1,21 @@
 # Interesting Taps & Forks
 
 A Tap is homebrew-speak for a git repository containing extra formulae.
-Homebrew has the capability to add (and remove) multiple taps to your local installation with the `brew tap` and `brew untap` command. Type `man brew` in your Terminal. The main repository https://github.com/Homebrew/homebrew-core, often called `homebrew/core`, is always built-in.
+Homebrew has the capability to add (and remove) multiple taps to your local installation with the `brew tap` and `brew untap` command. Type `man brew` in your Terminal. The main repository [https://github.com/Homebrew/homebrew-core](https://github.com/Homebrew/homebrew-core), often called `homebrew/core`, is always built-in.
 
-## Main Taps
+## Official Taps
 
 *   [homebrew/apache](https://github.com/Homebrew/homebrew-apache): A tap for Apache modules, extending macOS's built-in Apache. These brews may require unconventional additional setup, as explained in the caveats.
 
-*   [homebrew/boneyard](https://github.com/Homebrew/homebrew-boneyard): Formulae from other official taps, primarily (homebrew/core) are not deleted, they are moved here.
+*   [homebrew/boneyard](https://github.com/Homebrew/homebrew-boneyard): Archive of formulae removed from other official taps (primarily [homebrew/core](https://github.com/Homebrew/homebrew-core)).
 
 *   [homebrew/bundle](https://github.com/Homebrew/homebrew-bundle): Bundler for non-Ruby dependencies from Homebrew.
-
-*   [homebrew/completions](https://github.com/Homebrew/homebrew-completions): Shell completion formulae.
 
 *   [homebrew/dupes](https://github.com/Homebrew/homebrew-dupes): Need GDB or a newer Tk? System duplicates go here.
 
 *   [homebrew/emacs](https://github.com/Homebrew/homebrew-emacs): A tap for Emacs packages.
+
+*   [homebrew/fuse](https://github.com/Homebrew/homebrew-fuse): A tap for formulae with hard Fuse dependencies.
 
 *   [homebrew/games](https://github.com/Homebrew/homebrew-games): Game or gaming-emulation related formulae.
 
@@ -23,15 +23,13 @@ Homebrew has the capability to add (and remove) multiple taps to your local inst
 
 *   [homebrew/php](https://github.com/Homebrew/homebrew-php): Repository for php-related formulae.
 
-*   [homebrew/python](https://github.com/Homebrew/homebrew-python): A few Python formulae that do not build well with `pip` alone.
-
 *   [homebrew/science](https://github.com/Homebrew/homebrew-science): A collection of scientific libraries and tools.
 
 *   [homebrew/services](https://github.com/Homebrew/homebrew-services): A tool to start Homebrew formulae's plists with `launchctl`.
 
-*   [homebrew/x11](https://github.com/Homebrew/homebrew-x11): Formulae with hard X11 dependencies.
+*   [homebrew/tex](https://github.com/Homebrew/homebrew-tex): A tap for formulae that depend on TeX.
 
-`brew search` looks in these main taps as well as in [homebrew/core](https://github.com/Homebrew/homebrew-core). So don't worry about missing stuff. We will add other taps to the search as they become well maintained and popular.
+`brew search` looks in these taps as well as in [homebrew/core](https://github.com/Homebrew/homebrew-core). So don't worry about missing stuff. We will add other taps to the search as they become well maintained and popular.
 
 You can be added as a maintainer for one of the Homebrew organization taps and aid the project! If you are interested write to our list: homebrew-discuss@googlegroups.com. We want your help!
 
