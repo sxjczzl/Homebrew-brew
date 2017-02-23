@@ -10,7 +10,7 @@ module Homebrew
 
   def __env
     ENV.activate_extensions!
-    ENV.deps = ARGV.formulae if superenv?
+    ENV.deps = ARGV.formulae if ENV.superenv?
     ENV.setup_build_environment
     ENV.universal_binary if ARGV.build_universal?
 
