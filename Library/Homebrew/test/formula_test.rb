@@ -661,6 +661,24 @@ class FormulaTests < Homebrew::TestCase
     assert_equal %w[foo/bar/f1 baz/qux/f2], f3.runtime_dependencies.map(&:name)
   end
 
+  def test_dependencies_with_missing_formula
+    f2 = formula("f2") do
+      url "f-2"
+      depends_on "f1"
+    end
+
+    assert_equal [Dependency.new("f1")], f2.recursive_dependencies
+  end
+
+  def test_missing_dependencies_with_missing_formula
+    f2 = formula("f2") do
+      url "f-2"
+      depends_on "f1"
+    end
+
+    assert_empty f2.missing_dependencies
+  end
+
   def test_requirements
     f1 = formula("f1") do
       url "f1-1"

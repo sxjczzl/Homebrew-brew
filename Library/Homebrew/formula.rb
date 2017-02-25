@@ -1548,7 +1548,13 @@ class Formula
       end
     end
 
-    missing_dependencies.map!(&:to_formula)
+    missing_dependencies.map! do |dependency|
+      begin
+        dependency.to_formula
+      rescue FormulaUnavailableError
+      end
+    end
+    missing_dependencies.compact!
     missing_dependencies.select! do |d|
       hide.include?(d.name) || d.installed_prefixes.empty?
     end
