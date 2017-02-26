@@ -3,7 +3,7 @@ describe "brew log", :integration_test do
     HOMEBREW_REPOSITORY.cd do
       shutup do
         system "git", "init"
-        system "git", "commit", "--allow-empty", "-m", "This is a test commit"
+        system "git", "commit", "--no-gpg-sign", "--allow-empty", "-m", "This is a test commit"
       end
     end
 
@@ -21,7 +21,7 @@ describe "brew log", :integration_test do
       shutup do
         system "git", "init"
         system "git", "add", "--all"
-        system "git", "commit", "-m", "This is a test commit for Testball"
+        system "git", "commit", "--no-gpg-sign", "-m", "This is a test commit for Testball"
       end
     end
 

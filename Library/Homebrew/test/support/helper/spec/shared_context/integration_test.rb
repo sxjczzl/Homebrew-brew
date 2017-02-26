@@ -151,7 +151,7 @@ RSpec.shared_context "integration test" do
       CoreTap.instance.path.cd do |tap_path|
         system "git", "init"
         system "git", "add", "--all"
-        system "git", "commit", "-m",
+        system "git", "commit", "--no-gpg-sign", "-m",
           "#{old_name.capitalize} has not yet been renamed"
 
         brew "install", old_name
@@ -160,7 +160,7 @@ RSpec.shared_context "integration test" do
         (tap_path/"formula_renames.json").write JSON.generate(old_name => new_name)
 
         system "git", "add", "--all"
-        system "git", "commit", "-m",
+        system "git", "commit", "--no-gpg-sign", "-m",
           "#{old_name.capitalize} has been renamed to #{new_name.capitalize}"
       end
     end

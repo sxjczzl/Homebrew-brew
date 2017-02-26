@@ -8,7 +8,7 @@ describe "brew tap", :integration_test do
         system "git", "remote", "add", "origin", "https://github.com/Homebrew/homebrew-foo"
         FileUtils.touch "readme"
         system "git", "add", "--all"
-        system "git", "commit", "-m", "init"
+        system "git", "commit", "--no-gpg-sign", "-m", "init"
       end
     end
 

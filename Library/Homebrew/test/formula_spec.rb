@@ -575,7 +575,7 @@ describe Formula do
       shutup do
         system("git", "init")
         system("git", "add", "--all")
-        system("git", "commit", "-m", "Initial commit")
+        system("git", "commit", "--no-gpg-sign", "-m", "Initial commit")
       end
     end
 
@@ -1197,7 +1197,7 @@ describe Formula do
             shutup do
               system("git", "init")
               system("git", "add", "--all")
-              system("git", "commit", "-m", "Initial commit")
+              system("git", "commit", "--no-gpg-sign", "-m", "Initial commit")
             end
           end
 
