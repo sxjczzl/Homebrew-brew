@@ -929,7 +929,7 @@ class FormulaAuditor
       end
     end
 
-    if text =~ /xcodebuild[ (]["'*]/ && !text.include?("SYMROOT=")
+    if text =~ /xcodebuild[ (]*["'*]*/ && !text.include?("SYMROOT=")
       problem 'xcodebuild should be passed an explicit "SYMROOT"'
     end
 
