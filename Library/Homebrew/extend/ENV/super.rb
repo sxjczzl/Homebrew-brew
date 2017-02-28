@@ -164,7 +164,11 @@ module Superenv
   end
 
   def determine_include_paths
-    keg_only_deps.map { |d| d.opt_include.to_s }.to_path_s
+    paths = keg_only_deps.map { |d| d.opt_include.to_s }
+    if compiler == :llvm_clang && Formula["llvm"].installed?
+      paths << "#{Formula["llvm"].opt_lib}/libomp"
+    end
+    paths.to_path_s
   end
 
   def homebrew_extra_library_paths
@@ -174,6 +178,9 @@ module Superenv
   def determine_library_paths
     paths = keg_only_deps.map { |d| d.opt_lib.to_s }
     paths << "#{HOMEBREW_PREFIX}/lib"
+    if compiler == :llvm_clang && Formula["llvm"].installed?
+      paths << "#{Formula["llvm"].opt_lib}/libomp"
+    end
     paths += homebrew_extra_library_paths
     paths.to_path_s
   end
