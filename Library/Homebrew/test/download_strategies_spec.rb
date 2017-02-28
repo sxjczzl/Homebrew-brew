@@ -149,7 +149,7 @@ describe GitDownloadStrategy do
   def git_commit_all
     shutup do
       system "git", "add", "--all"
-      system "git", "commit", "-m", "commit number #{@commit_id}"
+      system "git", "commit", "--no-gpg-sign", "-m", "commit number #{@commit_id}"
       @commit_id += 1
     end
   end

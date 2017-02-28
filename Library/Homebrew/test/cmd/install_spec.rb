@@ -162,7 +162,7 @@ describe "brew install", :integration_test do
         FileUtils.touch "bin/something.bin"
         FileUtils.touch "README"
         system "git", "add", "--all"
-        system "git", "commit", "-m", "Initial repo commit"
+        system "git", "commit", "--no-gpg-sign", "-m", "Initial repo commit"
       end
     end
 
