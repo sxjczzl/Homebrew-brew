@@ -5,12 +5,10 @@ require "install_renamed"
 describe Pathname do
   include FileUtils
 
-  let(:src) { Pathname.new(Dir.mktmpdir) }
-  let(:dst) { Pathname.new(Dir.mktmpdir) }
+  let(:src) { mktmpdir }
+  let(:dst) { mktmpdir }
   let(:file) { src/"foo" }
   let(:dir) { src/"bar" }
-
-  after(:each) { rm_rf [src, dst] }
 
   describe DiskUsageExtension do
     before(:each) do
@@ -30,13 +28,13 @@ describe Pathname do
     describe "#abv" do
       context "when called on a directory" do
         it "returns a string with the file count and disk usage" do
-          expect(dir.abv).to eq("3 files, 1M")
+          expect(dir.abv).to eq("3 files, 1MB")
         end
       end
 
       context "when called on a file" do
         it "returns the disk usage" do
-          expect((dir/"a-file").abv).to eq("1M")
+          expect((dir/"a-file").abv).to eq("1MB")
         end
       end
     end
@@ -284,10 +282,17 @@ describe Pathname do
       expect(dst/dir.basename).to be_a_directory
     end
   end
+
+  describe "#ds_store?" do
+    it "returns whether a file is .DS_Store or not" do
+      expect(file).not_to be_ds_store
+      expect(file/".DS_Store").to be_ds_store
+    end
+  end
 end
 
 describe FileUtils do
-  let(:dst) { Pathname.new(Dir.mktmpdir) }
+  let(:dst) { mktmpdir }
 
   describe "#mkdir" do
     it "creates indermediate directories" do

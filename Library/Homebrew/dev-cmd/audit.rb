@@ -329,6 +329,27 @@ class FormulaAuditor
 
     problem "File should end with a newline" unless text.trailing_newline?
 
+    versioned_formulae = Dir[formula.path.to_s.gsub(/\.rb$/, "@*.rb")]
+    needs_versioned_alias = !versioned_formulae.empty? &&
+                            formula.tap &&
+                            formula.aliases.grep(/.@\d/).empty?
+    if needs_versioned_alias
+      _, last_alias_version = File.basename(versioned_formulae.sort.reverse.first)
+                                  .gsub(/\.rb$/, "")
+                                  .split("@")
+      major, minor, = formula.version.to_s.split(".")
+      alias_name = if last_alias_version.split(".").length == 1
+        "#{formula.name}@#{major}"
+      else
+        "#{formula.name}@#{major}.#{minor}"
+      end
+      problem <<-EOS.undent
+        Formula has other versions so create an alias:
+          cd #{formula.tap.alias_dir}
+          ln -s #{formula.path.to_s.gsub(formula.tap.path, "..")} #{alias_name}
+      EOS
+    end
+
     return unless @strict
 
     present = audit_components
@@ -444,7 +465,8 @@ class FormulaAuditor
           problem "Dependency '#{dep.name}' was renamed; use new name '#{dep_f.name}'."
         end
 
-        if @@aliases.include?(dep.name)
+        if @@aliases.include?(dep.name) &&
+           (core_formula? || !dep_f.versioned_formula?)
           problem "Dependency '#{dep.name}' is an alias; use the canonical name '#{dep.to_formula.full_name}'."
         end
 
@@ -582,6 +604,11 @@ class FormulaAuditor
 
   def audit_homepage
     homepage = formula.homepage
+
+    if homepage.nil? || homepage.empty?
+      problem "Formula should have a homepage."
+      return
+    end
 
     unless homepage =~ %r{^https?://}
       problem "The homepage should start with http or https (URL is #{homepage})."
@@ -740,6 +767,7 @@ class FormulaAuditor
 
     unstable_whitelist = %w[
       aalib 1.4rc5
+      angolmois 2.0.0alpha2
       automysqlbackup 3.0-rc6
       aview 1.3.0rc1
       distcc 3.2rc1
@@ -747,6 +775,8 @@ class FormulaAuditor
       ftgl 2.1.3-rc5
       hidapi 0.8.0-rc1
       libcaca 0.99b19
+      nethack4 4.3.0-beta2
+      opensyobon 1.0rc2
       premake 4.4-beta5
       pwnat 0.3-beta
       pxz 4.999.9
@@ -899,7 +929,7 @@ class FormulaAuditor
       end
     end
 
-    if text =~ /xcodebuild[ (]["'*]/ && !text.include?("SYMROOT=")
+    if text =~ /xcodebuild[ (]*["'*]*/ && !text.include?("SYMROOT=")
       problem 'xcodebuild should be passed an explicit "SYMROOT"'
     end
 

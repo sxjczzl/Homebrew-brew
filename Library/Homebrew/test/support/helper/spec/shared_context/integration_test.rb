@@ -1,4 +1,3 @@
-require "rspec"
 require "open3"
 
 RSpec::Matchers.define_negated_matcher :not_to_output, :output
@@ -38,14 +37,16 @@ RSpec.shared_context "integration test" do
     end
   end
 
-  before(:each) do
-    (HOMEBREW_PREFIX/"bin").mkpath
-    FileUtils.touch HOMEBREW_PREFIX/"bin/brew"
-  end
+  around(:each) do |example|
+    begin
+      (HOMEBREW_PREFIX/"bin").mkpath
+      FileUtils.touch HOMEBREW_PREFIX/"bin/brew"
 
-  after(:each) do
-    FileUtils.rm HOMEBREW_PREFIX/"bin/brew"
-    FileUtils.rmdir HOMEBREW_PREFIX/"bin"
+      example.run
+    ensure
+      FileUtils.rm HOMEBREW_PREFIX/"bin/brew"
+      FileUtils.rmdir HOMEBREW_PREFIX/"bin"
+    end
   end
 
   # Generate unique ID to be able to
@@ -63,7 +64,15 @@ RSpec.shared_context "integration test" do
   def brew(*args)
     env = args.last.is_a?(Hash) ? args.pop : {}
 
+    # Avoid warnings when HOMEBREW_PREFIX/bin is not in PATH.
+    path = [
+      env["PATH"],
+      (HOMEBREW_PREFIX/"bin").realpath.to_s,
+      ENV["PATH"],
+    ].compact.join(File::PATH_SEPARATOR)
+
     env.merge!(
+      "PATH" => path,
       "HOMEBREW_BREW_FILE" => HOMEBREW_PREFIX/"bin/brew",
       "HOMEBREW_INTEGRATION_TEST" => command_id_from_args(args),
       "HOMEBREW_TEST_TMPDIR" => TEST_TMPDIR,

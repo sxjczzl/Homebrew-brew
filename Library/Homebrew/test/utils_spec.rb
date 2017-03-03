@@ -1,9 +1,7 @@
 require "utils"
 
 describe "globally-scoped helper methods" do
-  let(:dir) { @dir = Pathname.new(Dir.mktmpdir) }
-
-  after(:each) { dir.rmtree unless @dir.nil? }
+  let(:dir) { mktmpdir }
 
   def esc(code)
     /(\e\[\d+m)*\e\[#{code}m/
@@ -195,8 +193,7 @@ describe "globally-scoped helper methods" do
   end
 
   specify "#gzip" do
-    Dir.mktmpdir do |path|
-      path = Pathname.new(path)
+    mktmpdir do |path|
       somefile = path/"somefile"
       FileUtils.touch somefile
       expect(gzip(somefile)[0].to_s).to eq("#{somefile}.gz")
@@ -232,10 +229,10 @@ describe "globally-scoped helper methods" do
   specify "#disk_usage_readable" do
     expect(disk_usage_readable(1)).to eq("1B")
     expect(disk_usage_readable(1000)).to eq("1000B")
-    expect(disk_usage_readable(1024)).to eq("1K")
-    expect(disk_usage_readable(1025)).to eq("1K")
-    expect(disk_usage_readable(4_404_020)).to eq("4.2M")
-    expect(disk_usage_readable(4_509_715_660)).to eq("4.2G")
+    expect(disk_usage_readable(1024)).to eq("1KB")
+    expect(disk_usage_readable(1025)).to eq("1KB")
+    expect(disk_usage_readable(4_404_020)).to eq("4.2MB")
+    expect(disk_usage_readable(4_509_715_660)).to eq("4.2GB")
   end
 
   describe "#number_readable" do
