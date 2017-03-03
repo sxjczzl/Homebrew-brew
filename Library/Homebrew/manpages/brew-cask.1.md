@@ -249,10 +249,14 @@ Environment variables specific to Homebrew-Cask:
 ## SEE ALSO
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 The Homebrew-Cask home page: <http://caskroom.io>
 =======
 The Homebrew-Cask home page: <http://caskroom.github.io>.
 >>>>>>> Change caskroom.io to caskroom.github.io
+=======
+The Homebrew-Cask home page: <http://caskroom.github.io>.
+>>>>>>> 4dafd7754aac3894002b87a994c9d7693f006df1
 
 The Homebrew-Cask GitHub page: <https://github.com/caskroom/homebrew-cask>
 
