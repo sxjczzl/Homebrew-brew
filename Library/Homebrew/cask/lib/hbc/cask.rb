@@ -1,5 +1,7 @@
 require "forwardable"
 
+require "hbc/cask_pin"
+
 require "hbc/dsl"
 
 module Hbc
@@ -14,6 +16,7 @@ module Hbc
       return unless block_given?
       @dsl.instance_eval(&block)
       @dsl.language_eval
+      @pin = CaskPin.new(self)
     end
 
     DSL::DSL_METHODS.each do |method_name|
@@ -85,8 +88,43 @@ module Hbc
       !versions.empty?
     end
 
+    def installed_latest_version
+      if not defined? @latest_version
+        @latest_version = "0"
+        versions.each do |version|
+          if version.to_s.casecmp @latest_version
+            @latest_version=version.to_s
+          end
+        end
+      end
+      @latest_version
+    end
+
+    def outdated?
+      (version.casecmp installed_latest_version) == 1
+    end
+
+    # @private
+    def pinned?
+      @pin.pinned?
+    end
+
+    # @private
+    def pin
+      @pin.pin
+    end
+
+    # @private
+    def unpin
+      @pin.unpin
+    end
+
     def to_s
       @token
+    end
+
+    def auto_update?
+      auto_updates == true
     end
 
     def dumpcask
