@@ -78,7 +78,7 @@ class Build
 
     ENV.activate_extensions!
 
-    if superenv?
+    if ENV.superenv?
       ENV.keg_only_deps = keg_only_deps
       ENV.deps = formula_deps
       ENV.x11 = reqs.any? { |rq| rq.is_a?(X11Requirement) }

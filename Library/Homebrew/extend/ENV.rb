@@ -3,11 +3,11 @@ require "extend/ENV/shared"
 require "extend/ENV/std"
 require "extend/ENV/super"
 
-def superenv?
-  ARGV.env != "std" && Superenv.bin
-end
-
 module EnvActivation
+  def superenv?
+    ARGV.env != "std" && Superenv.bin
+  end
+
   def activate_extensions!
     if superenv?
       extend(Superenv)
