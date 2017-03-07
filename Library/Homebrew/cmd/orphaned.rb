@@ -1,6 +1,6 @@
 #:  * `orphaned`:
-#:    List kegs that were installed as dependencies of other kegs, but are no
-#:    longer required for any explicitly-installed keg.
+#:    Find formulae that were installed as dependencies and are no
+#:    longer required.
 
 require "keg"
 

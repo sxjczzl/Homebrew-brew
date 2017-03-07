@@ -341,8 +341,8 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
     If `--installed` is passed, show options for all installed formulae.
 
   * `orphaned`:
-    List kegs that were installed as dependencies of other kegs, but are no
-    longer required for any explicitly-installed keg.
+    Find formulae that were installed as dependencies and are no
+    longer required.
 
   * `outdated` [`--quiet`|`--verbose`|`--json=``version`] [`--fetch-HEAD`]:
     Show formulae that have an updated version available.
