@@ -76,8 +76,8 @@ class SystemConfig
       describe_path(which("perl"))
     end
 
-    def describe_python
-      python = which "python"
+    def describe_python(version)
+      python = which "python#{version}"
       return "N/A" if python.nil?
       python_binary = Utils.popen_read python, "-c", "import sys; sys.stdout.write(sys.executable)"
       python_binary = Pathname.new(python_binary).realpath
@@ -164,7 +164,8 @@ class SystemConfig
       f.puts "Clang: #{clang.null? ? "N/A" : "#{clang} build #{clang_build}"}"
       f.puts "Git: #{describe_git}"
       f.puts "Perl: #{describe_perl}"
-      f.puts "Python: #{describe_python}"
+      f.puts "Python 2: #{describe_python("2")}"
+      f.puts "Python 3: #{describe_python("3")}"
       f.puts "Ruby: #{describe_ruby}"
       f.puts "Java: #{describe_java}"
     end
