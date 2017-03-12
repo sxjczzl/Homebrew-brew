@@ -84,6 +84,19 @@ module Hbc
       !versions.empty?
     end
 
+    def latest_installed_version
+      versions.last
+    end
+
+    def outdated?(greedy = false)
+      return false if version.nil? # ignore Casks without sources
+      unless greedy
+        return false if auto_updates
+        return false if version.latest?
+      end
+      version != latest_installed_version
+    end
+
     def to_s
       @token
     end
