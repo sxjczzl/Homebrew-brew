@@ -2,9 +2,10 @@ module Hbc
   class CLI
     class Outdated < Base
       def self.run(*args)
-        @greedy = true if args.delete("--greedy")
-        @quiet = true if args.delete("--quiet")
-
+        @options = {}
+        @options[:greedy] = true if args.delete("--greedy")
+        @options[:quiet] = true if args.delete("--quiet")
+        @options[:verbose] = true if args.delete("--verbose") || Hbc.verbose
         cask_tokens = cask_tokens_from(args)
         if cask_tokens.empty?
           check_installed
@@ -37,12 +38,12 @@ module Hbc
       end
 
       def self.show_version_detail?
-        Hbc.verbose || (!@quiet && $stdout.tty?)
+        @options[:verbose] || (!@options[:quiet] && $stdout.tty?)
       end
 
       def self.check_outdated(cask)
         odebug "Checking outdated for Cask #{cask.token}"
-        return unless cask.outdated?(@greedy)
+        return unless cask.outdated?(@options[:greedy])
         if show_version_detail?
           puts "#{cask.token}: (#{cask.latest_installed_version}) != #{cask.version}"
         else
