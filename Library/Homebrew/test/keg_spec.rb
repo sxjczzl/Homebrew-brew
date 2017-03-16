@@ -116,26 +116,6 @@ describe Keg do
     end
   end
 
-  specify "#might_have_been?" do
-    expect(keg).to be_might_have_been(:foo)
-
-    alter_tab(keg) { |t| t.foo = true }
-    expect(keg).to be_might_have_been(:foo)
-
-    alter_tab(keg) { |t| t.foo = false }
-    expect(keg).not_to be_might_have_been(:foo)
-  end
-
-  specify "#definitely_was_not?" do
-    expect(keg).not_to be_definitely_was_not(:foo)
-
-    alter_tab(keg) { |t| t.foo = true }
-    expect(keg).not_to be_definitely_was_not(:foo)
-
-    alter_tab(keg) { |t| t.foo = false }
-    expect(keg).to be_definitely_was_not(:foo)
-  end
-
   specify "#empty_installation?" do
     %w[.DS_Store INSTALL_RECEIPT.json LICENSE.txt].each do |file|
       touch keg/file
