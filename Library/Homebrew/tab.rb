@@ -345,16 +345,16 @@ class Tab < OpenStruct
   end
 
   # Helper method for checking truthiness of a value that may not be specified.
-  # `Tab#might_be?(:foo)` differs from `tab.foo` in that if `foo` is not
-  # specified `#might_be?` will return true.
-  def might_be?(key)
-    !definitely_not?(key)
+  # `Tab#absent_or_truthy?(:foo)` differs from `tab.foo` in that if `foo` is not
+  # specified `#absent_or_truthy?` will return true.
+  def absent_or_truthy?(key)
+    !present_and_falsey?(key)
   end
 
   # Helper method for checking falsiness of a value that may not be specified.
-  # `Tab#definitely_not?(:foo)` differs from `tab.foo` in that if `foo` is not
-  # specified `#definitely_not?` will return false.
-  def definitely_not?(key)
+  # `Tab#present_and_falsey?(:foo)` differs from `tab.foo` in that if `foo` is
+  # not specified `#present_and_falsey?` will return false.
+  def present_and_falsey?(key)
     __send__(key) == false
   end
 

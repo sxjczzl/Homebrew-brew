@@ -345,25 +345,25 @@ describe Tab do
     expect(remapped_options).to include(Option.new("with-foo-new"))
   end
 
-  specify "#might_be?" do
+  specify "#absent_or_truthy?" do
     tab = Tab.new
-    expect(tab).to be_might_be(:foo)
+    expect(tab).to be_absent_or_truthy(:foo)
 
     tab.foo = true
-    expect(tab).to be_might_be(:foo)
+    expect(tab).to be_absent_or_truthy(:foo)
 
     tab.foo = false
-    expect(tab).not_to be_might_be(:foo)
+    expect(tab).not_to be_absent_or_truthy(:foo)
   end
 
-  specify "#definitely_not?" do
+  specify "#present_and_falsey?" do
     tab = Tab.new
-    expect(tab).not_to be_definitely_not(:foo)
+    expect(tab).not_to be_present_and_falsey(:foo)
 
     tab.foo = true
-    expect(tab).not_to be_definitely_not(:foo)
+    expect(tab).not_to be_present_and_falsey(:foo)
 
     tab.foo = false
-    expect(tab).to be_definitely_not(:foo)
+    expect(tab).to be_present_and_falsey(:foo)
   end
 end

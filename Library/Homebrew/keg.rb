@@ -170,11 +170,11 @@ class Keg
   end
 
   def might_have_been?(key)
-    Tab.for_keg(self).might_be?(key)
+    Tab.for_keg(self).absent_or_truthy?(key)
   end
 
   def definitely_was_not?(key)
-    Tab.for_keg(self).definitely_not?(key)
+    Tab.for_keg(self).present_and_falsey?(key)
   end
 
   # if path is a file in a keg then this will return the containing Keg object
