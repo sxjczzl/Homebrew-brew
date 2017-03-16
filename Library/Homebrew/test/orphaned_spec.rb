@@ -13,7 +13,7 @@ describe "brew orphaned", :integration_test do
     shutup { brew "uninstall", "testball_dependent" }
 
     expect { brew "orphaned" }
-      .to output("testball 0.1\n").to_stdout
+      .to output("testball\n").to_stdout
       .and not_to_output.to_stderr
       .and be_a_success
   end

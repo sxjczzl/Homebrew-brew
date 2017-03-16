@@ -8,6 +8,6 @@ module Homebrew
   module_function
 
   def orphaned
-    puts Keg.orphaned.map { |k| "#{k.name} #{k.version}" }
+    puts Keg.orphaned.map(&:name).uniq
   end
 end
