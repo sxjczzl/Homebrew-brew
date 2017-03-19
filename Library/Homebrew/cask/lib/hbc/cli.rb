@@ -15,10 +15,12 @@ require "hbc/cli/home"
 require "hbc/cli/info"
 require "hbc/cli/install"
 require "hbc/cli/list"
+require "hbc/cli/outdated"
 require "hbc/cli/reinstall"
 require "hbc/cli/search"
 require "hbc/cli/style"
 require "hbc/cli/uninstall"
+require "hbc/cli/--version"
 require "hbc/cli/zap"
 
 require "hbc/cli/internal_use_base"
@@ -37,6 +39,7 @@ module Hbc
       "-S"       => "search",    # verb starting with "-" is questionable
       "up"       => "update",
       "instal"   => "install",   # gem does the same
+      "uninstal" => "uninstall",
       "rm"       => "uninstall",
       "remove"   => "uninstall",
       "abv"      => "info",
@@ -67,12 +70,24 @@ module Hbc
     }.freeze
 
     FLAGS = {
-      "--no-binaries" => :no_binaries=,
-      "--debug"       => :debug=,
-      "--verbose"     => :verbose=,
-      "--outdated"    => :cleanup_outdated=,
-      "--help"        => :help=,
+      ["--[no-]binaries", :binaries] => true,
+      ["--debug",         :debug]    => false,
+      ["--verbose",       :verbose]  => false,
+      ["--outdated",      :outdated] => false,
+      ["--help",          :help]     => false,
     }.freeze
+
+    FLAGS.each do |(_, method), default_value|
+      instance_variable_set(:"@#{method}", default_value)
+
+      define_singleton_method(:"#{method}=") do |arg|
+        instance_variable_set(:"@#{method}", arg)
+      end
+
+      define_singleton_method(:"#{method}?") do
+        instance_variable_get(:"@#{method}")
+      end
+    end
 
     def self.command_classes
       @command_classes ||= constants.map(&method(:const_get))
@@ -90,17 +105,6 @@ module Hbc
       @lookup.fetch(command_string, command_string)
     end
 
-    # modified from Homebrew
-    def self.require?(path)
-      require path
-      true # OK if already loaded
-    rescue LoadError => e
-      # HACK: :( because we should raise on syntax errors
-      #       but not if the file doesn't exist.
-      # TODO: make robust!
-      raise unless e.to_s.include? path
-    end
-
     def self.should_init?(command)
       (command.is_a? Class) && (command < CLI::Base) && command.needs_init?
     end
@@ -114,7 +118,7 @@ module Hbc
       elsif command.to_s.include?("/") && require?(command.to_s)
         # external command as Ruby library with literal path, useful
         # for development and troubleshooting
-        sym = Pathname.new(command.to_s).basename(".rb").to_s.capitalize
+        sym = File.basename(command.to_s, ".rb").capitalize
         klass = begin
                   const_get(sym)
                 rescue NameError
@@ -148,13 +152,13 @@ module Hbc
 
       command_string, *rest = *arguments
       rest = process_options(rest)
-      command = Hbc.help ? "help" : lookup_command(command_string)
+      command = help? ? "help" : lookup_command(command_string)
       Hbc.default_tap.install unless Hbc.default_tap.installed?
       Hbc.init if should_init?(command)
       run_command(command, *rest)
     rescue CaskError, CaskSha256MismatchError, ArgumentError => e
       msg = e.message
-      msg << e.backtrace.join("\n") if Hbc.debug
+      msg << e.backtrace.join("\n") if debug?
       onoe msg
       exit 1
     rescue StandardError, ScriptError, NoMemoryError => e
@@ -204,9 +208,9 @@ module Hbc
           EOS
         end
 
-        FLAGS.each do |flag, method|
-          opts.on(flag) do
-            Hbc.public_send(method, true)
+        FLAGS.keys.each do |flag, method|
+          opts.on(flag) do |bool|
+            send(:"#{method}=", bool)
           end
         end
 
@@ -227,14 +231,15 @@ module Hbc
           remaining << head
           retry
         rescue OptionParser::MissingArgument
-          raise CaskError, "The option '#{head}' requires an argument"
+          raise ArgumentError, "The option '#{head}' requires an argument."
         rescue OptionParser::AmbiguousOption
-          raise CaskError, "There is more than one possible option that starts with '#{head}'"
+          raise ArgumentError, "There is more than one possible option that starts with '#{head}'."
         end
       end
 
       # for compat with Homebrew, not certain if this is desirable
-      Hbc.verbose = true if !ENV["VERBOSE"].nil? || !ENV["HOMEBREW_VERBOSE"].nil?
+      self.verbose = true if ARGV.verbose?
+      self.debug = true if ARGV.debug?
 
       remaining
     end
@@ -244,16 +249,14 @@ module Hbc
         @attempted_verb = attempted_verb
       end
 
-      def run(*args)
-        if args.include?("--version") || @attempted_verb == "--version"
-          puts Hbc.full_version
-        else
-          purpose
-          usage
-          unless @attempted_verb.to_s.strip.empty? || @attempted_verb == "help"
-            raise CaskError, "Unknown command: #{@attempted_verb}"
-          end
-        end
+      def run(*_args)
+        purpose
+        usage
+
+        return if @attempted_verb.to_s.strip.empty?
+        return if @attempted_verb == "help"
+
+        raise ArgumentError, "Unknown command: #{@attempted_verb}"
       end
 
       def purpose

@@ -4,7 +4,7 @@
 #:  * `info` `--github` <formula>:
 #:    Open a browser to the GitHub History page for formula <formula>.
 #:
-#:    To view formula history locally: `brew log -p <formula>`.
+#:    To view formula history locally: `brew log -p <formula>`
 #:
 #:  * `info` `--json=`<version> (`--all`|`--installed`|<formulae>):
 #:    Print a JSON representation of <formulae>. Currently the only accepted value
@@ -13,7 +13,7 @@
 #:    Pass `--all` to get information on all formulae, or `--installed` to get
 #:    information on all installed formulae.
 #:
-#:    See the docs for examples of using the JSON:
+#:    See the docs for examples of using the JSON output:
 #:    <http://docs.brew.sh/Querying-Brew.html>
 
 require "blacklist"
@@ -43,7 +43,7 @@ module Homebrew
     if ARGV.named.empty?
       if HOMEBREW_CELLAR.exist?
         count = Formula.racks.length
-        puts "#{count} keg#{plural(count)}, #{HOMEBREW_CELLAR.abv}"
+        puts "#{Formatter.pluralize(count, "keg")}, #{HOMEBREW_CELLAR.abv}"
       end
     else
       ARGV.named.each_with_index do |f, i|

@@ -30,8 +30,7 @@ end
 # global methods
 
 def odebug(title, *sput)
-  return unless Hbc.respond_to?(:debug)
-  return unless Hbc.debug
+  return unless Hbc::CLI.debug?
   puts Formatter.headline(title, color: :magenta)
   puts sput unless sput.empty?
 end
@@ -90,27 +89,6 @@ module Hbc
       Etc.getpwuid(Process.euid).name
     end
 
-    # paths that "look" descendant (textually) will still
-    # return false unless both the given paths exist
-    def self.file_is_descendant(file, dir)
-      file = Pathname.new(file)
-      dir  = Pathname.new(dir)
-      return false unless file.exist? && dir.exist?
-      unless dir.directory?
-        onoe "Argument must be a directory: '#{dir}'"
-        return false
-      end
-      unless file.absolute? && dir.absolute?
-        onoe "Both arguments must be absolute: '#{file}', '#{dir}'"
-        return false
-      end
-      while file.parent != file
-        return true if File.identical?(file, dir)
-        file = file.parent
-      end
-      false
-    end
-
     def self.path_occupied?(path)
       File.exist?(path) || File.symlink?(path)
     end
@@ -144,19 +122,6 @@ module Hbc
       fraction = format("%.#{precision}f", @timenow.to_f - @timenow.to_i)[1..-1]
       timestamp.concat(fraction)
       container_path.join(timestamp)
-    end
-
-    def self.size_in_bytes(files)
-      Array(files).reduce(0) { |acc, elem| acc + (File.size?(elem) || 0) }
-    end
-
-    def self.capture_stderr
-      previous_stderr = $stderr
-      $stderr = StringIO.new
-      yield
-      $stderr.string
-    ensure
-      $stderr = previous_stderr
     end
   end
 end

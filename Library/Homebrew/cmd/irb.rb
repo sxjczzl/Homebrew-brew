@@ -12,10 +12,16 @@ class Symbol
     Formulary.factory(to_s, *args)
   end
 end
+
 class String
   def f(*args)
     Formulary.factory(self, *args)
   end
+end
+
+def cask
+  $LOAD_PATH.unshift("#{HOMEBREW_LIBRARY_PATH}/cask/lib")
+  require "hbc"
 end
 
 module Homebrew

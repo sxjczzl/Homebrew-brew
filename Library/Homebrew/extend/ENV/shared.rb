@@ -87,7 +87,11 @@ module SharedEnvExtension
   # Is the formula struggling to find the pkgconfig file? Point it to it.
   # This is done automatically for `keg_only` formulae.
   # <pre>ENV.prepend_path "PKG_CONFIG_PATH", "#{Formula["glib"].opt_lib}/pkgconfig"</pre>
+  # Prepending a system path such as /usr/bin is a no-op so that requirements
+  # don't accidentally override superenv shims or formulae's `bin` directories
+  # (e.g. <pre>ENV.prepend_path "PATH", which("emacs").dirname</pre>)
   def prepend_path(key, path)
+    return if %w[/usr/bin /bin /usr/sbin /sbin].include? path.to_s
     prepend key, path, File::PATH_SEPARATOR if File.directory? path
   end
 
@@ -269,7 +273,7 @@ module SharedEnvExtension
   # @private
   def gcc_version_formula(name)
     version = name[GNU_GCC_REGEXP, 1]
-    gcc_version_name = "gcc#{version.delete(".")}"
+    gcc_version_name = "gcc@#{version}"
 
     gcc = Formulary.factory("gcc")
     if gcc.version_suffix == version
@@ -286,7 +290,6 @@ module SharedEnvExtension
     rescue FormulaUnavailableError => e
       raise <<-EOS.undent
       Homebrew GCC requested, but formula #{e.name} not found!
-      You may need to: brew tap homebrew/versions
       EOS
     end
 

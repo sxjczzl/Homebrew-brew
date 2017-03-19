@@ -1,33 +1,42 @@
-#: `pull` [`--bottle`] [`--bump`] [`--clean`] [`--ignore-whitespace`] [`--resolve`] [`--branch-okay`] [`--no-pbcopy`] [`--no-publish`] <patch-source> [<patch-source>]
-#:
+#:  * `pull` [`--bottle`] [`--bump`] [`--clean`] [`--ignore-whitespace`] [`--resolve`] [`--branch-okay`] [`--no-pbcopy`] [`--no-publish`] <patch-source> [<patch-source>]:
 #:    Gets a patch from a GitHub commit or pull request and applies it to Homebrew.
 #:    Optionally, installs the formulae changed by the patch.
 #:
 #:    Each <patch-source> may be one of:
-#:      * The ID number of a PR (Pull Request) in the homebrew/core GitHub
+#:
+#:      ~ The ID number of a PR (pull request) in the homebrew/core GitHub
 #:        repository
-#:      * The URL of a PR on GitHub, using either the web page or API URL
+#:
+#:      ~ The URL of a PR on GitHub, using either the web page or API URL
 #:        formats. In this form, the PR may be on Homebrew/brew,
 #:        Homebrew/homebrew-core or any tap.
-#:      * The URL of a commit on GitHub
-#:      * A "http://bot.brew.sh/job/..." string specifying a testing job ID
 #:
-#:   If `--bottle` was passed, handle bottles, pulling the bottle-update
-#:   commit and publishing files on Bintray.
-#:   If `--bump` was passed, for one-formula PRs, automatically reword
-#:   commit message to our preferred format.
-#:   If `--clean` was passed, do not rewrite or otherwise modify the
-#:   commits found in the pulled PR.
-#:   If `--ignore-whitespace` was passed, silently ignore whitespace
-#:   discrepancies when applying diffs.
-#:   If `--resolve` was passed, when a patch fails to apply, leave in
-#:   progress and allow user to
-#:                  resolve, instead of aborting.
-#:   If `--branch-okay` was passed, do not warn if pulling to a branch
-#:   besides master (useful for testing).
-#:   If `--no-pbcopy` was passed, do not copy anything to the system
-#    clipboard.
-#:   If `--no-publish` was passed, do not publish bottles to Bintray.
+#:      ~ The URL of a commit on GitHub
+#:
+#:      ~ A "https://bot.brew.sh/job/..." string specifying a testing job ID
+#:
+#:    If `--bottle` is passed, handle bottles, pulling the bottle-update
+#:    commit and publishing files on Bintray.
+#:
+#:    If `--bump` is passed, for one-formula PRs, automatically reword
+#:    commit message to our preferred format.
+#:
+#:    If `--clean` is passed, do not rewrite or otherwise modify the
+#:    commits found in the pulled PR.
+#:
+#:    If `--ignore-whitespace` is passed, silently ignore whitespace
+#:    discrepancies when applying diffs.
+#:
+#:    If `--resolve` is passed, when a patch fails to apply, leave in
+#:    progress and allow user to resolve, instead of aborting.
+#:
+#:    If `--branch-okay` is passed, do not warn if pulling to a branch
+#:    besides master (useful for testing).
+#:
+#:    If `--no-pbcopy` is passed, do not copy anything to the system
+#:    clipboard.
+#:
+#:    If `--no-publish` is passed, do not publish bottles to Bintray.
 
 require "net/http"
 require "net/https"
@@ -144,6 +153,13 @@ module Homebrew
         # Make sure we catch syntax errors.
         rescue Exception
           next
+        end
+
+        if f.stable
+          stable_urls = [f.stable.url] + f.stable.mirrors
+          stable_urls.grep(%r{^https://dl.bintray.com/homebrew/mirror/}) do |mirror_url|
+            check_bintray_mirror(f.full_name, mirror_url)
+          end
         end
 
         if ARGV.include? "--bottle"
@@ -578,5 +594,13 @@ module Homebrew
         Pathname.new(filename).verify_checksum(checksum)
       end
     end
+  end
+
+  def check_bintray_mirror(name, url)
+    headers = curl_output("--connect-timeout", "15", "--head", url)[0]
+    status_code = headers.scan(%r{^HTTP\/.* (\d+)}).last.first
+    return if status_code.start_with?("3")
+    opoo "The Bintray mirror #{url} is not reachable (HTTP status code #{status_code})."
+    opoo "Do you need to upload it with `brew mirror #{name}`?"
   end
 end

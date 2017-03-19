@@ -229,7 +229,7 @@ module Hbc
       deps = CaskDependencies.new(@cask)
       deps.sorted.each do |dep_token|
         puts "#{dep_token} ..."
-        dep = Hbc.load(dep_token)
+        dep = CaskLoader.load(dep_token)
         if dep.installed?
           puts "already installed"
         else
@@ -295,16 +295,15 @@ module Hbc
     end
 
     def save_caskfile
-      timestamp = :now
-      create    = true
-      savedir   = @cask.metadata_subdir("Casks", timestamp, create)
-      if Dir.entries(savedir).size > 2
-        # should not happen
-        raise CaskAlreadyInstalledError, @cask unless force
-        savedir.rmtree
-        FileUtils.mkdir_p savedir
+      unless (old_savedirs = Pathname.glob(@cask.metadata_path("*"))).empty?
+        old_savedirs.each(&:rmtree)
       end
-      FileUtils.copy(@cask.sourcefile_path, savedir) if @cask.sourcefile_path
+
+      return unless @cask.sourcefile_path
+
+      savedir = @cask.metadata_subdir("Casks", :now, true)
+      savedir.mkpath
+      FileUtils.copy @cask.sourcefile_path, savedir
     end
 
     def uninstall
@@ -318,7 +317,13 @@ module Hbc
     def uninstall_artifacts
       odebug "Un-installing artifacts"
       artifacts = Artifact.for_cask(@cask, command: @command, force: force)
+
+      # Make sure the `uninstall` stanza is run first, as it
+      # may depend on other artifacts still being installed.
+      artifacts = artifacts.sort_by { |a| a.is_a?(Artifact::Uninstall) ? -1 : 1 }
+
       odebug "#{artifacts.length} artifact/s defined", artifacts
+
       artifacts.each do |artifact|
         next unless artifact.respond_to?(:uninstall_phase)
         odebug "Un-installing artifact of class #{artifact.class}"

@@ -9,7 +9,9 @@ require "utils/git"
 require "utils/github"
 require "utils/hash"
 require "utils/inreplace"
+require "utils/link"
 require "utils/popen"
+require "utils/svn"
 require "utils/tty"
 require "time"
 
@@ -129,16 +131,12 @@ def pretty_duration(s)
   if s > 59
     m = s / 60
     s %= 60
-    res = "#{m} minute#{plural m}"
+    res = Formatter.pluralize(m, "minute")
     return res if s.zero?
     res << " "
   end
 
-  res + "#{s} second#{plural s}"
-end
-
-def plural(n, s = "s")
-  n == 1 ? "" : s
+  res << Formatter.pluralize(s, "second")
 end
 
 def interactive_shell(f = nil)
@@ -194,7 +192,7 @@ module Homebrew
     # Add Gem binary directory and (if missing) Ruby binary directory to PATH.
     path = ENV["PATH"].split(File::PATH_SEPARATOR)
     path.unshift(RUBY_BIN) if which("ruby") != RUBY_PATH
-    path.unshift("#{Gem.dir}/bin")
+    path.unshift(Gem.bindir)
     ENV["PATH"] = path.join(File::PATH_SEPARATOR)
 
     if Gem::Specification.find_all_by_name(name, version).empty?
@@ -421,13 +419,13 @@ end
 def disk_usage_readable(size_in_bytes)
   if size_in_bytes >= 1_073_741_824
     size = size_in_bytes.to_f / 1_073_741_824
-    unit = "G"
+    unit = "GB"
   elsif size_in_bytes >= 1_048_576
     size = size_in_bytes.to_f / 1_048_576
-    unit = "M"
+    unit = "MB"
   elsif size_in_bytes >= 1_024
     size = size_in_bytes.to_f / 1_024
-    unit = "K"
+    unit = "KB"
   else
     size = size_in_bytes
     unit = "B"
@@ -479,38 +477,6 @@ def truncate_text_to_approximate_size(s, max_bytes, options = {})
   out.encode!("UTF-16", invalid: :replace)
   out.encode!("UTF-8")
   out
-end
-
-def link_src_dst_dirs(src_dir, dst_dir, command, link_dir: false)
-  return unless src_dir.exist?
-  conflicts = []
-  src_paths = link_dir ? [src_dir] : src_dir.find
-  src_paths.each do |src|
-    next if src.directory? && !link_dir
-    dst = dst_dir/src.relative_path_from(src_dir)
-    if dst.symlink?
-      next if src == dst.resolved_path
-      dst.unlink
-    end
-    if dst.exist?
-      conflicts << dst
-      next
-    end
-    dst_dir.parent.mkpath
-    dst.make_relative_symlink(src)
-  end
-
-  return if conflicts.empty?
-  onoe <<-EOS.undent
-    Could not link:
-    #{conflicts.join("\n")}
-
-    Please delete these paths and run `#{command}`.
-  EOS
-end
-
-def link_path_manpages(path, command)
-  link_src_dst_dirs(path/"man", HOMEBREW_PREFIX/"share/man", command)
 end
 
 def migrate_legacy_keg_symlinks_if_necessary

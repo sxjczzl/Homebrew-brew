@@ -81,7 +81,7 @@ or use this:
 
 **However all versions of RubyGems before 1.3.6 are buggy** and ignore
 the above setting. Sadly a fresh install of Snow Leopard comes with
-1.3.5. Currently the only known way to get round this is to upgrade
+1.3.5. Currently the only known way to get around this is to upgrade
 rubygems as root:
 
 `sudo gem update --system`
@@ -131,7 +131,7 @@ If you don’t even want (or can’t) use sudo for bootstrapping
 
 Another alternative is to use `perlbrew` to install a separate copy of Perl in your home directory, or wherever you like :
 ```bash
-curl -kL http://install.perlbrew.pl | bash
+curl -L https://install.perlbrew.pl | bash
 perlbrew install perl-5.16.2
 echo ".~/perl5/perlbrew/etc/bashrc" >> ~/.bashrc
 ```

@@ -236,10 +236,10 @@ class Tap
       raise
     end
 
-    link_manpages
+    link_completions_and_manpages
 
     formula_count = formula_files.size
-    puts "Tapped #{formula_count} formula#{plural(formula_count, "e")} (#{path.abv})" unless quiet
+    puts "Tapped #{Formatter.pluralize(formula_count, "formula")} (#{path.abv})" unless quiet
     Descriptions.cache_formulae(formula_names)
 
     return if options[:clone_target]
@@ -254,8 +254,10 @@ class Tap
     EOS
   end
 
-  def link_manpages
-    link_path_manpages(path, "brew tap --repair")
+  def link_completions_and_manpages
+    command = "brew tap --repair"
+    Utils::Link.link_manpages(path, command)
+    Utils::Link.link_completions(path, command)
   end
 
   # uninstall this {Tap}.
@@ -267,21 +269,12 @@ class Tap
     unpin if pinned?
     formula_count = formula_files.size
     Descriptions.uncache_formulae(formula_names)
-    unlink_manpages
+    Utils::Link.unlink_manpages(path)
+    Utils::Link.unlink_completions(path)
     path.rmtree
     path.parent.rmdir_if_possible
-    puts "Untapped #{formula_count} formula#{plural(formula_count, "e")}"
+    puts "Untapped #{Formatter.pluralize(formula_count, "formula")}"
     clear_cache
-  end
-
-  def unlink_manpages
-    return unless (path/"man").exist?
-    (path/"man").find do |src|
-      next if src.directory?
-      dst = HOMEBREW_PREFIX/"share"/src.relative_path_from(path)
-      dst.delete if dst.symlink? && src == dst.resolved_path
-      dst.parent.rmdir_if_possible
-    end
   end
 
   # True if the {#remote} of {Tap} is customized.
@@ -292,7 +285,7 @@ class Tap
 
   # path to the directory of all {Formula} files for this {Tap}.
   def formula_dir
-    @formula_dir ||= potential_formula_dirs.detect(&:directory?)
+    @formula_dir ||= potential_formula_dirs.detect(&:directory?) || path/"Formula"
   end
 
   def potential_formula_dirs
@@ -301,12 +294,12 @@ class Tap
 
   # path to the directory of all {Cask} files for this {Tap}.
   def cask_dir
-    @cask_dir ||= [path/"Casks"].detect(&:directory?)
+    @cask_dir ||= path/"Casks"
   end
 
   # an array of all {Formula} files of this {Tap}.
   def formula_files
-    @formula_files ||= if formula_dir
+    @formula_files ||= if formula_dir.directory?
       formula_dir.children.select(&method(:formula_file?))
     else
       []
@@ -315,7 +308,7 @@ class Tap
 
   # an array of all {Cask} files of this {Tap}.
   def cask_files
-    @cask_files ||= if cask_dir
+    @cask_files ||= if cask_dir.directory?
       cask_dir.children.select(&method(:cask_file?))
     else
       []
