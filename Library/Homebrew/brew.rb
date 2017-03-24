@@ -77,7 +77,7 @@ begin
   # - a help flag is passed AND a command is matched
   # - a help flag is passed AND there is no command specified
   # - no arguments are passed
-  if empty_argv || help_flag
+  if empty_argv || (help_flag && internal_cmd)
     require "cmd/help"
     Homebrew.help cmd, empty_argv: empty_argv
     # `Homebrew.help` never returns, except for external/unknown commands.
