@@ -8,6 +8,15 @@ module Homebrew
   module_function
 
   def commands
+    valid_options = ["--quiet", "--include-aliases", "-n"]
+    for option in ARGV.options_only do
+      if not valid_options.include?(option)
+        puts "Error: Invalid option provided: " + option
+        puts "Valid options are: ", valid_options
+        return
+      end
+    end
+
     if ARGV.include? "--quiet"
       cmds = internal_commands + external_commands
       cmds += internal_developer_commands
