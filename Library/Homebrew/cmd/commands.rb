@@ -10,15 +10,14 @@ module Homebrew
   def commands
     valid_options = ["--quiet", "--include-aliases"]
     invalid_options_by_user = []
-    for option in ARGV.options_only do
-      if not valid_options.include? option
-        invalid_options_by_user.push(option)
-      end
+    ARGV.options_only.each do |option|
+      invalid_options_by_user.push << option unless valid_options.include?(option)
     end
-    if invalid_options_by_user.length != 0
-        puts "Error: Invalid options provided: ", invalid_options_by_user
-        puts "Valid options are: ", valid_options
-        return
+    unless invalid_options_by_user.empty?
+      odie <<-EOS.undent
+        Invalid options provided: #{invalid_options_by_user.join " "}
+        Valid options are: #{valid_options.join " "}
+      EOS
     end
 
     if ARGV.include? "--quiet"
