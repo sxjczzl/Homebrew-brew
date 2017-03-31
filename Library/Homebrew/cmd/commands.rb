@@ -15,7 +15,7 @@ module Homebrew
     end
     unless invalid_options_by_user.empty?
       odie <<-EOS.undent
-        Invalid options provided: #{invalid_options_by_user.join " "}
+        Invalid option#{"s" if invalid_options_by_user.length>1} provided: #{invalid_options_by_user.join " "}
         Valid options are: #{valid_options.join " "}
       EOS
     end
