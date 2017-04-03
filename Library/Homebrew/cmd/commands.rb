@@ -8,10 +8,11 @@ module Homebrew
   module_function
 
   def commands
-    valid_options = ["--quiet", "--include-aliases"]
+    valid_options = ["--quiet",
+                     "--include-aliases"].freeze
     invalid_options_by_user = []
     ARGV.options_only.each do |option|
-      invalid_options_by_user.push << option unless valid_options.include?(option)
+      invalid_options_by_user << option unless valid_options.include?(option)
     end
     unless invalid_options_by_user.empty?
       odie <<-EOS.undent
