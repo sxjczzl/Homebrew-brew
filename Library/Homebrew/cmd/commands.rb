@@ -10,15 +10,10 @@ module Homebrew
   def commands
     valid_options = ["--quiet",
                      "--include-aliases"].freeze
-    invalid_options_by_user = []
-    ARGV.options_only.each do |option|
-      invalid_options_by_user << option unless valid_options.include?(option)
-    end
-    unless invalid_options_by_user.empty?
-      odie <<-EOS.undent
-        #{Formatter.pluralize(invalid_options_by_user.length, "Invalid Option")} Provided: #{invalid_options_by_user.join " "}
-        #{"Only #{Formatter.pluralize(valid_options.length, "Option")} Valid: #{valid_options.join " "}" unless valid_options.empty?}
-      EOS
+
+    check_for_incorrect_options do
+      puts "raza"
+      check valid_options
     end
 
     if ARGV.include? "--quiet"

@@ -28,6 +28,11 @@ rescue LoadError => e
   raise unless e.to_s.include? path
 end
 
+def check_for_incorrect_options(&block)
+  incorrect_options_for_brew_commands = IncorrectOptionsForBrewCommands.new
+  incorrect_options_for_brew_commands.instance_eval(&block)
+end
+
 begin
   trap("INT", std_trap) # restore default CTRL-C handler
 
