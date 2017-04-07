@@ -12,7 +12,6 @@ module Homebrew
                      "--include-aliases"].freeze
 
     check_for_incorrect_options do
-      puts "raza"
       check valid_options
     end
 
