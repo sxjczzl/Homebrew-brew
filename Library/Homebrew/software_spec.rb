@@ -380,6 +380,7 @@ class IncorrectOptionsForBrewCommands
     ARGV.options_only.each do |option|
       invalid_options_by_user << option unless @valid_options.include?(option)
     end
+    invalid_options_by_user = invalid_options_by_user.uniq
     return if invalid_options_by_user.empty?
     odie <<-EOS.undent
       #{Formatter.pluralize(invalid_options_by_user.length, "Invalid Option")} Provided: #{invalid_options_by_user.join " "}
