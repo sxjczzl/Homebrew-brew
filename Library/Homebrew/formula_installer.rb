@@ -531,6 +531,9 @@ class FormulaInstaller
     oh1 "Installing #{formula.full_name} dependency: #{Formatter.identifier(dep.name)}"
     fi.install
     fi.finish
+  rescue FormulaInstallationAlreadyAttemptedError
+    # We already attempted to install df as part of the dependency tree of
+    # another formula. In that case, don't generate an error, just move on.
   rescue Exception
     ignore_interrupts do
       tmp_keg.rename(installed_keg) if tmp_keg && !installed_keg.directory?
