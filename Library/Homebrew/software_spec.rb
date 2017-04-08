@@ -368,23 +368,3 @@ class PourBottleCheck
     @formula.send(:define_method, :pour_bottle?, &block)
   end
 end
-
-class CheckInvalidOptionsForBrewCommands
-  def initialize
-    @valid_options = []
-  end
-
-  def check(valid_options = [])
-    @valid_options = valid_options
-    invalid_options_by_user = []
-    ARGV.options_only.each do |option|
-      invalid_options_by_user << option unless @valid_options.include?(option)
-    end
-    invalid_options_by_user = invalid_options_by_user.uniq
-    return if invalid_options_by_user.empty?
-    odie <<-EOS.undent
-      #{Formatter.pluralize(invalid_options_by_user.length, "Invalid Option")} Provided: #{invalid_options_by_user.join " "}
-      #{"Only #{Formatter.pluralize(@valid_options.length, "Option")} Valid: #{@valid_options.join " "}" unless @valid_options.empty?}
-    EOS
-  end
-end
