@@ -11,7 +11,7 @@ module Homebrew
     valid_options = ["--quiet",
                      "--include-aliases"].freeze
 
-    check_for_incorrect_options do
+    check_invalid_options do
       check valid_options
     end
 

@@ -369,7 +369,7 @@ class PourBottleCheck
   end
 end
 
-class IncorrectOptionsForBrewCommands
+class CheckInvalidOptionsForBrewCommands
   def initialize
     @valid_options = []
   end
