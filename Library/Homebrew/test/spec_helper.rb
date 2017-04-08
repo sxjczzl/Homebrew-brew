@@ -21,6 +21,7 @@ require "global"
 require "tap"
 
 require "test/support/helper/shutup"
+require "test/support/helper/fake_curl"
 require "test/support/helper/fixtures"
 require "test/support/helper/formula"
 require "test/support/helper/mktmpdir"
@@ -43,6 +44,7 @@ RSpec.configure do |config|
   config.order = :random
 
   config.include(Test::Helper::Shutup)
+  config.include(Test::Helper::FakeCurl)
   config.include(Test::Helper::Fixtures)
   config.include(Test::Helper::Formula)
   config.include(Test::Helper::MkTmpDir)
