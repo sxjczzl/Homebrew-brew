@@ -8,7 +8,7 @@ module Homebrew
   module_function
 
   def commands
-    require "check_invalid_options"
+    require "options_for_brew_commands"
     options do
       option "--quiet"
       option "--include-aliases"

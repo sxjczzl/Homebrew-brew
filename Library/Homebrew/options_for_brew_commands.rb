@@ -1,5 +1,5 @@
 module Homebrew
-  class CheckInvalidOptionsForBrewCommands
+  class OptionsForBrewCommands
     def initialize
       @valid_options = []
     end
@@ -23,7 +23,7 @@ module Homebrew
   end
 
   def self.options(&block)
-    check_invalid_options_for_brew_commands = CheckInvalidOptionsForBrewCommands.new
-    check_invalid_options_for_brew_commands.instance_eval(&block)
+    options_for_brew_commands = OptionsForBrewCommands.new
+    options_for_brew_commands.instance_eval(&block)
   end
 end
