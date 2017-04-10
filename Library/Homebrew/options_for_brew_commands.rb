@@ -1,11 +1,11 @@
 module Homebrew
   class OptionsForBrewCommands
     def initialize
-      @valid_options = []
+      @valid_options = {}
     end
 
-    def option(var)
-      @valid_options << var
+    def option(key, value)
+      @valid_options[key] = value
     end
 
     def check_invalid_options
@@ -17,7 +17,7 @@ module Homebrew
       return if invalid_options_by_user.empty?
       odie <<-EOS.undent
         #{Formatter.pluralize(invalid_options_by_user.length, "Invalid Option")} Provided: #{invalid_options_by_user.join " "}
-        #{"Only #{Formatter.pluralize(@valid_options.length, "Option")} Valid: #{@valid_options.join " "}" unless @valid_options.empty?}
+        #{"Only #{Formatter.pluralize(@valid_options.length, "Option")} Valid: #{@valid_options.keys.join " "}" unless @valid_options.empty?}
       EOS
     end
   end

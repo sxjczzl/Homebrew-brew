@@ -10,8 +10,8 @@ module Homebrew
   def commands
     require "options_for_brew_commands"
     options do
-      option "--quiet"
-      option "--include-aliases"
+      option "--quiet", "List only the names of commands without the header"
+      option "--include-aliases", "The aliases of internal commands will be included"
       check_invalid_options
     end
 
