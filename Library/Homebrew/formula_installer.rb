@@ -534,6 +534,7 @@ class FormulaInstaller
   rescue FormulaInstallationAlreadyAttemptedError
     # We already attempted to install df as part of the dependency tree of
     # another formula. In that case, don't generate an error, just move on.
+    nil
   rescue Exception
     ignore_interrupts do
       tmp_keg.rename(installed_keg) if tmp_keg && !installed_keg.directory?
