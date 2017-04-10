@@ -1,10 +1,15 @@
 module Homebrew
   class OptionsForBrewCommands
     def initialize
+      @command_name = ""
       @valid_options = {}
     end
 
-    def option(key, value)
+    def command(command)
+      @command_name = command
+    end
+
+    def option(key, value = "No Description for this Option is Available")
       @valid_options[key] = value
     end
 
@@ -15,13 +20,23 @@ module Homebrew
       end
       invalid_options_by_user = invalid_options_by_user.uniq
       return if invalid_options_by_user.empty?
-      odie <<-EOS.undent
-        #{Formatter.pluralize(invalid_options_by_user.length, "Invalid Option")} Provided: #{invalid_options_by_user.join " "}
-        #{"Only #{Formatter.pluralize(@valid_options.length, "Option")} Valid: #{@valid_options.keys.join " "}" unless @valid_options.empty?}
 
-            #{@valid_options.map { |k, v| "#{k}:  #{v}" }.join("\n    ")}
+      invalid_option_string = "#{Formatter.pluralize(invalid_options_by_user.length, "invalid option")} provided: #{invalid_options_by_user.join " "}"
+      if @valid_options.empty?
+        odie <<-EOS.undent
+          #{invalid_option_string}
+          <#{@command_name}> has no valid options
 
-      EOS
+        EOS
+      else
+        odie <<-EOS.undent
+          #{invalid_option_string}
+          <#{@command_name}> has only #{Formatter.pluralize(@valid_options.length, "valid option")}: #{@valid_options.keys.join " "}
+
+              #{@valid_options.map { |k, v| "#{k}:  #{v}" }.join("\n    ")}
+
+        EOS
+      end
     end
   end
 
