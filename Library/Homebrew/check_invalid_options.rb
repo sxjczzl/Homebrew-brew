@@ -4,8 +4,11 @@ module Homebrew
       @valid_options = []
     end
 
-    def check(valid_options = [])
-      @valid_options = valid_options
+    def option(var)
+      @valid_options << var
+    end
+
+    def check_invalid_options
       invalid_options_by_user = []
       ARGV.options_only.each do |option|
         invalid_options_by_user << option unless @valid_options.include?(option)
@@ -19,7 +22,7 @@ module Homebrew
     end
   end
 
-  def self.check_invalid_options(&block)
+  def self.options(&block)
     check_invalid_options_for_brew_commands = CheckInvalidOptionsForBrewCommands.new
     check_invalid_options_for_brew_commands.instance_eval(&block)
   end

@@ -8,12 +8,11 @@ module Homebrew
   module_function
 
   def commands
-    valid_options = ["--quiet",
-                     "--include-aliases"].freeze
-
     require "check_invalid_options"
-    check_invalid_options do
-      check valid_options
+    options do
+      option "--quiet"
+      option "--include-aliases"
+      check_invalid_options
     end
 
     if ARGV.include? "--quiet"
