@@ -173,4 +173,130 @@ describe Utils::IOSelector do
       its(:separator) { is_expected.to eq(",") }
     end
   end
+
+  describe "given binary streams" do
+    let(:pathname) { Pathname.new("#{TEST_FIXTURE_DIR}/test.bin") }
+    let(:first_reader) { File.open(pathname) }
+    let(:second_reader) { File.open(pathname) }
+
+    describe "::each_chunk_from" do
+      subject do
+        blob_hash = { 0 => "".b, 1 => "".b }
+        merged_bytes = []
+
+        Utils::IOSelector.each_chunk_from(
+          [first_reader, second_reader],
+          0x1000,
+        ) do |tag, string_received|
+          blob_hash[tag] << string_received
+          merged_bytes.concat(string_received.bytes)
+        end
+
+        blob_hash[:merged_blob] = merged_bytes.sort!.pack("c*")
+        blob_hash
+      end
+
+      before { wait(1).for(subject) }
+
+      its([0]) {
+        is_expected
+          .to eq(Array.new(0x1002) { |n| n % 0x100 }.pack("c*"))
+      }
+
+      its([1]) {
+        is_expected
+          .to eq(Array.new(0x1002) { |n| n % 0x100 }.pack("c*"))
+      }
+
+      its([:merged_blob]) {
+        is_expected.to eq(0x1002.times
+                          .flat_map { |n| [n % 0x100] * 2 }
+                          .sort
+                          .pack("c*"))
+      }
+    end
+
+    describe "::new" do
+      let(:selector) do
+        Utils::IOSelector.new([first_reader, second_reader], nil)
+      end
+      subject { selector }
+
+      describe "pre-read" do
+        its(:pending_streams) {
+          are_expected.to eq([first_reader, second_reader])
+        }
+
+        its(:separator) { is_expected.to be_nil }
+      end
+
+      describe "post-read" do
+        before do
+          wait(1).for {
+            subject.each_chunk_nonblock(0x1234) {}
+            true
+          }.to be true
+        end
+
+        after { expect(selector.all_streams).to all be_closed }
+
+        its(:pending_streams) { are_expected.to be_empty }
+        its(:separator) { is_expected.to be_nil }
+      end
+
+      describe "#each_chunk_nonblock" do
+        subject do
+          blob_hash = { 0 => "".b, 1 => "".b }
+          merged_bytes = []
+
+          super()
+            .each_chunk_nonblock(0x801) do |tag, string_received|
+            blob_hash[tag] << string_received
+            merged_bytes.concat(string_received.bytes)
+          end
+
+          blob_hash[:merged_blob] = merged_bytes.sort!.pack("c*")
+          blob_hash
+        end
+
+        before { wait(1).for(subject) }
+        after { expect(selector.all_streams).to all be_closed }
+
+        its([0]) {
+          is_expected
+            .to eq(Array.new(0x1002) { |n| n % 0x100 }.pack("c*"))
+        }
+
+        its([1]) {
+          is_expected
+            .to eq(Array.new(0x1002) { |n| n % 0x100 }.pack("c*"))
+        }
+
+        its([:merged_blob]) {
+          is_expected.to eq(0x1002.times
+                            .flat_map { |n| [n % 0x100] * 2 }
+                            .sort
+                            .pack("c*"))
+        }
+      end
+
+      its(:all_streams) {
+        are_expected.to eq([first_reader, second_reader])
+      }
+
+      its(:all_tags) { are_expected.to eq([0, 1]) }
+
+      describe "#tag_of" do
+        subject do
+          {
+            "first tag" => super().tag_of(first_reader),
+            "second tag" => super().tag_of(second_reader),
+          }
+        end
+
+        its(["first tag"]) { is_expected.to eq(0) }
+        its(["second tag"]) { is_expected.to eq(1) }
+      end
+    end
+  end
 end
