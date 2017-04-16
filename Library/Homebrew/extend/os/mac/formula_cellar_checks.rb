@@ -61,6 +61,36 @@ module FormulaCellarChecks
     EOS
   end
 
+  def check_python_virtualenv
+    return if formula_requires_python?(formula) && default_python_is_system_python?
+    framework = formula.libexec/".Python"
+    return unless framework.symlink?
+    return unless framework.realpath.to_s.start_with?("/System")
+    <<-EOS.undent
+      virtualenv created against system Python
+      This formula created a virtualenv using system Python.
+      Please add `depends_on :python` to the formula.
+    EOS
+  end
+
+  def check_python_shebangs
+    return unless formula.bin.directory?
+    return if formula_requires_python?(formula) && default_python_is_system_python?
+    shibboleth = "#!/usr/bin/python"
+    system_python_shebangs = formula.bin.children.select do |bin|
+      (bin.open { |f| f.read(shibboleth.length) }) == shibboleth
+    end
+    return if system_python_shebangs.empty?
+
+    <<-EOS.undent
+      python scripts run with system python
+      These python scripts have shebangs that invoke system Python.
+      They should run Homebrew's python instead. Adding `depends_on :python`
+      to the formula may help.
+        #{system_python_shebangs * "\n        "}
+    EOS
+  end
+
   def check_linkage
     return unless formula.prefix.directory?
     keg = Keg.new(formula.prefix)
@@ -79,6 +109,32 @@ module FormulaCellarChecks
     audit_check_output(check_shadowed_headers)
     audit_check_output(check_openssl_links)
     audit_check_output(check_python_framework_links(formula.lib))
+    audit_check_output(check_python_virtualenv)
+    audit_check_output(check_python_shebangs)
     check_linkage
+  end
+
+  def default_python_is_system_python?
+    sanitized_path = ENV["PATH"]
+    begin
+      # Run `python` in the user's environment to get the real answer because
+      # the python we find in the user's PATH might be a pyenv shim
+      ENV["PATH"] = ORIGINAL_PATHS.join(File::PATH_SEPARATOR)
+      which_python = which("python")
+      python_exec, = Open3.capture2(which_python, "-c", "import sys; print(sys.executable)")
+      python_exec = Pathname.new(python_exec.strip).realpath
+    rescue => e
+      opoo "Inconsistent Python environment: #{e}"
+      python_exec = Pathname.new("")
+    ensure
+      ENV["PATH"] = sanitized_path
+    end
+
+    return nil unless python_exec.exist?
+    python_exec.to_s.start_with?("/usr/bin/python")
+  end
+
+  def formula_requires_python?(formula)
+    formula.requirements.any? { |r| r.name == "python" }
   end
 end
