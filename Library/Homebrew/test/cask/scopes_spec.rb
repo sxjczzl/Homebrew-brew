@@ -18,6 +18,20 @@ describe Hbc::Scopes, :cask do
       )
     end
 
+    it "ignores casks CaskLoader can't load" do
+      Hbc.caskroom.join("cask-bar").mkpath
+      Hbc.caskroom.join("cask-foo").mkpath
+      Hbc.caskroom.join("cask-buzz").mkpath
+
+      allow(Hbc::CaskLoader).to receive(:load) do |token|
+        raise(Hbc::CaskUnavailableError, token) if token == "cask-buzz"
+        "loaded-#{token}"
+      end
+
+      installed_casks = Hbc.installed
+      expect(installed_casks).to eq %w[loaded-cask-bar loaded-cask-foo]
+    end
+
     it "optimizes performance by resolving to a fully qualified path before calling Hbc::CaskLoader.load" do
       fake_tapped_cask_dir = Pathname.new(Dir.mktmpdir).join("Casks")
       absolute_path_to_cask = fake_tapped_cask_dir.join("some-cask.rb")

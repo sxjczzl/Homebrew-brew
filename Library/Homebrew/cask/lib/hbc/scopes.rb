@@ -34,12 +34,14 @@ module Hbc
                     tap_dir.join("#{token}.rb").exist?
                   end
 
-                  if path_to_cask
-                    CaskLoader.load(path_to_cask.join("#{token}.rb"))
-                  else
-                    CaskLoader.load(token)
+                  begin
+                    CaskLoader.load(path_to_cask ? path_to_cask.join("#{token}.rb") : token)
+                  rescue CaskUnavailableError => e
+                    onoe e
+                    nil
                   end
                 end
+                .compact
       end
     end
   end
