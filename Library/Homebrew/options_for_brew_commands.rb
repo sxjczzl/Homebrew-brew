@@ -43,6 +43,6 @@ module Homebrew
   def self.options(&block)
     options_for_brew_commands = OptionsForBrewCommands.new
     options_for_brew_commands.instance_eval(&block)
-    options_for_brew_commands.check_invalid_options()
+    options_for_brew_commands.check_invalid_options
   end
 end
