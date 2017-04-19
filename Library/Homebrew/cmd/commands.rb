@@ -13,7 +13,6 @@ module Homebrew
       command __method__.to_s
       option "--quiet", "List only the names of commands without the header"
       option "--include-aliases", "The aliases of internal commands will be included"
-      check_invalid_options
     end
 
     if ARGV.include? "--quiet"
