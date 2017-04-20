@@ -8,9 +8,8 @@ module Homebrew
   module_function
 
   def commands
-    require "options_for_brew_commands"
+    require "command_options"
     options do
-      command __method__.to_s
       option "--quiet", "List only the names of commands without the header"
       option "--include-aliases", "The aliases of internal commands will be included"
     end
