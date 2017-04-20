@@ -13,8 +13,8 @@ module Homebrew
       invalid_options_by_user = (ARGV.options_only - @valid_options.keys).uniq
       return if invalid_options_by_user.empty?
       invalid_option_pluralize = Formatter.pluralize(invalid_options_by_user.length, "invalid option")
-      invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options_by_user.join " "}"
       valid_option_pluralize = Formatter.pluralize(@valid_options.length, "valid option")
+      invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options_by_user.join " "}"
       if @valid_options.empty?
         odie <<-EOS.undent
           #{invalid_option_string}
