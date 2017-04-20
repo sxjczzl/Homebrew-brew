@@ -444,7 +444,7 @@ class FormulaAuditor
       @@remote_official_taps ||= OFFICIAL_TAPS - Tap.select(&:official?).map(&:repo)
 
       same_name_tap_formulae += @@remote_official_taps.map do |tap|
-        Thread.new { Homebrew.search_tap "homebrew", tap, name }
+        Thread.new { Homebrew.search_tap "homebrew", tap, /#{name}/ }
       end.flat_map(&:value)
     end
 
