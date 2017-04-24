@@ -195,7 +195,7 @@ describe "globally-scoped helper methods" do
     FileUtils.touch editor
     FileUtils.chmod 0755, editor
 
-    expect(which_editor).to eql editor
+    expect(which_editor).to eql editor.to_s
   end
 
   specify "#gzip" do
