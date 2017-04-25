@@ -5,7 +5,7 @@ module Homebrew
       @valid_options = {}
     end
 
-    def option(key, value = "No Description for this Option is Available")
+    def option(key, value = "No description for this option is available")
       @valid_options[key] = value
     end
 
