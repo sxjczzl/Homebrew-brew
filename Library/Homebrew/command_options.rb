@@ -1,6 +1,6 @@
 module Homebrew
   class CommandOptions
-    def initialize(command_name)
+    def initialize(command_name = nil)
       @command_name = command_name
       @valid_options = {}
     end
