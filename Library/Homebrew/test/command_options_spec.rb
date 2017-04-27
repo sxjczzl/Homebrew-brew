@@ -32,9 +32,7 @@ def random_invalid_options(valid_options, array_length)
 end
 
 describe Homebrew::CommandOptions do
-  describe "brew commands", :integration_test do
-    cmd = "commands"
-
+  describe "Tests for CommandOptions() class: " do
     it "checks correctness of initialize() method" do
       command_options = Homebrew::CommandOptions.new
       expect(command_options.command_name).to eq(nil)
@@ -54,35 +52,67 @@ describe Homebrew::CommandOptions do
         "--bar"=>"No description for this option is available" })
     end
 
-    it "test # 1: runs correctly if no option is provided" do
-      expect { brew cmd }
-        .to output.to_stdout
-        .and be_a_success
+    it "checks full error message if more than 1 incorrect options are provided" do
+      command_options = Homebrew::CommandOptions.new("test command")
+      command_options.option("--bar")
+      command_options.option("--foo", "do foo")
+      command_options.option("--quiet", "be quiet")
+      error_message = command_options.get_error_message(["--bar1", "--bar2", "--bar1", "--bar", "foo"])
+      expected_error_message = <<-EOS.undent
+      3 invalid options provided: --bar1 --bar2 foo
+      <test command> has only 3 valid options: --bar --foo --quiet
+
+          --bar:  No description for this option is available
+          --foo:  do foo
+          --quiet:  be quiet
+
+      EOS
+      expect(error_message).to eq(expected_error_message)
     end
 
-    valid_options = get_valid_options(cmd)
-    valid_options.each do |option, _desc|
-      it "test # 2: runs correctly if any 1 correct option is provided" do
-        expect { system("brew #{cmd} #{option}") }
+    it "checks no error if all correct options are provided" do
+      command_options = Homebrew::CommandOptions.new("test command")
+      command_options.option("--bar")
+      command_options.option("--foo", "do foo")
+      command_options.option("--quiet", "be quiet")
+      error_message = command_options.get_error_message(["--quiet", "--bar"])
+      expect(error_message).to eq(nil)
+    end
+  end
+
+  # Tests that use `Brew...`
+  ["commands"].each do |cmd|
+    describe "brew #{cmd}", :integration_test do
+      it "test # 1: runs correctly if no option is provided" do
+        expect { brew cmd }
+          .to output.to_stdout
+          .and be_a_success
+      end
+
+      valid_options = get_valid_options(cmd)
+      valid_options.each do |option, _desc|
+        it "test # 2: runs correctly if any 1 correct option is provided" do
+          expect { system("brew #{cmd} #{option}") }
+            .to output.to_stdout_from_any_process
+        end
+      end
+
+      it "test # 3: runs correctly if all correct options are provided" do
+        expect { system("brew #{cmd} #{valid_options.keys.join " "}") }
           .to output.to_stdout_from_any_process
       end
-    end
 
-    it "test # 3: runs correctly if all correct options are provided" do
-      expect { system("brew #{cmd} #{valid_options.keys.join " "}") }
-        .to output.to_stdout_from_any_process
-    end
+      it "test # 4: returns error if 1 incorrect option is provided" do
+        invalid_option = "--#{random_invalid_options(valid_options, 1)[0]}"
+        expect { system("brew #{cmd} #{invalid_option}") }
+          .to output(/invalid option provided/).to_stderr_from_any_process
+      end
 
-    it "test # 4: returns error if 1 incorrect option is provided" do
-      invalid_option = "--#{random_invalid_options(valid_options, 1)[0]}"
-      expect { system("brew #{cmd} #{invalid_option}") }
-        .to output(/invalid option provided/).to_stderr_from_any_process
-    end
-
-    it "test # 5: returns error if more than 1 incorrect options are provided" do
-      invalid_options = random_invalid_options(valid_options, 3)
-      expect { system("brew #{cmd} --#{invalid_options.join " --"}") }
-        .to output(/invalid options provided/).to_stderr_from_any_process
+      it "test # 5: returns error if more than 1 incorrect options are provided" do
+        invalid_options = random_invalid_options(valid_options, 3)
+        expect { system("brew #{cmd} --#{invalid_options.join " --"}") }
+          .to output(/invalid options provided/).to_stderr_from_any_process
+      end
     end
   end
 end

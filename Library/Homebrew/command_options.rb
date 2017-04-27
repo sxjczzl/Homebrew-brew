@@ -11,20 +11,21 @@ module Homebrew
       @valid_options[key] = value
     end
 
-    def check_invalid_options(argv_options_only)
-      invalid_options_by_user = (argv_options_only - @valid_options.keys).uniq
-      return if invalid_options_by_user.empty?
-      invalid_option_pluralize = Formatter.pluralize(invalid_options_by_user.length, "invalid option")
+    def get_error_message(argv_options_only)
+      invalid_options = (argv_options_only - @valid_options.keys).uniq
+      return nil if invalid_options.empty?
+      invalid_option_pluralize = Formatter.pluralize(invalid_options.length, "invalid option")
       valid_option_pluralize = Formatter.pluralize(@valid_options.length, "valid option")
-      invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options_by_user.join " "}"
+      invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options.join " "}"
+      error_message = nil
       if @valid_options.empty?
-        odie <<-EOS.undent
+        error_message = <<-EOS.undent
           #{invalid_option_string}
           <#{@command_name}> has no valid options
 
         EOS
       else
-        odie <<-EOS.undent
+        error_message = <<-EOS.undent
           #{invalid_option_string}
           <#{@command_name}> has only #{valid_option_pluralize}: #{@valid_options.keys.join " "}
 
@@ -32,6 +33,12 @@ module Homebrew
 
         EOS
       end
+      return error_message
+    end
+
+    def check_invalid_options(argv_options_only)
+      error_message = get_error_message(argv_options_only)
+      odie error_message if !error_message.nil?
     end
   end
 
