@@ -1,5 +1,7 @@
 module Homebrew
   class CommandOptions
+    attr_reader :command_name, :valid_options
+
     def initialize(command_name = nil)
       @command_name = command_name
       @valid_options = {}
@@ -9,8 +11,8 @@ module Homebrew
       @valid_options[key] = value
     end
 
-    def check_invalid_options
-      invalid_options_by_user = (ARGV.options_only - @valid_options.keys).uniq
+    def check_invalid_options(argv_options_only)
+      invalid_options_by_user = (argv_options_only - @valid_options.keys).uniq
       return if invalid_options_by_user.empty?
       invalid_option_pluralize = Formatter.pluralize(invalid_options_by_user.length, "invalid option")
       valid_option_pluralize = Formatter.pluralize(@valid_options.length, "valid option")
@@ -37,6 +39,6 @@ module Homebrew
     command_name = caller_locations(1, 1).first.label
     command_options = CommandOptions.new(command_name)
     command_options.instance_eval(&block)
-    command_options.check_invalid_options
+    command_options.check_invalid_options(ARGV.options_only)
   end
 end

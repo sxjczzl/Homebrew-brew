@@ -1,3 +1,5 @@
+# To run this test file: 'brew tests --only=command_options'
+
 require "command_options"
 
 def get_valid_options(cmd)
@@ -24,9 +26,28 @@ describe Homebrew::CommandOptions do
   describe "brew commands", :integration_test do
     cmd = "commands"
 
+    it "checks correctness of initialize() method" do
+      command_options = Homebrew::CommandOptions.new
+      expect(command_options.command_name).to eq(nil)
+      expect(command_options.valid_options).to eq({})
+
+      command_options = Homebrew::CommandOptions.new("test command")
+      expect(command_options.command_name).to eq("test command")
+      expect(command_options.valid_options).to eq({})
+    end
+
+    it "checks correctness of option() method" do
+      command_options = Homebrew::CommandOptions.new
+      command_options.option("--bar")
+      command_options.option("--foo", "do foo")
+      command_options.option("--quiet", "be quiet")
+      expect(command_options.valid_options).to eq({ "--foo"=>"do foo", "--quiet"=>"be quiet",
+        "--bar"=>"No description for this option is available" })
+    end
+
     it "test # 1: runs correctly if no option is provided" do
       expect { brew "commands" }
-        .to output.to_stdout
+        .to output(/Built-in commands/).to_stdout
         .and be_a_success
     end
 
@@ -67,11 +88,12 @@ describe Homebrew::CommandOptions do
 		MESSAGE
     end
 
+    # The following Test # 6 can be used for other cmds as well
     all_argv_options = [["--foo"],
-                        [["--bar", "--bar1", "--bar2"]]]
+                        ["--bar", "--bar1", "--bar2"],
+                        ["--quietee", "--qute", "--foo1", "--foo2", "--quiet"]]
     all_argv_options.each do |argv_options|
       it "test # 6: returns error if incorrect option(s) provided" do
-        argv_options = ["--quietee", "--qute", "--foo1", "--foo2"]
         invalid_options_by_user = (argv_options - valid_options.keys).uniq
         invalid_option_pluralize = Formatter.pluralize(invalid_options_by_user.length, "invalid option")
         valid_option_pluralize = Formatter.pluralize(valid_options.length, "valid option")
