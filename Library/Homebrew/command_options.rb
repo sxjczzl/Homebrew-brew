@@ -2,7 +2,7 @@ module Homebrew
   class CommandOptions
     attr_reader :command_name, :valid_options
 
-    def initialize(command_name = nil)
+    def initialize(command_name)
       @command_name = command_name
       @valid_options = {}
     end
