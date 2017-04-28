@@ -38,7 +38,7 @@ module Homebrew
 
     def check_invalid_options(argv_options_only)
       error_message = get_error_message(argv_options_only)
-      odie error_message if !error_message.nil?
+      odie error_message unless error_message.nil?
     end
   end
 
