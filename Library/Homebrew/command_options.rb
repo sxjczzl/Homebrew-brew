@@ -33,7 +33,7 @@ module Homebrew
 
         EOS
       end
-      return error_message
+      error_message
     end
 
     def check_invalid_options(argv_options_only)
