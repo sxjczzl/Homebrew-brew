@@ -92,7 +92,7 @@ module Hbc
 
     def each_line_from(sources)
       loop do
-        selected_sources = IO.select(sources, [], [], 10)
+        selected_sources = IO.select(sources, [], [], 50)
 
         break if selected_sources.nil?
 
