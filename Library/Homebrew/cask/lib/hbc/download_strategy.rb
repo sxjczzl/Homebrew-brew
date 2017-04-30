@@ -181,7 +181,7 @@ module Hbc
     end
 
     def ext
-      Pathname.new(@url).extname
+      Pathname.new(@url).extname.sub(/\?.*/, '')
     end
   end
 
