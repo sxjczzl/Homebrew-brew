@@ -1,0 +1,1 @@
+wget --no-check https://sourceforge.net/projects/scalpel/files/scalpel-0.5.3.tar.gz; tar zxvf scalpel-0.5.3.tar.gz; cd scalpel-0.5.3; make; export PATH=../scalpel-0.5.3:$PATH
