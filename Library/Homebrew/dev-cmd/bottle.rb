@@ -180,7 +180,7 @@ module Homebrew
 
     if ARGV.include?("--no-rebuild") || !f.tap
       rebuild = 0
-    elsif ARGV.include? "--keep-old"
+    elsif ARGV.include?("--keep-old") && !f.bottle_specification.checksums.empty?
       rebuild = f.bottle_specification.rebuild
     else
       ohai "Determining #{f.full_name} bottle rebuild..."
