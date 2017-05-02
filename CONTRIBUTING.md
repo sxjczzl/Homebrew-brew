@@ -12,4 +12,10 @@ First time contributing to Homebrew? Read our [Code of Conduct](https://github.c
 
 * open an issue with a detailed description of your proposed feature, the motivation for it and alternatives considered. Please note we may close this issue or ask you to create a pull-request if this is not something we see as sufficiently high priority.
 
+### Add a command
+* add Library/Homebrew/dev-cmd/new_command.rb (or other locations for non dev commands)
+* edit completions/zsh/_brew
+* run `brew man` after editing (test with `export MANPATH=$(brew --prefix)/share/man && man new_command`)
+* submit PR
+
 Thanks!
