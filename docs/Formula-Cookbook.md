@@ -85,7 +85,7 @@ so you can override this with `brew create <URL> --set-name <name>`.
 
 An SSL/TLS (https) [`homepage`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#homepage%3D-class_method) is preferred, if one is available.
 
-Try to summarize from the [`homepage`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#homepage%3D-class_method) what the formula does in the [`desc`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#desc%3D-class_method)ription. Note that the [`desc`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#desc%3D-class_method)ription is automatically prepended with the formula name.
+Try to summarize from the [`homepage`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#homepage%3D-class_method) what the formula does in the [`desc`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#desc%3D-class_method)ription. Note that the [`desc`](http://www.rubydoc.info/github/Homebrew/brew/master/Formula#desc%3D-class_method)ription is automatically prepended with the formula name. The combined description (including the formula name, e.g. 'formulaname: short description') should be fewer than 80 characters. The provided description should not start with the formula name or an indefinite article ('a' or 'an').
 
 ### Check the build system
 
