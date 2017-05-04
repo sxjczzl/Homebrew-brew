@@ -23,7 +23,7 @@ describe Homebrew::CommandOptions do
     argv_options = ["--foo"]
     error_message = command_options.get_error_message(argv_options)
     expect(error_message).to \
-      include("<test command> has only 1 valid option: --bar")
+      include("1 invalid option provided: --foo")
   end
 
   it "sets error message correctly if more than one invalid options provided" do
