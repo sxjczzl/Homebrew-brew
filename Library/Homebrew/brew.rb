@@ -88,7 +88,7 @@ begin
   end
 
   if internal_cmd
-    Homebrew::InstallCommand.send cmd.to_s.tr("-", "_").downcase
+    Homebrew.send cmd.to_s.tr("-", "_").downcase
   elsif which "brew-#{cmd}"
     %w[CACHE LIBRARY_PATH].each do |e|
       ENV["HOMEBREW_#{e}"] = Object.const_get("HOMEBREW_#{e}").to_s

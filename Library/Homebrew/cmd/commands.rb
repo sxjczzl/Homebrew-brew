@@ -6,12 +6,16 @@
 
 module Homebrew
   module_function
+  def commands
+    Homebrew::InstallCommand.commands
+  end
+
   class InstallCommand < CommandOptions
     Homebrew.options do
       option "--quiet", "List only the names of commands without the header"
       option "--include-aliases", "The aliases of internal commands will be included"
     end
-    
+
     def self.commands
       if ARGV.include? "--quiet"
         cmds = internal_commands + external_commands
