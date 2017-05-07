@@ -23,10 +23,12 @@ end
 
 # brew tests
 group :tests do
+  gem "minitest", "< 5.0.0"
   gem "parallel_tests"
   gem "rspec"
   gem "rspec-its", require: false
   gem "rspec-wait", require: false
+  gem "test-unit"
 end
 
 # brew tests --coverage

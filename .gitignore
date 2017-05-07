@@ -21,22 +21,25 @@
 
 # Ignore some vendored files within `Library`.
 /Library/Homebrew/vendor/portable-ruby
-/Library/Homebrew/vendor/ruby/2.0.0/bin
-/Library/Homebrew/vendor/ruby/2.0.0/cache
-/Library/Homebrew/vendor/ruby/2.0.0/extensions
-/Library/Homebrew/vendor/ruby/2.0.0/gems/*
-/Library/Homebrew/vendor/ruby/2.0.0/gems/ruby-macho-*/*
-/Library/Homebrew/vendor/ruby/2.0.0/gems/plist-*/*
-/Library/Homebrew/vendor/ruby/2.0.0/specifications
-/Library/Homebrew/vendor/ruby/2.0.0/tmp
+/Library/Homebrew/vendor/ruby/2.*
+/Library/Homebrew/vendor/ruby/ruby/*
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/bin
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/cache
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/extensions
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/*
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/ruby-macho-*/*
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/plist-*/*
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/specifications
+/Library/Homebrew/vendor/ruby/ruby/2.0.0/tmp
 
 # Unignore our vendored gems
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/ruby-macho-*
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/ruby-macho-*/LICENSE*
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/ruby-macho-*/lib
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/plist-*
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/plist-*/LICENSE*
-!/Library/Homebrew/vendor/ruby/2.0.0/gems/plist-*/lib
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/ruby-macho-*
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/ruby-macho-*/LICENSE*
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/ruby-macho-*/lib
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/plist-*
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/plist-*/LICENSE*
+!/Library/Homebrew/vendor/ruby/ruby/2.0.0/gems/plist-*/lib
 
 # Ignore `bin` contents (again).
 /bin

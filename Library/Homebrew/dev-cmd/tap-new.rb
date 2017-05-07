@@ -49,7 +49,7 @@ module Homebrew
       osx_image: xcode8.3
       rvm: system
       cache:
-        directories: /usr/local/Homebrew/Library/Homebrew/vendor
+        directories: /usr/local/Homebrew/Library/Homebrew/vendor/ruby
 
       before_install:
         - export TRAVIS_COMMIT="$(git rev-parse --verify -q HEAD)"
