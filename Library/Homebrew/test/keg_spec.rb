@@ -114,6 +114,18 @@ describe Keg do
       expect(keg).to be_orphaned
       expect(Keg.orphaned).to contain_exactly(keg, dependent)
     end
+
+    it "does not include kegs with non-orphaned dependents" do
+      dependent = make_dependent(keg)
+      recursive_dependent = make_dependent(dependent)
+
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      alter_tab(dependent) { |t| t.installed_on_request = false }
+      alter_tab(recursive_dependent) { |t| t.installed_on_request = true }
+
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
   end
 
   specify "#empty_installation?" do

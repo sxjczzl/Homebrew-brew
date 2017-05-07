@@ -166,9 +166,7 @@ class Keg
 
   def orphaned?
     return false if Tab.for_keg(self).absent_or_truthy? :installed_on_request
-    installed_dependents.none? do |dependent|
-      Tab.for_keg(dependent).absent_or_truthy? :installed_on_request
-    end
+    installed_dependents.all?(&:orphaned?)
   end
 
   # if path is a file in a keg then this will return the containing Keg object
