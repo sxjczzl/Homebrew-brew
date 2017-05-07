@@ -180,16 +180,14 @@ module Homebrew
   end
 
   def run_bundler_if_needed!
-    return unless Pathname.glob("#{HOMEBREW_GEM_HOME}/bin/*").empty?
-
-    if Gem::Specification.find_all_by_name("bundler").empty?
+    if Gem::Specification.find_all_by_name("bundler").empty? || !which("bundle")
       ohai "Installing Bundler..."
 
       # Do `gem install [...]` without having to spawn a separate process or
       # having to find the right `gem` binary for the running Ruby interpreter.
       require "rubygems/commands/install_command"
       install_cmd = Gem::Commands::InstallCommand.new
-      install_cmd.handle_options(%w[--no-ri --no-rdoc bundler])
+      install_cmd.handle_options(%w[--no-ri --no-rdoc --force bundler])
       exit_code = 1 # Should not matter as `install_cmd.execute` always throws.
       begin
         install_cmd.execute
@@ -203,7 +201,7 @@ module Homebrew
       unless quiet_system("bundle", "check")
         ohai "Installing RubyGems..."
         success = system "bundle", "install",
-                         "--path", "Library/Homebrew/vendor",
+                         "--path", "Library/Homebrew/vendor/ruby",
                          "--standalone",
                          "--jobs", "3"
         odie "Failed to install RubyGems!" unless success

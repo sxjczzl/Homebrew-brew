@@ -71,7 +71,7 @@ module Homebrew
           ["test/#{test_name}_spec.rb:#{line}"]
         end
       else
-        Dir.glob("test/**/*_spec.rb").reject { |p| p =~ %r{^test/vendor/bundle/} }
+        Dir.glob("test/**/*_spec.rb").reject { |p| p =~ %r{^test/vendor/ruby/bundle/} }
       end
 
       opts = []
@@ -103,7 +103,7 @@ module Homebrew
 
       files.map! { |p| HOMEBREW_LIBRARY_PATH/p }
 
-      (HOMEBREW_LIBRARY_PATH/"vendor/#{RUBY_ENGINE}/#{RUBY_VERSION}").cd do
+      HOMEBREW_GEM_HOME.cd do
         if parallel
           system "parallel_rspec", *opts, "--", *args, "--", *files
         else

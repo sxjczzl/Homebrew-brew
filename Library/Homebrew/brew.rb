@@ -13,7 +13,8 @@ HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent
 $:.unshift(HOMEBREW_LIBRARY_PATH)
 
 load_path_before_bundler = $:.dup
-require_relative "#{HOMEBREW_LIBRARY_PATH}/vendor/bundler/setup"
+HOMEBREW_BUNDLER_PATH = Pathname.new "#{HOMEBREW_LIBRARY_PATH}/vendor/ruby"
+require_relative "#{HOMEBREW_BUNDLER_PATH}/bundler/setup"
 ENV["HOMEBREW_GEMS_LOAD_PATH"] = ($: - load_path_before_bundler).join(":")
 
 require "global"
@@ -57,8 +58,10 @@ begin
   # Add contributed commands to PATH before checking.
   path.append(Pathname.glob(Tap::TAP_DIRECTORY/"*/*/cmd"))
 
-  # Add RubyGems.
-  HOMEBREW_GEM_HOME = HOMEBREW_LIBRARY_PATH/"vendor/#{RUBY_ENGINE}/#{RUBY_VERSION}"
+  # Add curreny Ruby and RubyGems.
+  require "rbconfig"
+  path.prepend(RbConfig::CONFIG["bindir"])
+  HOMEBREW_GEM_HOME = HOMEBREW_BUNDLER_PATH/"#{RUBY_ENGINE}/#{RbConfig::CONFIG["ruby_version"]}"
   path.append(HOMEBREW_GEM_HOME/"bin")
 
   # Add SCM wrappers.
