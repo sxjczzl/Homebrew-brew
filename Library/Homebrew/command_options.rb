@@ -2,8 +2,7 @@ module Homebrew
   class CommandOptions
     attr_reader :command_name, :valid_options
 
-    def initialize(command_name)
-      @command_name = command_name
+    def initialize
       @valid_options = {}
     end
 
@@ -21,13 +20,13 @@ module Homebrew
       if @valid_options.empty?
         error_message = <<-EOS.undent
           #{invalid_option_string}
-          <#{@command_name}> has no valid options
+          It has no valid options
 
         EOS
       else
         error_message = <<-EOS.undent
           #{invalid_option_string}
-          <#{@command_name}> has only #{valid_option_pluralize}: #{@valid_options.keys.join " "}
+          It has only #{valid_option_pluralize}: #{@valid_options.keys.join " "}
 
               #{@valid_options.map { |k, v| "#{k}:  #{v}" }.join("\n    ")}
 
@@ -40,12 +39,16 @@ module Homebrew
       error_message = get_error_message(argv_options_only)
       odie error_message unless error_message.nil?
     end
+
+    def options(&block)
+      instance_eval(&block)
+      check_invalid_options(ARGV.options_only)
+    end
   end
 
-  def self.options(&block)
-    command_name = caller_locations(1, 1).first.label
-    command_options = CommandOptions.new(command_name)
-    command_options.instance_eval(&block)
-    command_options.check_invalid_options(ARGV.options_only)
-  end
+  # def self.options(&block)
+  #   command_options = CommandOptions.new
+  #   command_options.instance_eval(&block)
+  #   command_options.check_invalid_options(ARGV.options_only)
+  # end
 end

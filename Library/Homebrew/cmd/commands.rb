@@ -6,17 +6,22 @@
 
 module Homebrew
   module_function
+
   def commands
-    Homebrew::InstallCommand.commands
+    command = CommandsCommand.new
+    command.commands
   end
 
-  class InstallCommand < CommandOptions
-    Homebrew.options do
-      option "--quiet", "List only the names of commands without the header"
-      option "--include-aliases", "The aliases of internal commands will be included"
+  class CommandsCommand < CommandOptions
+    def initialize
+      super
+      options do
+        option "--quiet", "List only the names of commands without the header"
+        option "--include-aliases", "The aliases of internal commands will be included"
+      end
     end
 
-    def self.commands
+    def commands
       if ARGV.include? "--quiet"
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
@@ -41,15 +46,15 @@ module Homebrew
       end
     end
 
-    def self.internal_commands
+    def internal_commands
       find_internal_commands HOMEBREW_LIBRARY_PATH/"cmd"
     end
 
-    def self.internal_developer_commands
+    def internal_developer_commands
       find_internal_commands HOMEBREW_LIBRARY_PATH/"dev-cmd"
     end
 
-    def self.external_commands
+    def external_commands
       paths.each_with_object([]) do |path, cmds|
         Dir["#{path}/brew-*"].each do |file|
           next unless File.executable?(file)
@@ -59,7 +64,7 @@ module Homebrew
       end.sort
     end
 
-    def self.find_internal_commands(directory)
+    def find_internal_commands(directory)
       directory.children.each_with_object([]) do |f, cmds|
         cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
       end
