@@ -15,13 +15,13 @@ module Homebrew
   class CommandsCommand < CommandOptions
     def initialize
       super
-      options do
-        option "--quiet", "List only the names of commands without the header"
-        option "--include-aliases", "The aliases of internal commands will be included"
-      end
+      option "--quiet", "List only the names of commands without the header"
+      option "--include-aliases", "The aliases of internal commands will be included"
     end
 
     def commands
+      check_invalid_options(ARGV.options_only)
+
       if ARGV.include? "--quiet"
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
