@@ -580,6 +580,10 @@ class FormulaAuditor
       problem "The homepage should start with http or https (URL is #{homepage})."
     end
 
+    if homepage =~ %r{^.+://[^/]+$}
+      problem "#{homepage} must have a slash after the domain name part."
+    end
+
     # Check for http:// GitHub homepage urls, https:// is preferred.
     # Note: only check homepages that are repo pages, not *.github.com hosts
     if homepage.start_with? "http://github.com/"

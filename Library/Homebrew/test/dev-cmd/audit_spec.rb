@@ -411,6 +411,8 @@ describe FormulaAuditor do
         "sf3" => "http://foo.sf.net/",
         "sf4" => "http://foo.sourceforge.io/",
         "waldo" => "http://www.gnu.org/waldo",
+        "sl1" => "http://example.com",
+        "sl2" => "http://example.com#section",
       }
 
       formula_homepages.each do |name, homepage|
@@ -422,7 +424,10 @@ describe FormulaAuditor do
         EOS
 
         fa.audit_homepage
-        if homepage =~ %r{http:\/\/www\.freedesktop\.org}
+        if name =~ /(sf2|sl)/
+          expect(fa.problems.first)
+            .to match("#{homepage} must have a slash after the domain name part.")
+        elsif homepage =~ %r{http:\/\/www\.freedesktop\.org}
           if homepage =~ /Software/
             expect(fa.problems.first).to match(
               "#{homepage} should be styled " \
