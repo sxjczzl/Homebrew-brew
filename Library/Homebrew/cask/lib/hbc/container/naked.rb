@@ -16,7 +16,14 @@ module Hbc
 
       def target_file
         return @path.basename if @nested
-        URI.decode(File.basename(@cask.url.path))
+
+        effective_filename = @command.run!("/usr/bin/xattr", args: ["-p", "curl.filename_effective", @path]).stdout.chomp
+
+        if effective_filename.empty?
+          URI.decode(File.basename(@cask.url.path))
+        else
+          effective_filename
+        end
       end
     end
   end
