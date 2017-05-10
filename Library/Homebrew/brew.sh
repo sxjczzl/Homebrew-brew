@@ -1,5 +1,8 @@
-HOMEBREW_VERSION="$(git -C "$HOMEBREW_REPOSITORY" describe --tags --dirty 2>/dev/null)"
-HOMEBREW_USER_AGENT_VERSION="$HOMEBREW_VERSION"
+if [[ -d "$HOMEBREW_REPOSITORY"/.git ]]
+then
+  HOMEBREW_VERSION="$(git -C "$HOMEBREW_REPOSITORY" describe --tags --dirty 2>/dev/null)"
+  HOMEBREW_USER_AGENT_VERSION="$HOMEBREW_VERSION"
+fi
 if [[ -z "$HOMEBREW_VERSION" ]]
 then
   HOMEBREW_VERSION=">1.2.0 (no git repository)"
