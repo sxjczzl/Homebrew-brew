@@ -70,6 +70,6 @@ module Homebrew
       end
     end
 
-    private :internal_commands, :internal_developer_commands, :external_commands, :find_internal_commands
+    # private :internal_commands, :internal_developer_commands, :external_commands, :find_internal_commands
   end
 end
