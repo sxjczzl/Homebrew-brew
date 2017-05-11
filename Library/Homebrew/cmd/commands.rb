@@ -9,17 +9,17 @@ module Homebrew
 
   def commands
     command = CommandsCommand.new
-    command.commands
+    command.call
   end
 
-  class CommandsCommand < CommandOptions
+  class CommandsCommand < Command
     def initialize
       super
       option "--quiet", "List only the names of commands without the header"
       option "--include-aliases", "The aliases of internal commands will be included"
     end
 
-    def commands
+    def call
       check_invalid_options(ARGV.options_only)
 
       if ARGV.include? "--quiet"
@@ -69,5 +69,7 @@ module Homebrew
         cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
       end
     end
+
+    private :internal_commands, :internal_developer_commands, :external_commands, :find_internal_commands
   end
 end

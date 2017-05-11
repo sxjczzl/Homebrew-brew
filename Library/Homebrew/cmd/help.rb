@@ -74,7 +74,7 @@ module Homebrew
   end
 
   def command_help(path)
-    if path.to_s.include? "Homebrew/cmd/"
+    if Pathname(path).fnmatch?('*/Homebrew/cmd/*')
       return command_help_cmd(path)
     end
 
@@ -95,13 +95,14 @@ module Homebrew
   end
 
   def command_help_cmd(path)
-    path_str = path.to_s
-    cmd = path_str.match(%r{Homebrew/cmd/(.*).rb})[1]
-    class_name = "#{cmd.capitalize}Command"
-    class_instance = Object.const_get("Homebrew::#{class_name}").new
+    cmd = Pathname(path).basename(".rb")
+    class_name = "#{cmd.to_s.capitalize}Command"
+    class_instance = Homebrew.const_get(class_name).new
+    valid_options = class_instance.valid_options
+    valid_options_names = valid_options.keys
     <<-EOS.undent
-      brew #{cmd} [#{class_instance.valid_options.keys.join "]["}]
-          #{class_instance.valid_options.map { |k, v| "#{k}:  #{v}" }.join("\n    ")}
+      brew #{cmd} [#{valid_options_names.join "] ["}]
+          #{valid_options.map { |name, desc| "#{name}:  #{desc}" }.join("\n    ")}
     EOS
   end
 end

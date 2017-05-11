@@ -1,5 +1,5 @@
 module Homebrew
-  class CommandOptions
+  class Command
     attr_reader :command_name, :valid_options
 
     def initialize

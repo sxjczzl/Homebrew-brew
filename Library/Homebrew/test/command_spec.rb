@@ -1,13 +1,13 @@
-require "command_options"
+require "command"
 
-describe Homebrew::CommandOptions do
+describe Homebrew::Command do
   it "initializes correctly" do
-    command_options = Homebrew::CommandOptions.new
+    command_options = Homebrew::Command.new
     expect(command_options.valid_options).to eq({})
   end
 
   it "sets valid_options correctly" do
-    command_options = Homebrew::CommandOptions.new
+    command_options = Homebrew::Command.new
     command_options.option("--bar")
     command_options.option("--foo", "do foo")
     command_options.option("--quiet", "be quiet")
@@ -17,7 +17,7 @@ describe Homebrew::CommandOptions do
   end
 
   it "sets error message correctly if only one invalid option provided" do
-    command_options = Homebrew::CommandOptions.new
+    command_options = Homebrew::Command.new
     command_options.option("--bar")
     argv_options = ["--foo"]
     error_message = command_options.get_error_message(argv_options)
@@ -26,7 +26,7 @@ describe Homebrew::CommandOptions do
   end
 
   it "sets error message correctly if more than one invalid options provided" do
-    command_options = Homebrew::CommandOptions.new
+    command_options = Homebrew::Command.new
     command_options.option("--bar")
     command_options.option("--foo", "do foo")
     command_options.option("--quiet", "be quiet")
@@ -43,7 +43,7 @@ describe Homebrew::CommandOptions do
   end
 
   it "produces no error message if only valid options provided" do
-    command_options = Homebrew::CommandOptions.new
+    command_options = Homebrew::Command.new
     command_options.option("--bar")
     command_options.option("--foo", "do foo")
     command_options.option("--quiet", "be quiet")
