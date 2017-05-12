@@ -61,6 +61,10 @@ begin
     internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("cmd", cmd)
 
     unless internal_cmd
+      internal_cmd = HOMEBREW_LIBRARY_PATH.join("cmd", "#{cmd}.sh").exist?
+    end
+
+    unless internal_cmd
       internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("dev-cmd", cmd)
       if internal_cmd && !ARGV.homebrew_developer?
         system "git", "config", "--file=#{HOMEBREW_REPOSITORY}/.git/config",
@@ -74,7 +78,7 @@ begin
   # - a help flag is passed AND a command is matched
   # - a help flag is passed AND there is no command specified
   # - no arguments are passed
-  if empty_argv || help_flag
+  if empty_argv || (help_flag && internal_cmd)
     require "cmd/help"
     Homebrew.help cmd, empty_argv: empty_argv
     # `Homebrew.help` never returns, except for external/unknown commands.
