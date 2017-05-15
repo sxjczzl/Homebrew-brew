@@ -56,6 +56,22 @@ class Sandbox
     deny_write path, type: :subpath
   end
 
+  def allow_read(path, options = {})
+    add_rule allow: true, operation: "file-read*", filter: path_filter(path, options[:type])
+  end
+
+  def allow_read_path(path)
+    allow_read path, type: :subpath
+  end
+
+  def deny_read(path, options = {})
+    add_rule allow: false, operation: "file-read*", filter: path_filter(path, options[:type])
+  end
+
+  def deny_read_path(path)
+    deny_read path, type: :subpath
+  end
+
   def allow_write_temp_and_cache
     allow_write_path "/private/tmp"
     allow_write_path "/private/var/tmp"
