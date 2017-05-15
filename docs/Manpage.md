@@ -66,11 +66,9 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
   * `command` <var>cmd</var>:
     Display the path to the file which is used when invoking `brew` <var>cmd</var>.
 
-  * `commands` [`--quiet` [`--include-aliases`]]:
-    Show a list of built-in and external commands.
-
-    If `--quiet` is passed, list only the names of commands without the header.
-    With `--include-aliases`, the aliases of internal commands will be included.
+* `commands` [`--quiet`] [`--include-aliases`]:
+      `--quiet`:  List only the names of commands without the header
+      `--include-aliases`:  The aliases of internal commands will be included
 
   * `config`:
     Show Homebrew and system configuration useful for debugging. If you file
@@ -526,16 +524,6 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
 
   * `untap` <var>tap</var>:
     Remove a tapped repository.
-
-  * `update` [`--merge`] [`--force`]:
-    Fetch the newest version of Homebrew and all formulae from GitHub using
-    `git`(1) and perform any necessary migrations.
-
-    If `--merge` is specified then `git merge` is used to include updates
-    (rather than `git rebase`).
-
-    If `--force` is specified then always do a slower, full update check even
-    if unnecessary.
 
   * `upgrade` [<var>install-options</var>] [`--cleanup`] [`--fetch-HEAD`] [<var>formulae</var>]:
     Upgrade outdated, unpinned brews.
