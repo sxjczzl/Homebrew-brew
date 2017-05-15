@@ -105,6 +105,34 @@ class Sandbox
     end
   end
 
+  def deny_read_shell_files
+    # Configuration.
+    # deny_read "/Users/#{ENV["USER"]}/.bash_profile"
+    # deny_read "/Users/#{ENV["USER"]}/.cshrc"
+    # deny_read "/Users/#{ENV["USER"]}/.config/fish/config.fish"
+    # deny_read "/Users/#{ENV["USER"]}/.kshrc"
+    # deny_read "/Users/#{ENV["USER"]}/.tcshrc"
+    # deny_read "/Users/#{ENV["USER"]}/.zshrc"
+
+    # Maybe this way is cleaner, although less explicit.
+    # Should this use a "/[^/]+/" regex instead of explicit USER to ensure
+    # we're not just protecting the active user on the machine but all of them?
+    %w[bash_profile cshrc config/fish/config.fish kshrc tcshrc zshrc].each do |s|
+      deny_read "/Users/#{ENV["USER"]}/.#{s}"
+    end
+
+    # Same as above. Seek review on preference.
+    # History.
+    # deny_read "/Users/#{ENV["USER"]}/.bash_history"
+    # deny_read "/Users/#{ENV["USER"]}/.zsh_history"
+    # deny_read "/Users/#{ENV["USER"]}/.config/fish/fish_history"
+    # deny_read "/Users/#{ENV["USER"]}/.sh_history"
+    # deny_read "/Users/#{ENV["USER"]}/.history"
+    %w[bash_history zsh_history config/fish/fish_history sh_history history].each do |s|
+      deny_read "/Users/#{ENV["USER"]}/.#{s}"
+    end
+  end
+
   def exec(*args)
     seatbelt = Tempfile.new(["homebrew", ".sb"], HOMEBREW_TEMP)
     seatbelt.write(@profile.dump)
