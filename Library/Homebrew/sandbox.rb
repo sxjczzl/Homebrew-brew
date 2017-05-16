@@ -157,6 +157,8 @@ class Sandbox
           (literal "/dev/dtracehelper")
           (literal "/dev/null")
           (literal "/dev/zero")
+          ; required by curl for accessing SSL certs when running under root user
+          (literal "/private/var/db/mds/system/mds.lock")
           (regex #"^/dev/fd/[0-9]+$")
           (regex #"^/dev/ttys?[0-9]*$")
           )
