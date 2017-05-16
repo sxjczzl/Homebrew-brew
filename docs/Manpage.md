@@ -67,6 +67,8 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
     Display the path to the file which is used when invoking `brew` <var>cmd</var>.
 
 * `commands` [`--quiet`] [`--include-aliases`]:
+      Show a list of built-in and external commands
+
       `--quiet`:  List only the names of commands without the header
       `--include-aliases`:  The aliases of internal commands will be included
 

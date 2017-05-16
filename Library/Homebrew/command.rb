@@ -1,13 +1,22 @@
 module Homebrew
   class Command
-    attr_reader :command_name, :valid_options
+    attr_reader :command_name, :valid_options, :description
 
     def initialize
       @valid_options = {}
+      @description = nil
     end
 
     def option(key, value = "No description for this option is available")
       @valid_options[key] = value
+    end
+
+    def desc(desc)
+      if @description.nil?
+        @description = desc
+      else
+        @description = "#{@description}\n#{desc}"
+      end
     end
 
     def get_error_message(argv_options_only)

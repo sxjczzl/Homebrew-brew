@@ -105,6 +105,8 @@ module Homebrew
     valid_options_names = valid_options.keys
     <<-EOS.undent
       brew #{cmd} [#{valid_options_names.join "] ["}]
+          #{class_instance.description}
+
           #{valid_options.map { |name, desc| "#{name}:  #{desc}" }.join("\n    ")}
     EOS
   end
