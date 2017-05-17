@@ -8,7 +8,7 @@ class MPIRequirement < Requirement
 
   fatal true
 
-  default_formula "open-mpi"
+  default_formula "homebrew/science/open-mpi"
 
   env :userpaths
 
