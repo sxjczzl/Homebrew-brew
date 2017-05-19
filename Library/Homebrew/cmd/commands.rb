@@ -16,8 +16,8 @@ module Homebrew
     def initialize
       super
       desc "Show a list of built-in and external commands"
-      option "--quiet", "List only the names of commands without the header"
-      option "--include-aliases", "The aliases of internal commands will be included"
+      option "--quiet", "list only the names of commands without the header.", children_options: ["--include-aliases"]
+      option "--include-aliases", "the aliases of internal commands will be included."
     end
 
     def call
