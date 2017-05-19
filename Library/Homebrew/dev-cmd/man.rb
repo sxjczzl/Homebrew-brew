@@ -72,14 +72,8 @@ module Homebrew
         # puts class_name
         if Homebrew.const_defined?(class_name)
           class_instance = Homebrew.const_get(class_name).new
-          valid_options = class_instance.valid_options
-          valid_options_names = valid_options.keys
-          output = <<-EOS.undent
-            * `#{cmd}` [`#{valid_options_names.join "`] [`"}`]:
-                  #{class_instance.description}
-
-                  #{valid_options.map { |name, desc| "`#{name}`:  #{desc}" }.join("\n      ")}
-          EOS
+          class_instance.generate_help_and_manpage_output
+          output = class_instance.man_output
           all << output
         else
           output = source_file.read.lines

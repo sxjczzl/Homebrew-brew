@@ -77,19 +77,11 @@ If \fB\-s\fR is passed, scrub the cache, removing downloads for even the latest 
 Display the path to the file which is used when invoking \fBbrew\fR \fIcmd\fR\.
 .
 .TP
-\fBcommands\fR [\fB\-\-quiet\fR] [\fB\-\-include\-aliases\fR]
+\fBcommands\fR [\fB\-\-quiet\fR [\fB\-\-include\-aliases\fR]]
 Show a list of built\-in and external commands
 .
-.IP "" 4
-.
-.nf
-
-`\-\-quiet`:  List only the names of commands without the header
-`\-\-include\-aliases`:  The aliases of internal commands will be included
-.
-.fi
-.
-.IP "" 0
+.IP
+If \fB\-\-quiet\fR is passed, list only the names of commands without the header\. With \fB\-\-include\-aliases\fR, the aliases of internal commands will be included\.
 .
 .TP
 \fBconfig\fR
@@ -625,7 +617,6 @@ Display where tap \fIuser\fR\fB/\fR\fIrepo\fR\'s directory is located\.
 .TP
 \fB\-\-version\fR
 Print the version number of Homebrew to standard output and exit\.
-
 .
 .SH "DEVELOPER COMMANDS"
 .

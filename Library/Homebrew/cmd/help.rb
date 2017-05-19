@@ -87,7 +87,7 @@ module Homebrew
       opoo "No help text in: #{path}" if ARGV.homebrew_developer?
       HOMEBREW_HELP
     else
-      help_lines.map do |line|
+      help_lines.map! do |line|
         line.slice(2..-1)
             .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
             .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
@@ -101,13 +101,7 @@ module Homebrew
   def command_help_cmd(cmd)
     class_name = "#{cmd.to_s.capitalize}Command"
     class_instance = Homebrew.const_get(class_name).new
-    valid_options = class_instance.valid_options
-    valid_options_names = valid_options.keys
-    <<-EOS.undent
-      brew #{cmd} [#{valid_options_names.join "] ["}]
-          #{class_instance.description}
-
-          #{valid_options.map { |name, desc| "#{name}:  #{desc}" }.join("\n    ")}
-    EOS
+    class_instance.generate_help_and_manpage_output
+    help_output = class_instance.help_output
   end
 end
