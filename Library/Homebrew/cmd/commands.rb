@@ -15,7 +15,7 @@ module Homebrew
   class CommandsCommand < Command
     def initialize
       super
-      desc "Show a list of built-in and external commands"
+      desc "Show a list of built-in and external commands."
       option "--quiet", "list only the names of commands without the header.", children_options: ["--include-aliases"]
       option "--include-aliases", "the aliases of internal commands will be included."
       generate_help_and_manpage_output()
