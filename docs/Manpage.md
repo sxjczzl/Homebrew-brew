@@ -527,6 +527,16 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
   * `untap` <var>tap</var>:
     Remove a tapped repository.
 
+  * `update` [`--merge`] [`--force`]:
+    Fetch the newest version of Homebrew and all formulae from GitHub using
+    `git`(1) and perform any necessary migrations.
+
+    If `--merge` is specified then `git merge` is used to include updates
+    (rather than `git rebase`).
+
+    If `--force` is specified then always do a slower, full update check even
+    if unnecessary.
+
   * `upgrade` [<var>install-options</var>] [`--cleanup`] [`--fetch-HEAD`] [<var>formulae</var>]:
     Upgrade outdated, unpinned brews.
 

@@ -62,14 +62,21 @@ module Homebrew
       .sort_by { |source_file| sort_key_for_path(source_file) }
       .map do |source_file|
         cmd = Pathname(source_file).basename(".rb")
+
         if cmd.fnmatch?("*.sh")
+          output = source_file.read.lines
+            .grep(/^#:/)
+            .map { |line| line.slice(2..-1) }
+            .join
+          if !(output.strip.empty? || output.include?("@hide_from_man_page"))
+            all << output
+          end
           next
         end
+
         require "cmd/#{cmd}"
         class_name = cmd.to_s.gsub(/^--/, '').gsub(/-/, '_')
         class_name = "#{class_name.to_s.capitalize}Command"
-        # puts "cmd==#{cmd}"
-        # puts class_name
         if Homebrew.const_defined?(class_name)
           class_instance = Homebrew.const_get(class_name).new
           class_instance.generate_help_and_manpage_output
