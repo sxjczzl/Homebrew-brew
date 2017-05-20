@@ -8,20 +8,18 @@ module Homebrew
   module_function
 
   def commands
-    command = CommandsCommand.new
-    command.call
+    CommandsCommand.call
   end
 
   class CommandsCommand < Command
-    def initialize
-      super
+    options do
       desc "Show a list of built-in and external commands."
       option "--quiet", "list only the names of commands without the header.", children_options: ["--include-aliases"]
       option "--include-aliases", "the aliases of internal commands will be included."
-      generate_help_and_manpage_output()
     end
 
-    def call
+    def self.call
+      # TODO: Put this check_invalid_options() method such that it doesn't have to be here
       check_invalid_options(ARGV.options_only)
 
       if ARGV.include? "--quiet"
@@ -50,15 +48,15 @@ module Homebrew
 
     private
 
-    def internal_commands
+    def self.internal_commands
       find_internal_commands HOMEBREW_LIBRARY_PATH/"cmd"
     end
 
-    def internal_developer_commands
+    def self.internal_developer_commands
       find_internal_commands HOMEBREW_LIBRARY_PATH/"dev-cmd"
     end
 
-    def external_commands
+    def self.external_commands
       paths.each_with_object([]) do |path, cmds|
         Dir["#{path}/brew-*"].each do |file|
           next unless File.executable?(file)
@@ -68,7 +66,7 @@ module Homebrew
       end.sort
     end
 
-    def find_internal_commands(directory)
+    def self.find_internal_commands(directory)
       directory.children.each_with_object([]) do |f, cmds|
         cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
       end

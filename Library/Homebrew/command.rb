@@ -2,7 +2,7 @@ module Homebrew
   class Command
     attr_reader :command_name, :valid_options, :description, :help_output, :man_output
 
-    def initialize
+    def self.initialize
       @valid_options = []
       @description = nil
       # TODO: set the @command_name dynamically
@@ -11,12 +11,19 @@ module Homebrew
       @man_output = nil
     end
 
-    def option(key, value = "No description for this option is available", **keyword_args)
+    def self.options(&block)
+      initialize
+      instance_eval(&block)
+      generate_help_and_manpage_output
+      # check_invalid_options(ARGV.options_only)
+    end
+
+    def self.option(key, value = "No description for this option is available", **keyword_args)
       children_options = keyword_args[:children_options]
       @valid_options.push({option: key, desc: value, children_options: children_options})
     end
 
-    def desc(desc)
+    def self.desc(desc)
       if @description.nil?
         @description = desc
       else
@@ -24,7 +31,7 @@ module Homebrew
       end
     end
 
-    def get_error_message(argv_options_only)
+    def self.get_error_message(argv_options_only)
       invalid_options = (argv_options_only - @valid_options.map{ |x| x[:option]}).uniq
       return nil if invalid_options.empty?
       invalid_option_pluralize = Formatter.pluralize(invalid_options.length, "invalid option")
@@ -47,17 +54,12 @@ module Homebrew
       error_message
     end
 
-    def check_invalid_options(argv_options_only)
+    def self.check_invalid_options(argv_options_only)
       error_message = get_error_message(argv_options_only)
       odie error_message unless error_message.nil?
     end
 
-    def options(&block)
-      instance_eval(&block)
-      check_invalid_options(ARGV.options_only)
-    end
-
-    def generate_help_and_manpage_output
+    def self.generate_help_and_manpage_output
       valid_options_and_suboptions = {}
       @valid_options.each do |valid_option_hash|
         option_name = valid_option_hash[:option]
@@ -91,11 +93,13 @@ module Homebrew
       end.join.strip
       @help_output = help_lines.join("\n")
     end
-  end
 
-  # def self.options(&block)
-  #   command_options = CommandOptions.new
-  #   command_options.instance_eval(&block)
-  #   command_options.check_invalid_options(ARGV.options_only)
-  # end
+    def self.help_output
+      @help_output
+    end
+
+    def self.man_output
+      @man_output
+    end
+  end
 end

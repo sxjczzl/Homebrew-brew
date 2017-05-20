@@ -78,8 +78,7 @@ module Homebrew
         class_name = cmd.to_s.gsub(/^--/, '').gsub(/-/, '_')
         class_name = "#{class_name.to_s.capitalize}Command"
         if Homebrew.const_defined?(class_name)
-          class_instance = Homebrew.const_get(class_name).new
-          class_instance.generate_help_and_manpage_output
+          class_instance = Homebrew.const_get(class_name)
           output = class_instance.man_output
           all << output
         else
