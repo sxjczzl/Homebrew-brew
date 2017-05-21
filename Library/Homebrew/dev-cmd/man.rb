@@ -56,18 +56,23 @@ module Homebrew
     end.reject { |s| s.strip.empty? || s.include?("@hide_from_man_page") }
   end
 
+  def read_the_commands_file(source_file)
+    source_file.read.lines
+                        .grep(/^#:/)
+                        .map { |line| line.slice(2..-1) }
+                        .join
+  end
+
   def path_glob_commands_from_dsl(glob)
     all = []
     Pathname.glob(glob)
             .sort_by { |source_file| sort_key_for_path(source_file) }
             .map do |source_file|
+
       cmd = Pathname(source_file).basename(".rb")
 
       if cmd.fnmatch?("*.sh")
-        output = source_file.read.lines
-                            .grep(/^#:/)
-                            .map { |line| line.slice(2..-1) }
-                            .join
+        output = read_the_commands_file(source_file)
         if !(output.strip.empty? || output.include?("@hide_from_man_page"))
           all << output
         end
@@ -82,10 +87,7 @@ module Homebrew
         output = class_instance.man_output
         all << output
       else
-        output = source_file.read.lines
-                            .grep(/^#:/)
-                            .map { |line| line.slice(2..-1) }
-                            .join
+        output = read_the_commands_file(source_file)
         if !(output.strip.empty? || output.include?("@hide_from_man_page"))
           all << output
         end
