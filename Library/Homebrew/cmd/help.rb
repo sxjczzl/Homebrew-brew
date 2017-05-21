@@ -101,6 +101,6 @@ module Homebrew
   def command_help_cmd(cmd)
     class_name = "#{cmd.to_s.capitalize}Command"
     class_instance = Homebrew.const_get(class_name)
-    help_output = class_instance.help_output
+    class_instance.help_output
   end
 end
