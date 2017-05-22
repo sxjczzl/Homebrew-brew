@@ -13,6 +13,7 @@ module Homebrew
 
   class CommandsCommand < Command
     options do
+      command "commands"
       desc "Show a list of built-in and external commands."
       option "--quiet", "list only the names of commands without the header." do
         option "--include-aliases", "the aliases of internal commands will be included."

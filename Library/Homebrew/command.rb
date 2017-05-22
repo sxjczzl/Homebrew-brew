@@ -6,10 +6,14 @@ module Homebrew
       @valid_options = []
       @description = nil
       # TODO: set the @command_name dynamically
-      @command_name = "commands"
+      @command_name = nil
       @help_output = nil
       @man_output = nil
       @root_options = []
+    end
+
+    def self.command(cmd)
+      @command_name = cmd
     end
 
     def self.options(&block)
@@ -17,42 +21,27 @@ module Homebrew
       @parent = nil
       instance_eval(&block)
       generate_help_and_manpage_output
-      # puts "start help_output",@help_output,"end_help_output"
-      # puts
-      # puts "start man_output",@man_output,"end_man_output"
-      # puts "valid_options: ", @valid_options
-      # puts "root option: ", @root_options, "end root options"
-      # check_invalid_options(ARGV.options_only)
     end
 
-    # def self.option(key, value = "No description for this option is available", **keyword_args)
-    #   children_options = keyword_args[:children_options]
-    #   @valid_options.push({option: key, desc: value, children_options: children_options})
-    # end
-
     def self.add_valid_option(option, desc)
-      valid_option = {:option => option, :desc => desc, :children_options => nil}
+      valid_option = {:option => option, :desc => desc, :child_options => nil}
       @valid_options.push(valid_option)
     end
 
     def self.option(key, value, &block)
-      # puts "-->lol",key,@parent,"-->end lol"
       if @parent.nil?
         @root_options.push(key)
       end
       if @parent != nil
         hash = @valid_options.find { |x| x[:option] == @parent }
-        if hash[:children_options] == nil
-          hash[:children_options] = [key]
+        if hash[:child_options] == nil
+          hash[:child_options] = [key]
         else
-          hash[:children_options].push(key)
+          hash[:child_options].push(key)
         end
       end
       add_valid_option(key, value)
-      if block.nil?
-        # @parent = nil
-        a = 1
-      else
+      if block_given?
         old_parent = @parent
         @parent = key
         instance_eval(&block)
@@ -98,7 +87,7 @@ module Homebrew
 
     def self.option_string(option)
       hash = @valid_options.find { |x| x[:option] == option }
-      child_options = hash[:children_options]
+      child_options = hash[:child_options]
 
       if child_options.nil?
         option_str = "[`#{option}`]"
@@ -116,7 +105,7 @@ module Homebrew
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
       hash = @valid_options.find { |x| x[:option] == option }
       desc = hash[:desc]
-      child_options = hash[:children_options]
+      child_options = hash[:child_options]
       if child_options.nil?
         if parent_present
           return " "*begin_spaces + "With `#{option}`, #{desc}\n"
@@ -126,7 +115,8 @@ module Homebrew
       else
         childs_str = ""
         child_options.each do |child_option|
-          child_str = desc_string(child_option, begin_spaces, true) # change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
+          # TODO: change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
+          child_str = desc_string(child_option, begin_spaces, true)
           childs_str += child_str
         end
         if parent_present
@@ -159,41 +149,6 @@ module Homebrew
       end.join.strip
       @help_output = help_lines.join("\n")
     end
-
-    # def self.generate_help_and_manpage_output
-    #   valid_options_and_suboptions = {}
-    #   @valid_options.each do |valid_option_hash|
-    #     option_name = valid_option_hash[:option]
-    #     suboptions = valid_option_hash[:children_options]
-    #     if @valid_options.map{|x| x[:children_options]}.flatten.include?(option_name) == false
-    #       valid_options_and_suboptions[option_name] = suboptions
-    #     end
-    #   end
-    #   help_lines = "  " + <<-EOS.undent
-    #     * `#{@command_name}` #{valid_options_and_suboptions.map { |k, v| "[`#{k}`#{" [`#{v.join "`][`" }`]" if v.nil? == false}]" }.join(" ")}:
-    #         #{@description}
-
-    #   EOS
-    #   for i in valid_options_and_suboptions
-    #     help_lines += "    " + <<-EOS.undent
-    #       If `#{i[0]}` is passed, #{@valid_options.find {|hash| hash[:option] == i[0]}[:desc]}
-    #     EOS
-    #     next if i[1] == nil
-    #     for children_option in i[1]
-    #       help_lines += "    " + <<-EOS.undent
-    #           With `#{children_option}`, #{@valid_options.find {|hash| hash[:option] == children_option}[:desc]}
-    #       EOS
-    #     end
-    #   end
-    #   @man_output = help_lines
-    #   help_lines = help_lines.split("\n")
-    #   help_lines.map! do |line|
-    #     line
-    #         .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
-    #         .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
-    #   end.join.strip
-    #   @help_output = help_lines.join("\n")
-    # end
 
     def self.help_output
       @help_output
