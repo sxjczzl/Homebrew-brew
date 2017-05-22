@@ -13,14 +13,43 @@ module Homebrew
 
     def self.options(&block)
       initialize
+      @parent = nil
       instance_eval(&block)
       generate_help_and_manpage_output
+      puts "valid_options: ", @valid_options
       # check_invalid_options(ARGV.options_only)
     end
 
-    def self.option(key, value = "No description for this option is available", **keyword_args)
-      children_options = keyword_args[:children_options]
-      @valid_options.push({option: key, desc: value, children_options: children_options})
+    # def self.option(key, value = "No description for this option is available", **keyword_args)
+    #   children_options = keyword_args[:children_options]
+    #   @valid_options.push({option: key, desc: value, children_options: children_options})
+    # end
+
+    def self.add_valid_option(option, desc)
+      valid_option = {:option => option, :desc => desc, :children_options => nil}
+      @valid_options.push(valid_option)
+    end
+
+    def self.option(key, value, &block)
+      # puts "-->lol",key,@parent,"-->end lol"
+      if @parent != nil
+        hash = @valid_options.find { |x| x[:option] == @parent }
+        if hash[:children_options] == nil
+          hash[:children_options] = [key]
+        else
+          hash[:children_options].push(key)
+        end
+      end
+      add_valid_option(key, value)
+      if block.nil?
+        # @parent = nil
+        a = 1
+      else
+        old_parent = @parent
+        @parent = key
+        instance_eval(&block)
+        @parent = old_parent
+      end
     end
 
     def self.desc(desc)
