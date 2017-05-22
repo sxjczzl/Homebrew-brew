@@ -15,12 +15,19 @@ module Homebrew
     options do
       desc "Show a list of built-in and external commands."
       option "--quiet", "list only the names of commands without the header." do
-        option "bar", "go to bar" do
-          option "foo", "do foo"
-        end
         option "--include-aliases", "the aliases of internal commands will be included."
       end
-      option "quiet1", "do quiet1"
+      # TODO: Move the following test case into the command_spec
+      # option "--quiet", "list only the names of commands without the header." do
+      #   option "--bar", "go to bar" do
+      #     option "--foo", "do foo" do
+      #       option "--foo child", "do foo"
+      #     end
+      #     option "--foo1", "do foo"
+      #   end
+      #   option "--include-aliases", "the aliases of internal commands will be included."
+      # end
+      # option "--quiet1", "do quiet1"
     end
 
     def self.call
