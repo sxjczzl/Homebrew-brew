@@ -17,6 +17,9 @@ module Homebrew
       @parent = nil
       instance_eval(&block)
       generate_help_and_manpage_output
+      # puts "start help_output",@help_output,"end_help_output"
+      # puts
+      # puts "start man_output",@man_output,"end_man_output"
       # puts "valid_options: ", @valid_options
       # puts "root option: ", @root_options, "end root options"
       # check_invalid_options(ARGV.options_only)
@@ -142,12 +145,12 @@ module Homebrew
         option_str += option_string(root_option)
       end
       help_lines = "  " + <<-EOS.undent
-        * `#{@command_name}` #{option_str}
+        * `#{@command_name}` #{option_str}:
             #{@description}
 
         #{desc_str}
       EOS
-      @man_output = help_lines
+      @man_output = help_lines.slice(0..-2)
       help_lines = help_lines.split("\n")
       help_lines.map! do |line|
         line
@@ -165,7 +168,7 @@ module Homebrew
     #     if @valid_options.map{|x| x[:children_options]}.flatten.include?(option_name) == false
     #       valid_options_and_suboptions[option_name] = suboptions
     #     end
-    #   end        
+    #   end
     #   help_lines = "  " + <<-EOS.undent
     #     * `#{@command_name}` #{valid_options_and_suboptions.map { |k, v| "[`#{k}`#{" [`#{v.join "`][`" }`]" if v.nil? == false}]" }.join(" ")}:
     #         #{@description}
