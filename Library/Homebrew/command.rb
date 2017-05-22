@@ -5,7 +5,6 @@ module Homebrew
     def self.initialize
       @valid_options = []
       @description = nil
-      # TODO: set the @command_name dynamically
       @command_name = nil
       @help_output = nil
       @man_output = nil
