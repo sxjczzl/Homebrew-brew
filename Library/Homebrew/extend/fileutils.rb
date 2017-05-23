@@ -108,13 +108,13 @@ module FileUtils
 
   # Run `make` 3.81 or newer.
   # Uses the system make on Leopard and newer, and the
-  # path to the actually-installed make on Tiger or older.
+  # name of the actually-installed make on Tiger or older.
   def make(*args)
     if Utils.popen_read("/usr/bin/make", "--version").match(/Make (\d\.\d+)/)[1] > "3.80"
-      system "/usr/bin/make", *args
+      system "make", *args
     else
       make = Formula["make"].opt_bin/"make"
-      make_path = make.exist? ? make.to_s : (Formula["make"].opt_bin/"gmake").to_s
+      make_path = make.exist? ? "make" : "gmake"
       system make_path, *args
     end
   end
