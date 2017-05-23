@@ -111,6 +111,17 @@ module Hbc
 
         EOS
       end
+
+      def unverified(discussion_url)
+        puts <<-EOS.undent
+        #{@cask}'s sha256 was updated WITHOUT verification.
+
+        As with any app, use at your own risk.
+
+          #{Formatter.url("#{discussion_url}")}
+
+        EOS
+      end
     end
   end
 end
