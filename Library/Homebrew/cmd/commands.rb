@@ -59,8 +59,6 @@ module Homebrew
       end
     end
 
-    private
-
     def self.internal_commands
       find_internal_commands HOMEBREW_LIBRARY_PATH/"cmd"
     end
@@ -84,5 +82,7 @@ module Homebrew
         cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
       end
     end
+
+    private_class_method :internal_commands, :internal_developer_commands, :external_commands, :find_internal_commands
   end
 end

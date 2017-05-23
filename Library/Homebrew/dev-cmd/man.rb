@@ -58,9 +58,9 @@ module Homebrew
 
   def read_the_commands_file(source_file)
     source_file.read.lines
-                        .grep(/^#:/)
-                        .map { |line| line.slice(2..-1) }
-                        .join
+               .grep(/^#:/)
+               .map { |line| line.slice(2..-1) }
+               .join
   end
 
   def path_glob_commands_from_dsl(glob)
@@ -73,14 +73,14 @@ module Homebrew
 
       if cmd.fnmatch?("*.sh")
         output = read_the_commands_file(source_file)
-        if !(output.strip.empty? || output.include?("@hide_from_man_page"))
+        unless output.strip.empty? || output.include?("@hide_from_man_page")
           all << output
         end
         next
       end
 
       require "cmd/#{cmd}"
-      class_name = cmd.to_s.gsub(/^--/, "").gsub(/-/, "_")
+      class_name = cmd.to_s.gsub(/^--/, "").tr("-", "_")
       class_name = "#{class_name.to_s.capitalize}Command"
       if Homebrew.const_defined?(class_name)
         class_instance = Homebrew.const_get(class_name)
@@ -88,7 +88,7 @@ module Homebrew
         all << output
       else
         output = read_the_commands_file(source_file)
-        if !(output.strip.empty? || output.include?("@hide_from_man_page"))
+        unless output.strip.empty? || output.include?("@hide_from_man_page")
           all << output
         end
       end

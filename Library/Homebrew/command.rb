@@ -1,6 +1,9 @@
 module Homebrew
   class Command
     attr_reader :command_name, :valid_options, :description, :help_output, :man_output
+    class << self
+      attr_reader :help_output, :man_output
+    end
 
     def self.initialize
       @valid_options = []
@@ -23,7 +26,7 @@ module Homebrew
     end
 
     def self.add_valid_option(option, desc)
-      valid_option = {:option => option, :desc => desc, :child_options => nil}
+      valid_option = { option: option, desc: desc, child_options: nil }
       @valid_options.push(valid_option)
     end
 
@@ -31,21 +34,20 @@ module Homebrew
       if @parent.nil?
         @root_options.push(key)
       end
-      if @parent != nil
+      unless @parent.nil?
         hash = @valid_options.find { |x| x[:option] == @parent }
-        if hash[:child_options] == nil
+        if hash[:child_options].nil?
           hash[:child_options] = [key]
         else
           hash[:child_options].push(key)
         end
       end
       add_valid_option(key, value)
-      if block_given?
-        old_parent = @parent
-        @parent = key
-        instance_eval(&block)
-        @parent = old_parent
-      end
+      return unless block_given?
+      old_parent = @parent
+      @parent = key
+      instance_eval(&block)
+      @parent = old_parent
     end
 
     def self.desc(desc)
@@ -57,10 +59,9 @@ module Homebrew
     end
 
     def self.get_error_message(argv_options_only)
-      invalid_options = (argv_options_only - @valid_options.map{ |x| x[:option]}).uniq
+      invalid_options = (argv_options_only - @valid_options.map { |x| x[:option] }).uniq
       return nil if invalid_options.empty?
       invalid_option_pluralize = Formatter.pluralize(invalid_options.length, "invalid option")
-      valid_option_pluralize = Formatter.pluralize(@valid_options.length, "valid option")
       invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options.join " "}"
       error_message = nil
       if @valid_options.empty?
@@ -88,17 +89,14 @@ module Homebrew
       hash = @valid_options.find { |x| x[:option] == option }
       child_options = hash[:child_options]
 
-      if child_options.nil?
-        option_str = "[`#{option}`]"
-        return option_str
-      else
-        childs_str = ""
-        child_options.each do |child_option|
-          child_str = option_string(child_option)
-          childs_str += child_str
-        end
-        option_str = "[`#{option}` #{childs_str}]"
+      return "[`#{option}`]" if child_options.nil?
+
+      childs_str = ""
+      child_options.each do |child_option|
+        child_str = option_string(child_option)
+        childs_str += child_str
       end
+      "[`#{option}` #{childs_str}]"
     end
 
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
@@ -106,11 +104,8 @@ module Homebrew
       desc = hash[:desc]
       child_options = hash[:child_options]
       if child_options.nil?
-        if parent_present
-          return " "*begin_spaces + "With `#{option}`, #{desc}\n"
-        else
-          return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n"
-        end
+        return " "*begin_spaces + "With `#{option}`, #{desc}\n" if parent_present
+        return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n"
       else
         childs_str = ""
         child_options.each do |child_option|
@@ -118,11 +113,8 @@ module Homebrew
           child_str = desc_string(child_option, begin_spaces, true)
           childs_str += child_str
         end
-        if parent_present
-          return " "*begin_spaces + "With `#{option}`, #{desc}\n" + "#{childs_str}"
-        else
-          return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n" + "#{childs_str}"
-        end
+        return " "*begin_spaces + "With `#{option}`, #{desc}\n#{childs_str}" if parent_present
+        return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n#{childs_str}"
       end
     end
 
@@ -143,18 +135,10 @@ module Homebrew
       help_lines = help_lines.split("\n")
       help_lines.map! do |line|
         line
-            .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
-            .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
+          .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
+          .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
       end.join.strip
       @help_output = help_lines.join("\n")
-    end
-
-    def self.help_output
-      @help_output
-    end
-
-    def self.man_output
-      @man_output
     end
   end
 end
