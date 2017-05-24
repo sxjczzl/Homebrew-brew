@@ -54,18 +54,10 @@ class LinkageChecker
   end
 
   def check_undeclared_deps
-    filter_out = proc do |dep|
-      next true if dep.build?
-      next false unless dep.optional? || dep.recommended?
-      formula.build.without?(dep)
-    end
-    declared_deps = formula.deps.reject { |dep| filter_out.call(dep) }.map(&:name)
-    declared_requirement_deps = formula.requirements.reject { |req| filter_out.call(req) }.map(&:default_formula).compact
-    declared_dep_names = (declared_deps + declared_requirement_deps).map { |dep| dep.split("/").last }
+    declared_deps = keg.to_formula.runtime_dependencies.map { |dep| dep.to_formula.full_name }
     undeclared_deps = @brewed_dylibs.keys.select do |full_name|
-      name = full_name.split("/").last
-      next false if name == formula.name
-      !declared_dep_names.include?(name)
+      next false if full_name == formula.full_name
+      !declared_deps.include?(full_name)
     end
     undeclared_deps.sort do |a, b|
       if a.include?("/") && !b.include?("/")
