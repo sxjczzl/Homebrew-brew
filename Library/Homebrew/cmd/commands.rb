@@ -23,7 +23,7 @@ module Homebrew
 
     def self.call
       # TODO: Put this check_invalid_options() method such that it doesn't have to be here
-      check_invalid_options()
+      check_invalid_options
 
       if argv.include? "--quiet"
         cmds = internal_commands + external_commands
