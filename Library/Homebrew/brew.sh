@@ -220,6 +220,7 @@ case "$HOMEBREW_COMMAND" in
   environment) HOMEBREW_COMMAND="--env" ;;
   --config)    HOMEBREW_COMMAND="config" ;;
 esac
+HOMEBREW_COMMAND_ARGS=("$@")
 
 if [[ -z "$HOMEBREW_DEVELOPER" ]]
 then
@@ -295,7 +296,7 @@ update-preinstall() {
   # Allow auto-update migration now we have a fix in place (below in this function).
   export HOMEBREW_ENABLE_AUTO_UPDATE_MIGRATION="1"
 
-  if [[ "$HOMEBREW_COMMAND" = "install" || "$HOMEBREW_COMMAND" = "upgrade" || "$HOMEBREW_COMMAND" = "tap" ]]
+  if [[ "$HOMEBREW_COMMAND" = "install" || "$HOMEBREW_COMMAND" = "upgrade" || ( "$HOMEBREW_COMMAND" = "tap" && $HOMEBREW_ARG_COUNT -gt 1 && ! "${HOMEBREW_COMMAND_ARGS[0]}" =~ ^--list ) ]]
   then
     if [[ -z "$HOMEBREW_VERBOSE" ]]
     then
