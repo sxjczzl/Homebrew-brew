@@ -118,7 +118,7 @@ module Hbc
 
         As with any app, use at your own risk.
 
-          #{Formatter.url("#{discussion_url}")}
+          #{Formatter.url(discussion_url.to_s)}
 
         EOS
       end
