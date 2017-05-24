@@ -8,6 +8,7 @@ module Homebrew
   module_function
 
   def commands
+    # TODO: goal is to no longer require def commands at all
     CommandsCommand.call
   end
 
@@ -18,17 +19,6 @@ module Homebrew
       option "--quiet", "list only the names of commands without the header." do
         option "--include-aliases", "the aliases of internal commands will be included."
       end
-      # TODO: Move the following test case into the command_spec
-      # option "--quiet", "list only the names of commands without the header." do
-      #   option "--bar", "go to bar" do
-      #     option "--foo", "do foo" do
-      #       option "--foo child", "do foo"
-      #     end
-      #     option "--foo1", "do foo"
-      #   end
-      #   option "--include-aliases", "the aliases of internal commands will be included."
-      # end
-      # option "--quiet1", "do quiet1"
     end
 
     def self.call
