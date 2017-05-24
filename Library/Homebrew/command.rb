@@ -1,7 +1,7 @@
 module Homebrew
   class Command
     class << self
-      attr_reader :command_name, :valid_options, :description, :help_output, :man_output
+      attr_reader :command_name, :valid_options, :description, :help_output, :man_output, :argv
     end
 
     def self.initialize
@@ -11,6 +11,7 @@ module Homebrew
       @help_output = nil
       @man_output = nil
       @root_options = []
+      @argv = ARGV
     end
 
     def self.command(cmd)
@@ -81,7 +82,7 @@ module Homebrew
       error_message
     end
 
-    def self.check_invalid_options(argv_options_only)
+    def self.check_invalid_options(argv_options_only = argv.options_only)
       error_message = get_error_message(argv_options_only)
       odie error_message unless error_message.nil?
     end

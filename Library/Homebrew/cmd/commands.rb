@@ -23,12 +23,12 @@ module Homebrew
 
     def self.call
       # TODO: Put this check_invalid_options() method such that it doesn't have to be here
-      check_invalid_options(ARGV.options_only)
+      check_invalid_options()
 
-      if ARGV.include? "--quiet"
+      if argv.include? "--quiet"
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
-        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if ARGV.include? "--include-aliases"
+        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if argv.include? "--include-aliases"
         puts Formatter.columns(cmds.sort)
       else
         # Find commands in Homebrew/cmd
