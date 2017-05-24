@@ -40,14 +40,14 @@ describe Homebrew::CommandsCommand do
   include_context "custom internal commands"
 
   specify "::internal_commands" do
-    cmds = described_class.new.send(:internal_commands)
+    cmds = described_class.send(:internal_commands)
     expect(cmds).to include("rbcmd"), "Ruby commands files should be recognized"
     expect(cmds).to include("shcmd"), "Shell commands files should be recognized"
     expect(cmds).not_to include("rbdevcmd"), "Dev commands shouldn't be included"
   end
 
   specify "::internal_developer_commands" do
-    cmds = described_class.new.send(:internal_developer_commands)
+    cmds = described_class.send(:internal_developer_commands)
     expect(cmds).to include("rbdevcmd"), "Ruby commands files should be recognized"
     expect(cmds).to include("shdevcmd"), "Shell commands files should be recognized"
     expect(cmds).not_to include("rbcmd"), "Non-dev commands shouldn't be included"
@@ -64,7 +64,7 @@ describe Homebrew::CommandsCommand do
       FileUtils.touch "#{dir}/brew-t4"
 
       ENV["PATH"] += "#{File::PATH_SEPARATOR}#{dir}"
-      cmds = described_class.new.send(:external_commands)
+      cmds = described_class.send(:external_commands)
 
       expect(cmds).to include("t1"), "Executable files should be included"
       expect(cmds).to include("t2"), "Executable Ruby files should be included"
