@@ -3,7 +3,7 @@
 #:    `--only=`<test_script> runs only <test_script>_spec.rb, and `--seed`
 #:    randomizes tests with the provided value instead of a random seed.
 #:
-#:    If `--verbose` is passed, print the command that runs the tests.
+#:    If `--verbose` (or `-v`) is passed, print the command that runs the tests.
 #:
 #:    If `--coverage` is passed, also generate code coverage reports.
 #:
@@ -33,7 +33,12 @@ module Homebrew
       ENV["HOMEBREW_DEVELOPER"] = "1"
       ENV["HOMEBREW_NO_COMPAT"] = "1" if ARGV.include? "--no-compat"
       ENV["HOMEBREW_TEST_GENERIC_OS"] = "1" if ARGV.include? "--generic"
-      ENV["HOMEBREW_NO_GITHUB_API"] = "1" unless ARGV.include? "--online"
+
+      if ARGV.include? "--online"
+        ENV["HOMEBREW_TEST_ONLINE"] = "1"
+      else
+        ENV["HOMEBREW_NO_GITHUB_API"] = "1"
+      end
 
       if ARGV.include? "--official-cmd-taps"
         ENV["HOMEBREW_TEST_OFFICIAL_CMD_TAPS"] = "1"
@@ -74,20 +79,24 @@ module Homebrew
         Dir.glob("test/**/*_spec.rb").reject { |p| p =~ %r{^test/vendor/bundle/} }
       end
 
-      opts = []
-
-      if ENV["CI"]
-        opts << "--combine-stderr"
-        opts << "--serialize-stdout"
+      opts = if ENV["CI"]
+        %w[
+          --combine-stderr
+          --serialize-stdout
+        ]
+      else
+        %w[
+          --nice
+        ]
       end
 
-      args = [
-        "--color",
-        "-I", HOMEBREW_LIBRARY_PATH/"test",
-        "--require", "spec_helper",
-        "--format", "progress",
-        "--format", "ParallelTests::RSpec::RuntimeLogger",
-        "--out", "tmp/parallel_runtime_rspec.log"
+      args = ["-I", HOMEBREW_LIBRARY_PATH/"test"]
+      args += %w[
+        --color
+        --require spec_helper
+        --format progress
+        --format ParallelTests::RSpec::RuntimeLogger
+        --out tmp/parallel_runtime_rspec.log
       ]
 
       args << "--seed" << ARGV.next if ARGV.include? "--seed"
@@ -95,6 +104,10 @@ module Homebrew
       unless OS.mac?
         args << "--tag" << "~needs_macos"
         files = files.reject { |p| p =~ %r{^test/(os/mac|cask)(/.*|_spec\.rb)$} }
+      end
+
+      unless OS.linux?
+        files = files.reject { |p| p =~ %r{^test/os/linux(/.*|_spec\.rb)$} }
       end
 
       if parallel

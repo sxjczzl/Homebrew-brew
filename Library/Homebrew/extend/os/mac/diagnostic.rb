@@ -81,6 +81,12 @@ module Homebrew
         return unless MacOS::CLT.installed?
         return unless MacOS::CLT.outdated?
 
+        # Travis CI images are going to end up outdated so don't complain when
+        # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
+        # repository. This only needs to support whatever CI provider
+        # Homebrew/brew is currently using.
+        return if ENV["TRAVIS"]
+
         <<-EOS.undent
           A newer Command Line Tools release is available.
           #{MacOS::CLT.update_instructions}
@@ -257,7 +263,7 @@ module Homebrew
           SSL_CERT_DIR support was removed from Apple's curl.
           If fetching formulae fails you should:
             unset SSL_CERT_DIR
-          and remove it from #{Utils::Shell.shell_profile} if present.
+          and remove it from #{Utils::Shell.profile} if present.
         EOS
       end
 

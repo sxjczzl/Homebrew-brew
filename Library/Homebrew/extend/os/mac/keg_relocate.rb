@@ -63,9 +63,9 @@ class Keg
   # expensive recursive search if possible.
   def fixed_name(file, bad_name)
     if bad_name.start_with? PREFIX_PLACEHOLDER
-      bad_name.sub(PREFIX_PLACEHOLDER, HOMEBREW_PREFIX.to_s)
+      bad_name.sub(PREFIX_PLACEHOLDER, HOMEBREW_PREFIX)
     elsif bad_name.start_with? CELLAR_PLACEHOLDER
-      bad_name.sub(CELLAR_PLACEHOLDER, HOMEBREW_CELLAR.to_s)
+      bad_name.sub(CELLAR_PLACEHOLDER, HOMEBREW_CELLAR)
     elsif (file.dylib? || file.mach_o_bundle?) && (file.parent + bad_name).exist?
       "@loader_path/#{bad_name}"
     elsif file.mach_o_executable? && (lib + bad_name).exist?
@@ -78,19 +78,13 @@ class Keg
     end
   end
 
-  def filename_contains_metavariable?(fn)
-    fn =~ /^@(loader_|executable_|r)path/
-  end
-
   def each_install_name_for(file, &block)
     dylibs = file.dynamically_linked_libraries
-    dylibs.reject! { |fn| filename_contains_metavariable?(fn) }
+    dylibs.reject! { |fn| fn =~ /^@(loader_|executable_|r)path/ }
     dylibs.each(&block)
   end
 
   def dylib_id_for(file)
-    return file.dylib_id if filename_contains_metavariable?(file.dylib_id)
-
     # The new dylib ID should have the same basename as the old dylib ID, not
     # the basename of the file itself.
     basename = File.basename(file.dylib_id)
@@ -129,6 +123,12 @@ class Keg
     end
 
     mach_o_files
+  end
+
+  def recursive_fgrep_args
+    # Don't recurse into symlinks; the man page says this is the default, but
+    # it's wrong. -O is a BSD-grep-only option.
+    "-lrO"
   end
 
   def self.file_linked_libraries(file, string)

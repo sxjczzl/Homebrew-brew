@@ -31,7 +31,7 @@ module Homebrew
             #{Formatter.url("https://pip.readthedocs.io/en/stable/installing/")}
           EOS
         when "pil" then <<-EOS.undent
-          Instead of PIL, consider `pip install pillow` or `brew install Homebrew/python/pillow`.
+          Instead of PIL, consider `pip install pillow` or `brew install Homebrew/science/pillow`.
           EOS
         when "macruby" then <<-EOS.undent
           MacRuby is not packaged and is on an indefinite development hiatus.
@@ -63,10 +63,6 @@ module Homebrew
             brew install leiningen
           and then follow the tutorial:
             #{Formatter.url("https://github.com/technomancy/leiningen/blob/stable/doc/TUTORIAL.md")}
-          EOS
-        when "osmium" then <<-EOS.undent
-          The creator of Osmium requests that it not be packaged and that people
-          use the GitHub master branch instead.
           EOS
         when "gfortran" then <<-EOS.undent
           GNU Fortran is now provided as part of GCC, and can be installed with:
@@ -105,10 +101,14 @@ module Homebrew
         message = nil
 
         Tap.each do |old_tap|
-          new_tap_name = old_tap.tap_migrations[name]
-          next unless new_tap_name
+          new_tap = old_tap.tap_migrations[name]
+          next unless new_tap
+
+          new_tap_user, new_tap_repo, = new_tap.split("/")
+          new_tap_name = "#{new_tap_user}/#{new_tap_repo}"
+
           message = <<-EOS.undent
-            It was migrated from #{old_tap} to #{new_tap_name}.
+            It was migrated from #{old_tap} to #{new_tap}.
             You can access it again by running:
               brew tap #{new_tap_name}
           EOS
@@ -122,7 +122,7 @@ module Homebrew
         path = Formulary.path name
         return if File.exist? path
         tap = Tap.from_path(path)
-        return unless File.exist? tap.path
+        return if tap.nil? || !File.exist?(tap.path)
         relative_path = path.relative_path_from tap.path
 
         tap.path.cd do

@@ -5,10 +5,10 @@ require "tab"
 require "test/support/fixtures/testball"
 require "test/support/fixtures/testball_bottle"
 
-RSpec::Matchers.define_negated_matcher :need_bottle, :be_bottle_unneeded
-RSpec::Matchers.alias_matcher :have_disabled_bottle, :be_bottle_disabled
-
 describe FormulaInstaller do
+  define_negated_matcher :need_bottle, :be_bottle_unneeded
+  alias_matcher :have_disabled_bottle, :be_bottle_disabled
+
   matcher :be_poured_from_bottle do
     match(&:poured_from_bottle)
   end
@@ -156,6 +156,13 @@ describe FormulaInstaller do
       let(:satisfied?) { true }
       let(:satisfied_by_formula?) { false }
       let(:installed?) { false }
+      it { is_expected.to be false }
+    end
+
+    context "it returns false when requirement is satisfied but default formula is installed" do
+      let(:satisfied?) { true }
+      let(:satisfied_by_formula?) { false }
+      let(:installed?) { true }
       it { is_expected.to be false }
     end
 

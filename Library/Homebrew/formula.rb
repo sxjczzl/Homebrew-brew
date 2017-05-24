@@ -13,6 +13,7 @@ require "pkg_version"
 require "tap"
 require "keg"
 require "migrator"
+require "extend/ENV"
 
 # A formula provides instructions and metadata for Homebrew to install a piece
 # of software. Every Homebrew formula is a {Formula}.
@@ -252,12 +253,14 @@ class Formula
 
   public
 
-  # The alias path that was used to install this formula, if present.
+  # The alias path that was used to install this formula, if it exists.
   # Can differ from alias_path, which is the alias used to find the formula,
   # and is specified to this instance.
   def installed_alias_path
     path = build.source["path"] if build.is_a?(Tab)
-    path if path =~ %r{#{HOMEBREW_TAP_DIR_REGEX}/Aliases}
+    return unless path =~ %r{#{HOMEBREW_TAP_DIR_REGEX}/Aliases}
+    return unless File.symlink?(path)
+    path
   end
 
   def installed_alias_name
@@ -1002,19 +1005,26 @@ class Formula
   def post_install; end
 
   # @private
-  def post_install_defined?
-    method(:post_install).owner == self.class
-  end
-
-  # @private
   def run_post_install
     @prefix_returns_versioned_prefix = true
     build = self.build
     self.build = Tab.for_formula(self)
+
     old_tmpdir = ENV["TMPDIR"]
     old_temp = ENV["TEMP"]
     old_tmp = ENV["TMP"]
+    old_path = ENV["HOMEBREW_PATH"]
+
     ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
+    ENV["HOMEBREW_PATH"] = nil
+
+    ENV.clear_sensitive_environment!
+
+    Pathname.glob("#{bottle_prefix}/{etc,var}/**/*") do |path|
+      path.extend(InstallRenamed)
+      path.cp_path_sub(bottle_prefix, HOMEBREW_PREFIX)
+    end
+
     with_logging("post_install") do
       post_install
     end
@@ -1023,6 +1033,7 @@ class Formula
     ENV["TMPDIR"] = old_tmpdir
     ENV["TEMP"] = old_temp
     ENV["TMP"] = old_tmp
+    ENV["HOMEBREW_PATH"] = old_path
     @prefix_returns_versioned_prefix = false
   end
 
@@ -1542,11 +1553,11 @@ class Formula
   def missing_dependencies(hide: nil)
     hide ||= []
     missing_dependencies = recursive_dependencies do |dependent, dep|
-      if dep.optional? || dep.recommended?
+      if dep.build?
+        Dependency.prune
+      elsif dep.optional? || dep.recommended?
         tab = Tab.for_formula(dependent)
         Dependency.prune unless tab.with?(dep)
-      elsif dep.build?
-        Dependency.prune
       end
     end
 
@@ -1555,6 +1566,8 @@ class Formula
       hide.include?(d.name) || d.installed_prefixes.empty?
     end
     missing_dependencies
+  rescue FormulaUnavailableError
+    []
   end
 
   # @private
@@ -1660,9 +1673,17 @@ class Formula
     old_temp = ENV["TEMP"]
     old_tmp = ENV["TMP"]
     old_term = ENV["TERM"]
+    old_path = ENV["PATH"]
+    old_homebrew_path = ENV["HOMEBREW_PATH"]
+
     ENV["CURL_HOME"] = old_curl_home || old_home
     ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
     ENV["TERM"] = "dumb"
+    ENV["PATH"] = PATH.new(old_path).append(HOMEBREW_PREFIX/"bin")
+    ENV["HOMEBREW_PATH"] = nil
+
+    ENV.clear_sensitive_environment!
+
     mktemp("#{name}-test") do |staging|
       staging.retain! if ARGV.keep_tmp?
       @testpath = staging.tmpdir
@@ -1685,6 +1706,8 @@ class Formula
     ENV["TEMP"] = old_temp
     ENV["TMP"] = old_tmp
     ENV["TERM"] = old_term
+    ENV["PATH"] = old_path
+    ENV["HOMEBREW_PATH"] = old_homebrew_path
     @prefix_returns_versioned_prefix = false
   end
 
@@ -1888,7 +1911,6 @@ class Formula
   def exec_cmd(cmd, args, out, logfn)
     ENV["HOMEBREW_CC_LOG_PATH"] = logfn
 
-    # TODO: system "xcodebuild" is deprecated, this should be removed soon.
     ENV.remove_cc_etc if cmd.to_s.start_with? "xcodebuild"
 
     # Turn on argument filtering in the superenv compiler wrapper.
@@ -1921,17 +1943,28 @@ class Formula
       mkdir_p env_home
 
       old_home = ENV["HOME"]
-      ENV["HOME"] = env_home
       old_curl_home = ENV["CURL_HOME"]
-      ENV["CURL_HOME"] = old_curl_home || old_home
+      old_path = ENV["HOMEBREW_PATH"]
+
+      unless ARGV.interactive?
+        ENV["HOME"] = env_home
+        ENV["CURL_HOME"] = old_curl_home || old_home
+      end
+      ENV["HOMEBREW_PATH"] = nil
+
       setup_home env_home
+
+      ENV.clear_sensitive_environment!
 
       begin
         yield staging
       ensure
         @buildpath = nil
-        ENV["HOME"] = old_home
-        ENV["CURL_HOME"] = old_curl_home
+        unless ARGV.interactive?
+          ENV["HOME"] = old_home
+          ENV["CURL_HOME"] = old_curl_home
+        end
+        ENV["HOMEBREW_PATH"] = old_path
       end
     end
   end
@@ -1967,7 +2000,7 @@ class Formula
 
   # The methods below define the formula DSL.
   class << self
-    include BuildEnvironmentDSL
+    include BuildEnvironment::DSL
 
     # The reason for why this software is not linked (by default) to
     # {::HOMEBREW_PREFIX}.
@@ -2336,7 +2369,7 @@ class Formula
     end
 
     # If this formula conflicts with another one.
-    # <pre>conflicts_with "imagemagick", :because => "because this is just a stupid example"</pre>
+    # <pre>conflicts_with "imagemagick", :because => "because both install 'convert' binaries"</pre>
     def conflicts_with(*names)
       opts = names.last.is_a?(Hash) ? names.pop : {}
       names.each { |name| conflicts << FormulaConflict.new(name, opts[:because]) }
@@ -2392,7 +2425,6 @@ class Formula
     #   version '4.8.1'
     # end</pre>
     def fails_with(compiler, &block)
-      # TODO: deprecate this in future.
       # odeprecated "fails_with :llvm" if compiler == :llvm
       specs.each { |spec| spec.fails_with(compiler, &block) }
     end

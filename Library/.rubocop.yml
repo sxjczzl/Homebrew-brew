@@ -8,7 +8,19 @@ AllCops:
 
 require: ./Homebrew/rubocops.rb
 
-Homebrew/CorrectBottleBlock:
+FormulaAuditStrict/BottleBlock:
+  Enabled: true
+
+FormulaAuditStrict/Desc:
+  Enabled: true
+
+FormulaAuditStrict/ComponentsOrder:
+  Enabled: true
+
+FormulaAuditStrict/ComponentsRedundancy:
+  Enabled: true
+
+FormulaAudit/Homepage:
   Enabled: true
 
 Metrics/AbcSize:
@@ -31,6 +43,11 @@ Metrics/MethodLength:
 
 Metrics/ModuleLength:
   CountComments: false
+  Exclude:
+    - '**/bin/**/*'
+    - '**/cmd/**/*'
+    - '**/lib/**/*'
+    - '**/spec/**/*'
 
 Metrics/PerceivedComplexity:
   Enabled: false

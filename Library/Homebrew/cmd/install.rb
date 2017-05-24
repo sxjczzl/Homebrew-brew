@@ -4,7 +4,7 @@
 #:    <formula> is usually the name of the formula to install, but it can be specified
 #:    in several different ways. See [SPECIFYING FORMULAE][].
 #:
-#:    If `--debug` is passed and brewing fails, open an interactive debugging
+#:    If `--debug` (or `-d`) is passed and brewing fails, open an interactive debugging
 #:    session with access to IRB or a shell inside the temporary build directory.
 #:
 #:    If `--env=std` is passed, use the standard build environment instead of superenv.
@@ -24,7 +24,7 @@
 #:    `gcc-4.2` for Apple's GCC 4.2, or `gcc-4.9` for a Homebrew-provided GCC
 #:    4.9.
 #:
-#:    If `--build-from-source` or `-s` is passed, compile the specified <formula> from
+#:    If `--build-from-source` (or `-s`) is passed, compile the specified <formula> from
 #:    source even if a bottle is provided. Dependencies will still be installed
 #:    from bottles if they are available.
 #:
@@ -48,11 +48,12 @@
 #:    during installation.
 #:
 #:  * `install` `--interactive` [`--git`] <formula>:
-#:    Download and patch <formula>, then open a shell. This allows the user to
-#:    run `./configure --help` and otherwise determine how to turn the software
-#:    package into a Homebrew formula.
+#:    If `--interactive` (or `-i`) is passed, download and patch <formula>, then
+#:    open a shell. This allows the user to run `./configure --help` and
+#:    otherwise determine how to turn the software package into a Homebrew
+#:    formula.
 #:
-#:    If `--git` is passed, Homebrew will create a Git repository, useful for
+#:    If `--git` (or `-g`) is passed, Homebrew will create a Git repository, useful for
 #:    creating patches to the software.
 
 require "missing_formula"
@@ -193,14 +194,20 @@ module Homebrew
         next unless f.opt_prefix.directory?
         keg = Keg.new(f.opt_prefix.resolved_path)
         tab = Tab.for_keg(keg)
-        tab.installed_on_request = true
-        tab.write
+        unless tab.installed_on_request
+          tab.installed_on_request = true
+          tab.write
+        end
       end
 
       perform_preinstall_checks
 
-      formulae.each { |f| install_formula(f) }
-    rescue FormulaClassUnavailableError => e
+      formulae.each do |f|
+        Migrator.migrate_if_needed(f)
+        install_formula(f)
+      end
+    rescue FormulaUnreadableError, FormulaClassUnavailableError,
+           TapFormulaUnreadableError, TapFormulaClassUnavailableError => e
       # Need to rescue before `FormulaUnavailableError` (superclass of this)
       # is handled, as searching for a formula doesn't make sense here (the
       # formula was found, but there's a problem with its implementation).
@@ -234,6 +241,8 @@ module Homebrew
         puts "To install one of them, run (for example):\n  brew install #{formulae_search_results.first}"
       end
 
+      # Do not search taps if the formula name is qualified
+      return if e.name.include?("/")
       ohai "Searching taps..."
       taps_search_results = search_taps(query)
       case taps_search_results.length

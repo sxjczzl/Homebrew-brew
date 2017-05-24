@@ -5,7 +5,7 @@
 #:    If `--merge` is specified then `git merge` is used to include updates
 #:    (rather than `git rebase`).
 #:
-#:    If `--force` is specified then always do a slower, full update check even
+#:    If `--force` (or `-f`) is specified then always do a slower, full update check even
 #:    if unnecessary.
 
 # Hide shellcheck complaint:
@@ -23,7 +23,7 @@ git() {
 }
 
 git_init_if_necessary() {
-  if [[ -n "$HOMEBREW_MACOS" ]]
+  if [[ -n "$HOMEBREW_MACOS" ]] || [[ -n "$HOMEBREW_FORCE_HOMEBREW_ORG" ]]
   then
     BREW_OFFICIAL_REMOTE="https://github.com/Homebrew/brew"
     CORE_OFFICIAL_REMOTE="https://github.com/Homebrew/homebrew-core"

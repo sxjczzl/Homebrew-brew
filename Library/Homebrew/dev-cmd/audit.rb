@@ -1,4 +1,4 @@
-#:  * `audit` [`--strict`] [`--fix`] [`--online`] [`--new-formula`] [`--display-cop-names`] [`--display-filename`] [<formulae>]:
+#:  * `audit` [`--strict`] [`--fix`] [`--online`] [`--new-formula`] [`--display-cop-names`] [`--display-filename`] [`--only=`<method>|`--except=`<method>] [`--only-cops=`[COP1,COP2..]|`--except-cops=`[COP1,COP2..]] [<formulae>]:
 #:    Check <formulae> for Homebrew coding style violations. This should be
 #:    run before submitting a new formula.
 #:
@@ -22,6 +22,14 @@
 #:
 #:    If `--display-filename` is passed, every line of output is prefixed with the
 #:    name of the file or formula being audited, to make the output easy to grep.
+#:
+#:    If `--only` is passed, only the methods named `audit_<method>` will be run.
+#:
+#:    If `--except` is passed, the methods named `audit_<method>` will not be run.
+#:
+#:    If `--only-cops` is passed, only the given Rubocop cop(s)' violations would be checked.
+#:
+#:    If `--except-cops` is passed, the given Rubocop cop(s)' checks would be skipped.
 #:
 #:    `audit` exits with a non-zero status if any errors are found. This is useful,
 #:    for instance, for implementing pre-commit hooks.
@@ -65,15 +73,30 @@ module Homebrew
       files = ARGV.resolved_formulae.map(&:path)
     end
 
-    if strict
-      options = { fix: ARGV.flag?("--fix"), realpath: true }
-      # Check style in a single batch run up front for performance
-      style_results = check_style_json(files, options)
+    only_cops = ARGV.value("only-cops").to_s.split(",")
+    except_cops = ARGV.value("except-cops").to_s.split(",")
+    if !only_cops.empty? && !except_cops.empty?
+      odie "--only-cops and --except-cops cannot be used simultaneously!"
+    elsif (!only_cops.empty? || !except_cops.empty?) && strict
+      odie "--only-cops/--except-cops and --strict cannot be used simultaneously"
     end
+
+    options = { fix: ARGV.flag?("--fix"), realpath: true }
+
+    if !only_cops.empty?
+      options[:only_cops] = only_cops
+    elsif !except_cops.empty?
+      options[:except_cops] = except_cops
+    elsif !strict
+      options[:except_cops] = [:FormulaAuditStrict]
+    end
+
+    # Check style in a single batch run up front for performance
+    style_results = check_style_json(files, options)
 
     ff.each do |f|
       options = { new_formula: new_formula, strict: strict, online: online }
-      options[:style_offenses] = style_results.file_offenses(f.path) if strict
+      options[:style_offenses] = style_results.file_offenses(f.path)
       fa = FormulaAuditor.new(f, options)
       fa.audit
 
@@ -244,70 +267,6 @@ class FormulaAuditor
     end
   end
 
-  def component_problem(before, after, offset = 0)
-    problem "`#{before[1]}` (line #{before[0] + offset}) should be put before `#{after[1]}` (line #{after[0] + offset})"
-  end
-
-  # scan in the reverse direction for remaining problems but report problems
-  # in the forward direction so that contributors don't reverse the order of
-  # lines in the file simply by following instructions
-  def audit_components(reverse = true, previous_pair = nil)
-    component_list = [
-      [/^  include Language::/,            "include directive"],
-      [/^  desc ["'][\S\ ]+["']/,          "desc"],
-      [/^  homepage ["'][\S\ ]+["']/,      "homepage"],
-      [/^  url ["'][\S\ ]+["']/,           "url"],
-      [/^  mirror ["'][\S\ ]+["']/,        "mirror"],
-      [/^  version ["'][\S\ ]+["']/,       "version"],
-      [/^  (sha1|sha256) ["'][\S\ ]+["']/, "checksum"],
-      [/^  revision/,                      "revision"],
-      [/^  version_scheme/,                "version_scheme"],
-      [/^  head ["'][\S\ ]+["']/,          "head"],
-      [/^  stable do/,                     "stable block"],
-      [/^  bottle do/,                     "bottle block"],
-      [/^  devel do/,                      "devel block"],
-      [/^  head do/,                       "head block"],
-      [/^  bottle (:unneeded|:disable)/,   "bottle modifier"],
-      [/^  keg_only/,                      "keg_only"],
-      [/^  option/,                        "option"],
-      [/^  depends_on/,                    "depends_on"],
-      [/^  conflicts_with/,                "conflicts_with"],
-      [/^  (go_)?resource/,                "resource"],
-      [/^  def install/,                   "install method"],
-      [/^  def caveats/,                   "caveats method"],
-      [/^  (plist_options|def plist)/,     "plist block"],
-      [/^  test do/,                       "test block"],
-    ]
-    if previous_pair
-      previous_before = previous_pair[0]
-      previous_after = previous_pair[1]
-    end
-    offset = previous_after && previous_after[0] && previous_after[0] >= 1 ? previous_after[0] - 1 : 0
-    present = component_list.map do |regex, name|
-      lineno = if reverse
-        text.reverse_line_number regex
-      else
-        text.line_number regex, offset
-      end
-      next unless lineno
-      [lineno, name]
-    end.compact
-    no_problem = true
-    present.each_cons(2) do |c1, c2|
-      if reverse
-        # scan in the forward direction from the offset
-        audit_components(false, [c1, c2]) if c1[0] > c2[0] # at least one more offense
-      elsif c1[0] > c2[0] && (offset.zero? || previous_pair.nil? || (c1[0] + offset) != previous_before[0] || (c2[0] + offset) != previous_after[0])
-        component_problem c1, c2, offset
-        no_problem = false
-      end
-    end
-    if no_problem && previous_pair
-      component_problem previous_before, previous_after
-    end
-    present
-  end
-
   def audit_file
     # Under normal circumstances (umask 0022), we expect a file mode of 644. If
     # the user's umask is more restrictive, respect that by masking out the
@@ -331,46 +290,65 @@ class FormulaAuditor
 
     problem "File should end with a newline" unless text.trailing_newline?
 
-    versioned_formulae = Dir[formula.path.to_s.gsub(/\.rb$/, "@*.rb")]
-    needs_versioned_alias = !versioned_formulae.empty? &&
-                            formula.tap &&
-                            formula.aliases.grep(/.@\d/).empty?
-    if needs_versioned_alias
-      _, last_alias_version = File.basename(versioned_formulae.sort.reverse.first)
-                                  .gsub(/\.rb$/, "")
-                                  .split("@")
-      major, minor, = formula.version.to_s.split(".")
-      alias_name = if last_alias_version.split(".").length == 1
-        "#{formula.name}@#{major}"
-      else
-        "#{formula.name}@#{major}.#{minor}"
+    if formula.versioned_formula?
+      unversioned_formula = begin
+        # build this ourselves as we want e.g. homebrew/core to be present
+        full_name = if formula.tap
+          "#{formula.tap}/#{formula.name}"
+        else
+          formula.name
+        end
+        Formulary.factory(full_name.gsub(/@.*$/, "")).path
+      rescue FormulaUnavailableError, TapFormulaAmbiguityError,
+             TapFormulaWithOldnameAmbiguityError
+        Pathname.new formula.path.to_s.gsub(/@.*\.rb$/, ".rb")
       end
-      problem <<-EOS.undent
-        Formula has other versions so create an alias:
-          cd #{formula.tap.alias_dir}
-          ln -s #{formula.path.to_s.gsub(formula.tap.path, "..")} #{alias_name}
-      EOS
-    end
+      unless unversioned_formula.exist?
+        unversioned_name = unversioned_formula.basename(".rb")
+        problem "#{formula} is versioned but no #{unversioned_name} formula exists"
+      end
+    elsif ARGV.build_stable? &&
+          !(versioned_formulae = Dir[formula.path.to_s.gsub(/\.rb$/, "@*.rb")]).empty?
+      versioned_aliases = formula.aliases.grep(/.@\d/)
+      _, last_alias_version =
+        File.basename(versioned_formulae.sort.reverse.first)
+            .gsub(/\.rb$/, "").split("@")
+      major, minor, = formula.version.to_s.split(".")
+      alias_name_major = "#{formula.name}@#{major}"
+      alias_name_major_minor = "#{alias_name_major}.#{minor}"
+      alias_name = if last_alias_version.split(".").length == 1
+        alias_name_major
+      else
+        alias_name_major_minor
+      end
+      valid_alias_names = [alias_name_major, alias_name_major_minor]
 
-    return unless @strict
+      if formula.tap && !formula.tap.core_tap?
+        valid_alias_names.map! { |a| "#{formula.tap}/#{a}" }
+      end
 
-    present = audit_components
+      valid_versioned_aliases = versioned_aliases & valid_alias_names
+      invalid_versioned_aliases = versioned_aliases - valid_alias_names
 
-    present.map!(&:last)
-    if present.include?("stable block")
-      %w[url checksum mirror].each do |component|
-        if present.include?(component)
-          problem "`#{component}` should be put inside `stable block`"
+      if valid_versioned_aliases.empty?
+        if formula.tap
+          problem <<-EOS.undent
+            Formula has other versions so create a versioned alias:
+              cd #{formula.tap.alias_dir}
+              ln -s #{formula.path.to_s.gsub(formula.tap.path, "..")} #{alias_name}
+          EOS
+        else
+          problem "Formula has other versions so create an alias named #{alias_name}."
         end
       end
-    end
 
-    if present.include?("head") && present.include?("head block")
-      problem "Should not have both `head` and `head do`"
+      unless invalid_versioned_aliases.empty?
+        problem <<-EOS.undent
+          Formula has invalid versioned aliases:
+            #{invalid_versioned_aliases.join("\n  ")}
+        EOS
+      end
     end
-
-    return unless present.include?("bottle modifier") && present.include?("bottle block")
-    problem "Should not have `bottle :unneeded/:disable` and `bottle do`"
   end
 
   def audit_class
@@ -429,11 +407,11 @@ class FormulaAuditor
     same_name_tap_formulae = @@local_official_taps_name_map[name] || []
 
     if @online
-      @@remote_official_taps ||= OFFICIAL_TAPS - Tap.select(&:official?).map(&:repo)
-
-      same_name_tap_formulae += @@remote_official_taps.map do |tap|
-        Thread.new { Homebrew.search_tap "homebrew", tap, name }
-      end.flat_map(&:value)
+      Homebrew.search_taps(name).each do |tap_formula_full_name|
+        tap_formula_name = tap_formula_full_name.split("/").last
+        next if tap_formula_name != name
+        same_name_tap_formulae << tap_formula_full_name
+      end
     end
 
     same_name_tap_formulae.delete(full_name)
@@ -468,7 +446,7 @@ class FormulaAuditor
         end
 
         if @@aliases.include?(dep.name) &&
-           (core_formula? || !dep_f.versioned_formula?)
+           (dep_f.core_formula? || !dep_f.versioned_formula?)
           problem "Dependency '#{dep.name}' is an alias; use the canonical name '#{dep.to_formula.full_name}'."
         end
 
@@ -550,6 +528,38 @@ class FormulaAuditor
     EOS
   end
 
+  def audit_keg_only_style
+    return unless @strict
+    return unless formula.keg_only?
+
+    whitelist = %w[
+      Apple
+      macOS
+      OS
+      Homebrew
+      Xcode
+      GPG
+      GNOME
+      BSD
+      Firefox
+    ].freeze
+
+    reason = formula.keg_only_reason.to_s
+    # Formulae names can legitimately be uppercase/lowercase/both.
+    name = Regexp.new(formula.name, Regexp::IGNORECASE)
+    reason.sub!(name, "")
+    first_word = reason.split[0]
+
+    if reason =~ /\A[A-Z]/ && !reason.start_with?(*whitelist)
+      problem <<-EOS.undent
+        '#{first_word}' from the keg_only reason should be '#{first_word.downcase}'.
+      EOS
+    end
+
+    return unless reason.end_with?(".")
+    problem "keg_only reason should not end with a period."
+  end
+
   def audit_options
     formula.options.each do |o|
       if o.name == "32-bit"
@@ -578,113 +588,11 @@ class FormulaAuditor
     problem "New formulae should not use `deprecated_option`."
   end
 
-  def audit_desc
-    # For now, only check the description when using `--strict`
-    return unless @strict
-
-    desc = formula.desc
-
-    unless desc && !desc.empty?
-      problem "Formula should have a desc (Description)."
-      return
-    end
-
-    # Make sure the formula name plus description is no longer than 80 characters
-    # Note full_name includes the name of the tap, while name does not
-    linelength = "#{formula.name}: #{desc}".length
-    if linelength > 80
-      problem <<-EOS.undent
-        Description is too long. \"name: desc\" should be less than 80 characters.
-        Length is calculated as #{formula.name} + desc. (currently #{linelength})
-      EOS
-    end
-
-    if desc =~ /([Cc]ommand ?line)/
-      problem "Description should use \"command-line\" instead of \"#{$1}\""
-    end
-
-    if desc =~ /^([Aa]n?)\s/
-      problem "Description shouldn't start with an indefinite article (#{$1})"
-    end
-
-    return unless desc.downcase.start_with? "#{formula.name} "
-    problem "Description shouldn't include the formula name"
-  end
-
   def audit_homepage
     homepage = formula.homepage
 
     if homepage.nil? || homepage.empty?
-      problem "Formula should have a homepage."
       return
-    end
-
-    unless homepage =~ %r{^https?://}
-      problem "The homepage should start with http or https (URL is #{homepage})."
-    end
-
-    # Check for http:// GitHub homepage urls, https:// is preferred.
-    # Note: only check homepages that are repo pages, not *.github.com hosts
-    if homepage.start_with? "http://github.com/"
-      problem "Please use https:// for #{homepage}"
-    end
-
-    # Savannah has full SSL/TLS support but no auto-redirect.
-    # Doesn't apply to the download URLs, only the homepage.
-    if homepage.start_with? "http://savannah.nongnu.org/"
-      problem "Please use https:// for #{homepage}"
-    end
-
-    # Freedesktop is complicated to handle - It has SSL/TLS, but only on certain subdomains.
-    # To enable https Freedesktop change the URL from http://project.freedesktop.org/wiki to
-    # https://wiki.freedesktop.org/project_name.
-    # "Software" is redirected to https://wiki.freedesktop.org/www/Software/project_name
-    if homepage =~ %r{^http://((?:www|nice|libopenraw|liboil|telepathy|xorg)\.)?freedesktop\.org/(?:wiki/)?}
-      if homepage =~ /Software/
-        problem "#{homepage} should be styled `https://wiki.freedesktop.org/www/Software/project_name`"
-      else
-        problem "#{homepage} should be styled `https://wiki.freedesktop.org/project_name`"
-      end
-    end
-
-    # Google Code homepages should end in a slash
-    if homepage =~ %r{^https?://code\.google\.com/p/[^/]+[^/]$}
-      problem "#{homepage} should end with a slash"
-    end
-
-    # People will run into mixed content sometimes, but we should enforce and then add
-    # exemptions as they are discovered. Treat mixed content on homepages as a bug.
-    # Justify each exemptions with a code comment so we can keep track here.
-    case homepage
-    when %r{^http://[^/]*\.github\.io/},
-         %r{^http://[^/]*\.sourceforge\.io/}
-      problem "Please use https:// for #{homepage}"
-    end
-
-    if homepage =~ %r{^http://([^/]*)\.(sf|sourceforge)\.net(/|$)}
-      problem "#{homepage} should be `https://#{$1}.sourceforge.io/`"
-    end
-
-    # There's an auto-redirect here, but this mistake is incredibly common too.
-    # Only applies to the homepage and subdomains for now, not the FTP URLs.
-    if homepage =~ %r{^http://((?:build|cloud|developer|download|extensions|git|glade|help|library|live|nagios|news|people|projects|rt|static|wiki|www)\.)?gnome\.org}
-      problem "Please use https:// for #{homepage}"
-    end
-
-    # Compact the above into this list as we're able to remove detailed notations, etc over time.
-    case homepage
-    when %r{^http://[^/]*\.apache\.org},
-         %r{^http://packages\.debian\.org},
-         %r{^http://wiki\.freedesktop\.org/},
-         %r{^http://((?:www)\.)?gnupg\.org/},
-         %r{^http://ietf\.org},
-         %r{^http://[^/.]+\.ietf\.org},
-         %r{^http://[^/.]+\.tools\.ietf\.org},
-         %r{^http://www\.gnu\.org/},
-         %r{^http://code\.google\.com/},
-         %r{^http://bitbucket\.org/},
-         %r{^http://(?:[^/]*\.)?archive\.org}
-      problem "Please use https:// for #{homepage}"
     end
 
     return unless @online
@@ -753,7 +661,10 @@ class FormulaAuditor
         }
       end
 
-      spec.patches.each { |p| audit_patch(p) if p.external? }
+      next if spec.patches.empty?
+      spec.patches.each { |p| patch_problems(p) if p.external? }
+      next unless @new_formula
+      problem "New formulae should not require patches to build. Patches should be submitted and accepted upstream first."
     end
 
     %w[Stable Devel].each do |name|
@@ -834,51 +745,76 @@ class FormulaAuditor
     return unless formula.tap.git? # git log is required
     return if @new_formula
 
-    fv = FormulaVersions.new(formula, max_depth: 1)
-    attributes = [:revision, :version_scheme]
+    fv = FormulaVersions.new(formula)
 
-    attributes_map = fv.version_attributes_map(attributes, "origin/master")
-
-    attributes.each do |attribute|
-      stable_attribute_map = attributes_map[attribute][:stable]
-      next if stable_attribute_map.nil? || stable_attribute_map.empty?
-
-      attributes_for_version = stable_attribute_map[formula.version]
-      next if attributes_for_version.nil? || attributes_for_version.empty?
-
-      old_attribute = formula.send(attribute)
-      max_attribute = attributes_for_version.max
-      if max_attribute && old_attribute < max_attribute
-        problem "#{attribute} should not decrease (from #{max_attribute} to #{old_attribute})"
-      end
+    previous_version_and_checksum = fv.previous_version_and_checksum("origin/master")
+    [:stable, :devel].each do |spec_sym|
+      next unless spec = formula.send(spec_sym)
+      next unless previous_version_and_checksum[spec_sym][:version] == spec.version
+      next if previous_version_and_checksum[spec_sym][:checksum] == spec.checksum
+      problem "#{spec_sym}: sha256 changed without the version also changing; please create an issue upstream to rule out malicious circumstances and to find out why the file changed."
     end
 
+    attributes = [:revision, :version_scheme]
+    attributes_map = fv.version_attributes_map(attributes, "origin/master")
+
+    current_version_scheme = formula.version_scheme
     [:stable, :devel].each do |spec|
       spec_version_scheme_map = attributes_map[:version_scheme][spec]
-      next if spec_version_scheme_map.nil? || spec_version_scheme_map.empty?
+      next if spec_version_scheme_map.empty?
 
-      max_version_scheme = spec_version_scheme_map.values.flatten.max
+      version_schemes = spec_version_scheme_map.values.flatten
+      max_version_scheme = version_schemes.max
       max_version = spec_version_scheme_map.select do |_, version_scheme|
         version_scheme.first == max_version_scheme
       end.keys.max
 
-      formula_spec = formula.send(spec)
-      next if formula_spec.nil?
-
-      if max_version && formula_spec.version < max_version
-        problem "#{spec} version should not decrease (from #{max_version} to #{formula_spec.version})"
+      if max_version_scheme && current_version_scheme < max_version_scheme
+        problem "version_scheme should not decrease (from #{max_version_scheme} to #{current_version_scheme})"
       end
+
+      if max_version_scheme && current_version_scheme >= max_version_scheme &&
+         current_version_scheme > 1 &&
+         !version_schemes.include?(current_version_scheme - 1)
+        problem "version_schemes should only increment by 1"
+      end
+
+      formula_spec = formula.send(spec)
+      next unless formula_spec
+
+      spec_version = formula_spec.version
+      next unless max_version
+      next if spec_version >= max_version
+
+      above_max_version_scheme = current_version_scheme > max_version_scheme
+      map_includes_version = spec_version_scheme_map.keys.include?(spec_version)
+      next if !current_version_scheme.zero? &&
+              (above_max_version_scheme || map_includes_version)
+      problem "#{spec} version should not decrease (from #{max_version} to #{spec_version})"
     end
 
-    return if formula.revision.zero?
-    if formula.stable
-      revision_map = attributes_map[:revision][:stable]
-      stable_revisions = revision_map[formula.stable.version] if revision_map
-      if !stable_revisions || stable_revisions.empty?
-        problem "'revision #{formula.revision}' should be removed"
+    current_revision = formula.revision
+    revision_map = attributes_map[:revision][:stable]
+    if formula.stable && !revision_map.empty?
+      stable_revisions = revision_map[formula.stable.version]
+      stable_revisions ||= []
+      max_revision = stable_revisions.max || 0
+
+      if current_revision < max_revision
+        problem "revision should not decrease (from #{max_revision} to #{current_revision})"
       end
-    else # head/devel-only formula
-      problem "'revision #{formula.revision}' should be removed"
+
+      stable_revisions -= [formula.revision]
+      if !current_revision.zero? && stable_revisions.empty? &&
+         revision_map.keys.length > 1
+        problem "'revision #{formula.revision}' should be removed"
+      elsif current_revision > 1 &&
+            current_revision != max_revision &&
+            !stable_revisions.include?(current_revision - 1)
+        problem "revisions should only increment by 1"
+      end
+    elsif !current_revision.zero? # head/devel-only formula
+      problem "'revision #{current_revision}' should be removed"
     end
   end
 
@@ -889,10 +825,10 @@ class FormulaAuditor
     return if legacy_patches.empty?
 
     problem "Use the patch DSL instead of defining a 'patches' method"
-    legacy_patches.each { |p| audit_patch(p) }
+    legacy_patches.each { |p| patch_problems(p) }
   end
 
-  def audit_patch(patch)
+  def patch_problems(patch)
     case patch.url
     when /raw\.github\.com/, %r{gist\.github\.com/raw}, %r{gist\.github\.com/.+/raw},
       %r{gist\.githubusercontent\.com/.+/raw}
@@ -933,7 +869,7 @@ class FormulaAuditor
     end
     bin_names.each do |name|
       ["system", "shell_output", "pipe_output"].each do |cmd|
-        if text =~ %r{(def test|test do).*(#{Regexp.escape HOMEBREW_PREFIX}/bin/)?#{cmd}[\(\s]+['"]#{Regexp.escape name}[\s'"]}m
+        if text =~ %r{(def test|test do).*(#{Regexp.escape(HOMEBREW_PREFIX)}/bin/)?#{cmd}[\(\s]+['"]#{Regexp.escape(name)}[\s'"]}m
           problem %Q(fully scope test #{cmd} calls e.g. #{cmd} "\#{bin}/#{name}")
         end
       end
@@ -960,11 +896,21 @@ class FormulaAuditor
       problem "Formulae using virtualenvs do not need a `setuptools` resource."
     end
 
+    if text =~ /system\s+['"]go['"],\s+['"]get['"]/
+      problem "Formulae should not use `go get`. If non-vendored resources are required use `go_resource`s."
+    end
+
     return unless text.include?('require "language/go"') && !text.include?("go_resource")
     problem "require \"language/go\" is unnecessary unless using `go_resource`s"
   end
 
-  def audit_line(line, _lineno)
+  def audit_lines
+    text.without_patch.split("\n").each_with_index do |line, lineno|
+      line_problems(line, lineno+1)
+    end
+  end
+
+  def line_problems(line, _lineno)
     if line =~ /<(Formula|AmazonWebServicesFormula|ScriptFileFormula|GithubGistFormula)/
       problem "Use a space in class inheritance: class Foo < #{$1}"
     end
@@ -1043,7 +989,19 @@ class FormulaAuditor
     end
 
     if line =~ /depends_on :tex/
-      problem ":tex is deprecated."
+      problem ":tex is deprecated"
+    end
+
+    if line =~ /depends_on\s+['"](.+)['"]\s+=>\s+:(lua|perl|python|ruby)(\d*)/
+      problem "#{$2} modules should be vendored rather than use deprecated `depends_on \"#{$1}\" => :#{$2}#{$3}`"
+    end
+
+    if line =~ /depends_on\s+['"](.+)['"]\s+=>\s+(.*)/
+      dep = $1
+      $2.split(" ").map do |o|
+        next unless o =~ /^\[?['"](.*)['"]/
+        problem "Dependency #{dep} should not use option #{$1}"
+      end
     end
 
     # Commented-out depends_on
@@ -1072,6 +1030,14 @@ class FormulaAuditor
 
     if line =~ /system\s+['"](env|export)(\s+|['"])/
       problem "Use ENV instead of invoking '#{$1}' to modify the environment"
+    end
+
+    if formula.name != "wine" && line =~ /ENV\.universal_binary/
+      problem "macOS has been 64-bit only since 10.6 so ENV.universal_binary is deprecated."
+    end
+
+    if line =~ /build\.universal\?/
+      problem "macOS has been 64-bit only so build.universal? is deprecated."
     end
 
     if line =~ /version == ['"]HEAD['"]/
@@ -1103,11 +1069,11 @@ class FormulaAuditor
     end
 
     if line =~ /(not\s|!)\s*build\.with?\?/
-      problem "Don't negate 'build.without?': use 'build.with?'"
+      problem "Don't negate 'build.with?': use 'build.without?'"
     end
 
     if line =~ /(not\s|!)\s*build\.without?\?/
-      problem "Don't negate 'build.with?': use 'build.without?'"
+      problem "Don't negate 'build.without?': use 'build.with?'"
     end
 
     if line =~ /ARGV\.(?!(debug\?|verbose\?|value[\(\s]))/
@@ -1155,11 +1121,11 @@ class FormulaAuditor
     end
 
     if line =~ /depends_on :(.+) (if.+|unless.+)$/
-      audit_conditional_dep($1.to_sym, $2, $&)
+      conditional_dep_problems($1.to_sym, $2, $&)
     end
 
     if line =~ /depends_on ['"](.+)['"] (if.+|unless.+)$/
-      audit_conditional_dep($1, $2, $&)
+      conditional_dep_problems($1, $2, $&)
     end
 
     if line =~ /(Dir\[("[^\*{},]+")\])/
@@ -1194,6 +1160,10 @@ class FormulaAuditor
         next unless line.include?(check)
         problem "Don't use #{check}; Homebrew/core only supports macOS"
       end
+    end
+
+    if line =~ /((revision|version_scheme)\s+0)/
+      problem "'#{$1}' should be removed"
     end
 
     return unless @strict
@@ -1247,7 +1217,7 @@ class FormulaAuditor
     EOS
   end
 
-  def audit_conditional_dep(dep, condition, line)
+  def conditional_dep_problems(dep, condition, line)
     quoted_dep = quote_dep(dep)
     dep = Regexp.escape(dep.to_s)
 
@@ -1263,31 +1233,26 @@ class FormulaAuditor
     dep.is_a?(Symbol) ? dep.inspect : "'#{dep}'"
   end
 
-  def audit_check_output(output)
+  def problem_if_output(output)
     problem(output) if output
   end
 
   def audit
-    audit_file
-    audit_formula_name
-    audit_class
-    audit_specs
-    audit_revision_and_version_scheme
-    audit_desc
-    audit_homepage
-    audit_bottle_spec
-    audit_github_repository
-    audit_deps
-    audit_conflicts
-    audit_options
-    audit_legacy_patches
-    audit_text
-    audit_caveats
-    text.without_patch.split("\n").each_with_index { |line, lineno| audit_line(line, lineno+1) }
-    audit_installed
-    audit_prefix_has_contents
-    audit_reverse_migration
-    audit_style
+    only_audits = ARGV.value("only").to_s.split(",")
+    except_audits = ARGV.value("except").to_s.split(",")
+    if !only_audits.empty? && !except_audits.empty?
+      odie "--only and --except cannot be used simultaneously!"
+    end
+
+    methods.map(&:to_s).grep(/^audit_/).each do |audit_method_name|
+      name = audit_method_name.gsub(/^audit_/, "")
+      if !only_audits.empty?
+        next unless only_audits.include?(name)
+      elsif !except_audits.empty?
+        next if except_audits.include?(name)
+      end
+      send(audit_method_name)
+    end
   end
 
   private
@@ -1418,8 +1383,8 @@ class ResourceAuditor
 
   def audit_urls
     # Check GNU urls; doesn't apply to mirrors
-    if url =~ %r{^(?:https?|ftp)://(?!alpha).+/gnu/}
-      problem "Please use \"https://ftpmirror.gnu.org\" instead of #{url}."
+    if url =~ %r{^(?:https?|ftp)://ftpmirror.gnu.org/(.*)}
+      problem "Please use \"https://ftp.gnu.org/gnu/#{$1}\" instead of #{url}."
     end
 
     if mirrors.include?(url)

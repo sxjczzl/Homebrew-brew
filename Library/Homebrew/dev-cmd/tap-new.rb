@@ -47,8 +47,12 @@ module Homebrew
       language: ruby
       os: osx
       env: OSX=10.12
-      osx_image: xcode8.1
+      osx_image: xcode8.3
       rvm: system
+      cache:
+        directories:
+          - $HOME/.gem/ruby
+          - Library/Homebrew/vendor/bundle
 
       before_install:
         - export TRAVIS_COMMIT="$(git rev-parse --verify -q HEAD)"

@@ -100,8 +100,7 @@ module Homebrew
 
       # See https://github.com/Homebrew/legacy-homebrew/pull/9986
       def check_path_for_trailing_slashes
-        all_paths = ENV["PATH"].split(File::PATH_SEPARATOR)
-        bad_paths = all_paths.select { |p| p[-1..-1] == "/" }
+        bad_paths = PATH.new(ENV["HOMEBREW_PATH"]).select { |p| p.end_with?("/") }
         return if bad_paths.empty?
 
         inject_file_list bad_paths, <<-EOS.undent
@@ -120,7 +119,7 @@ module Homebrew
         return unless which("python")
 
         anaconda_directory = which("anaconda").realpath.dirname
-        python_binary = Utils.popen_read which("python"), "-c", "import sys; sys.stdout.write(sys.executable)"
+        python_binary = Utils.popen_read(which("python"), "-c", "import sys; sys.stdout.write(sys.executable)")
         python_directory = Pathname.new(python_binary).realpath.dirname
 
         # Only warn if Python lives with Anaconda, since is most problematic case.
@@ -439,7 +438,7 @@ module Homebrew
 
         message = ""
 
-        paths.each do |p|
+        paths(ENV["HOMEBREW_PATH"]).each do |p|
           case p
           when "/usr/bin"
             unless $seen_prefix_bin
@@ -460,7 +459,7 @@ module Homebrew
 
                   Consider setting your PATH so that #{HOMEBREW_PREFIX}/bin
                   occurs before /usr/bin. Here is a one-liner:
-                    #{Utils::Shell.prepend_path_in_shell_profile("#{HOMEBREW_PREFIX}/bin")}
+                    #{Utils::Shell.prepend_path_in_profile("#{HOMEBREW_PREFIX}/bin")}
                 EOS
               end
             end
@@ -480,7 +479,7 @@ module Homebrew
         <<-EOS.undent
           Homebrew's bin was not found in your PATH.
           Consider setting the PATH for example like so
-            #{Utils::Shell.prepend_path_in_shell_profile("#{HOMEBREW_PREFIX}/bin")}
+            #{Utils::Shell.prepend_path_in_profile("#{HOMEBREW_PREFIX}/bin")}
         EOS
       end
 
@@ -495,7 +494,7 @@ module Homebrew
           Homebrew's sbin was not found in your PATH but you have installed
           formulae that put executables in #{HOMEBREW_PREFIX}/sbin.
           Consider setting the PATH for example like so
-            #{Utils::Shell.prepend_path_in_shell_profile("#{HOMEBREW_PREFIX}/sbin")}
+            #{Utils::Shell.prepend_path_in_profile("#{HOMEBREW_PREFIX}/sbin")}
         EOS
       end
 
@@ -609,7 +608,7 @@ module Homebrew
           /Applications/Server.app/Contents/ServerRoot/usr/sbin
         ].map(&:downcase)
 
-        paths.each do |p|
+        paths(ENV["HOMEBREW_PATH"]).each do |p|
           next if whitelist.include?(p.downcase) || !File.directory?(p)
 
           realpath = Pathname.new(p).realpath.to_s

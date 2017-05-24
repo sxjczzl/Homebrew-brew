@@ -1,9 +1,9 @@
 require "tab"
 require "formula"
 
-RSpec::Matchers.alias_matcher :be_built_with, :be_with
-
 describe Tab do
+  alias_matcher :be_built_with, :be_with
+
   matcher :be_poured_from_bottle do
     match do |actual|
       actual.poured_from_bottle == true
@@ -258,7 +258,7 @@ describe Tab do
     it "can create a Tab for a non-existant Keg" do
       f.prefix.mkpath
 
-      expect(subject.tabfile).to be nil
+      expect(subject.tabfile).to eq(f_tab_path)
     end
   end
 
