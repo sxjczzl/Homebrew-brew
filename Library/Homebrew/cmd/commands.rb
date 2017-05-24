@@ -41,11 +41,10 @@ module Homebrew
         puts Formatter.columns(internal_developer_commands)
 
         # Find commands in the path
-        unless (exts = external_commands).empty?
-          puts
-          puts "External commands"
-          puts Formatter.columns(exts)
-        end
+        return if (exts = external_commands).empty?
+        puts
+        puts "External commands"
+        puts Formatter.columns(exts)
       end
     end
 
