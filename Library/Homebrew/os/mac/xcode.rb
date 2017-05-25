@@ -191,7 +191,14 @@ module OS
       # Returns true even if outdated tools are installed, e.g.
       # tools from Xcode 4.x on 10.9
       def installed?
-        !detect_version.nil?
+        # Starting in El Capitan the upgrade of macOS, ex 10.10->10.11
+        # leads to the deletion of the /usr/include directory due to SIP.
+        # CLT should be considered not installed if a header file is missing.
+        if MacOS.version >= "10.11"
+          !detect_version.nil? && File.file?("/usr/include/zlib.h")
+        else
+          !detect_version.nil?
+        end
       end
 
       def update_instructions
