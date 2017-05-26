@@ -14,11 +14,11 @@ describe Homebrew::Command do
       command_options.option "-foo", "do foo"
     end
     command_options.option "--bar1", "go to bar1"
-    expect(command_options.valid_options).to eq(
-      [{ option: "--bar", desc: "go to bar", child_options: ["-foo"] },
-       { option: "-foo", desc: "do foo", child_options: nil },
-       { option: "--bar1", desc: "go to bar1", child_options: nil }]
-    )
+    expect(command_options.valid_options).to eq [
+      { option: "--bar", desc: "go to bar", child_options: ["-foo"] },
+      { option: "-foo", desc: "do foo", child_options: nil },
+      { option: "--bar1", desc: "go to bar1", child_options: nil },
+    ]
   end
 
   it "sets error message correctly if only one invalid option provided" do
