@@ -43,7 +43,12 @@ setup-ruby-path() {
 
       if [[ "$ruby_version_major" != "2" || -n "$HOMEBREW_FORCE_VENDOR_RUBY" ]]
       then
-        brew vendor-install ruby --quiet
+        if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "100500" || "$HOMEBREW_PROCESSOR" != "Intel" ]]
+        then
+          brew vendor-install ruby --quiet --vendor-version=2.2.7
+        else
+          brew vendor-install ruby --quiet
+        fi
         if [[ ! -x "$vendor_ruby_path" ]]
         then
           odie "Failed to install vendor Ruby."
