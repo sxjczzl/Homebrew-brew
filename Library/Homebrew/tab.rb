@@ -344,6 +344,20 @@ class Tab < OpenStruct
     tabfile.atomic_write(to_json)
   end
 
+  # Helper method for checking truthiness of a value that may not be specified.
+  # `Tab#absent_or_truthy?(:foo)` differs from `tab.foo` in that if `foo` is not
+  # specified `#absent_or_truthy?` will return true.
+  def absent_or_truthy?(key)
+    !present_and_falsey?(key)
+  end
+
+  # Helper method for checking falsiness of a value that may not be specified.
+  # `Tab#present_and_falsey?(:foo)` differs from `tab.foo` in that if `foo` is
+  # not specified `#present_and_falsey?` will return false.
+  def present_and_falsey?(key)
+    __send__(key) == false
+  end
+
   def to_s
     s = []
     if poured_from_bottle

@@ -1,5 +1,6 @@
 require "extend/pathname"
 require "keg_relocate"
+require "formula"
 require "formula_lock"
 require "ostruct"
 
@@ -155,6 +156,17 @@ class Keg
     end
 
     nil
+  end
+
+  # Finds kegs that were installed as dependencies of other kegs,
+  # but that are no longer required by any explicitly-installed kegs.
+  def self.orphaned
+    all.select(&:orphaned?)
+  end
+
+  def orphaned?
+    return false if Tab.for_keg(self).absent_or_truthy? :installed_on_request
+    installed_dependents.all?(&:orphaned?)
   end
 
   # if path is a file in a keg then this will return the containing Keg object

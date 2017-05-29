@@ -17,6 +17,13 @@ describe Keg do
     keg
   end
 
+  def alter_tab(keg)
+    tab = Tab.for_keg(keg)
+    tab.tabfile ||= keg/Tab::FILENAME
+    yield tab
+    tab.write
+  end
+
   around(:each) do |example|
     begin
       @old_stdout = $stdout
@@ -40,13 +47,85 @@ describe Keg do
   end
 
   after(:each) do
-    kegs.each(&:unlink)
+    kegs.each do |keg|
+      keg.unlink
+      rmtree keg
+    end
     rmtree HOMEBREW_PREFIX/"lib"
   end
 
   specify "::all" do
     Formula.clear_racks_cache
     expect(described_class.all).to eq([keg])
+  end
+
+  describe "orphaned" do
+    def make_dependent(keg)
+      keg.optlink unless keg.optlinked?
+      dependent = setup_test_keg("#{keg.name}_dependent", "1.0")
+      alter_tab(dependent) do |t|
+        t.runtime_dependencies = [{
+          "full_name" => "#{Tab.for_keg(keg).source["tap"]}/#{keg.name}",
+          "version" => keg.version.to_s,
+        }]
+      end
+      dependent
+    end
+
+    it "does not include kegs that were installed on request" do
+      alter_tab(keg) { |t| t.installed_on_request = true }
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
+
+    it "does not include kegs that did not record whether they were installed" do
+      alter_tab(keg) { |t| t.delete_field :installed_on_request }
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
+
+    it "includes kegs that were definitely not installed on request" do
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      expect(keg).to be_orphaned
+      expect(Keg.orphaned).to contain_exactly(keg)
+    end
+
+    it "does not include kegs that have dependents that were installed on request" do
+      dependent = make_dependent(keg)
+      alter_tab(dependent) { |t| t.installed_on_request = true }
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
+
+    it "does not include kegs that have dependents that did not record " \
+       "whether they were installed on request" do
+      dependent = make_dependent(keg)
+      alter_tab(dependent) { |t| t.delete_field :installed_on_request }
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
+
+    it "includes kegs that are only depended on by other orphaned kegs" do
+      dependent = make_dependent(keg)
+      alter_tab(dependent) { |t| t.installed_on_request = false }
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      expect(keg).to be_orphaned
+      expect(Keg.orphaned).to contain_exactly(keg, dependent)
+    end
+
+    it "does not include kegs with non-orphaned dependents" do
+      dependent = make_dependent(keg)
+      recursive_dependent = make_dependent(dependent)
+
+      alter_tab(keg) { |t| t.installed_on_request = false }
+      alter_tab(dependent) { |t| t.installed_on_request = false }
+      alter_tab(recursive_dependent) { |t| t.installed_on_request = true }
+
+      expect(keg).not_to be_orphaned
+      expect(Keg.orphaned).to be_empty
+    end
   end
 
   specify "#empty_installation?" do
@@ -349,16 +428,10 @@ describe Keg do
       keg.link
     end
 
-    def alter_tab(keg = dependent)
-      tab = Tab.for_keg(keg)
-      yield tab
-      tab.write
-    end
-
     # 1.1.6 is the earliest version of Homebrew that generates correct runtime
     # dependency lists in Tabs.
     def dependencies(deps, homebrew_version: "1.1.6")
-      alter_tab do |tab|
+      alter_tab dependent do |tab|
         tab.homebrew_version = homebrew_version
         tab.tabfile = dependent/Tab::FILENAME
         tab.runtime_dependencies = deps
