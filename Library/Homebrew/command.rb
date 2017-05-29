@@ -23,8 +23,20 @@ module Homebrew
       @parent = nil
       class_eval(&block)
       generate_help_and_manpage_output
+      build_methods_from_options
     end
 
+    def self.build_methods_from_options
+      @valid_options.each do |hash|
+        option_name = hash[:option]
+        option_name = option_name.gsub(/^--/, "").tr("-", "_")
+        Command.define_singleton_method("#{option_name}_present_in_argv?") do
+          return true if ARGV.include? "--#{option_name.tr("_", "-")}"
+          return false
+        end
+      end
+    end
+    
     def self.add_valid_option(option, desc)
       valid_option = { option: option, desc: desc, child_options: nil }
       @valid_options.push(valid_option)

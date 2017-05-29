@@ -25,10 +25,10 @@ module Homebrew
       # TODO: Put this check_invalid_options() method such that it doesn't have to be here
       check_invalid_options
 
-      if argv.include? "--quiet"
+      if quiet_present_in_argv?
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
-        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if argv.include? "--include-aliases"
+        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if include_aliases_present_in_argv?
         puts Formatter.columns(cmds.sort)
       else
         # Find commands in Homebrew/cmd
