@@ -1,7 +1,7 @@
 module Homebrew
   class Command
     class << self
-      attr_reader :command_name, :valid_options, :description, :help_output, :man_output, :argv
+      attr_reader :command_name, :valid_options, :description, :help_output, :man_output
     end
 
     def self.initialize
@@ -11,7 +11,6 @@ module Homebrew
       @help_output = nil
       @man_output = nil
       @root_options = []
-      @argv = ARGV
     end
 
     def self.command(cmd)
@@ -30,13 +29,12 @@ module Homebrew
       @valid_options.each do |hash|
         option_name = hash[:option]
         option_name = option_name.gsub(/^--/, "").tr("-", "_")
-        Command.define_singleton_method("#{option_name}_present_in_argv?") do
-          return true if ARGV.include? "--#{option_name.tr("_", "-")}"
-          return false
+        Command.define_singleton_method("#{option_name}?") do
+          ARGV.include? "--#{option_name.tr("_", "-")}"
         end
       end
     end
-    
+
     def self.add_valid_option(option, desc)
       valid_option = { option: option, desc: desc, child_options: nil }
       @valid_options.push(valid_option)
@@ -94,8 +92,8 @@ module Homebrew
       error_message
     end
 
-    def self.check_invalid_options(argv_options_only = argv.options_only)
-      error_message = get_error_message(argv_options_only)
+    def self.check_invalid_options
+      error_message = get_error_message(ARGV.options_only)
       odie error_message unless error_message.nil?
     end
 
