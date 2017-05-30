@@ -12,20 +12,20 @@ require "pathname"
 HOMEBREW_LIBRARY_PATH = Pathname.new(__FILE__).realpath.parent
 $:.unshift(HOMEBREW_LIBRARY_PATH.to_s)
 require "global"
+require "tap"
 
 if ARGV == %w[--version] || ARGV == %w[-v]
-  require "tap"
   puts "Homebrew #{HOMEBREW_VERSION}"
   puts "Homebrew/homebrew-core #{CoreTap.instance.version_string}"
   exit 0
 end
 
 def require?(path)
+  return false if path.nil?
   require path
 rescue LoadError => e
-  # HACK: ( because we should raise on syntax errors but
-  # not if the file doesn't exist. TODO make robust!
-  raise unless e.to_s.include? path
+  # we should raise on syntax errors but not if the file doesn't exist.
+  raise unless e.message.include?(path)
 end
 
 begin
@@ -48,13 +48,15 @@ begin
     end
   end
 
+  path = PATH.new(ENV["PATH"])
+
   # Add contributed commands to PATH before checking.
-  Dir["#{HOMEBREW_LIBRARY}/Taps/*/*/cmd"].each do |tap_cmd_dir|
-    ENV["PATH"] += "#{File::PATH_SEPARATOR}#{tap_cmd_dir}"
-  end
+  path.append(Pathname.glob(Tap::TAP_DIRECTORY/"*/*/cmd"))
 
   # Add SCM wrappers.
-  ENV["PATH"] += "#{File::PATH_SEPARATOR}#{HOMEBREW_SHIMS_PATH}/scm"
+  path.append(HOMEBREW_SHIMS_PATH/"scm")
+
+  ENV["PATH"] = path
 
   if cmd
     internal_cmd = require? HOMEBREW_LIBRARY_PATH.join("cmd", cmd)
@@ -114,7 +116,6 @@ begin
       odie "Unknown command: #{cmd}"
     end
   end
-
 rescue UsageError => e
   require "cmd/help"
   Homebrew.help cmd, usage_error: e.message
@@ -122,7 +123,7 @@ rescue SystemExit => e
   onoe "Kernel.exit" if ARGV.verbose? && !e.success?
   $stderr.puts e.backtrace if ARGV.debug?
   raise
-rescue Interrupt => e
+rescue Interrupt
   $stderr.puts # seemingly a newline is typical
   exit 130
 rescue BuildError => e

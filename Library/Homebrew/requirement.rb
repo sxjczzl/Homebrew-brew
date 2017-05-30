@@ -96,7 +96,7 @@ class Requirement
     # PATH.
     parent = satisfied_result_parent
     return unless parent
-    return if ENV["PATH"].split(File::PATH_SEPARATOR).include?(parent.to_s)
+    return if PATH.new(ENV["PATH"]).include?(parent.to_s)
     ENV.append_path("PATH", parent)
   end
 
@@ -151,15 +151,15 @@ class Requirement
   end
 
   def which(cmd)
-    super(cmd, ORIGINAL_PATHS.join(File::PATH_SEPARATOR))
+    super(cmd, PATH.new(ORIGINAL_PATHS))
   end
 
   def which_all(cmd)
-    super(cmd, ORIGINAL_PATHS.join(File::PATH_SEPARATOR))
+    super(cmd, PATH.new(ORIGINAL_PATHS))
   end
 
   class << self
-    include BuildEnvironmentDSL
+    include BuildEnvironment::DSL
 
     attr_reader :env_proc, :build
     attr_rw :fatal, :default_formula

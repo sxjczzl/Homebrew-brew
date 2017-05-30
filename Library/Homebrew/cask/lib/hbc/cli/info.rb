@@ -1,14 +1,17 @@
 module Hbc
   class CLI
-    class Info < Base
-      def self.run(*args)
-        cask_tokens = cask_tokens_from(args)
-        raise CaskUnspecifiedError if cask_tokens.empty?
-        cask_tokens.each do |cask_token|
+    class Info < AbstractCommand
+      def initialize(*)
+        super
+        raise CaskUnspecifiedError if args.empty?
+      end
+
+      def run
+        args.each do |cask_token|
           odebug "Getting info for Cask #{cask_token}"
           cask = CaskLoader.load(cask_token)
 
-          info(cask)
+          self.class.info(cask)
         end
       end
 
@@ -38,7 +41,7 @@ module Hbc
             puts versioned_staged_path.to_s
               .concat(" (")
               .concat(versioned_staged_path.exist? ? versioned_staged_path.abv : Formatter.error("does not exist"))
-              .concat(")")
+                                      .concat(")")
           end
         else
           puts "Not installed"
@@ -46,7 +49,7 @@ module Hbc
       end
 
       def self.name_info(cask)
-        ohai cask.name.size > 1 ? "Names" : "Name"
+        ohai((cask.name.size > 1) ? "Names" : "Name")
         puts cask.name.empty? ? Formatter.error("None") : cask.name
       end
 
@@ -66,7 +69,7 @@ module Hbc
         DSL::ORDINARY_ARTIFACT_TYPES.each do |type|
           next if cask.artifacts[type].empty?
           cask.artifacts[type].each do |artifact|
-            activatable_item = type == :stage_only ? "<none>" : artifact.first
+            activatable_item = (type == :stage_only) ? "<none>" : artifact.first
             puts "#{activatable_item} (#{type})"
           end
         end

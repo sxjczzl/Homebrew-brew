@@ -5,10 +5,6 @@ class Sandbox
   SANDBOX_EXEC = "/usr/bin/sandbox-exec".freeze
   SANDBOXED_TAPS = %w[
     homebrew/core
-    homebrew/dupes
-    homebrew/fuse
-    homebrew/devel-only
-    homebrew/tex
   ].freeze
 
   def self.available?
@@ -180,7 +176,7 @@ class Sandbox
 
     def add_rule(rule)
       s = "("
-      s << (rule[:allow] ? "allow": "deny")
+      s << ((rule[:allow]) ? "allow": "deny")
       s << " #{rule[:operation]}"
       s << " (#{rule[:filter]})" if rule[:filter]
       s << " (with #{rule[:modifier]})" if rule[:modifier]

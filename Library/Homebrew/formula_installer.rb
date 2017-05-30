@@ -217,11 +217,20 @@ class FormulaInstaller
     # function but after instantiating this class so that it can avoid having to
     # relink the active keg if possible (because it is slow).
     if formula.linked_keg.directory?
-      # some other version is already installed *and* linked
-      raise CannotInstallFormulaError, <<-EOS.undent
-        #{formula.name}-#{formula.linked_keg.resolved_path.basename} already installed
-        To install this version, first `brew unlink #{formula.name}`
+      message = <<-EOS.undent
+        #{formula.name} #{formula.linked_version} is already installed
       EOS
+      message += if formula.outdated? && !formula.head?
+        <<-EOS.undent
+          To upgrade to #{formula.version}, run `brew upgrade #{formula.name}`
+        EOS
+      else
+        # some other version is already installed *and* linked
+        <<-EOS.undent
+          To install #{formula.version}, first run `brew unlink #{formula.name}`
+        EOS
+      end
+      raise CannotInstallFormulaError, message
     end
 
     check_conflicts
@@ -463,7 +472,7 @@ class FormulaInstaller
 
   def effective_build_options_for(dependent, inherited_options = [])
     args  = dependent.build.used_options
-    args |= dependent == formula ? options : inherited_options
+    args |= (dependent == formula) ? options : inherited_options
     args |= Tab.for_formula(dependent).used_options
     args &= dependent.options
     BuildOptions.new(args, dependent.options)
@@ -555,13 +564,11 @@ class FormulaInstaller
       fix_dynamic_linkage(keg)
     end
 
-    if formula.post_install_defined?
-      if build_bottle?
-        ohai "Not running post_install as we're building a bottle"
-        puts "You can run it manually using `brew postinstall #{formula.full_name}`"
-      else
-        post_install
-      end
+    if build_bottle?
+      ohai "Not running post_install as we're building a bottle"
+      puts "You can run it manually using `brew postinstall #{formula.full_name}`"
+    else
+      post_install
     end
 
     caveats
@@ -649,13 +656,15 @@ class FormulaInstaller
     Sandbox.print_sandbox_message if Sandbox.formula?(formula)
 
     Utils.safe_fork do
-      # Invalidate the current sudo timestamp in case a build script calls sudo
-      system "/usr/bin/sudo", "-k"
+      # Invalidate the current sudo timestamp in case a build script calls sudo.
+      # Travis CI's Linux sudoless workers have a weird sudo that fails here.
+      system "/usr/bin/sudo", "-k" unless ENV["TRAVIS_SUDO"] == "false"
 
       if Sandbox.formula?(formula)
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"build.sandbox.log")
+        sandbox.allow_write_path(ENV["HOME"]) if ARGV.interactive?
         sandbox.allow_write_temp_and_cache
         sandbox.allow_write_log(formula)
         sandbox.allow_write_xcode
@@ -671,7 +680,6 @@ class FormulaInstaller
     if !formula.prefix.directory? || Keg.new(formula.prefix).empty_installation?
       raise "Empty installation"
     end
-
   rescue Exception
     ignore_interrupts do
       # any exceptions must leave us with nothing installed
@@ -823,12 +831,6 @@ class FormulaInstaller
     skip_linkage = formula.bottle_specification.skip_relocation?
     keg.replace_placeholders_with_locations tab.changed_files, skip_linkage: skip_linkage
 
-    Pathname.glob("#{formula.bottle_prefix}/{etc,var}/**/*") do |path|
-      path.extend(InstallRenamed)
-      path.cp_path_sub(formula.bottle_prefix, HOMEBREW_PREFIX)
-    end
-    FileUtils.rm_rf formula.bottle_prefix
-
     tab = Tab.for_keg(keg)
 
     CxxStdlib.check_compatibility(
@@ -887,6 +889,6 @@ class FormulaInstaller
   def puts_requirement_messages
     return unless @requirement_messages
     return if @requirement_messages.empty?
-    puts @requirement_messages
+    $stderr.puts @requirement_messages
   end
 end

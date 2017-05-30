@@ -92,25 +92,17 @@ module Hbc
 
     def each_line_from(sources)
       loop do
-        selected_sources = IO.select(sources, [], [], 10)
-
-        break if selected_sources.nil?
-
-        readable_sources = selected_sources[0].delete_if(&:eof?)
-
-        readable_sources.each do |source|
-          type = (source == sources[0] ? :stdout : :stderr)
-
+        readable_sources = IO.select(sources)[0]
+        readable_sources.delete_if(&:eof?).first(1).each do |source|
+          type = ((source == sources[0]) ? :stdout : :stderr)
           begin
             yield(type, source.readline_nonblock || "")
           rescue IO::WaitReadable, EOFError
             next
           end
         end
-
         break if readable_sources.empty?
       end
-
       sources.each(&:close_read)
     end
 
@@ -162,7 +154,7 @@ module Hbc
       def self._parse_plist(command, output)
         raise CaskError, "Empty plist input" unless output =~ /\S/
         output.sub!(/\A(.*?)(<\?\s*xml)/m, '\2')
-        _warn_plist_garbage(command, Regexp.last_match[1]) if CLI.debug?
+        _warn_plist_garbage(command, Regexp.last_match[1]) if ARGV.debug?
         output.sub!(%r{(<\s*/\s*plist\s*>)(.*?)\Z}m, '\1')
         _warn_plist_garbage(command, Regexp.last_match[2])
         xml = Plist.parse_xml(output)

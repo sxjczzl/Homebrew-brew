@@ -280,7 +280,7 @@ class Version
   private
 
   def max(a, b)
-    a > b ? a : b
+    (a > b) ? a : b
   end
 
   def tokenize
@@ -307,7 +307,7 @@ class Version
     spec_s = spec.to_s
 
     stem = if spec.directory?
-      spec.basename.to_s
+      spec.basename
     elsif %r{((?:sourceforge\.net|sf\.net)/.*)/download$} =~ spec_s
       Pathname.new(spec.dirname).stem
     elsif /\.[^a-zA-Z]+$/ =~ spec_s
@@ -315,6 +315,11 @@ class Version
     else
       spec.stem
     end
+
+    # date-based versioning
+    # e.g. ltopers-v2017-04-14.tar.gz
+    m = /-v?(\d{4}-\d{2}-\d{2})/.match(stem)
+    return m.captures.first unless m.nil?
 
     # GitHub tarballs
     # e.g. https://github.com/foo/bar/tarball/v1.2.3

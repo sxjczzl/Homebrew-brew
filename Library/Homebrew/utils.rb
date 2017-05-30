@@ -75,7 +75,7 @@ def odeprecated(method, replacement = nil, disable: false, disable_on: nil, call
   backtrace = caller
   tap_message = nil
   caller_message = backtrace.detect do |line|
-    next unless line =~ %r{^#{Regexp.escape HOMEBREW_LIBRARY}/Taps/([^/]+/[^/]+)/}
+    next unless line =~ %r{^#{Regexp.escape(HOMEBREW_LIBRARY)}/Taps/([^/]+/[^/]+)/}
     tap = Tap.fetch $1
     tap_message = "\nPlease report this to the #{tap} tap!"
     true
@@ -190,10 +190,10 @@ module Homebrew
     Gem::Specification.reset
 
     # Add Gem binary directory and (if missing) Ruby binary directory to PATH.
-    path = ENV["PATH"].split(File::PATH_SEPARATOR)
-    path.unshift(RUBY_BIN) if which("ruby") != RUBY_PATH
-    path.unshift(Gem.bindir)
-    ENV["PATH"] = path.join(File::PATH_SEPARATOR)
+    path = PATH.new(ENV["PATH"])
+    path.prepend(RUBY_BIN) if which("ruby") != RUBY_PATH
+    path.prepend(Gem.bindir)
+    ENV["PATH"] = path
 
     if Gem::Specification.find_all_by_name(name, version).empty?
       ohai "Installing or updating '#{name}' gem"
@@ -293,7 +293,7 @@ def quiet_system(cmd, *args)
 end
 
 def which(cmd, path = ENV["PATH"])
-  path.split(File::PATH_SEPARATOR).each do |p|
+  PATH.new(path).each do |p|
     begin
       pcmd = File.expand_path(cmd, p)
     rescue ArgumentError
@@ -307,7 +307,7 @@ def which(cmd, path = ENV["PATH"])
 end
 
 def which_all(cmd, path = ENV["PATH"])
-  path.to_s.split(File::PATH_SEPARATOR).map do |p|
+  PATH.new(path).map do |p|
     begin
       pcmd = File.expand_path(cmd, p)
     rescue ArgumentError
@@ -320,8 +320,17 @@ def which_all(cmd, path = ENV["PATH"])
 end
 
 def which_editor
-  editor = ENV.values_at("HOMEBREW_EDITOR", "VISUAL").compact.reject(&:empty?).first
-  return which(editor, ENV["HOMEBREW_PATH"]) unless editor.nil?
+  editor = ENV.values_at("HOMEBREW_EDITOR", "HOMEBREW_VISUAL").compact.reject(&:empty?).first
+  if editor
+    editor_name, _, editor_args = editor.partition " "
+    editor_path = which(editor_name, ENV["HOMEBREW_PATH"])
+    editor = if editor_args.to_s.empty?
+      editor_path.to_s
+    else
+      "#{editor_path} #{editor_args}"
+    end
+    return editor
+  end
 
   # Find Textmate
   editor = which("mate", ENV["HOMEBREW_PATH"])
@@ -338,7 +347,7 @@ def which_editor
     or HOMEBREW_EDITOR to your preferred text editor.
   EOS
 
-  editor
+  editor.to_s
 end
 
 def exec_editor(*args)
@@ -347,7 +356,7 @@ def exec_editor(*args)
 end
 
 def exec_browser(*args)
-  browser = ENV["HOMEBREW_BROWSER"] || ENV["BROWSER"]
+  browser = ENV["HOMEBREW_BROWSER"]
   browser ||= OS::PATH_OPEN if defined?(OS::PATH_OPEN)
   return unless browser
   safe_exec(browser, *args)
@@ -406,8 +415,8 @@ def nostdout
   end
 end
 
-def paths
-  @paths ||= ENV["PATH"].split(File::PATH_SEPARATOR).collect do |p|
+def paths(env_path = ENV["PATH"])
+  @paths ||= PATH.new(env_path).collect do |p|
     begin
       File.expand_path(p).chomp("/")
     rescue ArgumentError
