@@ -77,9 +77,7 @@ module Homebrew
     if Pathname(path).fnmatch?("*/Homebrew/cmd/*")
       cmd = Pathname(path).basename(".rb")
       class_name = "#{cmd.to_s.capitalize}Command"
-      if Homebrew.const_defined?(class_name)
-        return command_help_cmd(cmd)
-      end
+      return command_help_cmd(cmd) if Homebrew.const_defined?(class_name)
     end
 
     help_lines = path.read.lines.grep(/^#:/)
@@ -87,7 +85,7 @@ module Homebrew
       opoo "No help text in: #{path}" if ARGV.homebrew_developer?
       HOMEBREW_HELP
     else
-      help_lines.map! do |line|
+      help_lines.map do |line|
         line.slice(2..-1)
             .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
             .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")

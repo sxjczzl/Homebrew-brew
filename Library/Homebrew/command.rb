@@ -1,7 +1,8 @@
 module Homebrew
   class Command
     class << self
-      attr_reader :command_name, :valid_options, :description, :help_output, :man_output
+      attr_reader :command_name, :valid_options, :description, :help_output,
+        :man_output
     end
 
     def self.initialize
@@ -43,8 +44,7 @@ module Homebrew
     def self.option(key, value, &block)
       if @parent.nil?
         @root_options.push(key)
-      end
-      unless @parent.nil?
+      else
         hash = @valid_options.find { |x| x[:option] == @parent }
         if hash[:child_options].nil?
           hash[:child_options] = [key]
@@ -72,7 +72,7 @@ module Homebrew
       generate_help_and_manpage_output if @help_output.nil? && @man_output.nil?
 
       invalid_options = (argv_options_only - @valid_options.map { |x| x[:option] }).uniq
-      return nil if invalid_options.empty?
+      return if invalid_options.empty?
       invalid_option_pluralize = Formatter.pluralize(invalid_options.length, "invalid option")
       invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options.join " "}"
       error_message = nil

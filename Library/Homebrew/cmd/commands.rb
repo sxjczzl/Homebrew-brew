@@ -36,15 +36,19 @@ module Homebrew
         puts Formatter.columns(internal_commands)
 
         # Find commands in Homebrew/dev-cmd
-        puts
-        puts "Built-in developer commands"
-        puts Formatter.columns(internal_developer_commands)
+        puts <<-EOS.undent
+
+          Built-in developer commands
+          #{Formatter.columns(internal_developer_commands)}
+        EOS
 
         # Find commands in the path
         return if (exts = external_commands).empty?
-        puts
-        puts "External commands"
-        puts Formatter.columns(exts)
+        puts <<-EOS.undent
+
+          External commands
+          #{Formatter.columns(exts)}
+        EOS
       end
     end
 
@@ -71,7 +75,5 @@ module Homebrew
         cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
       end
     end
-
-    private_class_method :internal_commands, :internal_developer_commands, :external_commands, :find_internal_commands
   end
 end
