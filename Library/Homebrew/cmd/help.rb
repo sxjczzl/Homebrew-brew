@@ -74,7 +74,7 @@ module Homebrew
   end
 
   def command_help(path)
-    if Pathname(path).fnmatch?("*/Homebrew/cmd/*")
+    if Pathname(path).fnmatch?("*/Homebrew/cmd/*.rb")
       cmd = Pathname(path).basename(".rb")
       class_name = "#{cmd.to_s.capitalize}Command"
       return command_help_cmd(cmd) if Homebrew.const_defined?(class_name)
