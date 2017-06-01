@@ -302,7 +302,11 @@ class Tap
   end
 
   def potential_formula_dirs
-    @potential_formula_dirs ||= [path/"Formula", path/"HomebrewFormula", path].freeze
+    @potential_formula_dirs ||= [path/"Formula",
+                                 path/"Formulae",
+                                 path/"HomebrewFormula",
+                                 path/"HomebrewFormulae",
+                                 path].freeze
   end
 
   # path to the directory of all {Cask} files for this {Tap}.
