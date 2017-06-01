@@ -737,7 +737,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
 
   def stage
     super
-    cp_r cached_location/".", Dir.pwd, preserve: true
+    cp_r File.join(cached_location,"."), Dir.pwd, preserve: true
   end
 
   def source_modified_time
@@ -977,7 +977,7 @@ class CVSDownloadStrategy < VCSDownloadStrategy
   end
 
   def stage
-    cp_r cached_location/".", Dir.pwd, preserve: true
+    cp_r File.join(cached_location,"."), Dir.pwd, preserve: true
   end
 
   private
@@ -1066,7 +1066,7 @@ class BazaarDownloadStrategy < VCSDownloadStrategy
   def stage
     # The export command doesn't work on checkouts
     # See https://bugs.launchpad.net/bzr/+bug/897511
-    cp_r cached_location/".", Dir.pwd, preserve: true
+    cp_r File.join(cached_location,"."), Dir.pwd, preserve: true
     rm_r ".bzr"
   end
 
