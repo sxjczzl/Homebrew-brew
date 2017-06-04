@@ -87,7 +87,7 @@ class Cleaner
 
       Find.prune if @f.skip_clean? path
 
-      next if path.symlink? || path.directory?
+      next if path.symlink?
 
       if path.extname == ".la"
         path.unlink
@@ -100,8 +100,10 @@ class Cleaner
       elsif path.basename.to_s == ".packlist" # Hidden file, not file extension!
         path.unlink
       else
+        perms = if path.directory?
+          0775
         # Set permissions for executables and non-executables
-        perms = if executable_path?(path)
+        elsif executable_path?(path)
           0555
         else
           0444
