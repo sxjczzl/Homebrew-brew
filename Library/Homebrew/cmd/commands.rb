@@ -16,8 +16,8 @@ module Homebrew
     options do
       command "commands"
       desc "Show a list of built-in and external commands."
-      option "--quiet", "list only the names of commands without the header." do
-        option "--include-aliases", "the aliases of internal commands will be included."
+      option name: "quiet", desc: "list only the names of commands without the header." do
+        option name: "include-aliases", desc: "the aliases of internal commands will be included."
       end
     end
 

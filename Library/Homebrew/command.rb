@@ -36,26 +36,30 @@ module Homebrew
       end
     end
 
-    def self.add_valid_option(option, desc)
-      valid_option = { option: option, desc: desc, child_options: nil }
+    def self.add_valid_option(option, desc, value)
+      valid_option = { option: option, desc: desc, value: value, child_options: nil }
       @valid_options.push(valid_option)
     end
 
-    def self.option(key, value, &block)
+    def self.option(**hash_args, &block)
+      option_name = hash_args[:name]
+      option_desc = hash_args[:desc]
+      option_value = hash_args[:value]
+      option_name = "--#{option_name}"
       if @parent.nil?
-        @root_options.push(key)
+        @root_options.push(option_name)
       else
         hash = @valid_options.find { |x| x[:option] == @parent }
         if hash[:child_options].nil?
-          hash[:child_options] = [key]
+          hash[:child_options] = [option_name]
         else
-          hash[:child_options].push(key)
+          hash[:child_options].push(option_name)
         end
       end
-      add_valid_option(key, value)
+      add_valid_option(option_name, option_desc, option_value)
       return unless block_given?
       old_parent = @parent
-      @parent = key
+      @parent = option_name
       instance_eval(&block)
       @parent = old_parent
     end
@@ -101,7 +105,12 @@ module Homebrew
       hash = @valid_options.find { |x| x[:option] == option }
       child_options = hash[:child_options]
 
-      return "[`#{option}`]" if child_options.nil?
+      # return "[`#{option}`]" if child_options.nil?
+      if child_options.nil?
+        value = hash[:value]
+        return "[`#{option}`]" if value.nil?
+        return "[`#{option}`=<#{value}>]"
+      end
 
       childs_str = ""
       child_options.each do |child_option|
@@ -116,8 +125,16 @@ module Homebrew
       desc = hash[:desc]
       child_options = hash[:child_options]
       if child_options.nil?
-        return " "*begin_spaces + "With `#{option}`, #{desc}\n" if parent_present
-        return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n"
+        # return " "*begin_spaces + "With `#{option}`, #{desc}\n" if parent_present
+        # return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n"
+        option_value = hash[:value]
+        if parent_present
+          return " "*begin_spaces + "With `#{option}`, #{desc}\n" if option_value.nil?
+          return " "*begin_spaces + "With `#{option}=`<#{option_value}>, #{desc}\n"
+        else
+          return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n" if option_value.nil?
+          return " "*begin_spaces + "If `#{option}=`<#{option_value}> is specified, #{desc}\n"
+        end
       else
         childs_str = ""
         child_options.each do |child_option|
@@ -149,6 +166,7 @@ module Homebrew
         line
           .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
           .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
+          .gsub(/<(.*?)>/, "#{Tty.underline}\\1#{Tty.reset}")
       end.join.strip
       @help_output = help_lines.join("\n")
     end
