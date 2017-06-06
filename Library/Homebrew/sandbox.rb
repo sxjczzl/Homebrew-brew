@@ -62,6 +62,9 @@ class Sandbox
     allow_write "^/private/var/folders/[^/]+/[^/]+/[C,T]/", type: :regex
     allow_write_path HOMEBREW_TEMP
     allow_write_path HOMEBREW_CACHE
+    allow_write_path ENV["TMPDIR"] if ENV["TMPDIR"]
+    allow_write_path ENV["TEMP"] if ENV["TEMP"]
+    allow_write_path ENV["TMP"] if ENV["TMP"]
   end
 
   def allow_write_cellar(formula)
