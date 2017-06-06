@@ -13,6 +13,13 @@ require "rbconfig"
 require "official_taps"
 require "pp"
 
+ruby_version_major, ruby_version_minor, = RUBY_VERSION.split(".").map(&:to_i)
+if ruby_version_major == 2 && ruby_version_minor < 3
+  # Use Ruby 2.3's URI class to support RFC 3986.
+  $LOAD_PATH.unshift("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/vendor/ruby/2.3.0")
+  require "uri"
+end
+
 ARGV.extend(HomebrewArgvExtension)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
