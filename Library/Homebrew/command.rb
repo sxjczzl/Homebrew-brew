@@ -72,13 +72,51 @@ module Homebrew
       end
     end
 
+    def self.get_invalid_options(argv_options_only)
+      argv_options_only = argv_options_only.uniq
+      valid_options_with_values =
+        @valid_options
+        .select { |option_hash| !option_hash[:value].nil? }
+        .map { |option_hash| option_hash[:option] }
+      all_valid_options =
+        @valid_options
+        .map { |option_hash| option_hash[:option] }
+
+      argv_invalid_options = []
+      argv_options_without_value = {}
+      argv_options_only.each do |argv_option|
+        if argv_option.include?("=")
+          index = argv_option.index("=")
+          argv_option_name = argv_option[0..index-1]
+          if !all_valid_options.include?(argv_option_name)
+            argv_invalid_options.push(argv_option_name)
+          elsif index == argv_option.size-1
+            option_value = @valid_options.find { |x| x[:option] == argv_option_name }[:value]
+            argv_options_without_value[argv_option_name] = option_value
+          end
+        elsif !all_valid_options.include?(argv_option)
+          argv_invalid_options.push(argv_option)
+        elsif valid_options_with_values.include?(argv_option)
+          option_value = @valid_options.find { |x| x[:option] == argv_option }[:value]
+          argv_options_without_value[argv_option] = option_value
+        end
+      end
+      [argv_invalid_options, argv_options_without_value]
+    end
+
     def self.get_error_message(argv_options_only)
       generate_help_and_manpage_output if @help_output.nil? && @man_output.nil?
+      argv_invalid_options, argv_options_without_value = get_invalid_options(argv_options_only)
 
-      invalid_options = (argv_options_only - @valid_options.map { |x| x[:option] }).uniq
-      return if invalid_options.empty?
-      invalid_option_pluralize = Formatter.pluralize(invalid_options.length, "invalid option")
-      invalid_option_string = "#{invalid_option_pluralize} provided: #{invalid_options.join " "}"
+      return if argv_invalid_options.empty? && argv_options_without_value.empty?
+      invalid_option_pluralize = Formatter.pluralize(argv_invalid_options.length, "invalid option")
+      invalid_option_string = "#{invalid_option_pluralize} provided: #{argv_invalid_options.join " "}"
+      unless argv_options_without_value.empty?
+        invalid_option_string = <<-EOS.undent
+          #{invalid_option_string}
+          #{argv_options_without_value.map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")}
+        EOS
+      end
       error_message = nil
       if @valid_options.empty?
         error_message = <<-EOS.undent
@@ -109,7 +147,7 @@ module Homebrew
       if child_options.nil?
         value = hash[:value]
         return "[`#{option}`]" if value.nil?
-        return "[`#{option}`=<#{value}>]"
+        return "[`#{option}=`<#{value}>]"
       end
 
       childs_str = ""
