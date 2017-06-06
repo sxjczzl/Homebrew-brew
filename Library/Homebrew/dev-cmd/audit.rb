@@ -1371,7 +1371,9 @@ class ResourceAuditor
            %r{^http://hackage\.haskell\.org/},
            %r{^http://(?:[^/]*\.)?archive\.org},
            %r{^http://(?:[^/]*\.)?freedesktop\.org},
-           %r{^http://(?:[^/]*\.)?mirrorservice\.org/}
+           %r{^http://(?:[^/]*\.)?mirrorservice\.org/},
+           %r{^(http|git)://git\.code\.sf\.net/},
+           %r{^(http|svn)://svn\.code\.sf\.net/}
         problem "Please use https:// for #{p}"
       when %r{^http://search\.mcpan\.org/CPAN/(.*)}i
         problem "#{p} should be `https://cpan.metacpan.org/#{$1}`"
@@ -1379,6 +1381,18 @@ class ResourceAuditor
         problem "#{p} should be `https://download.gnome.org/#{$2}`"
       when %r{^git://anonscm\.debian\.org/users/(.*)}i
         problem "#{p} should be `https://anonscm.debian.org/git/users/#{$1}`"
+      when %r{^http://hg\.(sv|savannah)\.gnu\.org/(.*)}i
+        problem "#{p} should be `https://hg.savannah.gnu.org/#{$2}`"
+      when %r{^(http|git)://git\.(sv|savannah)\.gnu\.org/(.*)}i
+        problem "#{p} should be `https://git.savannah.gnu.org/#{$2}`"
+      when %r{^(http|svn)://svn\.(sv|savannah)\.gnu\.org/(.*)}i
+        problem "#{p} should be `https://svn.savannah.gnu.org/#{$2}`"
+      when %r{^(http|git)://([^/]*)\.git\.sourceforge\.net/gitroot/(.*)}i
+        problem "Please use https://git.code.sf.net/ for #{p}"
+      when %r{^(http|svn)://([^/]*)\.svn\.sourceforge\.net/svnroot/(.*)}i
+        problem "Please use https://svn.code.sf.net/ for #{p}"
+      when %r{^http://([^/]*)\.(sf|sourceforge)\.net/(.*)}i
+        problem "#{p} should be `https://#{$1}.sourceforge.io/#{$3}`"
       end
     end
 
