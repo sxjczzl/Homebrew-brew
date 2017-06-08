@@ -19,8 +19,8 @@ module Homebrew
       option name: "quiet", desc: "list only the names of commands without the header." do
         option name: "include-aliases", desc: "the aliases of internal commands will be included."
       end
-      option name: "prune", value: "days", desc: "remove all cache files older than <days>."
-      option name: "prune1", value: "days", desc: "remove all cache files older than <days>."
+      # option name: "prune", value: "days", desc: "remove all cache files older than <days>."
+      # option name: "prune1", value: "days", desc: "remove all cache files older than <days>."
     end
 
     def self.call
