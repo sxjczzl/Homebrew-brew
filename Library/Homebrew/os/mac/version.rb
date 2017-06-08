@@ -29,6 +29,7 @@ module OS
       end
 
       def <=>(other)
+        p ["<=>", self, other]
         @comparison_cache.fetch(other) do
           v = SYMBOLS.fetch(other) { other.to_s }
           @comparison_cache[other] = super(Version.new(v))

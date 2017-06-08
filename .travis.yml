@@ -34,7 +34,7 @@ before_install:
     fi
 
 script:
-  - brew test-bot
+  - brew test-bot --test-default-formula
 
 notifications:
   slack: machomebrew:1XNF7p1JRCdBUuKaeSwsWEc1
