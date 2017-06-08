@@ -15,7 +15,7 @@
 #:    If `--online` is passed, include tests that use the GitHub API.
 #:
 #:    If `--official-cmd-taps` is passed, include tests that use any of the
-#:    taps for official external commands.
+#:    taps for official external commands (implies `--online`).
 
 require "fileutils"
 require "tap"
@@ -34,7 +34,7 @@ module Homebrew
       ENV["HOMEBREW_NO_COMPAT"] = "1" if ARGV.include? "--no-compat"
       ENV["HOMEBREW_TEST_GENERIC_OS"] = "1" if ARGV.include? "--generic"
 
-      if ARGV.include? "--online"
+      if ARGV.include?("--online") || ARGV.include?("--official-cmd-taps")
         ENV["HOMEBREW_TEST_ONLINE"] = "1"
       else
         ENV["HOMEBREW_NO_GITHUB_API"] = "1"
