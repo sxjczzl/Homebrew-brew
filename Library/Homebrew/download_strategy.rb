@@ -2,6 +2,9 @@ require "json"
 require "rexml/document"
 require "time"
 
+# Superclass for all the download strategies, has 2 subclasses
+# VCSDownloadStrategy and AbstractFileDownloadStrategy
+# They are further classified later
 class AbstractDownloadStrategy
   include FileUtils
 
@@ -132,6 +135,12 @@ class AbstractDownloadStrategy
   end
 end
 
+# This is a superclass for all the Version Control System downloading strategies
+# Its subclasses include SubversionDownloadStrategy, GitDownloadStrategy,
+# CVSDownloadStrategy, MercurialDownloadStrategy, BazaarDownloadStrategy
+# and FossilDownloadStrategy
+# The naming scheme used in repositories downloaded with VCS is name--cache_tag,
+# which is useful while determining how to clear the cache in cleanup.rb
 class VCSDownloadStrategy < AbstractDownloadStrategy
   REF_TYPES = [:tag, :branch, :revisions, :revision].freeze
 
@@ -220,6 +229,10 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
   end
 end
 
+# The AbstractFileDownloadStrategy is a class necessary because using local
+# bottles instead of dowloading a file needs a few different commands. Also
+# there are two subclasses of the current class, CurlDownloadStrategy and
+# LocalBottleDownloadStrategy
 class AbstractFileDownloadStrategy < AbstractDownloadStrategy
   def stage
     case type = cached_location.compression_type
@@ -316,6 +329,13 @@ class AbstractFileDownloadStrategy < AbstractDownloadStrategy
   end
 end
 
+# It is a superclass for the following strategies:
+# CurlApacheMirrorDownloadStrategy, CurlPostDownloadStrategy,
+# NoUnzipCurlDownloadStrategy, CurlBottleDownloadStrategy, S3DownloadStrategy
+# and GitHubPrivateRepositoryDownloadStrategy.
+# Files downloaded by this way follow the naming convention
+# name-version.extension . Also the incomplete file is
+# name-version.extension.incomplete .
 class CurlDownloadStrategy < AbstractFileDownloadStrategy
   attr_reader :mirrors, :tarball_path, :temporary_path
 
