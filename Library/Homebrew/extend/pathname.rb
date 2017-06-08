@@ -441,6 +441,117 @@ class Pathname
     EOS
   end
 
+  # Writes an exec script intended for use by unix GUI apps.
+  def write_gui_script(*command, **options)
+    command_str = command.map(&:inspect).join(", ")
+    options[:env] ||= {}
+    options[:bundle_id] ||= "sh.brew.#{basename}"
+
+    dirname.mkpath
+    write <<-EOS.undent
+      #!/usr/bin/ruby
+
+      def setup_env(env)
+        env["LC_ALL"] = nil
+        if ENV["LANG"].nil? || /\.UTF-8\z/.match(ENV["LANG"]).nil?
+          env["LANG"] = detect_lang
+        end
+        env["LANGUAGE"] ||= detect_language
+
+        env["GTK_PATH"] ||= "#{HOMEBREW_PREFIX}/lib/gtk-2.0"
+
+        env
+      end
+
+      def detect_lang
+        lang = `/usr/bin/defaults read #{options[:bundle_id]} AppleLocale 2>/dev/null`.chomp
+        unless $?.success?
+          lang = `/usr/bin/defaults read -g AppleLocale`.chomp
+        end
+        lang.gsub!('-', '_')
+        lang.gsub!('Hant', 'TW')
+        lang.gsub!('Hans', 'CN')
+        lang << ".UTF-8"
+
+        `/usr/bin/locale -a | /usr/bin/grep -q '^\#{lang}$'`
+        unless $?.success?
+          lang = "en_US.UTF-8"
+        end
+
+        lang
+      end
+
+      def detect_language
+        langs = `/usr/bin/defaults read #{options[:bundle_id]} AppleLanguages 2>/dev/null`
+        unless $?.success?
+          langs = `/usr/bin/defaults read -g AppleLanguages`
+        end
+        langs.gsub!('-', '_')
+        langs.gsub!('Hant', 'TW')
+        langs.gsub!('Hans', 'CN')
+
+        language = []
+        langs.each_line do |line|
+          match = /\\w+/.match(line)
+          language << match[0] if match
+        end
+
+        language.join(":")
+      end
+
+      if __FILE__ == $0
+        ENV["PATH"] = "#{HOMEBREW_PREFIX}/bin:\#{ENV["PATH"]}"
+
+        app_env = setup_env(#{options[:env].inspect})
+        exec(app_env, #{command_str}, *ARGV)
+      end
+    EOS
+  end
+
+  def write_info_plist(target, version, **info)
+    write <<-EOS.undent
+      <?xml version="1.0" encoding="UTF-8"?>
+      <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+      <plist version="1.0">
+      <dict>
+        <key>CFBundleDisplayName</key>
+        <string>#{info[:CFBundleDisplayName] || target}</string>
+        <key>CFBundleExecutable</key>
+        <string>#{info[:CFBundleExecutable] || target}</string>
+        <key>CFBundleIconFile</key>
+        <string>#{info[:CFBundleIconFile] || "#{target}.icns"}</string>
+        <key>CFBundleIdentifier</key>
+        <string>#{info[:CFBundleIdentifier] || "sh.brew.#{target}"}</string>
+        <key>CFBundleInfoDictionaryVersion</key>
+        <string>#{info[:CFBundleInfoDictionaryVersion] || "6.0"}</string>
+        <key>CFBundleName</key>
+        <string>#{info[:CFBundleName] || target}</string>
+        <key>CFBundlePackageType</key>
+        <string>#{info[:CFBundlePackageType] || "AAPL"}</string>
+        <key>CFBundleShortVersionString</key>
+        <string>#{info[:CFBundleShortVersionString] || version}</string>
+        <key>CFBundleVersion</key>
+        <string>#{info[:CFBundleVersion] || version}</string>
+      </dict>
+      </plist>
+    EOS
+  end
+
+  def make_app_bundle(target, version, icon_path, *command, **options)
+    command = [target] if command.empty?
+    script = self + "#{target}.app/Contents/MacOS/#{target}"
+    script.write_gui_script(*command, options)
+    script.chmod(0755)
+
+    info = { CFBundleIdentifier: options[:bundle_id] }
+    info_plist = self + "#{target}.app/Contents/Info.plist"
+    info_plist.write_info_plist(target, version, info)
+
+    (self+"#{target}.app/Contents/Resources").mkdir
+    system("/usr/bin/sips", "-s", "format", "icns", icon_path,
+           "--out", self+"#{target}.app/Contents/Resources/#{target}.icns")
+  end
+
   def install_metafiles(from = Pathname.pwd)
     Pathname(from).children.each do |p|
       next if p.directory?
