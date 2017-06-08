@@ -125,6 +125,7 @@ module Homebrew
         <<-EOS.undent
           Your Command Line Tools are too outdated.
           #{MacOS::CLT.update_instructions}
+          #{MacOS::CLT.version_tag_instructions}
         EOS
       end
 

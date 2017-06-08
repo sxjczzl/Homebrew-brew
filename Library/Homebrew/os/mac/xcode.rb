@@ -211,6 +211,16 @@ module OS
         end
       end
 
+      def version_tag_instructions
+        if MacOS.version == "10.6"
+          <<-EOS.undent
+            If you want to keep using Xcode on your old, unsupported OS/HW sys for a bit longer (with a bit of alchemy), then:
+              cd `brew --repository`; git reset --hard 1.0.9
+              export HOMEBREW_NO_AUTO_UPDATE=1
+          EOS
+        end
+      end
+
       def latest_version
         # As of Xcode 8 CLT releases are no longer in sync with Xcode releases
         # on the older supported platform for that Xcode release, i.e there's no
