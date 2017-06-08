@@ -96,6 +96,11 @@ module Language
           yield if block_given?
         end
       end
+
+      # download and extract a package(s) source code
+      def cabal_get(*args)
+        system "cabal", "get", *args
+      end
     end
   end
 end
