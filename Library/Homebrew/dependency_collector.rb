@@ -131,8 +131,8 @@ class DependencyCollector
     when :ld64       then LD64Dependency.new if MacOS.version < :leopard
     # Tiger doesn't ship expat in /usr/lib
     when :expat      then Dependency.new("expat", tag) if MacOS.version < :leopard
-    when :python2
-      PythonRequirement.new(tags)
+    when :node       then NodeRequirement.new(tags)
+    when :python2    then PythonRequirement.new(tags)
     else
       raise ArgumentError, "Unsupported special dependency #{spec.inspect}"
     end
