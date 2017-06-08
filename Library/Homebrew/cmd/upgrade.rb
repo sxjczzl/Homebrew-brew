@@ -75,6 +75,11 @@ module Homebrew
       puts pinned.map { |f| "#{f.full_specified_name} #{f.pkg_version}" } * ", "
     end
 
+    if ENV["HOMEBREW_ASK"]
+      choice = prompt "y", "Do you want to proceed [Y/n] "
+      exit 0 if choice.downcase == "n"
+    end
+    
     # Sort keg_only before non-keg_only formulae to avoid any needless conflicts
     # with outdated, non-keg_only versions of formulae being upgraded.
     formulae_to_install.sort! do |a, b|
@@ -94,6 +99,12 @@ module Homebrew
       next unless f.installed?
       Homebrew::Cleanup.cleanup_formula f
     end
+  end
+
+  def prompt(default, *args)
+    print(*args)
+    result = gets.strip
+    return result.empty? ? default : result
   end
 
   def upgrade_pinned?
