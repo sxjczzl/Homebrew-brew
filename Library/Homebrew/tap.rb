@@ -298,7 +298,7 @@ class Tap
 
   # path to the directory of all {Formula} files for this {Tap}.
   def formula_dir
-    @formula_dir ||= potential_formula_dirs.detect(&:directory?) || path/"Formula"
+    @formula_dir ||= potential_formula_dirs.detect(&:directory?)
   end
 
   def potential_formula_dirs
