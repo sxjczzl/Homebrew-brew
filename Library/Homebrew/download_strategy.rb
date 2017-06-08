@@ -643,6 +643,14 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
   def initialize(name, resource)
     super
     @url = @url.sub("svn+http://", "")
+
+    # System SVN tends to barf on https, but brewed SVN should consistently
+    # work due to being linked to brewed OpenSSL & generated PEM, so we can
+    # provide automatic upgrades to https where possible.
+    if !ENV["HOMEBREW_SVN"].nil? || which("svn").to_s.include?(HOMEBREW_PREFIX) &&
+                                    @url =~ /svn\.code\.sf\.net/
+      @url = @url.sub(%r{^(http://|svn://)}, "https://")
+    end
   end
 
   def fetch
