@@ -36,16 +36,13 @@ module Homebrew
       end
     end
 
-    def self.add_valid_option(option, desc, value)
-      valid_option = { option: option, desc: desc, value: value, child_options: nil }
-      @valid_options.push(valid_option)
+    def self.add_valid_option(option_hash)
+      @valid_options.push(option_hash)
     end
 
-    def self.option(**hash_args, &block)
-      option_name = hash_args[:name]
-      option_desc = hash_args[:desc]
-      option_value = hash_args[:value]
-      option_name = "--#{option_name}"
+    def self.option(**option_hash, &block)
+      option_hash[:option] = "--#{option_hash[:option]}"
+      option_name = option_hash[:option]
       if @parent.nil?
         @root_options.push(option_name)
       else
@@ -56,7 +53,7 @@ module Homebrew
           hash[:child_options].push(option_name)
         end
       end
-      add_valid_option(option_name, option_desc, option_value)
+      add_valid_option(option_hash)
       return unless block_given?
       old_parent = @parent
       @parent = option_name
@@ -87,13 +84,18 @@ module Homebrew
       valid_options_with_values =
         @valid_options
         .select { |option_hash| option_hash[:value] }
-        .map { |option_hash| option_hash[:option] }
 
       options_without_value =
         argv_options_only
+        .select { |opt| valid_options_with_values.map { |x| x[:option] }.include?(opt.split("=", 2)[0]) }
         .select do |opt|
-          valid_options_with_values.include?(opt.split("=", 2)[0]) &&
-            (!opt.include?("=") || opt.split("=", 2)[1] == "")
+          (valid_options_with_values
+            .find { |x| x[:option]==opt.split("=", 2)[0] }[:equal_sign_presence]==true &&
+            valid_options_with_values.map { |hash| hash[:option] }.include?(opt.split("=", 2)[0]) &&
+            (!opt.include?("=") || opt.split("=", 2)[1] == "")) ||
+            (valid_options_with_values
+              .find { |x| x[:option]==opt.split("=", 2)[0] }[:equal_sign_presence]==false &&
+              (opt.include?("=") || ARGV[ARGV.index(opt.split("=", 2)[0])+1].start_with?("-")))
         end
       options_without_value.map do |opt|
         opt_name = opt.split("=", 2)[0]
@@ -147,14 +149,16 @@ module Homebrew
       value = hash[:value]
       if child_options.nil?
         return "[`#{option}`]" if value.nil?
-        return "[`#{option}=`<#{value}>]"
+        return "[`#{option}=`<#{value}>]" if hash[:equal_sign_presence]
+        return "[`#{option} `<#{value}>]"
       end
 
       childs_str = child_options.map do |co|
         option_string(co)
       end.join(" ")
       return "[`#{option}` #{childs_str}]" if value.nil?
-      return "[`#{option}=`<#{value}> #{childs_str}]"
+      return "[`#{option}=`<#{value}> #{childs_str}]" if hash[:equal_sign_presence]
+      "[`#{option} `<#{value}> #{childs_str}]"
     end
 
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
@@ -167,16 +171,19 @@ module Homebrew
         option_value = hash[:value]
         if parent_present
           return " "*begin_spaces + "With `#{option}`, #{desc}\n" if option_value.nil?
-          return " "*begin_spaces + "With `#{option}=`<#{option_value}>, #{desc}\n"
+          return " "*begin_spaces + "With `#{option}=`<#{option_value}>, #{desc}\n" if hash[:equal_sign_presence]
+          return " "*begin_spaces + "With `#{option} `<#{option_value}>, #{desc}\n"
         else
           return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n" if option_value.nil?
-          return " "*begin_spaces + "If `#{option}=`<#{option_value}> is specified, #{desc}\n"
+          return " "*begin_spaces + "If `#{option}=`<#{option_value}> is specified, #{desc}\n" if hash[:equal_sign_presence]
+          return " "*begin_spaces + "If `#{option} `<#{option_value}> is specified, #{desc}\n"
         end
       else
         # TODO: change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
         childs_str = child_options.map do |co|
           desc_string(co, begin_spaces, true)
         end.join("")
+        # TODO: change the below to cater to option_value.nil?, like above in this function
         return " "*begin_spaces + "With `#{option}`, #{desc}\n#{childs_str}" if parent_present
         return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n#{childs_str}"
       end
