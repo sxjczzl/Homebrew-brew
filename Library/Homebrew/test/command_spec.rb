@@ -43,11 +43,13 @@ describe Homebrew::Command do
     expect(command_options.get_error_message(argv_options)).to eq <<-EOS.undent
       2 invalid options provided: --bar1 --bar2
       Correct usage:
-      brew test_command [--bar][--foo][--quiet]:
+      brew test_command [--bar] [--foo] [--quiet]:
           This is test_command
 
           If --bar is passed, go to bar
+
           If --foo is passed, do foo
+
           If --quiet is passed, be quiet
     EOS
   end
@@ -80,7 +82,7 @@ describe Homebrew::Command do
 
     command_options.generate_help_and_manpage_output
     expect(command_options.help_output).to eq <<-EOS.undent
-      brew test_command [--quiet [--bar [--foo [--foo child]][--foo1=seconds]][--include-aliases]][--quiet1=days]:
+      brew test_command [--quiet [--bar [--foo [--foo child]] [--foo1=seconds]] [--include-aliases]] [--quiet1=days]:
           This is test_command
 
           If --quiet is passed, list only the names of commands without the header.
@@ -89,6 +91,7 @@ describe Homebrew::Command do
           With --foo child, do foo
           With --foo1=seconds, do foo for seconds
           With --include-aliases, the aliases of internal commands will be included.
+
           If --quiet1=days is specified, be quiet1 for days
     EOS
       .slice(0..-2)

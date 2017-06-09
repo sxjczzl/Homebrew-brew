@@ -18,6 +18,7 @@ module Homebrew
       desc "Show a list of built-in and external commands."
       option name: "quiet", desc: "list only the names of commands without the header." do
         option name: "include-aliases", desc: "the aliases of internal commands will be included."
+        # option name: "foo", desc: "do foo"
       end
       # option name: "prune", value: "days", desc: "remove all cache files older than <days>."
       # option name: "prune1", value: "days", desc: "remove all cache files older than <days>."

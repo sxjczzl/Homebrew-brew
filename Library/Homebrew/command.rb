@@ -144,18 +144,17 @@ module Homebrew
       child_options = hash[:child_options]
 
       # return "[`#{option}`]" if child_options.nil?
+      value = hash[:value]
       if child_options.nil?
-        value = hash[:value]
         return "[`#{option}`]" if value.nil?
         return "[`#{option}=`<#{value}>]"
       end
 
-      childs_str = ""
-      child_options.each do |child_option|
-        child_str = option_string(child_option)
-        childs_str += child_str
-      end
-      "[`#{option}` #{childs_str}]"
+      childs_str = child_options.map do |co|
+        option_string(co)
+      end.join(" ")
+      return "[`#{option}` #{childs_str}]" if value.nil?
+      return "[`#{option}=`<#{value}> #{childs_str}]"
     end
 
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
@@ -174,24 +173,22 @@ module Homebrew
           return " "*begin_spaces + "If `#{option}=`<#{option_value}> is specified, #{desc}\n"
         end
       else
-        childs_str = ""
-        child_options.each do |child_option|
-          # TODO: change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
-          child_str = desc_string(child_option, begin_spaces, true)
-          childs_str += child_str
-        end
+        # TODO: change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
+        childs_str = child_options.map do |co|
+          desc_string(co, begin_spaces, true)
+        end.join("")
         return " "*begin_spaces + "With `#{option}`, #{desc}\n#{childs_str}" if parent_present
         return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n#{childs_str}"
       end
     end
 
     def self.generate_help_and_manpage_output
-      option_str = ""
-      desc_str = ""
-      @root_options.each do |root_option|
-        desc_str += desc_string(root_option)
-        option_str += option_string(root_option)
-      end
+      option_str = @root_options.map do |ro|
+        option_string(ro)
+      end.join(" ")
+      desc_str = @root_options.map do |ro|
+        desc_string(ro)
+      end.join("\n")
       help_lines = "  " + <<-EOS.undent
         * `#{@command_name}` #{option_str}:
             #{@description}
