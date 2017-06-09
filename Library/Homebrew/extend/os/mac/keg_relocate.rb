@@ -84,7 +84,16 @@ class Keg
     dylibs.each(&block)
   end
 
+  # Rust ships two copies of its libraries, one in lib/ and the other in lib/rustlib/.
+  # We need to avoid rewriting the second copy until
+  # https://github.com/rust-lang/rust/issues/39870 is fixed.
+  def rust_duplicate?(fn)
+    fn =~ %r{/lib/rustlib/}
+  end
+
   def dylib_id_for(file)
+    return file.dylib_id if rust_duplicate?(file.to_s)
+
     # The new dylib ID should have the same basename as the old dylib ID, not
     # the basename of the file itself.
     basename = File.basename(file.dylib_id)
