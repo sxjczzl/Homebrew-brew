@@ -65,7 +65,11 @@ module Homebrew
       if @description.nil?
         @description = desc
       else
-        @description = "#{@description}\n#{desc}"
+        @description = <<-EOS.undent
+          #{@description}
+          #{desc}
+        EOS
+                             .strip
       end
     end
 
@@ -89,13 +93,9 @@ module Homebrew
         argv_options_only
         .select { |opt| valid_options_with_values.map { |x| x[:option] }.include?(opt.split("=", 2)[0]) }
         .select do |opt|
-          (valid_options_with_values
-            .find { |x| x[:option]==opt.split("=", 2)[0] }[:equal_sign_presence]==true &&
-            valid_options_with_values.map { |hash| hash[:option] }.include?(opt.split("=", 2)[0]) &&
-            (!opt.include?("=") || opt.split("=", 2)[1] == "")) ||
-            (valid_options_with_values
-              .find { |x| x[:option]==opt.split("=", 2)[0] }[:equal_sign_presence]==false &&
-              (opt.include?("=") || ARGV[ARGV.index(opt.split("=", 2)[0])+1].start_with?("-")))
+          (opt.include?("=") && opt.split("=", 2)[1].empty?) ||
+            (!opt.include?("=") && ARGV[ARGV.index(opt)+1] &&
+              ARGV[ARGV.index(opt)+1].start_with?("-"))
         end
       options_without_value.map do |opt|
         opt_name = opt.split("=", 2)[0]
@@ -149,44 +149,46 @@ module Homebrew
       value = hash[:value]
       if child_options.nil?
         return "[`#{option}`]" if value.nil?
-        return "[`#{option}=`<#{value}>]" if hash[:equal_sign_presence]
-        return "[`#{option} `<#{value}>]"
+        return "[`#{option}=`<#{value}>]"
       end
 
       childs_str = child_options.map do |co|
         option_string(co)
       end.join(" ")
       return "[`#{option}` #{childs_str}]" if value.nil?
-      return "[`#{option}=`<#{value}> #{childs_str}]" if hash[:equal_sign_presence]
-      "[`#{option} `<#{value}> #{childs_str}]"
+      "[`#{option}=`<#{value}> #{childs_str}]"
     end
 
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
       hash = @valid_options.find { |x| x[:option] == option }
       desc = hash[:desc]
       child_options = hash[:child_options]
-      if child_options.nil?
-        # return " "*begin_spaces + "With `#{option}`, #{desc}\n" if parent_present
-        # return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n"
-        option_value = hash[:value]
-        if parent_present
-          return " "*begin_spaces + "With `#{option}`, #{desc}\n" if option_value.nil?
-          return " "*begin_spaces + "With `#{option}=`<#{option_value}>, #{desc}\n" if hash[:equal_sign_presence]
-          return " "*begin_spaces + "With `#{option} `<#{option_value}>, #{desc}\n"
-        else
-          return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n" if option_value.nil?
-          return " "*begin_spaces + "If `#{option}=`<#{option_value}> is specified, #{desc}\n" if hash[:equal_sign_presence]
-          return " "*begin_spaces + "If `#{option} `<#{option_value}> is specified, #{desc}\n"
-        end
+      option_value = hash[:value]
+
+      output = <<-EOS.undent
+        `#{option}`, #{desc}
+      EOS
+      if parent_present
+        output = output.gsub(/`#{option}`/, 'With \\0')
+      elsif option_value.nil?
+        output = output.gsub(/`#{option}`/, 'If \\0 is passed')
       else
-        # TODO: change begin_spaces to begin_spaces+2 if maintainers agree on indenting the descriptions of childs
+        output = output.gsub(/`#{option}`/, 'If \\0 is specified')
+      end
+      if option_value
+        output = output
+                 .gsub(/`#{option}`/, "`#{option}=`<#{option_value}>")
+      end
+      unless child_options.nil?
         childs_str = child_options.map do |co|
           desc_string(co, begin_spaces, true)
-        end.join("")
-        # TODO: change the below to cater to option_value.nil?, like above in this function
-        return " "*begin_spaces + "With `#{option}`, #{desc}\n#{childs_str}" if parent_present
-        return " "*begin_spaces + "If `#{option}` is passed, #{desc}\n#{childs_str}"
+        end.join("\s\s\s\s")
+        output = <<-EOS.undent
+          #{output}\s\s\s\s#{childs_str}
+        EOS
+                       .chop
       end
+      output
     end
 
     def self.generate_help_and_manpage_output
@@ -195,21 +197,23 @@ module Homebrew
       end.join(" ")
       desc_str = @root_options.map do |ro|
         desc_string(ro)
-      end.join("\n")
-      help_lines = "  " + <<-EOS.undent
+      end.join("\n\s\s\s\s")
+
+      help_lines = "\s\s" + <<-EOS.undent
         * `#{@command_name}` #{option_str}:
             #{@description}
 
-        #{desc_str}
+            #{desc_str}
       EOS
-      @man_output = help_lines.slice(0..-2)
+                   .chop
+      @man_output = help_lines
       help_lines = help_lines.split("\n")
       help_lines.map! do |line|
         line
           .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
           .gsub(/`(.*?)`/, "#{Tty.bold}\\1#{Tty.reset}")
           .gsub(/<(.*?)>/, "#{Tty.underline}\\1#{Tty.reset}")
-      end.join.strip
+      end
       @help_output = help_lines.join("\n")
     end
   end
