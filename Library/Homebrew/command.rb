@@ -40,8 +40,18 @@ module Homebrew
       @valid_options.push(option_hash)
     end
 
+    def self.switches
+      @valid_options.select { |h| /^-(?!-)/ =~ h[:option] || h[:switch] }
+                    .map { |h| h[:switch] || h[:option] }
+    end
+
     def self.option(**option_hash, &block)
-      option_hash[:option] = "--#{option_hash[:option]}"
+      option_hash[:option] = "--#{option_hash[:option]}" if option_hash[:option]
+      option_hash[:switch] = "-#{option_hash[:switch]}" if option_hash[:switch]
+      if option_hash[:option].nil?
+        option_hash[:option] = option_hash[:switch]
+        option_hash[:switch] = nil
+      end
       option_name = option_hash[:option]
       if @parent.nil?
         @root_options.push(option_name)
@@ -74,6 +84,7 @@ module Homebrew
     end
 
     def self.argv_invalid_options_passed(argv_options_only)
+      argv_options_only = argv_options_only.select { |arg| /^--/ =~ arg }
       argv_options_only = argv_options_only.uniq
       valid_option_names =
         @valid_options
@@ -85,6 +96,7 @@ module Homebrew
     end
 
     def self.argv_options_without_value_passed(argv_options_only)
+      argv_options_only = argv_options_only.select { |arg| /^--/ =~ arg }
       valid_options_with_values =
         @valid_options
         .select { |option_hash| option_hash[:value] }
@@ -94,8 +106,8 @@ module Homebrew
         .select { |opt| valid_options_with_values.map { |x| x[:option] }.include?(opt.split("=", 2)[0]) }
         .select do |opt|
           (opt.include?("=") && opt.split("=", 2)[1].empty?) ||
-            (!opt.include?("=") && ARGV[ARGV.index(opt)+1] &&
-              ARGV[ARGV.index(opt)+1].start_with?("-"))
+            (!opt.include?("=") && (ARGV[ARGV.index(opt)+1].nil? ||
+                          ARGV[ARGV.index(opt)+1].start_with?("-")))
         end
       options_without_value.map do |opt|
         opt_name = opt.split("=", 2)[0]
@@ -104,36 +116,39 @@ module Homebrew
       end
     end
 
+    def self.argv_invalid_switches_passed(argv_options_only)
+      argv_options_only.select { |arg| /^-(?!-)/ =~ arg }
+                       .map { |s| s[1..-1] }
+                       .select { |s| !(s.split("") - switches.map { |s| s[1..-1] }).empty? }
+                       .map { |s| "-#{s}" }
+    end
+
     def self.get_error_message(argv_options_only)
       generate_help_and_manpage_output if @help_output.nil? && @man_output.nil?
 
       argv_invalid_options = argv_invalid_options_passed(argv_options_only)
       argv_options_without_value = argv_options_without_value_passed(argv_options_only)
+      argv_invalid_switches = argv_invalid_switches_passed(argv_options_only)
+      # puts "argv_invalid_switches:- #{argv_invalid_switches}"
 
       return if argv_invalid_options.empty? && argv_options_without_value.empty?
       invalid_option_pluralize = Formatter.pluralize(argv_invalid_options.length, "invalid option")
       invalid_option_string = "#{invalid_option_pluralize} provided: #{argv_invalid_options.join " "}"
+      invalid_switch_pluralize = Formatter.pluralize(argv_invalid_switches.length, "invalid switch")
+      invalid_switch_string = "#{invalid_switch_pluralize} provided: #{argv_invalid_switches.join " "}"
+      # puts "LOL", invalid_switch_string
       unless argv_options_without_value.empty?
         invalid_option_string = <<-EOS.undent
           #{invalid_option_string}
           #{argv_options_without_value.map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")}
+          #{invalid_switch_string unless invalid_switch_string.empty?}
         EOS
       end
-      error_message = nil
-      if @valid_options.empty?
-        error_message = <<-EOS.undent
-          #{invalid_option_string}
-          The command has no valid options
-
-        EOS
-      else
-        error_message = <<-EOS.undent
-          #{invalid_option_string}
-          Correct usage:
-          #{@help_output}
-        EOS
-      end
-      error_message
+      <<-EOS.undent
+        #{invalid_option_string}
+        Correct usage:
+        #{@help_output}
+      EOS
     end
 
     def self.check_invalid_options
@@ -179,6 +194,9 @@ module Homebrew
         output = output
                  .gsub(/`#{option}`/, "`#{option}=`<#{option_value}>")
       end
+      if hash[:switch]
+        output = output.gsub(/`#{option}`/, "\\0 or `#{hash[:switch]}`")
+      end
       unless child_options.nil?
         childs_str = child_options.map do |co|
           desc_string(co, begin_spaces, true)
@@ -192,6 +210,7 @@ module Homebrew
     end
 
     def self.generate_help_and_manpage_output
+      # puts "root_options: #{@root_options}"
       option_str = @root_options.map do |ro|
         option_string(ro)
       end.join(" ")

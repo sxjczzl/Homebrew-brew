@@ -58,7 +58,7 @@ describe Homebrew::Command do
     command_options = Homebrew::Command
     command_options.initialize
     command_options.option option: "bar", desc: "go to bar"
-    command_options.option option: "--foo", desc: "do foo"
+    command_options.option option: "foo", desc: "do foo"
     command_options.option option: "quiet", desc: "be quiet"
     expect(command_options.get_error_message(["--quiet", "--bar"])).to eq(nil)
   end
