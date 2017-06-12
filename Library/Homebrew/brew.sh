@@ -123,7 +123,15 @@ HOMEBREW_USER_AGENT_CURL="$HOMEBREW_USER_AGENT $HOMEBREW_CURL_VERSION"
 
 if [[ -z "$HOMEBREW_CACHE" ]]
 then
-  HOMEBREW_CACHE="$HOME/Library/Caches/Homebrew"
+  if [[ -n "$HOMEBREW_MACOS" ]]
+  then
+    HOMEBREW_CACHE="$HOME/Library/Caches/Homebrew"
+  elif [[ -n "$XDG_CACHE_HOME" ]]
+  then
+    HOMEBREW_CACHE="$XDG_CACHE_HOME/Homebrew"
+  else
+    HOMEBREW_CACHE="$HOME/.cache/Homebrew"
+  fi
 fi
 
 # Declared in bin/brew
