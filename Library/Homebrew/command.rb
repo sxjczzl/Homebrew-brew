@@ -151,7 +151,7 @@ module Homebrew
       EOS
     end
 
-    def self.check_invalid_options
+    def self.check_for_errors
       error_message = get_error_message(ARGV.options_only)
       odie error_message unless error_message.nil?
     end

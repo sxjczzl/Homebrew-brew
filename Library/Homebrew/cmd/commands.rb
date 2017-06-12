@@ -27,8 +27,8 @@ module Homebrew
     end
 
     def self.call
-      # TODO: Put this check_invalid_options() method such that it doesn't have to be here
-      check_invalid_options
+      # TODO: Put this check_for_errors() method such that it doesn't have to be here
+      check_for_errors
 
       if quiet?
         cmds = internal_commands + external_commands

@@ -42,6 +42,7 @@ describe Homebrew::Command do
     argv_options = ["--bar1", "--bar2", "--bar1", "--bar", "--foo"]
     expect(command_options.get_error_message(argv_options)).to eq <<-EOS.undent
       2 invalid options provided: --bar1 --bar2
+
       Correct usage:
       brew test_command [--bar] [--foo] [--quiet]:
           This is test_command
