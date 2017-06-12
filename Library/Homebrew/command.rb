@@ -12,6 +12,8 @@ module Homebrew
       @help_output = nil
       @man_output = nil
       @root_options = []
+      @optional_trailing_args = []
+      @compulsory_trailing_args = []
     end
 
     def self.command(cmd)
@@ -210,16 +212,23 @@ module Homebrew
     end
 
     def self.generate_help_and_manpage_output
-      # puts "root_options: #{@root_options}"
       option_str = @root_options.map do |ro|
         option_string(ro)
       end.join(" ")
       desc_str = @root_options.map do |ro|
         desc_string(ro)
       end.join("\n\s\s\s\s")
+      unless @optional_trailing_args.empty?
+        opt_trailing_str = " [<" + @optional_trailing_args.map { |a| a }
+                           .join(">] [<") + ">]"
+      end
+      unless @compulsory_trailing_args.empty?
+        comp_trailing_str = " <" + @compulsory_trailing_args.map { |a| a }
+                            .join("> <") + ">"
+      end
 
       help_lines = "\s\s" + <<-EOS.undent
-        * `#{@command_name}` #{option_str}:
+        * `#{@command_name}` #{option_str}#{opt_trailing_str}#{comp_trailing_str}:
             #{@description}
 
             #{desc_str}
@@ -234,6 +243,14 @@ module Homebrew
           .gsub(/<(.*?)>/, "#{Tty.underline}\\1#{Tty.reset}")
       end
       @help_output = help_lines.join("\n")
+    end
+
+    def self.optional_arg(arg)
+      @optional_trailing_args.push(arg)
+    end
+
+    def self.compulsory_arg(arg)
+      @compulsory_trailing_args.push(arg)
     end
   end
 end
