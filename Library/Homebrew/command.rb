@@ -119,7 +119,7 @@ module Homebrew
     def self.argv_invalid_switches_passed(argv_options_only)
       argv_options_only.select { |arg| /^-(?!-)/ =~ arg }
                        .map { |s| s[1..-1] }
-                       .select { |s| !(s.split("") - switches.map { |s| s[1..-1] }).empty? }
+                       .select { |s| !(s.split("") - switches.map { |sw| sw[1..-1] }).empty? }
                        .map { |s| "-#{s}" }
     end
 
@@ -129,23 +129,23 @@ module Homebrew
       argv_invalid_options = argv_invalid_options_passed(argv_options_only)
       argv_options_without_value = argv_options_without_value_passed(argv_options_only)
       argv_invalid_switches = argv_invalid_switches_passed(argv_options_only)
-      # puts "argv_invalid_switches:- #{argv_invalid_switches}"
+      invalid_options_switches = argv_invalid_options + argv_invalid_switches
 
-      return if argv_invalid_options.empty? && argv_options_without_value.empty?
-      invalid_option_pluralize = Formatter.pluralize(argv_invalid_options.length, "invalid option")
-      invalid_option_string = "#{invalid_option_pluralize} provided: #{argv_invalid_options.join " "}"
-      invalid_switch_pluralize = Formatter.pluralize(argv_invalid_switches.length, "invalid switch")
-      invalid_switch_string = "#{invalid_switch_pluralize} provided: #{argv_invalid_switches.join " "}"
-      # puts "LOL", invalid_switch_string
-      unless argv_options_without_value.empty?
-        invalid_option_string = <<-EOS.undent
-          #{invalid_option_string}
-          #{argv_options_without_value.map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")}
-          #{invalid_switch_string unless invalid_switch_string.empty?}
-        EOS
-      end
+      return if invalid_options_switches.empty? && argv_options_without_value.empty?
+
+      invalid_opt_str = Formatter.pluralize(invalid_options_switches.length, "invalid option")
+      invalid_opt_str = "#{invalid_opt_str} provided: #{invalid_options_switches.join " "}"
+      opt_without_value_str =
+        argv_options_without_value
+        .map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")
+      error_msg = <<-EOS.undent
+        #{invalid_opt_str unless invalid_options_switches.empty?}\
+        #{"\n" if !invalid_options_switches.empty? && !opt_without_value_str.empty?}\
+        #{opt_without_value_str unless opt_without_value_str.empty?}
+      EOS
+
       <<-EOS.undent
-        #{invalid_option_string}
+        #{error_msg}
         Correct usage:
         #{@help_output}
       EOS
