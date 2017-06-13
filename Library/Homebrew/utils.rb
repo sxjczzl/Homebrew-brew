@@ -334,8 +334,8 @@ def which_editor
               .first
   return editor if editor
 
-  # Find Atom, Sublime Text, Textmate, BBEdit / TextWrangler, or vim
-  editor = %w[atom subl mate edit vim].find do |candidate|
+  # Find Atom, Sublime Text, Textmate, BBEdit / TextWrangler, MacVim, or vim
+  editor = %w[atom subl mate edit mvim vim].find do |candidate|
     candidate if which(candidate, ENV["HOMEBREW_PATH"])
   end
   editor ||= "/usr/bin/vim"
