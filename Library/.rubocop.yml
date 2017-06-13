@@ -205,4 +205,4 @@ Style/VariableNumber:
   Enabled: false
 
 Style/WordArray:
-  MinSize: 4
+  EnforcedStyle: brackets
