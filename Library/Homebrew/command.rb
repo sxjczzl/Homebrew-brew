@@ -47,7 +47,22 @@ module Homebrew
                     .map { |h| h[:switch] || h[:option] }
     end
 
-    def self.option(**option_hash, &block)
+    def self.option(*args, **option_hash, &block)
+      if args.length == 2
+        option_hash[:switch] = args[0]
+        option_hash[:option] = args[1]
+      elsif args.length == 1
+        if args[0].length == 1
+          option_hash[:switch] = args[0]
+        else
+          option_hash[:option] = args[0]
+        end
+      else
+        raise ArgumentError, <<-EOS.undent
+          Developer's Error. Incorrect # of arguments for option in options block
+        EOS
+      end
+
       option_hash[:option] = "--#{option_hash[:option]}" if option_hash[:option]
       option_hash[:switch] = "-#{option_hash[:switch]}" if option_hash[:switch]
       if option_hash[:option].nil?

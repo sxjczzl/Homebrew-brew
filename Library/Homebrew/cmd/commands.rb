@@ -20,14 +20,14 @@ module Homebrew
       optional_arg :formulae1
       compulsory_arg :car
       compulsory_arg :bus
-      option option: "quiet", desc: "list only the names of commands without the header.", switch: "n" do
-        option option: "include-aliases", desc: "the aliases of internal commands will be included."
-        option option: "foo", desc: "do foo"
-        option switch: "t", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
+      option "n", "quiet", desc: "list only the names of commands without the header." do
+        option "include-aliases", desc: "the aliases of internal commands will be included."
+        option "foo", desc: "do foo"
+        option "t", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
       end
-      option switch: "s", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
-      option option: "prune", value: "days", desc: "remove all cache files older than <days>."
-      option option: "prune1", value: "days", desc: "remove all cache files older than <days>."
+      option "s", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
+      option "prune", value: "days", desc: "remove all cache files older than <days>."
+      option "prune1", value: "days", desc: "remove all cache files older than <days>."
     end
 
     def self.call
