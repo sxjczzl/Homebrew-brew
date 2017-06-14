@@ -49,6 +49,13 @@ module Homebrew
 
     def self.option(*args, **option_hash, &block)
       if args.length == 2
+        if args[0].length != 1
+          raise ArgumentError, <<-EOS.undent
+            Developer's Error. Incorrect option params in options block
+            Format: switch, option, ...
+            switch should be of length = 1
+          EOS
+        end
         option_hash[:switch] = args[0]
         option_hash[:option] = args[1]
       elsif args.length == 1
