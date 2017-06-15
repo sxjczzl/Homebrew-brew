@@ -133,6 +133,14 @@ class Sandbox
     end
   end
 
+  def deny_read_broad_home
+    if HOMEBREW_PREFIX.to_s != "/Users/#{ENV["USER"]}"
+      deny_read_path "/Users/#{ENV["USER"]}"
+      allow_read_path "/Users/#{ENV["USER"]}/Library"
+    end
+    deny_read_shell_files
+  end
+
   def exec(*args)
     seatbelt = Tempfile.new(["homebrew", ".sb"], HOMEBREW_TEMP)
     seatbelt.write(@profile.dump)
