@@ -137,6 +137,7 @@ class Sandbox
     if HOMEBREW_PREFIX.to_s != "/Users/#{ENV["USER"]}"
       deny_read_path "/Users/#{ENV["USER"]}"
       allow_read_path "/Users/#{ENV["USER"]}/Library"
+      allow_read_path "/Users/#{ENV["USER"]}/.gem" # Used by Homebrew
     end
     deny_read_shell_files
   end
