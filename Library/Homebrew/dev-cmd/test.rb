@@ -72,6 +72,7 @@ module Homebrew
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/cache")
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/log")
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/run")
+            sandbox.deny_read_broad_home
             sandbox.exec(*args)
           else
             exec(*args)
