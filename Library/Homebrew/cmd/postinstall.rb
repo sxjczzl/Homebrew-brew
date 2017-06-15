@@ -40,6 +40,7 @@ module Homebrew
         sandbox.allow_write_log(formula)
         sandbox.allow_write_xcode
         sandbox.deny_write_homebrew_repository
+        sandbox.deny_read_broad_home
         sandbox.allow_write_cellar(formula)
         Keg::TOP_LEVEL_DIRECTORIES.each do |dir|
           sandbox.allow_write_path "#{HOMEBREW_PREFIX}/#{dir}"
