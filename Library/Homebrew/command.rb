@@ -14,6 +14,7 @@ module Homebrew
       @root_options = []
       @optional_trailing_args = []
       @compulsory_trailing_args = []
+      @argv = ARGV
     end
 
     def self.command(cmd)
@@ -147,6 +148,34 @@ module Homebrew
                        .map { |s| "-#{s}" }
     end
 
+    def self.trailing_args_error
+      # test case: brew commands --lol lo --prune pop --fo po
+      valid_options_with_values =
+        @valid_options
+        .select { |option_hash| option_hash[:value] }
+        .map { |option_hash| option_hash[:option] }
+
+      trailing_args =
+        [nil, *@argv]
+        .each_cons(2)
+        .select do |prev_arg, arg|
+          (prev_arg.nil? && !arg.start_with?("-")) ||
+            (!prev_arg.nil? && !valid_options_with_values.include?(prev_arg))
+        end
+        .map { |_prev_arg, arg| arg }
+        .select { |arg| !arg.start_with?("-") }
+
+      return if trailing_args.empty?
+      if (@compulsory_trailing_args+@optional_trailing_args).include?(:formulae)
+        invalid_formulas =
+          trailing_args
+          .select { |arg| Formulary.loader_for(arg).class.to_s == "Formulary::NullLoader" }
+        return "Invalid formula name(s): #{invalid_formulas.join(" ")}" unless invalid_formulas.empty?
+      else
+        return "Invalid trailing argument(s): #{trailing_args.join(" ")}"
+      end
+    end
+
     def self.get_error_message(argv_options_only)
       generate_help_and_manpage_output if @help_output.nil? && @man_output.nil?
 
@@ -159,13 +188,15 @@ module Homebrew
 
       invalid_opt_str = Formatter.pluralize(invalid_options_switches.length, "invalid option")
       invalid_opt_str = "#{invalid_opt_str} provided: #{invalid_options_switches.join " "}"
+      trailing_args_err = trailing_args_error
       opt_without_value_str =
         argv_options_without_value
         .map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")
       error_msg = <<-EOS.undent
         #{invalid_opt_str unless invalid_options_switches.empty?}\
         #{"\n" if !invalid_options_switches.empty? && !opt_without_value_str.empty?}\
-        #{opt_without_value_str unless opt_without_value_str.empty?}
+        #{opt_without_value_str unless opt_without_value_str.empty?}\
+        #{"\n"+trailing_args_err unless trailing_args_err.nil?}
       EOS
 
       <<-EOS.undent
