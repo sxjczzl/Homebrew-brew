@@ -669,7 +669,15 @@ class FormulaInstaller
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"build.sandbox.log")
-        sandbox.allow_write_path(ENV["HOME"]) if ARGV.interactive?
+
+        if ARGV.interactive?
+          # The allow_read here is superfluous for now.
+          sandbox.allow_read_path(ENV["HOME"])
+          sandbox.allow_write_path(ENV["HOME"])
+        else
+          sandbox.deny_read_broad_home
+        end
+
         sandbox.allow_write_temp_and_cache
         sandbox.allow_write_log(formula)
         sandbox.allow_write_xcode
