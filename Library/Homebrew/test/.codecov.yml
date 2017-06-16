@@ -1,4 +1,4 @@
 comment: off
 
 fixes:
-  - "::Library/Homebrew/"
+  - "Library/Homebrew/::"
