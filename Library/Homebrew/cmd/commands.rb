@@ -16,10 +16,10 @@ module Homebrew
     options do
       command "commands"
       desc "Show a list of built-in and external commands."
-      optional_arg :formulae
-      optional_arg :formulae1
-      compulsory_arg :car
-      compulsory_arg :bus
+      argument :car
+      argument :bus
+      argument :formulae, optional: true
+      argument :formulae1, optional: true
       option "n", "quiet", desc: "list only the names of commands without the header." do
         option "include-aliases", desc: "the aliases of internal commands will be included."
         option "foo", desc: "do foo"

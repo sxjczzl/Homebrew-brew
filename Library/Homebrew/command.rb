@@ -298,12 +298,14 @@ module Homebrew
       @help_output = help_lines.join("\n")
     end
 
-    def self.optional_arg(arg)
-      @optional_trailing_args.push(arg)
-    end
-
-    def self.compulsory_arg(arg)
-      @compulsory_trailing_args.push(arg)
+    def self.argument(name, **hash)
+      optional = hash[:optional]
+      optional = false if optional.nil?
+      if optional == true
+        @optional_trailing_args.push(name)
+      else
+        @compulsory_trailing_args.push(name)
+      end
     end
   end
 end
