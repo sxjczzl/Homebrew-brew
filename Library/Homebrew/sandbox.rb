@@ -134,8 +134,9 @@ class Sandbox
   end
 
   def deny_read_broad_home
-    # Limit this to protecting non-HOME installations for now.
-    if HOMEBREW_PREFIX.to_s != "/Users/#{ENV["USER"]}"
+    # Limit this to protecting non-HOME & human installations for now.
+    if HOMEBREW_PREFIX.to_s != "/Users/#{ENV["USER"]}" &&
+       HOMEBREW_REPOSITORY.to_s != "/Users/#{ENV["USER"]}" && !ENV["CI"]
       # Deny reading to everything under /Users/xyz.
       deny_read "^/Users/#{ENV["USER"]}/[^/]+", type: :regex
       # Don't deny read access to /Users/xyz itself.
