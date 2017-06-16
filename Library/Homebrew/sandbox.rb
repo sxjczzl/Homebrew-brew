@@ -134,12 +134,21 @@ class Sandbox
   end
 
   def deny_read_broad_home
+    # Limit this to protecting non-HOME installations for now.
     if HOMEBREW_PREFIX.to_s != "/Users/#{ENV["USER"]}"
-      deny_read_path "/Users/#{ENV["USER"]}"
+      # Deny reading to everything under /Users/xyz.
+      deny_read "^/Users/#{ENV["USER"]}/[^/]+", type: :regex
+      # Don't deny read access to /Users/xyz itself.
+      allow_read "/Users/#{ENV["USER"]}"
+      # Need to test this more, but Apple dumps things in here that may need reading.
       allow_read_path "/Users/#{ENV["USER"]}/Library"
-      allow_read_path "/Users/#{ENV["USER"]}/.gem" # Used by Homebrew
+      # Used by Homebrew.
+      allow_read_path "/Users/#{ENV["USER"]}/.gem"
+      # Used by the HEAD install_spec tests.
+      allow_read "/Users/#{ENV["USER"]}/.gitconfig"
+    else
+      deny_read_shell_files
     end
-    deny_read_shell_files
   end
 
   def exec(*args)
