@@ -15,6 +15,7 @@ module Homebrew
       @optional_trailing_args = []
       @compulsory_trailing_args = []
       @argv = ARGV
+      @mutually_exclusive_options = [] # array of array
     end
 
     def self.command(cmd)
@@ -25,6 +26,7 @@ module Homebrew
       initialize
       @parent = nil
       class_eval(&block)
+      handle_mutually_exclusive_options
       generate_help_and_manpage_output
       build_methods_from_options
     end
@@ -36,6 +38,24 @@ module Homebrew
         Command.define_singleton_method("#{option_name}?") do
           ARGV.include? "--#{option_name.tr("_", "-")}"
         end
+      end
+    end
+
+    def self.mutually_exclusive_options(*opts)
+      opts = opts.map do |opt|
+        if opt.length == 1
+          "-#{opt}"
+        else
+          "--#{opt}"
+        end
+      end
+      @mutually_exclusive_options.push(opts)
+    end
+
+    def self.handle_mutually_exclusive_options
+      @mutually_exclusive_options.each do |opts|
+        hash = @valid_options.find { |h| h[:option] == opts[0] }
+        hash[:mutually_exclusive_options] = opts.drop(1)
       end
     end
 
@@ -214,19 +234,25 @@ module Homebrew
     def self.option_string(option)
       hash = @valid_options.find { |x| x[:option] == option }
       child_options = hash[:child_options]
-
-      # return "[`#{option}`]" if child_options.nil?
       value = hash[:value]
-      if child_options.nil?
-        return "[`#{option}`]" if value.nil?
-        return "[`#{option}=`<#{value}>]"
-      end
+      mut_excl_opts = hash[:mutually_exclusive_options]
 
-      childs_str = child_options.map do |co|
-        option_string(co)
-      end.join(" ")
-      return "[`#{option}` #{childs_str}]" if value.nil?
-      "[`#{option}=`<#{value}> #{childs_str}]"
+      return if @valid_options.map { |h| h[:mutually_exclusive_options] }.flatten.include?(option)
+      output = "[`#{option}`]"
+      if child_options
+        childs_str = child_options.map do |co|
+          option_string(co)
+        end.join(" ")
+        output = output.gsub(/`#{option}`/, "`#{option}` #{childs_str}")
+      end
+      if value
+        output = output.gsub(/`#{option}`/, "`#{option}=`<#{value}>")
+      end
+      if mut_excl_opts
+        mut_excl_opts = [option, *mut_excl_opts]
+        output = output.gsub(/`#{option}`/, "`#{mut_excl_opts.join("`|`")}`")
+      end
+      output
     end
 
     def self.desc_string(option, begin_spaces = 4, parent_present = false)
@@ -267,7 +293,7 @@ module Homebrew
     def self.generate_help_and_manpage_output
       option_str = @root_options.map do |ro|
         option_string(ro)
-      end.join(" ")
+      end.join(" ").gsub(/\s+/, " ")
       desc_str = @root_options.map do |ro|
         desc_string(ro)
       end.join("\n\s\s\s\s")

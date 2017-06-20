@@ -16,11 +16,12 @@ module Homebrew
     options do
       command "commands"
       desc "Show a list of built-in and external commands."
-      argument :car
-      argument :bus
-      argument :formulae, optional: true
-      argument :formulae1, optional: true
-      option "n", "quiet", desc: "list only the names of commands without the header." do
+      # argument :car
+      # argument :bus
+      # argument :formulae, optional: true
+      # argument :formulae1, optional: true
+      mutually_exclusive_options "quiet", "s", "p"
+      option "quiet", desc: "list only the names of commands without the header." do
         option "include-aliases", desc: "the aliases of internal commands will be included."
         option "foo", desc: "do foo"
         option "t", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
