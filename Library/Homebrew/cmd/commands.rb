@@ -15,21 +15,20 @@ module Homebrew
   class CommandsCommand < Command
     options do
       command "commands"
-      desc "Show a list of built-in and external commands."
-      # argument :car
-      # argument :bus
-      # argument :formulae, optional: true
-      # argument :formulae1, optional: true
-      # mutually_exclusive_options "quiet", "s", "p"
-      option "quiet", desc: "list only the names of commands without the header." do
-        option "include-aliases", desc: "the aliases of internal commands will be included."
-        # option "f","foo", desc: "do foo"
-        # option "t", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
-      end
-      # option "b","bar",desc:"go to bar"
-      # option "s", desc: "scrub the cache, removing downloads for even the latest versions of formulae."
-      # option "prune", value: "days", desc: "remove all cache files older than <days>."
-      # option "prune1", value: "days", desc: "remove all cache files older than <days>."
+      desc "Install <formula>."
+      argument :formulae
+      option "d", "debug", desc: "open an interactive debugging session with access to IRB or a shell inside the temporary build directory."
+      option "env", value: "std", desc: "use the standard build environment instead of superenv."
+      option "ignore-dependencies", desc: "skip installing any dependencies of any kind. If they are not already present, the formula will probably fail to install."
+      option "only-dependencies", desc: "install the dependencies with specified options but do not install the specified formula."
+      mutually_exclusive_options "ignore-dependencies", "only-dependencies"
+      option "cc", value: "compiler", desc: "attempt to compile using <compiler>. <compiler> should be the name of the compiler's executable, for instance `gcc-4.2` for Apple's GCC 4.2, or `gcc-4.9` for a Homebrew-provided GCC 4.9."
+      option "s", "build-from-source", desc: "compile the specified formula from source even if a bottle is provided. Dependencies will still be installed from bottles if they are available."
+      option "force-bottle", desc: "install from a bottle if it exists for the current or newest version of macOS, even if it would not normally be used for installation."
+      option "devel", desc: "and <formula> defines it, install the development version."
+      option "HEAD", desc: "and <formula> defines it, install the HEAD version, aka master, trunk, unstable."
+      option "keep-tmp", desc: "the temporary files created during installation are not deleted."
+      option "build-bottle", desc: "prepare the formula for eventual bottling during installation."
     end
 
     def self.call
