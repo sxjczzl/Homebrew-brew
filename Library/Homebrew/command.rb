@@ -7,10 +7,10 @@ module Homebrew
 
     def self.initialize
       @valid_options = []
-      @description = nil
-      @command_name = nil
-      @help_output = nil
-      @man_output = nil
+      # @description = nil
+      # @command_name = nil
+      # @help_output = nil
+      # @man_output = nil
       @root_options = []
       @optional_trailing_args = []
       @compulsory_trailing_args = []
@@ -18,7 +18,7 @@ module Homebrew
       @mutually_exclusive_options = [] # array of array
     end
 
-    def self.command(cmd)
+    def self.command_name(cmd)
       @command_name = cmd
     end
 
@@ -26,6 +26,7 @@ module Homebrew
       initialize
       @parent = nil
       class_eval(&block)
+      puts @valid_options
       handle_mutually_exclusive_options
       generate_help_and_manpage_output
       build_methods_from_options
@@ -69,26 +70,12 @@ module Homebrew
     end
 
     def self.option(*args, **option_hash, &block)
-      if args.length == 2
-        if args[0].length != 1
-          raise ArgumentError, <<-EOS.undent
-            Developer's Error. Incorrect option params in options block
-            Format: switch, option, ...
-            switch should be of length = 1
-          EOS
-        end
-        option_hash[:switch] = args[0]
-        option_hash[:option] = args[1]
-      elsif args.length == 1
+      if args.length == 1
         if args[0].length == 1
           option_hash[:switch] = args[0]
         else
           option_hash[:option] = args[0]
         end
-      else
-        raise ArgumentError, <<-EOS.undent
-          Developer's Error. Incorrect # of arguments for option in options block
-        EOS
       end
 
       option_hash[:option] = "--#{option_hash[:option]}" if option_hash[:option]
