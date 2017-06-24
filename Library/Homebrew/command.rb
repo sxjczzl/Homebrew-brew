@@ -167,7 +167,7 @@ module Homebrew
               (!prev_arg.nil? && !valid_options_with_values.include?(prev_arg))
           end
         trailing_args = trailing_args.map { |_prev_arg, arg| arg }
-                                     .select { |arg| !arg.start_with?("-") }
+                                     .reject { |arg| arg.start_with?("-") }
 
         return if trailing_args.empty?
         if (@compulsory_trailing_args+@optional_trailing_args).include?(:formulae)
