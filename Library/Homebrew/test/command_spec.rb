@@ -34,7 +34,7 @@ describe Homebrew::Command do
   # it "sets error message correctly if more than one invalid options provided" do
   #   command_options = Homebrew::Command
   #   command_options.initialize
-  #   command_options.command "test_command"
+  #   command_options.cmd_name "test_command"
   #   command_options.desc "This is test_command"
   #   command_options.option "bar", desc: "go to bar"
   #   command_options.option "foo", desc: "do foo"
@@ -67,7 +67,7 @@ describe Homebrew::Command do
   it "tests the option block thoroughly" do
     command_options = Homebrew::Command
     command_options.initialize
-    command_options.command "test_command"
+    command_options.cmd_name "test_command"
     command_options.desc "This is test_command"
 
     command_options.option "quiet", desc: "list only the names of commands without the header." do

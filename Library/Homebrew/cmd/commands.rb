@@ -16,13 +16,9 @@ module Homebrew
     options do
       cmd_name "commands"
       desc "Show a list of built-in and external commands."
-      option "quiet", switch: "q", desc: "list only the names of commands without the header." do
-        option "include-aliases", switch: "i", desc: "the aliases of internal commands will be included."
+      option "quiet", desc: "list only the names of commands without the header." do
+        option "include-aliases", desc: "the aliases of internal commands will be included."
       end
-      option "prune", value: "days", desc: "remove all cache files older than <days>."
-      option "prune1", value: "days", desc: "remove all cache files older than <days>."
-      option switch: "f", desc: "do foo"
-      option "l", desc: "lol"
     end
 
     def self.run
