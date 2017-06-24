@@ -172,9 +172,8 @@ module Homebrew
             trailing_args
             .select { |arg| Formulary.loader_for(arg).class.to_s == "Formulary::NullLoader" }
           return "Invalid formula name(s): #{invalid_formulas.join(" ")}" unless invalid_formulas.empty?
-        else
-          return "Invalid trailing argument(s): #{trailing_args.join(" ")}"
         end
+        "Invalid trailing argument(s): #{trailing_args.join(" ")}"
       end
 
       def get_error_message(argv_options_only)
