@@ -14,7 +14,7 @@ module Homebrew
 
   class CommandsCommand < Command
     options do
-      command_name "commands"
+      self.command_name = "commands"
       desc "Show a list of built-in and external commands."
       option "quiet", switch: "q", desc: "list only the names of commands without the header." do
         option "include-aliases", switch: "i", desc: "the aliases of internal commands will be included."

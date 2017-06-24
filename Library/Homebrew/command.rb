@@ -1,7 +1,8 @@
 module Homebrew
   class Command
     class << self
-      attr_reader :command_name, :valid_options, :description, :help_output,
+      attr_accessor :command_name
+      attr_reader :valid_options, :description, :help_output,
         :man_output
 
       def initialize
@@ -21,10 +22,7 @@ module Homebrew
         handle_mutually_exclusive_options
         generate_help_and_manpage_output
         build_methods_from_options
-      end
-
-      def command_name(cmd)
-        @command_name = cmd
+        puts "Command #{@command_name}"
       end
 
       def build_methods_from_options
@@ -164,8 +162,8 @@ module Homebrew
             (prev_arg.nil? && !arg.start_with?("-")) ||
               (!prev_arg.nil? && !valid_options_with_values.include?(prev_arg))
           end
-          .map { |_prev_arg, arg| arg }
-          .select { |arg| !arg.start_with?("-") }
+        trailing_args = trailing_args.map { |_prev_arg, arg| arg }
+                                     .select { |arg| !arg.start_with?("-") }
 
         return if trailing_args.empty?
         if (@compulsory_trailing_args+@optional_trailing_args).include?(:formulae)
