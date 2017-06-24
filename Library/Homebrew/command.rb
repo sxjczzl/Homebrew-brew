@@ -5,6 +5,10 @@ module Homebrew
         :man_output
 
       def initialize
+        @description = nil
+        @command_name = nil
+        @help_output = nil
+        @man_output = nil
         @valid_options = []
         @root_options = []
         @optional_trailing_args = []
@@ -26,12 +30,12 @@ module Homebrew
         @command_name = cmd
       end
 
-      def build_methods_from_options
+      def build_methods_from_options(argv = @argv)
         @valid_options.each do |hash|
           option_name = hash[:option]
           option_name = option_name.gsub(/^--/, "").tr("-", "_")
           Command.define_singleton_method("#{option_name}?") do
-            ARGV.include? "--#{option_name.tr("_", "-")}"
+            argv.include? "--#{option_name.tr("_", "-")}"
           end
         end
       end
@@ -109,8 +113,8 @@ module Homebrew
         end
       end
 
-      def argv_invalid_options_passed(argv_options_only)
-        argv_options_only = argv_options_only.select { |arg| /^--/ =~ arg }
+      def argv_invalid_options_passed(argv)
+        argv_options_only = argv.select { |arg| /^--/ =~ arg }
         argv_options_only = argv_options_only.uniq
         valid_option_names =
           @valid_options
@@ -121,8 +125,8 @@ module Homebrew
           .map { |opt| opt.split("=", 2)[0] }
       end
 
-      def argv_options_without_value_passed(argv_options_only)
-        argv_options_only = argv_options_only.select { |arg| /^--/ =~ arg }
+      def argv_options_without_value_passed(argv)
+        argv_options_only = argv.select { |arg| /^--/ =~ arg }
         valid_options_with_values =
           @valid_options
           .select { |option_hash| option_hash[:value] }
@@ -132,8 +136,8 @@ module Homebrew
           .select { |opt| valid_options_with_values.map { |x| x[:option] }.include?(opt.split("=", 2)[0]) }
           .select do |opt|
             (opt.include?("=") && opt.split("=", 2)[1].empty?) ||
-              (!opt.include?("=") && (ARGV[ARGV.index(opt)+1].nil? ||
-                            ARGV[ARGV.index(opt)+1].start_with?("-")))
+              (!opt.include?("=") && (argv[argv.index(opt)+1].nil? ||
+                            argv[argv.index(opt)+1].start_with?("-")))
           end
         options_without_value.map do |opt|
           opt_name = opt.split("=", 2)[0]
@@ -142,22 +146,21 @@ module Homebrew
         end
       end
 
-      def argv_invalid_switches_passed(argv_options_only)
-        argv_options_only.select { |arg| /^-(?!-)/ =~ arg }
-                         .map { |s| s[1..-1] }
-                         .select { |s| !(s.split("") - switches.map { |sw| sw[1..-1] }).empty? }
-                         .map { |s| "-#{s}" }
+      def argv_invalid_switches_passed(argv)
+        argv.select { |arg| /^-(?!-)/ =~ arg }
+            .map { |s| s[1..-1] }
+            .select { |s| !(s.split("") - switches.map { |sw| sw[1..-1] }).empty? }
+            .map { |s| "-#{s}" }
       end
 
-      def trailing_args_error
-        # test case: brew commands --lol lo --prune pop --fo po
+      def trailing_args_error(argv)
         valid_options_with_values =
           @valid_options
           .select { |option_hash| option_hash[:value] }
           .map { |option_hash| option_hash[:option] }
 
         trailing_args =
-          [nil, *@argv]
+          [nil, *argv]
           .each_cons(2)
           .select do |prev_arg, arg|
             (prev_arg.nil? && !arg.start_with?("-")) ||
@@ -176,39 +179,39 @@ module Homebrew
         "Invalid trailing argument(s): #{trailing_args.join(" ")}"
       end
 
-      def get_error_message(argv_options_only)
-        generate_help_and_manpage_output if @help_output.nil? && @man_output.nil?
-
-        argv_invalid_options = argv_invalid_options_passed(argv_options_only)
-        argv_options_without_value = argv_options_without_value_passed(argv_options_only)
-        argv_invalid_switches = argv_invalid_switches_passed(argv_options_only)
+      def get_error_message(argv)
+        argv_invalid_options = argv_invalid_options_passed(argv)
+        argv_options_without_value = argv_options_without_value_passed(argv)
+        argv_invalid_switches = argv_invalid_switches_passed(argv)
         invalid_options_switches = argv_invalid_options + argv_invalid_switches
 
         return if invalid_options_switches.empty? && argv_options_without_value.empty?
 
         invalid_opt_str = Formatter.pluralize(invalid_options_switches.length, "invalid option")
         invalid_opt_str = "#{invalid_opt_str} provided: #{invalid_options_switches.join " "}"
-        trailing_args_err = trailing_args_error
+        trailing_args_err = trailing_args_error(argv)
         opt_without_value_str =
           argv_options_without_value
           .map { |k, v| "#{k} requires a value <#{v}>" }.join("\n")
-        error_msg = <<-EOS.undent
+
+        <<-EOS.undent
           #{invalid_opt_str unless invalid_options_switches.empty?}\
           #{"\n" if !invalid_options_switches.empty? && !opt_without_value_str.empty?}\
           #{opt_without_value_str unless opt_without_value_str.empty?}\
           #{"\n"+trailing_args_err unless trailing_args_err.nil?}
         EOS
-
-        <<-EOS.undent
-          #{error_msg}
-          Correct usage:
-          #{@help_output}
-        EOS
+              .gsub(/  +/, "")
       end
 
       def check_for_errors
-        error_message = get_error_message(ARGV.options_only)
-        odie error_message unless error_message.nil?
+        error_message = get_error_message(@argv)
+        return if error_message.nil?
+        generate_help_and_manpage_output
+        odie <<-EOS.undent
+          #{error_message}
+          Correct usage:
+          #{@help_output}
+        EOS
       end
 
       def option_string(option)
@@ -278,11 +281,13 @@ module Homebrew
           desc_string(ro)
         end.join("\n\s\s\s\s")
         unless @optional_trailing_args.empty?
-          opt_trailing_str = " [<" + @optional_trailing_args.map { |a| a }
+          opt_trailing_str = " [<" +
+                             @optional_trailing_args
                              .join(">] [<") + ">]"
         end
         unless @compulsory_trailing_args.empty?
-          comp_trailing_str = " <" + @compulsory_trailing_args.map { |a| a }
+          comp_trailing_str = " <" +
+                              @compulsory_trailing_args
                               .join("> <") + ">"
         end
 
