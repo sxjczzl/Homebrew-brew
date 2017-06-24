@@ -9,23 +9,23 @@ module Homebrew
 
   def commands
     # TODO: goal is to no longer require def commands at all
-    CommandsCommand.call
+    CommandsCommand.run
   end
 
   class CommandsCommand < Command
     options do
-      self.command_name = "commands"
+      cmd_name "commands"
       desc "Show a list of built-in and external commands."
       option "quiet", switch: "q", desc: "list only the names of commands without the header." do
         option "include-aliases", switch: "i", desc: "the aliases of internal commands will be included."
       end
-      option "prune", switch: "p", value: "days", desc: "remove all cache files older than <days>."
+      option "prune", value: "days", desc: "remove all cache files older than <days>."
       option "prune1", value: "days", desc: "remove all cache files older than <days>."
       option switch: "f", desc: "do foo"
       option "l", desc: "lol"
     end
 
-    def self.call
+    def self.run
       # TODO: Put this check_for_errors() method such that it doesn't have to be here
       check_for_errors
 

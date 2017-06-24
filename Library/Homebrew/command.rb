@@ -1,8 +1,7 @@
 module Homebrew
   class Command
     class << self
-      attr_accessor :command_name
-      attr_reader :valid_options, :description, :help_output,
+      attr_reader :command_name, :valid_options, :description, :help_output,
         :man_output
 
       def initialize
@@ -18,11 +17,13 @@ module Homebrew
         initialize
         @parent = nil
         class_eval(&block)
-        puts @valid_options
         handle_mutually_exclusive_options
         generate_help_and_manpage_output
         build_methods_from_options
-        puts "Command #{@command_name}"
+      end
+
+      def cmd_name(cmd)
+        @command_name = cmd
       end
 
       def build_methods_from_options
