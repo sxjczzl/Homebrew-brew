@@ -228,9 +228,7 @@ module Homebrew
           end.join(" ")
           output = output.gsub(/`#{option}`/, "`#{option}` #{childs_str}")
         end
-        if value
-          output = output.gsub(/`#{option}`/, "`#{option}=`<#{value}>")
-        end
+        output = output.gsub(/`#{option}`/, "`#{option}=`<#{value}>") if value
         if mut_excl_opts
           mut_excl_opts = [option, *mut_excl_opts]
           output = output.gsub(/`#{option}`/, "`#{mut_excl_opts.join("`|`")}`")
@@ -297,7 +295,7 @@ module Homebrew
 
               #{desc_str}
         EOS
-                     .chop
+                                    .chop
         @man_output = help_lines
         help_lines = help_lines.split("\n")
         help_lines.map! do |line|
