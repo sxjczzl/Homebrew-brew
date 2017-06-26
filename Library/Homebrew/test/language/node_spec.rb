@@ -42,6 +42,20 @@ describe Language::Node do
       resp = subject.std_npm_install_args(npm_install_arg)
       expect(resp).to include("--prefix=#{npm_install_arg}", "#{Dir.pwd}/pack.tgz")
     end
+
+    it "does not raise error with prepublish_required set" do
+      allow(Language::Node).to receive(:safe_system).with("npm", "install", "-ddd")
+      allow(Utils).to receive(:popen_read).with("npm pack").and_return("pack.tgz")
+      resp = subject.std_npm_install_args(npm_install_arg, prepublish_required: true)
+      expect(resp).to include("--prefix=#{npm_install_arg}", "#{Dir.pwd}/pack.tgz")
+    end
+
+    it "raises error with non zero exitstatus with prepublish_required set" do
+      allow(Language::Node).to receive(:safe_system).with("npm", "install", "-ddd")\
+        .and_raise("Failure while executing: npm install -ddd")
+      expect { subject.std_npm_install_args(npm_install_arg, prepublish_required: true) }.to \
+        raise_error("Failure while executing: npm install -ddd")
+    end
   end
 
   specify "#local_npm_install_args" do

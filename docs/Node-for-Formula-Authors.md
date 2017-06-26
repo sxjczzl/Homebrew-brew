@@ -72,7 +72,13 @@ This will install your Node module in npm's global module style with a custom pr
 bin.install_symlink Dir["#{libexec}/bin/*"]
 ```
 
-**Note:** Because of a required workaround for `npm@5` calling `npm pack` we currently don't support installing modules (from non-npm registry tarballs), which require a prepublish step (e.g. for transpiling sources). See [Homebrew/brew#2820](https://github.com/Homebrew/brew/pull/2820) for more information.
+**Note:** If your Node module requires a prepublish step (e.g. for transpiling sources) it is recommended to use a npm registry tarball (which is already prepublished) as the download url. If this is not possible, you have to pass `prepublish_required: true` to `std_npm_install_args` like in:
+
+```ruby
+system "npm", "install", *Language::Node.std_npm_install_args(libexec, prepublish_required: true)
+```
+
+This will run the `prepublish` script before we pack the module internally for installation with the overhead of installing all it's dependencies beforehand an additional time.
 
 ### Installing module dependencies locally with `local_npm_install_args`
 

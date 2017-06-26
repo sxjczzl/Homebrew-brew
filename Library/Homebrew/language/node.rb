@@ -4,7 +4,13 @@ module Language
       "cache=#{HOMEBREW_CACHE}/npm_cache"
     end
 
-    def self.pack_for_installation
+    def self.pack_for_installation(prepare_required: false)
+      # Some packages are requiring (dev)dependencies to be in place when
+      # running the prepublish script (which is run before pack). In this case
+      # we have to install all dependencies a first time already before
+      # executing npm pack (and a second time when doing the actual install).
+      safe_system "npm", "install", *local_npm_install_args if prepare_required
+
       # Homebrew assumes the buildpath/testpath will always be disposable
       # and from npm 5.0.0 the logic changed so that when a directory is
       # fed to `npm install` only symlinks are created linking back to that
@@ -30,13 +36,13 @@ module Language
       end
     end
 
-    def self.std_npm_install_args(libexec)
+    def self.std_npm_install_args(libexec, prepare_required: false)
       setup_npm_environment
       # tell npm to not install .brew_home by adding it to the .npmignore file
       # (or creating a new one if no .npmignore file already exists)
       open(".npmignore", "a") { |f| f.write("\n.brew_home\n") }
 
-      pack = pack_for_installation
+      pack = pack_for_installation(prepare_required: prepare_required)
 
       # npm install args for global style module format installed into libexec
       %W[
