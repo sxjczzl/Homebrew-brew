@@ -56,11 +56,51 @@ module Homebrew
     end.reject { |s| s.strip.empty? || s.include?("@hide_from_man_page") }
   end
 
+  def read_the_commands_file(source_file)
+    source_file.read.lines
+               .grep(/^#:/)
+               .map { |line| line.slice(2..-1) }
+               .join
+  end
+
+  def path_glob_commands_from_dsl(glob)
+    all = []
+    Pathname.glob(glob)
+            .sort_by { |source_file| sort_key_for_path(source_file) }
+            .map do |source_file|
+
+      cmd = Pathname(source_file).basename(".rb")
+
+      if cmd.fnmatch?("*.sh")
+        output = read_the_commands_file(source_file)
+        unless output.strip.empty? || output.include?("@hide_from_man_page")
+          all << output
+        end
+        next
+      end
+
+      require "cmd/#{cmd}"
+      class_name = cmd.to_s.gsub(/^--/, "").tr("-", "_")
+      class_name = "#{class_name.to_s.capitalize}Command"
+      if Homebrew.const_defined?(class_name)
+        class_instance = Homebrew.const_get(class_name)
+        output = class_instance.man_output
+        all << output
+      else
+        output = read_the_commands_file(source_file)
+        unless output.strip.empty? || output.include?("@hide_from_man_page")
+          all << output
+        end
+      end
+    end
+    all
+  end
+
   def build_man_page
     template = (SOURCE_PATH/"brew.1.md.erb").read
     variables = OpenStruct.new
 
-    variables[:commands] = path_glob_commands("#{HOMEBREW_LIBRARY_PATH}/cmd/*.{rb,sh}")
+    variables[:commands] = path_glob_commands_from_dsl("#{HOMEBREW_LIBRARY_PATH}/cmd/*.{rb,sh}")
     variables[:developer_commands] = path_glob_commands("#{HOMEBREW_LIBRARY_PATH}/dev-cmd/*.{rb,sh}")
     readme = HOMEBREW_REPOSITORY/"README.md"
     variables[:lead_maintainer] = readme.read[/(Homebrew's lead maintainer .*\.)/, 1]

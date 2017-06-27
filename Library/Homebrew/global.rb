@@ -11,6 +11,7 @@ require "exceptions"
 require "set"
 require "rbconfig"
 require "official_taps"
+require "command"
 require "pp"
 require "English"
 

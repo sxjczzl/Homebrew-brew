@@ -74,6 +74,13 @@ module Homebrew
   end
 
   def command_help(path)
+    if Pathname(path).fnmatch?("*/Homebrew/cmd/*.rb")
+      cmd = Pathname(path).basename(".rb")
+      class_name = cmd.to_s.gsub(/^--/, "").tr("-", "_")
+      class_name = "#{class_name.to_s.capitalize}Command"
+      return command_help_cmd(class_name) if Homebrew.const_defined?(class_name)
+    end
+
     help_lines = path.read.lines.grep(/^#:/)
     if help_lines.empty?
       opoo "No help text in: #{path}" if ARGV.homebrew_developer?
@@ -88,5 +95,10 @@ module Homebrew
             .gsub("@hide_from_man_page", "")
       end.join.strip
     end
+  end
+
+  def command_help_cmd(class_name)
+    class_instance = Homebrew.const_get(class_name)
+    class_instance.help_output
   end
 end

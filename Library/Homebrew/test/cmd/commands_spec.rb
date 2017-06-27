@@ -36,7 +36,7 @@ RSpec.shared_context "custom internal commands" do
   end
 end
 
-describe Homebrew do
+describe Homebrew::CommandsCommand do
   include_context "custom internal commands"
 
   specify "::internal_commands" do
