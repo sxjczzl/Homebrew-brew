@@ -21,4 +21,27 @@ describe Homebrew::Command do
       { option_name: "--bar1", is_root_option: true, desc: "go to bar1", child_option_names: [] },
     ]
   end
+
+  it "sets error message correctly if invalid options provided" do
+    command_options = Homebrew::Command.new
+    command_options.initialize_variables
+    command_options.command_name = "test_command"
+    command_options.description = "This is test_command"
+    command_options.option "bar", desc: "go to bar"
+    command_options.option "foo", desc: "do foo"
+    command_options.option "quiet", desc: "be quiet"
+    argv_options = ["--bar1", "--bar2", "--bar", "--foo"]
+    expect(command_options
+      .error_message(argv_options))
+      .to eq "Invalid option(s) provided: --bar1 --bar2"
+  end
+
+  it "produces no error message if no invalid options provided" do
+    command = Homebrew::Command.new
+    command.initialize_variables
+    command.option "bar", desc: "go to bar"
+    command.option "foo", desc: "do foo"
+    command.option "quiet", desc: "be quiet"
+    expect(command.error_message(["--quiet", "--bar"])).to eq(nil)
+  end
 end

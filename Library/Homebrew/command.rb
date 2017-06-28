@@ -31,5 +31,20 @@ module Homebrew
       instance_eval(&block)
       @parent_option_name = parent_option_name
     end
+
+    def error_message(argv_tokens = @argv_tokens)
+      invalid_options =
+        argv_tokens.select { |arg| /^--/ =~ arg }
+                   .reject { |arg| @valid_options.map { |opt| opt[:option_name] }.include?(arg) }
+      return if invalid_options.empty?
+      "Invalid option(s) provided: #{invalid_options.join " "}"
+    end
+
+    def check_for_errors
+      return if error_message.nil?
+      odie <<-EOS.undent
+        #{error_message}
+      EOS
+    end
   end
 end
