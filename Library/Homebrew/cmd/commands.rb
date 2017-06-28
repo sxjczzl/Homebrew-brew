@@ -14,6 +14,16 @@ module Homebrew
   end
 
   class CommandsCommand < Command
+    def initialize
+      options do
+        self.command_name = "commands"
+        self.description = "Show a list of built-in and external commands."
+        option "quiet", desc: "list only the names of commands without the header." do
+          option "include-aliases", desc: "the aliases of internal commands will be included."
+        end
+      end
+    end
+
     def commands
       if ARGV.include? "--quiet"
         cmds = internal_commands + external_commands
