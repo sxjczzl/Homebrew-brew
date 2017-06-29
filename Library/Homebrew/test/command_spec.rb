@@ -44,4 +44,38 @@ describe Homebrew::Command do
     command.option "quiet", desc: "be quiet"
     expect(command.error_message(["--quiet", "--bar"])).to eq(nil)
   end
+
+  it "tests the option block and @help_output" do
+    command = Homebrew::Command.new
+    command.initialize_variables
+    command.command_name = "test_command"
+    command.description = "This is test_command"
+
+    command.option "quiet", desc: "list only the names of commands without the header." do
+      command.option "bar", desc: "go to bar" do
+        command.option "foo", desc: "do foo" do
+          command.option "foo child", desc: "do foo"
+        end
+        command.option "foo1", desc: "do foo for seconds"
+      end
+      command.option "include-aliases", desc: "the aliases of internal commands will be included."
+    end
+    command.option "quiet1", desc: "be quiet"
+
+    command.generate_documentation
+    expect(command.help_output).to eq <<-EOS.undent
+      brew test_command [--quiet [--bar [--foo [--foo child]] [--foo1]] [--include-aliases]] [--quiet1]:
+          This is test_command
+
+          If --quiet is passed, list only the names of commands without the header.
+          With --bar, go to bar
+          With --foo, do foo
+          With --foo child, do foo
+          With --foo1, do foo for seconds
+          With --include-aliases, the aliases of internal commands will be included.
+
+          If --quiet1 is passed, be quiet
+    EOS
+      .slice(0..-2)
+  end
 end
