@@ -15,10 +15,9 @@ describe Homebrew::Command do
     end
     command.option "bar1", desc: "go to bar1"
     expect(command.valid_options).to eq [
-      { option_name: "--bar", desc: "go to bar", is_root_option: true,
-        child_option_names: ["--foo"] },
-      { option_name: "--foo", desc: "do foo", child_option_names: [] },
-      { option_name: "--bar1", is_root_option: true, desc: "go to bar1", child_option_names: [] },
+      { option_name: "--bar", desc: "go to bar", parent_name: nil },
+      { option_name: "--foo", desc: "do foo", parent_name: "--bar" },
+      { option_name: "--bar1", desc: "go to bar1", parent_name: nil },
     ]
   end
 
@@ -63,7 +62,7 @@ describe Homebrew::Command do
     command.option "quiet1", desc: "be quiet"
 
     command.generate_documentation
-    expect(command.help_output).to eq <<-EOS.undent
+    expect(command.help_output).to eq <<-EOS.undent.slice(0..-2)
       brew test_command [--quiet [--bar [--foo [--foo child]] [--foo1]] [--include-aliases]] [--quiet1]:
           This is test_command
 
@@ -76,6 +75,5 @@ describe Homebrew::Command do
 
           If --quiet1 is passed, be quiet
     EOS
-      .slice(0..-2)
   end
 end
