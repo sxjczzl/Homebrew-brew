@@ -58,18 +58,27 @@ module Homebrew
   end
 
   class Documentation
-    def initialize(cmd_name, cmd_description, cmd_valid_options)
+    def initialize(cmd_name, cmd_description, valid_options)
       @cmd_name = cmd_name
       @cmd_description = cmd_description
-      @cmd_valid_options = cmd_valid_options
+      @valid_options = valid_options
     end
 
     def man_output
+      option_names_doc =
+        root_option_names
+        .map { |opt_name| option_name_documentation(opt_name) }
+        .join(" ")
+      options_with_desc_doc =
+        root_option_names
+        .map { |opt_name| option_with_desc_documentation(opt_name) }
+        .join("\n\s\s\s\s")
+
       "\s\s" + <<-EOS.undent.chop
-        * `#{@cmd_name}` #{all_options_name_doc}:
+        * `#{@cmd_name}` #{option_names_doc}:
             #{@cmd_description}
 
-            #{all_options_desc_doc}
+            #{options_with_desc_doc}
       EOS
     end
 
@@ -82,55 +91,42 @@ module Homebrew
       end.join("\n")
     end
 
-    def option_name_doc(option_name)
-      child_option_names =
+    def option_name_documentation(option_name)
+      child_option_names_doc =
         child_option_names(option_name)
-        .map { |opt_name| option_name_doc(opt_name) }
+        .map { |opt_name| option_name_documentation(opt_name) }
         .join(" ")
-      return "[`#{option_name}`]" if child_option_names.empty?
-      "[`#{option_name}` #{child_option_names}]"
+      return "[`#{option_name}`]" if child_option_names_doc.empty?
+      "[`#{option_name}` #{child_option_names_doc}]"
     end
 
-    def all_options_name_doc
-      root_option_names
-        .map { |opt_name| option_name_doc(opt_name) }
-        .join(" ")
-    end
-
-    def option_desc_doc(option_name)
-      option_desc = @cmd_valid_options
+    def option_with_desc_documentation(option_name)
+      option_desc = @valid_options
                     .find { |opt| opt[:option_name] == option_name }[:desc]
-
-      option_desc = <<-EOS.undent
+      option_with_desc_doc = <<-EOS.undent
         `#{option_name}`, #{option_desc}
       EOS
       if root_option_names.include?(option_name)
-        option_desc.gsub!(/`#{option_name}`/, 'If \\0 is passed')
+        option_with_desc_doc.gsub!(/`#{option_name}`/, 'If \\0 is passed')
       else
-        option_desc.gsub!(/`#{option_name}`/, 'With \\0')
+        option_with_desc_doc.gsub!(/`#{option_name}`/, 'With \\0')
       end
-      child_option_desc =
+      child_option_with_desc_doc =
         child_option_names(option_name)
-        .map { |opt_name| option_desc_doc(opt_name) }
+        .map { |opt_name| option_with_desc_documentation(opt_name) }
         .join("\s\s\s\s")
-      return option_desc if child_option_desc.empty?
-      "#{option_desc}\s\s\s\s#{child_option_desc}"
-    end
-
-    def all_options_desc_doc
-      root_option_names
-        .map { |opt_name| option_desc_doc(opt_name) }
-        .join("\n\s\s\s\s")
+      return option_with_desc_doc if child_option_with_desc_doc.empty?
+      "#{option_with_desc_doc}\s\s\s\s#{child_option_with_desc_doc}"
     end
 
     def root_option_names
-      @cmd_valid_options.reject { |opt| opt[:parent_name] }
-                        .map { |opt| opt[:option_name] }
+      @valid_options.reject { |opt| opt[:parent_name] }
+                    .map { |opt| opt[:option_name] }
     end
 
     def child_option_names(opt_name)
-      @cmd_valid_options.select { |opt| opt[:parent_name] == opt_name }
-                        .map { |opt| opt[:option_name] }
+      @valid_options.select { |opt| opt[:parent_name] == opt_name }
+                    .map { |opt| opt[:option_name] }
     end
   end
 end
