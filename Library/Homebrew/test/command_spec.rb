@@ -55,25 +55,27 @@ describe Homebrew::Command do
         command.option "foo", desc: "do foo" do
           command.option "foo child", desc: "do foo"
         end
-        command.option "foo1", desc: "do foo for seconds"
       end
+    end
+    command.option "foo1", desc: "do foo1."
+    command.option "quiet1", desc: "be quiet1." do
       command.option "include-aliases", desc: "the aliases of internal commands will be included."
     end
-    command.option "quiet1", desc: "be quiet"
 
     command.generate_documentation
     expect(command.help_output).to eq <<-EOS.undent.slice(0..-2)
-      brew test_command [--quiet [--bar [--foo [--foo child]] [--foo1]] [--include-aliases]] [--quiet1]:
+      brew test_command [--quiet [--bar [--foo [--foo child]]]] [--foo1] [--quiet1 [--include-aliases]]:
           This is test_command
 
           If --quiet is passed, list only the names of commands without the header.
           With --bar, go to bar
           With --foo, do foo
           With --foo child, do foo
-          With --foo1, do foo for seconds
-          With --include-aliases, the aliases of internal commands will be included.
 
-          If --quiet1 is passed, be quiet
+          If --foo1 is passed, do foo1.
+
+          If --quiet1 is passed, be quiet1.
+          With --include-aliases, the aliases of internal commands will be included.
     EOS
   end
 end

@@ -4,6 +4,8 @@ module Homebrew
     attr_reader :valid_options, :help_output, :man_output
 
     def initialize_variables
+      # @valid_options is an array of hashes. Each hash represents an option
+      # and has the following keys: `option_name`:string, `desc`:string, `parent_name`:string
       @valid_options = []
       @argv_tokens = ARGV.dup.uniq
     end
@@ -11,12 +13,13 @@ module Homebrew
     def options(&block)
       initialize_variables
       instance_eval(&block)
-      generate_documentation
     end
 
     def option(option_name, **option_hash, &block)
       option_name = "--#{option_name}"
       option_hash[:option_name] = option_name
+      # @parent_name helps keep track if this `option()` method was called
+      # from inside of another `option()` method (and if so, which one)
       option_hash[:parent_name] = @parent_name
       @valid_options.push(option_hash)
       return unless block_given?
@@ -26,13 +29,14 @@ module Homebrew
       parent_temp = @parent_name
       @parent_name = option_name
       instance_eval(&block)
-      # After executing the `block`, change `@parent_name` back to
-      # original so that the next option at the same hierarchy level as
-      # `option_name` in the DSL has the same parent as `option_name`
+      # Since now we are out of the `block`, change `@parent_name` back to
+      # what it was before, so that the next `option` at the same hierarchy level as
+      # `option_name` in the `options` DSL has the same parent info as `option_name`
       @parent_name = parent_temp
     end
 
     def error_message(argv_tokens = @argv_tokens)
+      # parse the input arguments and select the invalid option names
       invalid_options =
         argv_tokens
         .select { |arg| /^--/ =~ arg }
@@ -43,6 +47,7 @@ module Homebrew
 
     def check_for_errors
       return unless error_message
+      generate_documentation
       odie <<-EOS.undent
         #{error_message}
         Correct usage:
@@ -65,10 +70,14 @@ module Homebrew
     end
 
     def man_output
+      # Generate first line of the command's documentation
+      # that specifies relationships between different options
       option_names_doc =
         root_option_names
         .map { |opt_name| option_name_documentation(opt_name) }
         .join(" ")
+      # Generate rest of the lines of the command's documentation
+      # that lists each option along with its description
       options_with_desc_doc =
         root_option_names
         .map { |opt_name| option_with_desc_documentation(opt_name) }
@@ -83,6 +92,8 @@ module Homebrew
     end
 
     def help_output
+      # Formatting the documentation for improved display on the user's screen
+      # for `--help`
       man_output.split("\n").map do |line|
         line
           .sub(/^  \* /, "#{Tty.bold}brew#{Tty.reset} ")
@@ -92,6 +103,8 @@ module Homebrew
     end
 
     def option_name_documentation(option_name)
+      # Recursively compute the first line of the documentation output
+      # part for the option `option_name` (along with all it's child options)
       child_option_names_doc =
         child_option_names(option_name)
         .map { |opt_name| option_name_documentation(opt_name) }
@@ -101,6 +114,8 @@ module Homebrew
     end
 
     def option_with_desc_documentation(option_name)
+      # Recursively compute, for the option `option_name` (along with all it's child options),
+      # the lines of the documentation output that list the option with its desciption
       option_desc = @valid_options
                     .find { |opt| opt[:option_name] == option_name }[:desc]
       option_with_desc_doc = <<-EOS.undent
