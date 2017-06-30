@@ -22,6 +22,8 @@ describe Homebrew::Command do
   end
 
   it "sets error message correctly if invalid options provided" do
+    stub_const("ARGV", ["--bar1", "--bar2", "--bar"])
+
     command_options = Homebrew::Command.new
     command_options.initialize_variables
     command_options.command_name = "test_command"
@@ -29,19 +31,21 @@ describe Homebrew::Command do
     command_options.option "bar", desc: "go to bar"
     command_options.option "foo", desc: "do foo"
     command_options.option "quiet", desc: "be quiet"
-    argv_options = ["--bar1", "--bar2", "--bar", "--foo"]
-    expect(command_options
-      .error_message(argv_options))
+
+    expect(command_options.error_message)
       .to eq "Invalid option(s) provided: --bar1 --bar2"
   end
 
   it "produces no error message if no invalid options provided" do
+    stub_const("ARGV", ["--quiet", "--bar"])
+
     command = Homebrew::Command.new
     command.initialize_variables
     command.option "bar", desc: "go to bar"
     command.option "foo", desc: "do foo"
     command.option "quiet", desc: "be quiet"
-    expect(command.error_message(["--quiet", "--bar"])).to eq(nil)
+
+    expect(command.error_message).to eq(nil)
   end
 
   it "tests the option block and @help_output" do

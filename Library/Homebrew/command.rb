@@ -13,6 +13,7 @@ module Homebrew
     def options(&block)
       initialize_variables
       instance_eval(&block)
+      check_for_errors
     end
 
     def option(option_name, **option_hash, &block)
@@ -35,10 +36,10 @@ module Homebrew
       @parent_name = parent_temp
     end
 
-    def error_message(argv_tokens = @argv_tokens)
-      # parse the input arguments and select the invalid option names
+    def error_message
+      # parse the input ARGV arguments and select the invalid option names provided
       invalid_options =
-        argv_tokens
+        @argv_tokens
         .select { |arg| /^--/ =~ arg }
         .reject { |arg| @valid_options.map { |opt| opt[:option_name] }.include?(arg) }
       return if invalid_options.empty?

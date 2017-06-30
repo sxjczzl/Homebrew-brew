@@ -40,6 +40,7 @@ describe Homebrew::CommandsCommand do
   include_context "custom internal commands"
 
   specify "::internal_commands" do
+    stub_const("ARGV", [])
     cmds = described_class.new.internal_commands
     expect(cmds).to include("rbcmd"), "Ruby commands files should be recognized"
     expect(cmds).to include("shcmd"), "Shell commands files should be recognized"
@@ -47,6 +48,7 @@ describe Homebrew::CommandsCommand do
   end
 
   specify "::internal_developer_commands" do
+    stub_const("ARGV", [])
     cmds = described_class.new.internal_developer_commands
     expect(cmds).to include("rbdevcmd"), "Ruby commands files should be recognized"
     expect(cmds).to include("shdevcmd"), "Shell commands files should be recognized"
@@ -64,6 +66,7 @@ describe Homebrew::CommandsCommand do
       FileUtils.touch "#{dir}/brew-t4"
 
       ENV["PATH"] += "#{File::PATH_SEPARATOR}#{dir}"
+      stub_const("ARGV", [])
       cmds = described_class.new.external_commands
 
       expect(cmds).to include("t1"), "Executable files should be included"
