@@ -284,6 +284,8 @@ setup-analytics
 update-preinstall-timer() {
   sleep 3
   echo 'Updating Homebrew...' >&2
+  sleep 3
+  echo '  (to do this less frequently, set $HOMEBREW_AUTO_UPDATE_SECS.)' >&2
 }
 
 update-preinstall() {
