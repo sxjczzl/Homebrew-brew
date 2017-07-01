@@ -1,3 +1,5 @@
+require "json"
+
 module Language
   module Node
     def self.npm_cache_config
@@ -5,11 +7,23 @@ module Language
     end
 
     def self.pack_for_installation(prepare_required: false)
-      # Some packages are requiring (dev)dependencies to be in place when
-      # running the prepublish script (which is run before pack). In this case
-      # we have to install all dependencies a first time already before
-      # executing npm pack (and a second time when doing the actual install).
-      safe_system "npm", "install", *local_npm_install_args if prepare_required
+      # Read https://gist.github.com/chrmoritz/34e4c4d7779d72b549e2fc41f77c365c
+      # for a complete overview of the edge cases this method has to handle.
+      if prepare_required
+        # Rewrites the package.json so that npm pack will bundle all deps
+        # into a self-contained package, so that we avoid installing them a
+        # second time during the final installation of the package to libexec.
+        pkg_json = JSON.parse(IO.read("package.json"))
+        if pkg_json["dependencies"]
+          pkg_json["bundledDependencies"] = pkg_json["dependencies"].keys
+          IO.write("package.json", JSON.pretty_generate(pkg_json))
+        end
+
+        # We have to already install all deps here before npm pack, because the
+        # prepare script could require them. This already executes the prepare
+        # script to, so that we can continue to npm pack with --ignore-scripts.
+        safe_system "npm", "install", *local_npm_install_args
+      end
 
       # Homebrew assumes the buildpath/testpath will always be disposable
       # and from npm 5.0.0 the logic changed so that when a directory is

@@ -72,13 +72,15 @@ This will install your Node module in npm's global module style with a custom pr
 bin.install_symlink Dir["#{libexec}/bin/*"]
 ```
 
-**Note:** If your Node module requires a prepublish step (e.g. for transpiling sources) it is recommended to use a npm registry tarball (which is already prepublished) as the download url. If this is not possible, you have to pass `prepublish_required: true` to `std_npm_install_args` like in:
+**Note:** If your Node module requires a prepare or prepublish step (e.g. for transpiling sources) it is recommended to use a npm registry tarball (which is already prepared/ prepublished) as the download url. If this is not possible, you have to pass `prepare_required: true` to `std_npm_install_args` like in:
 
 ```ruby
-system "npm", "install", *Language::Node.std_npm_install_args(libexec, prepublish_required: true)
+system "npm", "install", *Language::Node.std_npm_install_args(libexec, prepare_required: true)
 ```
 
-This will run the `prepublish` script before we pack the module internally for installation with the overhead of installing all it's dependencies beforehand an additional time.
+This will run the `prepare` and `prepublish` scripts of your module before we pack the module and it's dependencies internally for installation.
+
+Not passing `prepare_required: true` will prevent the `prepare` and `prepublish` scripts of your top-level module from being executed, but all lifecycle scripts from it's dependencies are still executed as normal.
 
 ### Installing module dependencies locally with `local_npm_install_args`
 
