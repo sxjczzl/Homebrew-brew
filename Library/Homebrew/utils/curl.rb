@@ -37,6 +37,8 @@ end
 def curl_output(*args)
   curl_args = curl_args(extra_args: args, show_output: true)
   Open3.popen3(*curl_args) do |_, stdout, stderr, wait_thread|
-    [stdout.read, stderr.read, wait_thread.value]
+    selector = Utils::IOSelector.new([stdout, stderr])
+    result = selector.binread_nonblock.values
+    result << wait_thread.value
   end
 end

@@ -81,29 +81,14 @@ module Hbc
 
       write_input_to(raw_stdin)
       raw_stdin.close_write
-      each_line_from [raw_stdout, raw_stderr], &b
 
+      ::Utils::IOSelector
+        .each_line_from(stdout: raw_stdout, stderr: raw_stderr, &b)
       @processed_status = raw_wait_thr.value
     end
 
     def write_input_to(raw_stdin)
       [*options[:input]].each { |line| raw_stdin.print line }
-    end
-
-    def each_line_from(sources)
-      loop do
-        readable_sources = IO.select(sources)[0]
-        readable_sources.delete_if(&:eof?).first(1).each do |source|
-          type = ((source == sources[0]) ? :stdout : :stderr)
-          begin
-            yield(type, source.readline_nonblock || "")
-          rescue IO::WaitReadable, EOFError
-            next
-          end
-        end
-        break if readable_sources.empty?
-      end
-      sources.each(&:close_read)
     end
 
     def result
