@@ -6,24 +6,28 @@ module Language
       "cache=#{HOMEBREW_CACHE}/npm_cache"
     end
 
+    # Read https://gist.github.com/chrmoritz/34e4c4d7779d72b549e2fc41f77c365c
+    # for a complete overview of the edge cases this method has to handle.
     def self.pack_for_installation(prepare_required: false)
-      # Read https://gist.github.com/chrmoritz/34e4c4d7779d72b549e2fc41f77c365c
-      # for a complete overview of the edge cases this method has to handle.
-      if prepare_required
-        # Rewrites the package.json so that npm pack will bundle all deps
-        # into a self-contained package, so that we avoid installing them a
-        # second time during the final installation of the package to libexec.
-        pkg_json = JSON.parse(IO.read("package.json"))
-        if pkg_json["dependencies"]
-          pkg_json["bundledDependencies"] = pkg_json["dependencies"].keys
-          IO.write("package.json", JSON.pretty_generate(pkg_json))
-        end
-
-        # We have to already install all deps here before npm pack, because the
-        # prepare script could require them. This already executes the prepare
-        # script to, so that we can continue to npm pack with --ignore-scripts.
-        safe_system "npm", "install", *local_npm_install_args
+      # Rewrites the package.json so that npm pack will bundle all deps
+      # into a self-contained package, so that we avoid installing them a
+      # second time during the final installation of the package to libexec.
+      pkg_json = JSON.parse(IO.read("package.json"))
+      if pkg_json["dependencies"]
+        pkg_json["bundledDependencies"] = pkg_json["dependencies"].keys
+        IO.write("package.json", JSON.pretty_generate(pkg_json))
       end
+
+      # If `prepare_required` is false we pass `--production` to install all
+      # production deps (no devDeps) for bundling them into the pack and also
+      # to prevent the toplevel prepare / prepublish script from being executed
+      # while still executing all lifecycle scripts for the deps.
+      # Otherwise we omit `--production` to install all deps (devDeps might be
+      # required in `prepare`). This already executes the prepare script too,
+      # so that we can continue to `npm pack` with `--ignore-scripts`.
+      install_args = local_npm_install_args
+      install_args << "--production" unless prepare_required
+      safe_system "npm", "install", *install_args
 
       # Homebrew assumes the buildpath/testpath will always be disposable
       # and from npm 5.0.0 the logic changed so that when a directory is
