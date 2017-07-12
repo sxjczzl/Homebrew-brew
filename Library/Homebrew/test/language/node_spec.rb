@@ -28,7 +28,7 @@ describe Language::Node do
 
     it "raises error with non zero npm pack exitstatus" do
       allow(IO).to receive(:read).and_return("{}")
-      allow(Language::Node).to receive(:safe_system).with("npm", "install", "-ddd", "--build-from-source",
+      allow(Language::Node).to receive(:node_system).with("npm", "install", "-ddd", "--build-from-source",
         "--cache=#{HOMEBREW_CACHE}/npm_cache", "--production") { `true` }
       allow(Utils).to receive(:popen_read).with(npm_pack_cmd) { `false` }
       expect { subject.std_npm_install_args(npm_install_arg) }.to \
@@ -37,7 +37,7 @@ describe Language::Node do
 
     it "raises error with empty npm pack output" do
       allow(IO).to receive(:read).and_return("{}")
-      allow(Language::Node).to receive(:safe_system).with("npm", "install", "-ddd", "--build-from-source",
+      allow(Language::Node).to receive(:node_system).with("npm", "install", "-ddd", "--build-from-source",
         "--cache=#{HOMEBREW_CACHE}/npm_cache", "--production") { `true` }
       allow(Utils).to receive(:popen_read).with(npm_pack_cmd) { `false` }
       expect { subject.std_npm_install_args(npm_install_arg) }.to \
@@ -46,7 +46,7 @@ describe Language::Node do
 
     it "does not raise error with a zero npm pack exitstatus" do
       allow(IO).to receive(:read).and_return("{}")
-      allow(Language::Node).to receive(:safe_system).with("npm", "install", "-ddd", "--build-from-source",
+      allow(Language::Node).to receive(:node_system).with("npm", "install", "-ddd", "--build-from-source",
         "--cache=#{HOMEBREW_CACHE}/npm_cache", "--production") { `true` }
       allow(Utils).to receive(:popen_read).with(npm_pack_cmd) { `echo pack.tgz` }
       resp = subject.std_npm_install_args(npm_install_arg)
@@ -59,7 +59,7 @@ describe Language::Node do
                       '"bundledDependencies":["foo","bar"]}'
       expected_json = JSON.pretty_generate(JSON.parse(expected_json))
       allow(IO).to receive(:write).with("package.json", expected_json) { `true` }
-      allow(Language::Node).to receive(:safe_system)
+      allow(Language::Node).to receive(:node_system)
         .with("npm", "install", "-ddd", "--build-from-source", "--cache=#{HOMEBREW_CACHE}/npm_cache") { `true` }
       allow(Utils).to receive(:popen_read).with("npm pack --ignore-scripts") { `echo pack.tgz` }
       resp = subject.std_npm_install_args(npm_install_arg, prepare_required: true)
@@ -68,7 +68,7 @@ describe Language::Node do
 
     it "raises error with non zero local npm install exitstatus" do
       allow(IO).to receive(:read).and_return("{}")
-      allow(Language::Node).to receive(:safe_system).and_raise("Failure while executing: npm install -ddd")
+      allow(Language::Node).to receive(:node_system).and_raise("Failure while executing: npm install -ddd")
       expect { subject.std_npm_install_args(npm_install_arg, prepare_required: true) }.to \
         raise_error("Failure while executing: npm install -ddd")
     end

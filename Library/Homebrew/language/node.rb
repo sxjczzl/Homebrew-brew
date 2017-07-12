@@ -6,6 +6,16 @@ module Language
       "cache=#{HOMEBREW_CACHE}/npm_cache"
     end
 
+    def self.node_system(cmd, *args)
+      ohai "#{cmd} #{args * " "}"
+      if ARGV.verbose?
+        safe_system(cmd, *args)
+      else
+        quiet_system(cmd, *args)
+        raise ErrorDuringExecution.new(cmd, args) unless $CHILD_STATUS.exitstatus.zero?
+      end
+    end
+
     # Read https://gist.github.com/chrmoritz/34e4c4d7779d72b549e2fc41f77c365c
     # for a complete overview of the edge cases this method has to handle.
     def self.pack_for_installation(prepare_required: false)
@@ -27,7 +37,7 @@ module Language
       # so that we can continue to `npm pack` with `--ignore-scripts`.
       install_args = local_npm_install_args
       install_args << "--production" unless prepare_required
-      safe_system "npm", "install", *install_args
+      node_system "npm", "install", *install_args
 
       # Homebrew assumes the buildpath/testpath will always be disposable
       # and from npm 5.0.0 the logic changed so that when a directory is
