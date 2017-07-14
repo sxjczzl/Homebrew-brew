@@ -1,6 +1,12 @@
 #:  * `desc` <formula>:
 #:    Display <formula>'s name and one-line description.
 #:
+#:  * `desc` -a:
+#:    Display name and one-line description for all formulae.
+#:
+#:  * `desc` -i:
+#:    Display name and one-line description for all installed formulae.
+#:
 #:  * `desc` [`-s`|`-n`|`-d`] (<text>|`/`<text>`/`):
 #:    Search both name and description (`-s`), just the names (`-n`), or just  the
 #:    descriptions (`-d`) for <text>. If <text> is flanked by slashes, it is interpreted
@@ -19,14 +25,18 @@ module Homebrew
     search_type << :name   if ARGV.flag? "--name"
     search_type << :desc   if ARGV.flag? "--description"
 
-    if search_type.empty?
+    if ARGV.include?("--all") or ARGV.include?("-a")
+      Descriptions.all.print
+    elsif ARGV.include?("--installed") or ARGV.include?("-i")
+      Descriptions.installed.print
+    elsif search_type.empty?
       raise FormulaUnspecifiedError if ARGV.named.empty?
       desc = {}
       ARGV.formulae.each { |f| desc[f.full_name] = f.desc }
       results = Descriptions.new(desc)
       results.print
     elsif search_type.size > 1
-      odie "Pick one, and only one, of -s/--search, -n/--name, or -d/--description."
+      odie "Pick one, and only one, of -s/--search, -n/--name, or -d/--description -i/--installed -a/--all."
     elsif arg = ARGV.named.first
       regex = Homebrew.query_regexp(arg)
       results = Descriptions.search(regex, search_type.first)
