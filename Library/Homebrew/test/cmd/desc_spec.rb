@@ -18,7 +18,7 @@ describe "brew desc", :integration_test do
   end
 
   it "fails when both --all and --install are specified" do
-    expect { brew "desc", "--all", "--install" }
+    expect { brew "desc", "--all", "--installed" }
       .to output(/Pick one, and only one/).to_stderr
       .and not_to_output.to_stdout
       .and be_a_failure

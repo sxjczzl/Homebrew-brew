@@ -21,15 +21,15 @@ module Homebrew
 
   def desc
     search_type = []
-    search_type << :either if ARGV.flag? "--search"
-    search_type << :name   if ARGV.flag? "--name"
-    search_type << :desc   if ARGV.flag? "--description"
+    search_type << :either    if ARGV.flag? "--search"
+    search_type << :name      if ARGV.flag? "--name"
+    search_type << :desc      if ARGV.flag? "--description"
+    search_type << :all       if ARGV.flag? "--all"
+    search_type << :installed if ARGV.flag? "--installed"
 
-    if (ARGV.include?("--all") || ARGV.include?("-a")) && (ARGV.include?("--installed") || ARGV.include?("-i"))
-      odie "You must provide a search term."
-    end
-
-    if ARGV.include?("--all") || ARGV.include?("-a")
+    if search_type.size > 1
+      odie "Pick one, and only one of -s/--search, -n/--name, or -d/--description -i/--installed -a/--all."
+    elsif ARGV.include?("--all") || ARGV.include?("-a")
       Descriptions.all.print
     elsif ARGV.include?("--installed") || ARGV.include?("-i")
       Descriptions.installed.print
@@ -39,8 +39,6 @@ module Homebrew
       ARGV.formulae.each { |f| desc[f.full_name] = f.desc }
       results = Descriptions.new(desc)
       results.print
-    elsif search_type.size > 1
-      odie "Pick one, and only one, of -s/--search, -n/--name, or -d/--description -i/--installed -a/--all."
     elsif arg = ARGV.named.first
       regex = Homebrew.query_regexp(arg)
       results = Descriptions.search(regex, search_type.first)
