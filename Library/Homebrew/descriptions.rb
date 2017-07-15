@@ -122,7 +122,7 @@ class Descriptions
     formulae = Formula.installed.map(&:full_name)
     formulae.sort!
 
-    results = @cache.select { |name, _| formulae.include? name}
+    results = @cache.select { |name, _| formulae.include? name }
     new(results)
   end
 

@@ -25,15 +25,13 @@ module Homebrew
     search_type << :name   if ARGV.flag? "--name"
     search_type << :desc   if ARGV.flag? "--description"
 
-    if (ARGV.include?("--all") or ARGV.include?("-a")) and
-      (ARGV.include?("--installed") or ARGV.include?("-i"))
-        odie "You must provide a search term."
+    if (ARGV.include?("--all") || ARGV.include?("-a")) && (ARGV.include?("--installed") || ARGV.include?("-i"))
+      odie "You must provide a search term."
     end
 
-    if
-      ARGV.include?("--all") or ARGV.include?("-a")
+    if ARGV.include?("--all") || ARGV.include?("-a")
       Descriptions.all.print
-    elsif ARGV.include?("--installed") or ARGV.include?("-i")
+    elsif ARGV.include?("--installed") || ARGV.include?("-i")
       Descriptions.installed.print
     elsif search_type.empty?
       raise FormulaUnspecifiedError if ARGV.named.empty?
