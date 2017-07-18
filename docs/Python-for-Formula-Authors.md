@@ -179,7 +179,7 @@ Sometimes we have to `inreplace` a `Makefile` to use our prefix for the Python b
 
 ### Python declarations
 
-Libraries **should** declare a dependency on `:python` or `:python3` as appropriate, which will respectively cause the formula to use the first python or python3 discovered in `PATH` at install time. If a library supports both Python 2.x and Python 3.x, the `:python` dependency **should** be `:recommended` (i.e. built by default) and the `:python3` dependency should be `:optional`. Python 2.x libraries **must** function when they are installed against either the system Python or Homebrew Python.
+Libraries **should** declare a dependency on `:python` or `:python3` as appropriate, which will respectively cause the formula to use the first python or python3 discovered in `PATH` at install time. Python 2.x libraries **must** function when they are installed against either the system Python or Homebrew Python.
 
 Formulae that declare a dependency on `:python` will always be bottled against Homebrew's python, since we cannot in general build binary packages that can be imported from both Pythons. Users can add `--build-from-source` after `brew install` to compile against whichever python is in `PATH`.
 
