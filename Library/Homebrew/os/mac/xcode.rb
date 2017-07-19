@@ -92,7 +92,7 @@ module OS
         else
           <<-EOS.undent
             Xcode can be updated from
-              https://developer.apple.com/download/more/
+              https://developer.apple.com/download/
           EOS
         end
       end
