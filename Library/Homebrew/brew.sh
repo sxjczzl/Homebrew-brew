@@ -105,11 +105,6 @@ then
   HOMEBREW_OS_USER_AGENT_VERSION="Mac OS X $HOMEBREW_MACOS_VERSION"
 
   printf -v HOMEBREW_MACOS_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_MACOS_VERSION//./ }
-  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "100900" &&
-        -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]]
-  then
-    HOMEBREW_CURL="$HOMEBREW_PREFIX/opt/curl/bin/curl"
-  fi
 else
   HOMEBREW_PROCESSOR="$(uname -m)"
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
@@ -342,6 +337,17 @@ else
   # shellcheck source=/dev/null
   source "$HOMEBREW_LIBRARY/Homebrew/utils/ruby.sh"
   setup-ruby-path
+
+  for project in homebrew linuxbrew mistydemeo
+  do
+    curl_command_path="$HOMEBREW_LIBRARY/Library/Taps/$project/homebrew-core/cmd/vendor-curl.sh"
+    if [[ -x "$curl_command_path" ]]
+    then
+      source "$curl_command_path"
+      setup-curl-path
+      break
+    fi
+  done
 
   # Unshift command back into argument list (unless argument list was empty).
   [[ "$HOMEBREW_ARG_COUNT" -gt 0 ]] && set -- "$HOMEBREW_COMMAND" "$@"

@@ -11,13 +11,22 @@ VENDOR_DIR="$HOMEBREW_LIBRARY/Homebrew/vendor"
 # Built from https://github.com/Homebrew/homebrew-portable.
 if [[ -n "$HOMEBREW_MACOS" ]]
 then
-  if [[ "$HOMEBREW_PROCESSOR" = "Intel" ]]
+  # Universal 10.4 build
+  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "100500" || "$HOMEBREW_PROCESSOR" != "Intel" ]]
   then
+    ruby_URL="https://archive.org/download/tigerbrew/portable-ruby-2.2.7.tiger.bottle.tar.gz"
+    ruby_SHA="b7a283eaa3b3a77f73eb2c4a7210ef84fa23729a724717b0562ded9094028eb0"
+  # Intel-only 10.5 build
+  else
     ruby_URL="https://homebrew.bintray.com/bottles-portable/portable-ruby-2.0.0-p648.leopard_64.bottle.tar.gz"
     ruby_SHA="5c1240abe4be91c9774a0089c2a38a8ccfff87c009e8e5786730c659d5e633f7"
-  else
-    ruby_URL=""
-    ruby_SHA=""
+  fi
+
+  # Universal Curl used on older OS Xs to download software
+  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "100900" ]]
+  then
+    curl_URL="https://archive.org/download/tigerbrew/portable-curl-7.53.1.tiger.bottle.tar.gz"
+    curl_SHA="e4c142abd7720d0796415d232fd1577e5ab9005c65ad79d8b731ea30a27a051e"
   fi
 elif [[ -n "$HOMEBREW_LINUX" ]]
 then
@@ -43,6 +52,13 @@ fetch() {
   elif [[ -z "$HOMEBREW_VERBOSE" ]]
   then
     curl_args[${#curl_args[*]}]="--progress-bar"
+  fi
+
+  # Certs are too old to recognize most modern websites; count on the
+  # sha256 hashes to ensure we're fetching the right thing.
+  if [[ "$HOMEBREW_CURL" = "/usr/bin/curl" && "$HOMEBREW_OSX_VERSION_NUMERIC" -lt "100900" ]]
+  then
+    curl_args[${#curl_args[*]}]="--insecure"
   fi
 
   temporary_path="$CACHED_LOCATION.incomplete"
