@@ -269,6 +269,7 @@ module GitHub
 
   def issues_for_formula(name, options = {})
     tap = options[:tap] || CoreTap.instance
+    return [] if tap.custom_remote?
     issues_matching(name, state: "open", repo: "#{tap.user}/homebrew-#{tap.repo}")
   end
 
