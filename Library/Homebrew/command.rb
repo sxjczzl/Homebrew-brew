@@ -48,8 +48,6 @@ module Homebrew
       # correct usage of command `cmd_name`
       odie <<-EOS.undent
         #{error_msg}
-        Correct usage:
-        #{help_documentation(cmd_name)}
       EOS
     end
 
