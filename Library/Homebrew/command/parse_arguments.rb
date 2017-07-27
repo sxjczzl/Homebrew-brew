@@ -1,17 +1,11 @@
-require "command/documentation"
-require "command/define_command"
 require "command/command_options"
 
 module Homebrew
   module Command
     class ParseArguments < CommandOptions
       def initialize(cmd_name)
-        super()
-        # Get the code block defined in the `define_command` DSL of command
-        # `cmd_name`
-        code_block = Command.get_cmd_variable_value(cmd_name)
-        # Run that code block
-        instance_eval(&code_block)
+        # Run the `define_command` DSL for command `cmd_name`
+        super(cmd_name)
         # Get command line arguments
         @argv_tokens = ARGV.dup.uniq
       end

@@ -6,6 +6,12 @@ module Homebrew
     # advantage is that no class/sub-class stores any unnecessary variables/state
     # that it will not use.
     class DefineCommand
+      def initialize(cmd_name)
+        # Get and then run the code block defined in the `define_command` DSL
+        # of command `cmd_name`
+        instance_eval(&Command.variable_value(cmd_name))
+      end
+
       # Overridden by sub-class `Homebrew::Command::Documentation`. The
       # method is called whenever `desc do` DSL is executed inside the
       #  `define_command do` DSL

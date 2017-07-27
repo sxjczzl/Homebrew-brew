@@ -68,7 +68,7 @@ module Homebrew
     # Fetches the value (i.e. code block of `define_command do` DSL) stored in
     # the relevant command's variable. For example, for the `cmd_name`
     # "commands", return the value of the variable `@commands_command`
-    def get_cmd_variable_value(cmd_name)
+    def variable_value(cmd_name)
       # Infer the variable name from `cmd_name`
       cmd_var_name = cmd_variable_name(cmd_name)
       # Return the value stored in this variable

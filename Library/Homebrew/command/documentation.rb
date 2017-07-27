@@ -4,13 +4,11 @@ module Homebrew
   module Command
     class Documentation < CommandOptions
       def initialize(cmd_name)
-        super()
+        # Run the `define_command` DSL for command `cmd_name`
+        super(cmd_name)
+        # Store the command's name in a local instance variable, which will be
+        # used in generating documentation
         @cmd_name = cmd_name
-        # Get the code block defined in the `define_command` DSL of command
-        # `cmd_name`
-        code_block = Command.get_cmd_variable_value(cmd_name)
-        # Run that code block
-        instance_eval(&code_block)
       end
 
       # Overrides the DefineCommand::option method
