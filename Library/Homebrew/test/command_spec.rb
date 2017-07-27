@@ -1,85 +1,86 @@
-require "command"
+require "cmd/commands"
+require "command/documentation"
+require "command/parse_arguments"
+require "command/define_command"
+
+# TODO: Move the test cases of each class/sub-class into seperate files
 
 describe Homebrew::Command do
-  it "initializes correctly" do
-    command = Homebrew::Command.new
-    command.initialize_variables
-    expect(command.valid_options).to eq([])
-  end
+  before(:each) { stub_const("ARGV", []) }
+  before(:each) do
+    described_class.define_command "test-cmd1" do
+      desc "this is a test command description"
 
-  it "sets @valid_options correctly" do
-    command = Homebrew::Command.new
-    command.initialize_variables
-    command.option "bar", desc: "go to bar" do
-      command.option "foo", desc: "do foo"
-    end
-    command.option "bar1", desc: "go to bar1"
-    expect(command.valid_options).to eq [
-      { option_name: "--bar", desc: "go to bar", parent_name: nil },
-      { option_name: "--foo", desc: "do foo", parent_name: "--bar" },
-      { option_name: "--bar1", desc: "go to bar1", parent_name: nil },
-    ]
-  end
+      option "--option1" do
+        desc <<-EOS.undent
+          If #{@option} is passed, execute function option1()
+        EOS
+      end
 
-  it "sets error message correctly if invalid options provided" do
-    stub_const("ARGV", ["--bar1", "--bar2", "--bar"])
+      option "--option2" do
+        desc <<-EOS.undent
+          If #{@option} is passed, execute function option2()
+        EOS
+      end
 
-    command_options = Homebrew::Command.new
-    command_options.initialize_variables
-    command_options.command_name = "test_command"
-    command_options.description = "This is test_command"
-    command_options.option "bar", desc: "go to bar"
-    command_options.option "foo", desc: "do foo"
-    command_options.option "quiet", desc: "be quiet"
-
-    expect(command_options.error_message)
-      .to eq "Invalid option(s) provided: --bar1 --bar2"
-  end
-
-  it "produces no error message if no invalid options provided" do
-    stub_const("ARGV", ["--quiet", "--bar"])
-
-    command = Homebrew::Command.new
-    command.initialize_variables
-    command.option "bar", desc: "go to bar"
-    command.option "foo", desc: "do foo"
-    command.option "quiet", desc: "be quiet"
-
-    expect(command.error_message).to eq(nil)
-  end
-
-  it "tests the option block and @help_output" do
-    command = Homebrew::Command.new
-    command.initialize_variables
-    command.command_name = "test_command"
-    command.description = "This is test_command"
-
-    command.option "quiet", desc: "list only the names of commands without the header." do
-      command.option "bar", desc: "go to bar" do
-        command.option "foo", desc: "do foo" do
-          command.option "foo child", desc: "do foo"
-        end
+      run do
+        puts "the command `test-cmd1` was just executed"
+        puts "this is the second line"
       end
     end
-    command.option "foo1", desc: "do foo1."
-    command.option "quiet1", desc: "be quiet1." do
-      command.option "include-aliases", desc: "the aliases of internal commands will be included."
-    end
+  end
 
-    command.generate_documentation
-    expect(command.help_output).to eq <<-EOS.undent.slice(0..-2)
-      brew test_command [--quiet [--bar [--foo [--foo child]]]] [--foo1] [--quiet1 [--include-aliases]]:
-          This is test_command
+  it "checks correctly the `man-page` output of the command: `commands`" do
+    manpage_output = described_class.manpage_documentation("commands")
+    expect(manpage_output).to eq "\s\s" + <<-EOS.undent
+      * `commands` [`--quiet` [`--include-aliases`]]:
+          Show a list of built-in and external commands.
 
           If --quiet is passed, list only the names of commands without the header.
-          With --bar, go to bar
-          With --foo, do foo
-          With --foo child, do foo
-
-          If --foo1 is passed, do foo1.
-
-          If --quiet1 is passed, be quiet1.
           With --include-aliases, the aliases of internal commands will be included.
     EOS
+  end
+
+  it "checks correctly the `help` output of the command: `commands`" do
+    help_output = described_class.help_documentation("commands")
+    expect(help_output).to eq <<-EOS.undent.chop
+      brew commands [--quiet [--include-aliases]]:
+          Show a list of built-in and external commands.
+
+          If --quiet is passed, list only the names of commands without the header.
+          With --include-aliases, the aliases of internal commands will be included.
+    EOS
+  end
+
+  it "checks the `help` of a test command" do
+    help_output = described_class.help_documentation("test-cmd1")
+    expect(help_output).to eq <<-EOS.undent.chop
+      brew test-cmd1 [--option1] [--option2]:
+          this is a test command description
+
+          If --option1 is passed, execute function option1()
+
+          If --option2 is passed, execute function option2()
+    EOS
+  end
+
+  it "runs the `commands` command using the DSL method" do
+    expect { described_class.run_command("commands") }
+      .to output(/Built-in commands/).to_stdout
+  end
+
+  it "runs a test command using the DSL method" do
+    expect { described_class.run_command("test-cmd1") }
+      .to output(/the command `test-cmd1` was just executed/).to_stdout
+  end
+
+  it "checks for correct error message on a test command" do
+    stub_const("ARGV", ["--option1"])
+    error_msg = described_class::ParseArguments.new("test-cmd1").error_msg
+    expect(error_msg).to eq(nil)
+
+    stub_const("ARGV", ["--option1", "--option3"])
+    error_msg = described_class::ParseArguments.new("test-cmd1").error_msg
+    expect(error_msg).to eq("Invalid option(s) provided: --option3")
   end
 end

@@ -7,24 +7,22 @@
 module Homebrew
   module_function
 
-  def commands
-    # TODO: Goal is to not require this function at all.
-    command = CommandsCommand.new
-    command.commands
-  end
-
-  class CommandsCommand < Command
-    def initialize
-      options do
-        self.command_name = "commands"
-        self.description = "Show a list of built-in and external commands."
-        option "quiet", desc: "list only the names of commands without the header." do
-          option "include-aliases", desc: "the aliases of internal commands will be included."
-        end
+  Command.define_command "commands" do
+    desc "Show a list of built-in and external commands."
+    option "--quiet" do
+      desc <<-EOS.undent
+        If #{@option} is passed, list only the names of commands without the header.
+      EOS
+      suboption "--include-aliases" do
+        desc <<-EOS.undent
+          With #{@suboption}, the aliases of internal commands will be included.
+        EOS
       end
     end
 
-    def commands
+    run do
+      # code which was originally present in Homebrew#commands() method
+      # TODO: generate methods that remove the need for using `ARGV` here
       if ARGV.include? "--quiet"
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
@@ -48,29 +46,33 @@ module Homebrew
         end
       end
     end
+  end
 
-    def internal_commands
-      find_internal_commands HOMEBREW_LIBRARY_PATH/"cmd"
-    end
+  def commands
+    Command.run_command("commands")
+  end
 
-    def internal_developer_commands
-      find_internal_commands HOMEBREW_LIBRARY_PATH/"dev-cmd"
-    end
+  def internal_commands
+    find_internal_commands HOMEBREW_LIBRARY_PATH/"cmd"
+  end
 
-    def external_commands
-      paths.each_with_object([]) do |path, cmds|
-        Dir["#{path}/brew-*"].each do |file|
-          next unless File.executable?(file)
-          cmd = File.basename(file, ".rb")[5..-1]
-          cmds << cmd unless cmd.include?(".")
-        end
-      end.sort
-    end
+  def internal_developer_commands
+    find_internal_commands HOMEBREW_LIBRARY_PATH/"dev-cmd"
+  end
 
-    def find_internal_commands(directory)
-      directory.children.each_with_object([]) do |f, cmds|
-        cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
+  def external_commands
+    paths.each_with_object([]) do |path, cmds|
+      Dir["#{path}/brew-*"].each do |file|
+        next unless File.executable?(file)
+        cmd = File.basename(file, ".rb")[5..-1]
+        cmds << cmd unless cmd.include?(".")
       end
+    end.sort
+  end
+
+  def find_internal_commands(directory)
+    directory.children.each_with_object([]) do |f, cmds|
+      cmds << f.basename.to_s.sub(/\.(?:rb|sh)$/, "") if f.file?
     end
   end
 end
