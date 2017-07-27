@@ -8,12 +8,11 @@ module Homebrew
 
     # This method is run when a `define_command do` DSL is declared anywhere
     def define_command(cmd_name, &code_block)
-      # Infer the variable name from `cmd_name`
-      cmd_var_name = cmd_variable_name(cmd_name)
-      # Dynamically create this variable as an instance variable of
+      # Infer the variable name from `cmd_name`. Then, dynamically
+      # create this variable as an instance variable of
       # Module:Homebrew::Command and set its value to `code_block`
       # (i.e. the block of code passed into this `define_command` DSL)
-      instance_variable_set(cmd_var_name, code_block)
+      instance_variable_set(variable_name(cmd_name), code_block)
     end
 
     # This method is run when a user executes `brew cmd_name` on command line
@@ -53,7 +52,7 @@ module Homebrew
 
     # Helper Method
     # Infer the variable name from `cmd_name`
-    def cmd_variable_name(cmd_name)
+    def variable_name(cmd_name)
       # Infer the variable name from `cmd_name`: First convert the command's
       # name (i.e. `cmd_name`) to it's legal variable name. For e.g.
       # "commands" -> "commands", "gist-logs" -> "gist_logs", "--cache" ->
@@ -67,10 +66,9 @@ module Homebrew
     # the relevant command's variable. For example, for the `cmd_name`
     # "commands", return the value of the variable `@commands_command`
     def variable_value(cmd_name)
-      # Infer the variable name from `cmd_name`
-      cmd_var_name = cmd_variable_name(cmd_name)
-      # Return the value stored in this variable
-      instance_variable_get(cmd_var_name)
+      # Infer the variable name from `cmd_name` and return the value stored
+      # in that variable
+      instance_variable_get(variable_name(cmd_name))
     end
   end
 end
