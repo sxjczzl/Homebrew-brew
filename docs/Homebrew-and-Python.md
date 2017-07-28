@@ -13,7 +13,7 @@ Homebrew provides one formula for Python 2.7.x and another for Python 3.x. The e
 * `python` will always point to the macOS system Python
 * `python2` will point to the brew-installed Python 2.7.x
 * `python3` will point to the brew-installed Python 3.x
-* `pip2` will point to the pip associated with the brew-installed Python 2.7x
+* `pip2` will point to the pip associated with the brew-installed Python 2.7.x
 * `pip3` will point to the pip associated with the brew-installed Python 3.x
 
 ([Wondering which one to choose?](https://wiki.python.org/moin/Python2orPython3))
