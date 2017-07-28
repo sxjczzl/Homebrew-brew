@@ -28,6 +28,8 @@ module Homebrew
       # ARGV.include?("option") in the `run do` DSL of a command
       def generate_command_line_parsing_methods
         argv_tokens = @argv_tokens
+        # For each valid option, generate a method that checks whether or
+        # not that option is provided in the command line arguments
         @valid_options.each do |option|
           option_name = option[:option_name]
           method_name = Command.legal_variable_name(option_name)
