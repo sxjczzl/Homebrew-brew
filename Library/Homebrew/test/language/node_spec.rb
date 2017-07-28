@@ -48,4 +48,29 @@ describe Language::Node do
     resp = subject.local_npm_install_args
     expect(resp).to include("-ddd", "--build-from-source", "--cache=#{HOMEBREW_CACHE}/npm_cache")
   end
+
+  describe "#setup_yarn_environment" do
+    it "does nothing when .yarnrc exists" do
+      allow_any_instance_of(Pathname).to receive(:exist?).and_return(true)
+      expect(subject.setup_yarn_environment).to be_nil
+    end
+
+    it "calls prepend_path when node formula exists and yarnrc does not exist" do
+      node = formula "node" do
+        url "node-test"
+      end
+      stub_formula_loader(node)
+      allow_any_instance_of(Pathname).to receive(:exist?).and_return(false)
+      allow_any_instance_of(Pathname).to receive(:write)
+      expect(ENV).to receive(:prepend_path).twice
+      subject.setup_yarn_environment
+    end
+
+    it "does not call prepend_path when node formula does not exist but .yarnrc exists" do
+      allow_any_instance_of(Pathname).to receive(:exist?).and_return(false)
+      allow_any_instance_of(Pathname).to receive(:write)
+      expect(ENV).to receive(:prepend_path)
+      expect(subject.setup_yarn_environment).to be_nil
+    end
+  end
 end

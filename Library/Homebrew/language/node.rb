@@ -58,5 +58,28 @@ module Language
         --#{npm_cache_config}
       ]
     end
+
+    def self.setup_yarn_environment
+      yarnrc = Pathname.new("#{ENV["HOME"]}/.yarnrc")
+      # only run setup_yarn_environment once per formula
+      return if yarnrc.exist?
+      # Writing a temporary `.yarnrc` to `.brew_home` to tell yarn to set its global prefix
+      # to a tmp path not restricted by brew's sandbox, build native addons from source
+      # and ignore yarn 0.28+ strict top level engine checks (preventing build failures)
+      yarnrc.write <<-EOS.undent
+        prefix "#{ENV["HOME"]}/.yarn"
+        cache-folder "#{HOMEBREW_CACHE}/yarn_cache"
+        build-from-source true
+        ignore-engines true
+      EOS
+      FileUtils.mkdir_p "#{ENV["HOME"]}/.yarn/bin"
+      ENV.prepend_path "PATH", "#{ENV["HOME"]}/.yarn/bin"
+      # help yarn find the `node-gyp` copy of the homebrew managed npm
+      begin
+        ENV.prepend_path "PATH", "#{Formula["node"].opt_libexec}/lib/node_modules/npm/bin/node-gyp-bin"
+      rescue FormulaUnavailableError
+        nil
+      end
+    end
   end
 end
