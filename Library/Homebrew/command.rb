@@ -1,5 +1,4 @@
 require "command/parse_arguments"
-require "command/documentation"
 require "command/run_command"
 
 module Homebrew
@@ -12,7 +11,7 @@ module Homebrew
       # create this variable as an instance variable of
       # Module:Homebrew::Command and set its value to `code_block`
       # (i.e. the block of code passed into this `define_command` DSL)
-      instance_variable_set(variable_name(cmd_name), code_block)
+      instance_variable_set("@#{legal_variable_name(cmd_name)}", code_block)
     end
 
     # This method is run when a user executes `brew cmd_name` on command line
@@ -22,16 +21,6 @@ module Homebrew
       parse_arguments!(cmd_name)
       # Run the contents of the `run do` DSL of command `cmd_name`
       RunCommand.new(cmd_name)
-    end
-
-    def manpage_documentation(cmd_name)
-      # Get the `brew man` output for command `cmd_name`
-      Documentation.new(cmd_name).man_output
-    end
-
-    def help_documentation(cmd_name)
-      # Get the `brew --help` output for command `cmd_name`
-      Documentation.new(cmd_name).help_output
     end
 
     # This method parses the command line arguments when `brew cmd_name`
@@ -51,24 +40,21 @@ module Homebrew
     end
 
     # Helper Method
-    # Infer the variable name from `cmd_name`
-    def variable_name(cmd_name)
-      # Infer the variable name from `cmd_name`: First convert the command's
-      # name (i.e. `cmd_name`) to it's legal variable name. For e.g.
+    def legal_variable_name(name)
+      # Get the legal/valid variable name from `name`. For e.g.
       # "commands" -> "commands", "gist-logs" -> "gist_logs", "--cache" ->
-      # "cache". Then, append "_command" to the variable name (because of
-      # the convention used in naming these variable names)
-      "@#{cmd_name.gsub(/^--/, "").tr("-", "_")}_command"
+      # "cache".
+      name.gsub(/^--/, "").tr("-", "_")
     end
 
     # Helper Method
     # Fetches the value (i.e. code block of `define_command do` DSL) stored in
     # the relevant command's variable. For example, for the `cmd_name`
-    # "commands", return the value of the variable `@commands_command`
-    def variable_value(cmd_name)
+    # "commands-temp", return the value of the variable `@commands_temp`
+    def command_variable_value(cmd_name)
       # Infer the variable name from `cmd_name` and return the value stored
       # in that variable
-      instance_variable_get(variable_name(cmd_name))
+      instance_variable_get("@#{legal_variable_name(cmd_name)}")
     end
   end
 end

@@ -5,6 +5,7 @@ module Homebrew
     class ParseArguments < CommandOptions
       def initialize(cmd_name)
         # Run the `define_command` DSL for command `cmd_name`
+        # and initialize `@valid_options` variable
         super(cmd_name)
         # Get command line arguments
         @argv_tokens = ARGV.dup.uniq

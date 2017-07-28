@@ -1,5 +1,4 @@
 require "cmd/commands"
-require "command/documentation"
 require "command/parse_arguments"
 require "command/define_command"
 
@@ -35,11 +34,13 @@ describe Homebrew::Command do
       .to output(/the command `test-cmd1` was just executed/).to_stdout
   end
 
-  it "checks for correct error message on a test command" do
+  it "checks for no error message if no invalid option provided" do
     stub_const("ARGV", ["--option1"])
     error_msg = described_class::ParseArguments.new("test-cmd1").error_msg
     expect(error_msg).to eq(nil)
+  end
 
+  it "checks for an error message if invalid option provided" do
     stub_const("ARGV", ["--option1", "--option3"])
     error_msg = described_class::ParseArguments.new("test-cmd1").error_msg
     expect(error_msg).to eq("Invalid option(s) provided: --option3")
