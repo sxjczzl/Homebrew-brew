@@ -23,6 +23,19 @@ module Homebrew
         return if invalid_options.empty?
         "Invalid option(s) provided: #{invalid_options.join(" ")}"
       end
+
+      # Dynamically generate methods that can replace the use of
+      # ARGV.include?("option") in the `run do` DSL of a command
+      def generate_command_line_parsing_methods
+        argv_tokens = @argv_tokens
+        @valid_options.each do |option|
+          option_name = option[:option_name]
+          method_name = option_name.gsub(/^--/, "").tr("-", "_")
+          Homebrew.define_singleton_method("#{method_name}?") do
+            argv_tokens.include? option_name
+          end
+        end
+      end
     end
   end
 end
