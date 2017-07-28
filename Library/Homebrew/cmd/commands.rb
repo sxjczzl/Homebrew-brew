@@ -21,12 +21,10 @@ module Homebrew
     end
 
     run do
-      # code which was originally present in Homebrew#commands() method
-      # TODO: generate methods that remove the need for using `ARGV` here
-      if ARGV.include? "--quiet"
+      if quiet?
         cmds = internal_commands + external_commands
         cmds += internal_developer_commands
-        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if ARGV.include? "--include-aliases"
+        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if include_aliases?
         puts Formatter.columns(cmds.sort)
       else
         # Find commands in Homebrew/cmd

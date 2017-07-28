@@ -30,7 +30,7 @@ module Homebrew
         argv_tokens = @argv_tokens
         @valid_options.each do |option|
           option_name = option[:option_name]
-          method_name = option_name.gsub(/^--/, "").tr("-", "_")
+          method_name = Command.legal_variable_name(option_name)
           Homebrew.define_singleton_method("#{method_name}?") do
             argv_tokens.include? option_name
           end
