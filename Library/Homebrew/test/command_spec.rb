@@ -45,4 +45,10 @@ describe Homebrew::Command do
     error_msg = described_class::ParseArguments.new("test-cmd1").error_msg
     expect(error_msg).to eq("Invalid option(s) provided: --option3")
   end
+
+  it "checks subsitute functions for ARGV.include?() are generated" do
+    stub_const("ARGV", ["--option1"])
+    described_class::ParseArguments.new("test-cmd1").generate_command_line_parsing_methods
+    expect(Homebrew.option1?).to eq(true)
+  end
 end

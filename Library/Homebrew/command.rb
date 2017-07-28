@@ -16,12 +16,12 @@ module Homebrew
 
     # This method is run when a user executes `brew cmd_name` on command line
     def run_command(cmd_name)
-      # Dynamically generate methods that can replace the use of
-      # ARGV.include?("option") in the `run do` DSL of command `cmd_name`
-      ParseArguments.new(cmd_name).generate_command_line_parsing_methods
       # Parse the command line arguments and quit with an error if any
       # invalid options provided. Otherwise, proceed to running the command
       parse_arguments!(cmd_name)
+      # Dynamically generate methods that can replace the use of
+      # ARGV.include?("option") in the `run do` DSL of command `cmd_name`
+      ParseArguments.new(cmd_name).generate_command_line_parsing_methods
       # Run the contents of the `run do` DSL of command `cmd_name`
       RunCommand.new(cmd_name)
     end
