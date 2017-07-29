@@ -167,7 +167,7 @@ module Superenv
   end
 
   def determine_include_paths
-    PATH.new(keg_only_deps.map(&:opt_include)).existing
+    PATH.new(deps.map(&:opt_include)).existing
   end
 
   def homebrew_extra_library_paths
@@ -176,8 +176,7 @@ module Superenv
 
   def determine_library_paths
     PATH.new(
-      keg_only_deps.map(&:opt_lib),
-      HOMEBREW_PREFIX/"lib",
+      deps.map(&:opt_lib),
       homebrew_extra_library_paths,
     ).existing
   end
