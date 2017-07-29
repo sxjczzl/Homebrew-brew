@@ -9,7 +9,7 @@ module Homebrew
       def initialize(cmd_name)
         # Get and then run the code block defined in the `define_command` DSL
         # of command `cmd_name`
-        instance_eval(&Command.command_variable_value(cmd_name))
+        instance_eval(&Command.accessor_define_command(:get, cmd_name))
       end
 
       # Overridden by sub-class `Homebrew::Command::Documentation`. The

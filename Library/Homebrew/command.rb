@@ -7,11 +7,9 @@ module Homebrew
 
     # This method is run when a `define_command do` DSL is declared anywhere
     def define_command(cmd_name, &code_block)
-      # Infer the variable name from `cmd_name`. Then, dynamically
-      # create this variable as an instance variable of
-      # Module:Homebrew::Command and set its value to `code_block`
-      # (i.e. the block of code passed into this `define_command` DSL)
-      instance_variable_set("@#{legal_variable_name(cmd_name)}", code_block)
+      # Set the code block defined in the `define_command` DSL
+      # of command `cmd_name` in its respective variable
+      accessor_define_command(:set, cmd_name, &code_block)
     end
 
     # This method is run when a user executes `brew cmd_name` on command line
@@ -43,21 +41,26 @@ module Homebrew
     end
 
     # Helper Method
+    # Get the lagal variable/method name that can be used for the string `name`
     def legal_variable_name(name)
-      # Get the legal/valid variable name from `name`. For e.g.
-      # "commands" -> "commands", "gist-logs" -> "gist_logs", "--cache" ->
-      # "cache".
+      # Get the legal/valid variable name from `name` by removing the
+      # preceeding `--` and converting all `-` to `_`. For e.g. "commands"
+      # -> "commands", "gist-logs" -> "gist_logs", "--cache" -> "cache".
       name.gsub(/^--/, "").tr("-", "_")
     end
 
     # Helper Method
-    # Fetches the value (i.e. code block of `define_command do` DSL) stored in
-    # the relevant command's variable. For example, for the `cmd_name`
-    # "commands-temp", return the value of the variable `@commands_temp`
-    def command_variable_value(cmd_name)
-      # Infer the variable name from `cmd_name` and return the value stored
-      # in that variable
-      instance_variable_get("@#{legal_variable_name(cmd_name)}")
+    # :set and :get the `define_command` DSL code block for command `cmd_name`
+    def accessor_define_command(action, cmd_name, &code_block)
+      # Infer the respective variable name for command `cmd_name` that stores
+      # the command's `define_command` DSL block and :set or :get
+      # the value stored in that variable
+      command_variable_name = "@#{legal_variable_name(cmd_name)}"
+      if action == :set
+        instance_variable_set(command_variable_name, code_block)
+      elsif action == :get
+        instance_variable_get(command_variable_name)
+      end
     end
   end
 end
