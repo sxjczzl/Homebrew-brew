@@ -218,7 +218,7 @@ class Cmd
     elsif path.start_with?(cellar) || path.start_with?(opt)
       dep = path[keg_regex, 2]
       dep && @deps.include?(dep)
-    elsif path.start_with?(prefix)
+    elsif path.start_with?(prefix) && !ENV["HOMEBREW_NO_FILTER_PREFIX"]
       true
     else
       # ignore MacPorts, Boxen's Homebrew, X11, fink
@@ -284,6 +284,7 @@ class Cmd
   end
 
   def configure?
+    return false if ENV["HOMEBREW_FILTER_CONFIGURE"]
     # configure scripts generated with autoconf 2.61 or later export as_nl
     ENV.key? "as_nl"
   end
