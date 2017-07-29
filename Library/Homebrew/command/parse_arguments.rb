@@ -24,6 +24,20 @@ module Homebrew
         "Invalid option(s) provided: #{invalid_options.join(" ")}"
       end
 
+      # This method parses the command line arguments when `brew cmd_name`
+      # is executed, and throws an error message if any incorrect option
+      # is provided
+      def parse_arguments!
+        # Get the error message by parsing command line arguments when
+        # `brew cmd_name` is executed on the command line
+        # If there is no error, proceed with normal execution of command
+        return unless error_msg
+        # If there is error, quit with the error message
+        odie <<-EOS.undent
+          #{error_msg}
+        EOS
+      end
+
       # Dynamically generate methods that can replace the use of
       # ARGV.include?("option") in the `run do` DSL of a command
       def generate_command_line_parsing_methods

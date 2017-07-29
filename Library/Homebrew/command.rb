@@ -16,7 +16,7 @@ module Homebrew
     def run_command(cmd_name)
       # Parse the command line arguments and quit with an error if any
       # invalid options provided. Otherwise, proceed to running the command
-      parse_arguments!(cmd_name)
+      ParseArguments.new(cmd_name).parse_arguments!
       # Dynamically generate methods that can replace the use of
       # ARGV.include?("option") in the `run do` DSL of command `cmd_name`
       ParseArguments.new(cmd_name).generate_command_line_parsing_methods
@@ -24,23 +24,7 @@ module Homebrew
       RunCommand.new(cmd_name)
     end
 
-    # This method parses the command line arguments when `brew cmd_name`
-    # is executed, and throws an error message if any incorrect option
-    # is provided
-    def parse_arguments!(cmd_name)
-      # Get the error message by parsing command line arguments when
-      # `brew cmd_name` is executed on the command line
-      error_msg = ParseArguments.new(cmd_name).error_msg
-      # If there is no error, proceed with normal execution of command
-      return unless error_msg
-      # If there is error, quit with the error message, plus, instructions on
-      # correct usage of command `cmd_name`
-      odie <<-EOS.undent
-        #{error_msg}
-      EOS
-    end
-
-    # Helper Method
+    # Helper Method for Module:Homebrew:Command
     # Get the lagal variable/method name that can be used for the string `name`
     def legal_variable_name(name)
       # Get the legal/valid variable name from `name` by removing the
@@ -49,7 +33,7 @@ module Homebrew
       name.gsub(/^--/, "").tr("-", "_")
     end
 
-    # Helper Method
+    # Helper Method for Module:Homebrew:Command
     # :set and :get the `define_command` DSL code block for command `cmd_name`
     def accessor_define_command(action, cmd_name, &code_block)
       # Infer the respective variable name for command `cmd_name` that stores
