@@ -16,7 +16,7 @@ module Homebrew
     def run_command(cmd_name)
       # Parse the command line arguments and quit with an error if any
       # invalid options provided. Otherwise, proceed to running the command
-      ParseArguments.new(cmd_name).parse_arguments!
+      ParseArguments.new(cmd_name).parse_arguments_for_error!
       # Dynamically generate methods that can replace the use of
       # ARGV.include?("option") in the `run do` DSL of command `cmd_name`
       ParseArguments.new(cmd_name).generate_command_line_parsing_methods

@@ -27,7 +27,7 @@ module Homebrew
       # This method parses the command line arguments when `brew cmd_name`
       # is executed, and throws an error message if any incorrect option
       # is provided
-      def parse_arguments!
+      def parse_arguments_for_error!
         # Get the error message by parsing command line arguments when
         # `brew cmd_name` is executed on the command line
         # If there is no error, proceed with normal execution of command
