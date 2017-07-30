@@ -243,9 +243,12 @@ module Hbc
             end repeat
 
             tell application "Finder"
+              set currentVolume to alert volume of (get volume settings)
+              set volume alert volume 0
               set trashedItems to (move argv to trash)
-              set output to ""
+              set volume alert volume currentVolume
 
+              set output to ""
               repeat with i from 1 to (count trashedItems)
                 set trashedItem to POSIX path of (item i of trashedItems as string)
                 set output to output & trashedItem
@@ -253,7 +256,6 @@ module Hbc
                   set output to output & (do shell script "printf \"\\0\"")
                 end if
               end repeat
-
               return output
             end tell
           end run
