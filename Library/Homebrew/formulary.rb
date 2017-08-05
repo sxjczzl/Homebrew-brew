@@ -15,13 +15,20 @@ module Formulary
     FORMULAE.fetch(path)
   end
 
+  def self.namespace_module(namespace)
+    if const_defined?(namespace)
+      const_get(namespace)
+    else
+      Module.new.tap { |m| const_set(namespace, m) }
+    end
+  end
+
   def self.load_formula(name, path, contents, namespace)
     if ENV["HOMEBREW_DISABLE_LOAD_FORMULA"]
       raise "Formula loading disabled by HOMEBREW_DISABLE_LOAD_FORMULA!"
     end
 
-    mod = Module.new
-    const_set(namespace, mod)
+    mod = namespace_module(namespace)
     begin
       mod.module_eval(contents, path)
     rescue ScriptError => e
