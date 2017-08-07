@@ -37,6 +37,20 @@ module RuboCop
         match_object
       end
 
+      # Yields to block when there is a match
+      # Parameters: urls : Array of url/mirror method call nodes
+      #             regex: regex pattern to match urls
+      def audit_urls(urls, regex)
+        urls.each do |url_node|
+          url_string_node = parameters(url_node).first
+          url_string = string_content(url_string_node)
+          match_object = regex_match_group(url_string_node, regex)
+          next unless match_object
+          offending_node(url_string_node.parent)
+          yield match_object, url_string
+        end
+      end
+
       # Returns all string nodes among the descendants of given node
       def find_strings(node)
         return [] if node.nil?
@@ -102,14 +116,11 @@ module RuboCop
 
       # Returns nil if does not depend on dependency_name
       # args: node - dependency_name - dependency's name
-      def depends_on?(dependency_name)
+      def depends_on?(dependency_name, *types)
+        types = [:required, :build, :optional, :recommended, :run] if types.empty?
         dependency_nodes = find_every_method_call_by_name(@body, :depends_on)
         idx = dependency_nodes.index do |n|
-          depends_on_name_type?(n, dependency_name, :required) ||
-            depends_on_name_type?(n, dependency_name, :build) ||
-            depends_on_name_type?(n, dependency_name, :optional) ||
-            depends_on_name_type?(n, dependency_name, :recommended) ||
-            depends_on_name_type?(n, dependency_name, :run)
+          types.any? { |type| depends_on_name_type?(n, dependency_name, type) }
         end
         return if idx.nil?
         @offense_source_range = dependency_nodes[idx].source_range
@@ -127,7 +138,8 @@ module RuboCop
 
         case type
         when :required
-          type_match = !node.method_args.nil? && node.method_args.first.str_type?
+          type_match = !node.method_args.nil? &&
+                       (node.method_args.first.str_type? || node.method_args.first.sym_type?)
           if type_match && !name_match
             name_match = node_equals?(node.method_args.first, name)
           end
@@ -138,6 +150,8 @@ module RuboCop
           if type_match && !name_match
             name_match = node_equals?(node.method_args.first.keys.first.children.first, name)
           end
+        else
+          type_match = false
         end
 
         if type_match || name_match
@@ -334,14 +348,26 @@ module RuboCop
       def string_content(node)
         case node.type
         when :str
-          return node.str_content if node.type == :str
+          node.str_content
         when :dstr
-          return node.each_child_node(:str).map(&:str_content).join("") if node.type == :dstr
+          node.each_child_node(:str).map(&:str_content).join("")
         when :const
-          return node.const_name if node.type == :const
+          node.const_name
+        when :sym
+          node.children.first.to_s
         else
           ""
         end
+      end
+
+      # Returns true if the formula is versioned
+      def versioned_formula?
+        formula_file_name.include?("@") || @formula_name.match(/AT\d+/)
+      end
+
+      # Returns filename of the formula without the extension
+      def formula_file_name
+        File.basename(processed_source.buffer.name, ".rb")
       end
 
       # Returns printable component name

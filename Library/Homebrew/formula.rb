@@ -27,7 +27,7 @@ require "extend/ENV"
 # @see SharedEnvExtension
 # @see FileUtils
 # @see Pathname
-# @see http://docs.brew.sh/Formula-Cookbook.html Formula Cookbook
+# @see https://docs.brew.sh/Formula-Cookbook.html Formula Cookbook
 # @see https://github.com/styleguide/ruby Ruby Style Guide
 #
 # <pre>class Wget < Formula
@@ -177,8 +177,8 @@ class Formula
 
     @tap = if path == Formulary.core_path(name)
       CoreTap.instance
-    elsif path.to_s =~ HOMEBREW_TAP_PATH_REGEX
-      Tap.fetch(Regexp.last_match(1), Regexp.last_match(2))
+    elsif match = path.to_s.match(HOMEBREW_TAP_PATH_REGEX)
+      Tap.fetch(match[:user], match[:repo])
     end
 
     @full_name = full_name_with_optional_tap(name)
@@ -383,7 +383,9 @@ class Formula
   # All of aliases for the formula
   def aliases
     @aliases ||= if tap
-      tap.alias_reverse_table[full_name] || []
+      tap.alias_reverse_table[full_name].to_a.map do |a|
+        a.split("/")[-1]
+      end
     else
       []
     end
@@ -955,30 +957,27 @@ class Formula
     build = self.build
     self.build = Tab.for_formula(self)
 
-    old_tmpdir = ENV["TMPDIR"]
-    old_temp = ENV["TEMP"]
-    old_tmp = ENV["TMP"]
-    old_path = ENV["HOMEBREW_PATH"]
+    new_env = {
+      "TMPDIR" => HOMEBREW_TEMP,
+      "TEMP" => HOMEBREW_TEMP,
+      "TMP" => HOMEBREW_TEMP,
+      "HOMEBREW_PATH" => nil,
+    }
 
-    ENV["TMPDIR"] = ENV["TEMP"] = ENV["TMP"] = HOMEBREW_TEMP
-    ENV["HOMEBREW_PATH"] = nil
+    with_env(new_env) do
+      ENV.clear_sensitive_environment!
 
-    ENV.clear_sensitive_environment!
+      Pathname.glob("#{bottle_prefix}/{etc,var}/**/*") do |path|
+        path.extend(InstallRenamed)
+        path.cp_path_sub(bottle_prefix, HOMEBREW_PREFIX)
+      end
 
-    Pathname.glob("#{bottle_prefix}/{etc,var}/**/*") do |path|
-      path.extend(InstallRenamed)
-      path.cp_path_sub(bottle_prefix, HOMEBREW_PREFIX)
-    end
-
-    with_logging("post_install") do
-      post_install
+      with_logging("post_install") do
+        post_install
+      end
     end
   ensure
     self.build = build
-    ENV["TMPDIR"] = old_tmpdir
-    ENV["TEMP"] = old_temp
-    ENV["TMP"] = old_tmp
-    ENV["HOMEBREW_PATH"] = old_path
     @prefix_returns_versioned_prefix = false
   end
 
@@ -1008,7 +1007,8 @@ class Formula
   # rarely, you don't want your library symlinked into the main prefix
   # see gettext.rb for an example
   def keg_only?
-    keg_only_reason && keg_only_reason.valid?
+    return false unless keg_only_reason
+    keg_only_reason.valid?
   end
 
   # @private
@@ -2071,9 +2071,9 @@ class Formula
     # and you haven't passed or previously used any options on this formula.
     #
     # If you maintain your own repository, you can add your own bottle links.
-    # http://docs.brew.sh/Bottles.html
-    # You can ignore this block entirely if submitting to Homebrew/Homebrew, It'll be
-    # handled for you by the Brew Test Bot.
+    # https://docs.brew.sh/Bottles.html
+    # You can ignore this block entirely if submitting to Homebrew/homebrew-core.
+    # It'll be handled for you by the Brew Test Bot.
     #
     # <pre>bottle do
     #   root_url "https://example.com" # Optional root to calculate bottle URLs
@@ -2213,7 +2213,7 @@ class Formula
     # depends_on :arch => :x86_64 # If this formula only builds on Intel x86 64-bit.
     # depends_on :arch => :ppc # Only builds on PowerPC?
     # depends_on :ld64 # Sometimes ld fails on `MacOS.version < :leopard`. Then use this.
-    # depends_on :x11 # X11/XQuartz components. Non-optional X11 deps should go in Homebrew/Homebrew-x11
+    # depends_on :x11 # X11/XQuartz components.
     # depends_on :osxfuse # Permits the use of the upstream signed binary or our source package.
     # depends_on :tuntap # Does the same thing as above. This is vital for Yosemite and above.
     # depends_on :mysql => :recommended</pre>
@@ -2370,7 +2370,7 @@ class Formula
     #   version '4.8.1'
     # end</pre>
     def fails_with(compiler, &block)
-      # odeprecated "fails_with :llvm" if compiler == :llvm
+      odeprecated "fails_with :llvm" if compiler == :llvm
       specs.each { |spec| spec.fails_with(compiler, &block) }
     end
 

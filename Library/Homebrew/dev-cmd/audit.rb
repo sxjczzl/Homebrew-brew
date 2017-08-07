@@ -87,10 +87,14 @@ module Homebrew
     if !only_cops.empty?
       options[:only_cops] = only_cops
       ARGV.push("--only=style")
+    elsif new_formula
+      nil
+    elsif strict
+      options[:except_cops] = [:NewFormulaAudit]
     elsif !except_cops.empty?
       options[:except_cops] = except_cops
     elsif !strict
-      options[:except_cops] = [:FormulaAuditStrict]
+      options[:only_cops] = [:FormulaAudit]
     end
 
     # Check style in a single batch run up front for performance
@@ -309,7 +313,7 @@ class FormulaAuditor
         unversioned_name = unversioned_formula.basename(".rb")
         problem "#{formula} is versioned but no #{unversioned_name} formula exists"
       end
-    elsif ARGV.build_stable? &&
+    elsif ARGV.build_stable? && formula.stable? &&
           !(versioned_formulae = Dir[formula.path.to_s.gsub(/\.rb$/, "@*.rb")]).empty?
       versioned_aliases = formula.aliases.grep(/.@\d/)
       _, last_alias_version =
@@ -519,15 +523,6 @@ class FormulaAuditor
         problem "Ambiguous conflicting formula #{c.name.inspect}."
       end
     end
-
-    versioned_conflicts_whitelist = %w[node@ bash-completion@].freeze
-
-    return unless formula.conflicts.any? && formula.versioned_formula?
-    return if formula.name.start_with?(*versioned_conflicts_whitelist)
-    problem <<-EOS
-      Versioned formulae should not use `conflicts_with`.
-      Use `keg_only :versioned_formula` instead.
-    EOS
   end
 
   def audit_keg_only_style
@@ -560,34 +555,6 @@ class FormulaAuditor
 
     return unless reason.end_with?(".")
     problem "keg_only reason should not end with a period."
-  end
-
-  def audit_options
-    formula.options.each do |o|
-      if o.name == "32-bit"
-        problem "macOS has been 64-bit only since 10.6 so 32-bit options are deprecated."
-      end
-
-      next unless @strict
-
-      if o.name == "universal"
-        problem "macOS has been 64-bit only since 10.6 so universal options are deprecated."
-      end
-
-      if o.name !~ /with(out)?-/ && o.name != "c++11" && o.name != "universal"
-        problem "Options should begin with with/without. Migrate '--#{o.name}' with `deprecated_option`."
-      end
-
-      next unless o.name =~ /^with(out)?-(?:checks?|tests)$/
-      unless formula.deps.any? { |d| d.name == "check" && (d.optional? || d.recommended?) }
-        problem "Use '--with#{Regexp.last_match(1)}-test' instead of '--#{o.name}'. Migrate '--#{o.name}' with `deprecated_option`."
-      end
-    end
-
-    return unless @new_formula
-    return if formula.deprecated_options.empty?
-    return if formula.versioned_formula?
-    problem "New formulae should not use `deprecated_option`."
   end
 
   def audit_homepage
@@ -663,7 +630,6 @@ class FormulaAuditor
       end
 
       next if spec.patches.empty?
-      spec.patches.each { |p| patch_problems(p) if p.external? }
       next unless @new_formula
       problem "New formulae should not require patches to build. Patches should be submitted and accepted upstream first."
     end
@@ -819,36 +785,6 @@ class FormulaAuditor
     end
   end
 
-  def patch_problems(patch)
-    case patch.url
-    when %r{https?://github\.com/.+/.+/(?:commit|pull)/[a-fA-F0-9]*.(?:patch|diff)}
-      unless patch.url =~ /\?full_index=\w+$/
-        problem <<-EOS.undent
-          GitHub patches should use the full_index parameter:
-            #{patch.url}?full_index=1
-        EOS
-      end
-    when /raw\.github\.com/, %r{gist\.github\.com/raw}, %r{gist\.github\.com/.+/raw},
-      %r{gist\.githubusercontent\.com/.+/raw}
-      unless patch.url =~ /[a-fA-F0-9]{40}/
-        problem "GitHub/Gist patches should specify a revision:\n#{patch.url}"
-      end
-    when %r{https?://patch-diff\.githubusercontent\.com/raw/(.+)/(.+)/pull/(.+)\.(?:diff|patch)}
-      problem <<-EOS.undent
-        use GitHub pull request URLs:
-          https://github.com/#{Regexp.last_match(1)}/#{Regexp.last_match(2)}/pull/#{Regexp.last_match(3)}.patch?full_index=1
-        Rather than patch-diff:
-          #{patch.url}
-      EOS
-    when %r{macports/trunk}
-      problem "MacPorts patches should specify a revision instead of trunk:\n#{patch.url}"
-    when %r{^http://trac\.macports\.org}
-      problem "Patches from MacPorts Trac should be https://, not http:\n#{patch.url}"
-    when %r{^http://bugs\.debian\.org}
-      problem "Patches from Debian should be https://, not http:\n#{patch.url}"
-    end
-  end
-
   def audit_text
     bin_names = Set.new
     bin_names << formula.name
@@ -941,16 +877,6 @@ class FormulaAuditor
     if line =~ %r[(\#\{prefix\}/share/(info|man))]
       problem "\"#{Regexp.last_match(1)}\" should be \"\#{#{Regexp.last_match(2)}}\""
     end
-
-    if line =~ /depends_on :(automake|autoconf|libtool)/
-      problem ":#{Regexp.last_match(1)} is deprecated. Usage should be \"#{Regexp.last_match(1)}\""
-    end
-
-    if line =~ /depends_on :apr/
-      problem ":apr is deprecated. Usage should be \"apr-util\""
-    end
-
-    problem ":tex is deprecated" if line =~ /depends_on :tex/
 
     if line =~ /depends_on\s+['"](.+)['"]\s+=>\s+:(lua|perl|python|ruby)(\d*)/
       problem "#{Regexp.last_match(2)} modules should be vendored rather than use deprecated `depends_on \"#{Regexp.last_match(1)}\" => :#{Regexp.last_match(2)}#{Regexp.last_match(3)}`"
@@ -1315,181 +1241,10 @@ class ResourceAuditor
   end
 
   def audit_urls
-    # Check GNU urls; doesn't apply to mirrors
-    if url =~ %r{^(?:https?|ftp)://ftpmirror.gnu.org/(.*)}
-      problem "Please use \"https://ftp.gnu.org/gnu/#{Regexp.last_match(1)}\" instead of #{url}."
-    end
-
-    # Fossies upstream requests they aren't used as primary URLs
-    # https://github.com/Homebrew/homebrew-core/issues/14486#issuecomment-307753234
-    if url =~ %r{^https?://fossies\.org/}
-      problem "Please don't use fossies.org in the url (using as a mirror is fine)"
-    end
-
-    if mirrors.include?(url)
-      problem "URL should not be duplicated as a mirror: #{url}"
-    end
-
     urls = [url] + mirrors
-
-    # Check a variety of SSL/TLS URLs that don't consistently auto-redirect
-    # or are overly common errors that need to be reduced & fixed over time.
-    urls.each do |p|
-      case p
-      when %r{^http://ftp\.gnu\.org/},
-           %r{^http://ftpmirror\.gnu\.org/},
-           %r{^http://download\.savannah\.gnu\.org/},
-           %r{^http://download-mirror\.savannah\.gnu\.org/},
-           %r{^http://[^/]*\.apache\.org/},
-           %r{^http://code\.google\.com/},
-           %r{^http://fossies\.org/},
-           %r{^http://mirrors\.kernel\.org/},
-           %r{^http://(?:[^/]*\.)?bintray\.com/},
-           %r{^http://tools\.ietf\.org/},
-           %r{^http://launchpad\.net/},
-           %r{^http://github\.com/},
-           %r{^http://bitbucket\.org/},
-           %r{^http://anonscm\.debian\.org/},
-           %r{^http://cpan\.metacpan\.org/},
-           %r{^http://hackage\.haskell\.org/},
-           %r{^http://(?:[^/]*\.)?archive\.org},
-           %r{^http://(?:[^/]*\.)?freedesktop\.org},
-           %r{^http://(?:[^/]*\.)?mirrorservice\.org/}
-        problem "Please use https:// for #{p}"
-      when %r{^http://search\.mcpan\.org/CPAN/(.*)}i
-        problem "#{p} should be `https://cpan.metacpan.org/#{Regexp.last_match(1)}`"
-      when %r{^(http|ftp)://ftp\.gnome\.org/pub/gnome/(.*)}i
-        problem "#{p} should be `https://download.gnome.org/#{Regexp.last_match(2)}`"
-      when %r{^git://anonscm\.debian\.org/users/(.*)}i
-        problem "#{p} should be `https://anonscm.debian.org/git/users/#{Regexp.last_match(1)}`"
-      end
-    end
-
-    # Prefer HTTP/S when possible over FTP protocol due to possible firewalls.
-    urls.each do |p|
-      case p
-      when %r{^ftp://ftp\.mirrorservice\.org}
-        problem "Please use https:// for #{p}"
-      when %r{^ftp://ftp\.cpan\.org/pub/CPAN(.*)}i
-        problem "#{p} should be `http://search.cpan.org/CPAN#{Regexp.last_match(1)}`"
-      end
-    end
-
-    # Check SourceForge urls
-    urls.each do |p|
-      # Skip if the URL looks like a SVN repo
-      next if p.include? "/svnroot/"
-      next if p.include? "svn.sourceforge"
-
-      # Is it a sourceforge http(s) URL?
-      next unless p =~ %r{^https?://.*\b(sourceforge|sf)\.(com|net)}
-
-      if p =~ /(\?|&)use_mirror=/
-        problem "Don't use #{Regexp.last_match(1)}use_mirror in SourceForge urls (url is #{p})."
-      end
-
-      if p.end_with?("/download")
-        problem "Don't use /download in SourceForge urls (url is #{p})."
-      end
-
-      if p =~ %r{^https?://sourceforge\.}
-        problem "Use https://downloads.sourceforge.net to get geolocation (url is #{p})."
-      end
-
-      if p =~ %r{^https?://prdownloads\.}
-        problem "Don't use prdownloads in SourceForge urls (url is #{p}).\n" \
-                "\tSee: http://librelist.com/browser/homebrew/2011/1/12/prdownloads-is-bad/"
-      end
-
-      if p =~ %r{^http://\w+\.dl\.}
-        problem "Don't use specific dl mirrors in SourceForge urls (url is #{p})."
-      end
-
-      problem "Please use https:// for #{p}" if p.start_with? "http://downloads"
-    end
-
-    # Debian has an abundance of secure mirrors. Let's not pluck the insecure
-    # one out of the grab bag.
-    urls.each do |u|
-      next unless u =~ %r{^http://http\.debian\.net/debian/(.*)}i
-      problem <<-EOS.undent
-        Please use a secure mirror for Debian URLs.
-        We recommend:
-          https://mirrors.ocf.berkeley.edu/debian/#{Regexp.last_match(1)}
-      EOS
-    end
-
-    # Check for Google Code download urls, https:// is preferred
-    # Intentionally not extending this to SVN repositories due to certificate
-    # issues.
-    urls.grep(%r{^http://.*\.googlecode\.com/files.*}) do |u|
-      problem "Please use https:// for #{u}"
-    end
-
-    # Check for new-url Google Code download urls, https:// is preferred
-    urls.grep(%r{^http://code\.google\.com/}) do |u|
-      problem "Please use https:// for #{u}"
-    end
-
-    # Check for git:// GitHub repo urls, https:// is preferred.
-    urls.grep(%r{^git://[^/]*github\.com/}) do |u|
-      problem "Please use https:// for #{u}"
-    end
-
-    # Check for git:// Gitorious repo urls, https:// is preferred.
-    urls.grep(%r{^git://[^/]*gitorious\.org/}) do |u|
-      problem "Please use https:// for #{u}"
-    end
-
-    # Check for http:// GitHub repo urls, https:// is preferred.
-    urls.grep(%r{^http://github\.com/.*\.git$}) do |u|
-      problem "Please use https:// for #{u}"
-    end
-
-    # Check for master branch GitHub archives.
-    urls.grep(%r{^https://github\.com/.*archive/master\.(tar\.gz|zip)$}) do
-      problem "Use versioned rather than branch tarballs for stable checksums."
-    end
-
-    # Use new-style archive downloads
-    urls.each do |u|
-      next unless u =~ %r{https://.*github.*/(?:tar|zip)ball/} && u !~ /\.git$/
-      problem "Use /archive/ URLs for GitHub tarballs (url is #{u})."
-    end
-
-    # Don't use GitHub .zip files
-    urls.each do |u|
-      next unless u =~ %r{https://.*github.*/(archive|releases)/.*\.zip$} && u !~ %r{releases/download}
-      problem "Use GitHub tarballs rather than zipballs (url is #{u})."
-    end
-
-    # Don't use GitHub codeload URLs
-    urls.each do |u|
-      next unless u =~ %r{https?://codeload\.github\.com/(.+)/(.+)/(?:tar\.gz|zip)/(.+)}
-      problem <<-EOS.undent
-        use GitHub archive URLs:
-          https://github.com/#{Regexp.last_match(1)}/#{Regexp.last_match(2)}/archive/#{Regexp.last_match(3)}.tar.gz
-        Rather than codeload:
-          #{u}
-      EOS
-    end
-
-    # Check for Maven Central urls, prefer HTTPS redirector over specific host
-    urls.each do |u|
-      next unless u =~ %r{https?://(?:central|repo\d+)\.maven\.org/maven2/(.+)$}
-      problem "#{u} should be `https://search.maven.org/remotecontent?filepath=#{Regexp.last_match(1)}`"
-    end
 
     if name == "curl" && !urls.find { |u| u.start_with?("http://") }
       problem "should always include at least one HTTP url"
-    end
-
-    # Check pypi urls
-    if @strict
-      urls.each do |p|
-        next unless p =~ %r{^https?://pypi.python.org/(.*)}
-        problem "#{p} should be `https://files.pythonhosted.org/#{Regexp.last_match(1)}`"
-      end
     end
 
     return unless @online

@@ -39,7 +39,7 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
 
   * `analytics` [`state`]:
     Display anonymous user behaviour analytics state.
-    Read more at <http://docs.brew.sh/Analytics.html>.
+    Read more at <https://docs.brew.sh/Analytics.html>.
 
   * `analytics` (`on`|`off`):
     Turn on/off Homebrew's analytics.
@@ -196,9 +196,9 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
     information on all installed formulae.
 
     See the docs for examples of using the JSON output:
-    <http://docs.brew.sh/Querying-Brew.html>
+    <https://docs.brew.sh/Querying-Brew.html>
 
-  * `install` [`--debug`] [`--env=`(`std`|`super`)] [`--ignore-dependencies`|`--only-dependencies`] [`--cc=``compiler`] [`--build-from-source`|`--force-bottle`] [`--devel`|`--HEAD`] [`--keep-tmp`] [`--build-bottle`] `formula`:
+  * `install` [`--debug`] [`--env=`(`std`|`super`)] [`--ignore-dependencies`|`--only-dependencies`] [`--cc=``compiler`] [`--build-from-source`|`--force-bottle`] [`--devel`|`--HEAD`] [`--keep-tmp`] [`--build-bottle`] `formula` [`options` ...]:
     Install `formula`.
 
     `formula` is usually the name of the formula to install, but it can be specified
@@ -246,6 +246,9 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
 
     If `--build-bottle` is passed, prepare the formula for eventual bottling
     during installation.
+
+    Installation options specific to `formula` may be appended to the command,
+    and can be listed with `brew options` `formula`.
 
   * `install` `--interactive` [`--git`] `formula`:
     If `--interactive` (or `-i`) is passed, download and patch `formula`, then
@@ -472,7 +475,7 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
     Pass `--installed` to get information on installed taps.
 
     See the docs for examples of using the JSON output:
-    <http://docs.brew.sh/Querying-Brew.html>
+    <https://docs.brew.sh/Querying-Brew.html>
 
   * `tap-pin` `tap`:
     Pin `tap`, prioritizing its formulae over core when formula names are supplied
@@ -885,7 +888,7 @@ scripts that reside somewhere in the `PATH`, named `brew-``cmdname` or
 to create your own commands without modifying Homebrew's internals.
 
 Instructions for creating your own commands can be found in the docs:
-<http://docs.brew.sh/External-Commands.html>
+<https://docs.brew.sh/External-Commands.html>
 
 ## SPECIFYING FORMULAE
 
@@ -998,7 +1001,7 @@ can take several different forms:
     *Default:* the number of available CPU cores.
 
   * `HOMEBREW_NO_ANALYTICS`:
-    If set, Homebrew will not send analytics. See: <http://docs.brew.sh/Analytics.html>
+    If set, Homebrew will not send analytics. See: <https://docs.brew.sh/Analytics.html>
 
   * `HOMEBREW_NO_AUTO_UPDATE`:
     If set, Homebrew will not auto-update before running `brew install`,
@@ -1061,7 +1064,7 @@ If your proxy requires authentication:
 
 ## SEE ALSO
 
-Homebrew Documentation: <https://github.com/Homebrew/brew/blob/master/docs/>
+Homebrew Documentation: <https://docs.brew.sh>
 
 `brew-cask`(1), `git`(1), `git-log`(1)
 
@@ -1069,7 +1072,9 @@ Homebrew Documentation: <https://github.com/Homebrew/brew/blob/master/docs/>
 
 Homebrew's lead maintainer is Mike McQuaid.
 
-Homebrew's current maintainers are Alyssa Ross, Andrew Janke, Alex Dunn, FX Coudert, ilovezfs, Josh Hagins, JCount, Misty De Meo, neutric, Tomasz Pajor, Markus Reiter, Tim Smith, Tom Schoonjans, Uladzislau Shablinski and William Woodruff.
+Homebrew/homebrew-core's lead maintainer is ilovezfs.
+
+Homebrew's other current maintainers are Alyssa Ross, Andrew Janke, Alex Dunn, FX Coudert, Josh Hagins, JCount, Misty De Meo, neutric, Tomasz Pajor, Markus Reiter, Tim Smith, Tom Schoonjans, Uladzislau Shablinski and William Woodruff.
 
 Former maintainers with significant contributions include Baptiste Fontaine, Xu Cheng, Martin Afanasjew, Dominyk Tiller, Brett Koonce, Charlie Sharpsteen, Jack Nagel, Adam Vandenberg and Homebrew's creator: Max Howell.
 

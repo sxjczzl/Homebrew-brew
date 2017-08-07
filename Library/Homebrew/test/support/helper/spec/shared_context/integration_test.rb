@@ -77,20 +77,43 @@ RSpec.shared_context "integration test" do
       "HOMEBREW_INTEGRATION_TEST" => command_id_from_args(args),
       "HOMEBREW_TEST_TMPDIR" => TEST_TMPDIR,
       "HOMEBREW_DEVELOPER" => ENV["HOMEBREW_DEVELOPER"],
+      "GEM_HOME" => nil,
     )
 
-    ruby_args = [
-      "-W0",
-      "-I", "#{HOMEBREW_LIBRARY_PATH}/test/support/lib",
-      "-I", HOMEBREW_LIBRARY_PATH.to_s,
-      "-rconfig"
-    ]
-    ruby_args << "-rsimplecov" if ENV["HOMEBREW_TESTS_COVERAGE"]
-    ruby_args << "-rtest/support/helper/integration_mocks"
-    ruby_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
+    @ruby_args ||= begin
+      ruby_args = [
+        "-W0",
+        "-I", "#{HOMEBREW_LIBRARY_PATH}/test/support/lib",
+        "-I", HOMEBREW_LIBRARY_PATH.to_s,
+        "-rconfig"
+      ]
+      if ENV["HOMEBREW_TESTS_COVERAGE"]
+        simplecov_spec = Gem.loaded_specs["simplecov"]
+        specs = [simplecov_spec]
+        simplecov_spec.runtime_dependencies.each do |dep|
+          begin
+            specs += dep.to_specs
+          rescue Gem::LoadError => e
+            onoe e
+          end
+        end
+        libs = specs.flat_map do |spec|
+          full_gem_path = spec.full_gem_path
+          # full_require_paths isn't available in RubyGems < 2.2.
+          spec.require_paths.map do |lib|
+            next lib if lib.include?(full_gem_path)
+            "#{full_gem_path}/#{lib}"
+          end
+        end
+        libs.each { |lib| ruby_args << "-I" << lib }
+        ruby_args << "-rsimplecov"
+      end
+      ruby_args << "-rtest/support/helper/integration_mocks"
+      ruby_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
+    end
 
-    Bundler.with_original_env do
-      stdout, stderr, status = Open3.capture3(env, RUBY_PATH, *ruby_args, *args)
+    Bundler.with_clean_env do
+      stdout, stderr, status = Open3.capture3(env, RUBY_PATH, *@ruby_args, *args)
       $stdout.print stdout
       $stderr.print stderr
       status
@@ -148,22 +171,20 @@ RSpec.shared_context "integration test" do
   end
 
   def install_and_rename_coretap_formula(old_name, new_name)
-    shutup do
-      CoreTap.instance.path.cd do |tap_path|
-        system "git", "init"
-        system "git", "add", "--all"
-        system "git", "commit", "-m",
-          "#{old_name.capitalize} has not yet been renamed"
+    CoreTap.instance.path.cd do |tap_path|
+      system "git", "init"
+      system "git", "add", "--all"
+      system "git", "commit", "-m",
+        "#{old_name.capitalize} has not yet been renamed"
 
-        brew "install", old_name
+      brew "install", old_name
 
-        (tap_path/"Formula/#{old_name}.rb").unlink
-        (tap_path/"formula_renames.json").write JSON.generate(old_name => new_name)
+      (tap_path/"Formula/#{old_name}.rb").unlink
+      (tap_path/"formula_renames.json").write JSON.generate(old_name => new_name)
 
-        system "git", "add", "--all"
-        system "git", "commit", "-m",
-          "#{old_name.capitalize} has been renamed to #{new_name.capitalize}"
-      end
+      system "git", "add", "--all"
+      system "git", "commit", "-m",
+        "#{old_name.capitalize} has been renamed to #{new_name.capitalize}"
     end
   end
 

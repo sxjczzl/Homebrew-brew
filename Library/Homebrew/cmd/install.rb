@@ -1,4 +1,4 @@
-#:  * `install` [`--debug`] [`--env=`(`std`|`super`)] [`--ignore-dependencies`|`--only-dependencies`] [`--cc=`<compiler>] [`--build-from-source`|`--force-bottle`] [`--devel`|`--HEAD`] [`--keep-tmp`] [`--build-bottle`] <formula>:
+#:  * `install` [`--debug`] [`--env=`(`std`|`super`)] [`--ignore-dependencies`|`--only-dependencies`] [`--cc=`<compiler>] [`--build-from-source`|`--force-bottle`] [`--devel`|`--HEAD`] [`--keep-tmp`] [`--build-bottle`] <formula> [<options> ...]:
 #:    Install <formula>.
 #:
 #:    <formula> is usually the name of the formula to install, but it can be specified
@@ -46,6 +46,9 @@
 #:
 #:    If `--build-bottle` is passed, prepare the formula for eventual bottling
 #:    during installation.
+#:
+#:    Installation options specific to <formula> may be appended to the command,
+#:    and can be listed with `brew options` <formula>.
 #:
 #:  * `install` `--interactive` [`--git`] <formula>:
 #:    If `--interactive` (or `-i`) is passed, download and patch <formula>, then
@@ -327,13 +330,8 @@ module Homebrew
     fi.ignore_deps          = ARGV.ignore_deps?
     fi.only_deps            = ARGV.only_deps?
     fi.build_bottle         = ARGV.build_bottle?
-    fi.build_from_source    = ARGV.build_from_source? || ARGV.build_all_from_source?
-    fi.force_bottle         = ARGV.force_bottle?
     fi.interactive          = ARGV.interactive?
     fi.git                  = ARGV.git?
-    fi.verbose              = ARGV.verbose?
-    fi.quieter              = ARGV.quieter?
-    fi.debug                = ARGV.debug?
     fi.prelude
     fi.install
     fi.finish
