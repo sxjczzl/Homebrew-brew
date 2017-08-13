@@ -942,6 +942,8 @@ module Homebrew
       end
 
       def check_for_non_prefixed_coreutils
+        return unless CoreTap.instance.installed?
+
         coreutils = Formula["coreutils"]
         return unless coreutils.any_version_installed?
 
@@ -955,6 +957,8 @@ module Homebrew
       end
 
       def check_for_non_prefixed_findutils
+        return unless CoreTap.instance.installed?
+
         findutils = Formula["findutils"]
         return unless findutils.any_version_installed?
 
