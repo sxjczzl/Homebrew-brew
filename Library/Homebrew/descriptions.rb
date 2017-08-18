@@ -110,6 +110,22 @@ class Descriptions
     new(results)
   end
 
+  def self.all
+    ensure_cache
+
+    new(@cache.select { true })
+  end
+
+  def self.installed
+    ensure_cache
+
+    formulae = Formula.installed.map(&:full_name)
+    formulae.sort!
+
+    results = @cache.select { |name, _| formulae.include? name }
+    new(results)
+  end
+
   # Create an actual instance.
   def initialize(descriptions)
     @descriptions = descriptions

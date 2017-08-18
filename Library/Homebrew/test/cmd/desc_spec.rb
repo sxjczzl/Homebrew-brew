@@ -17,6 +17,13 @@ describe "brew desc", :integration_test do
       .and be_a_failure
   end
 
+  it "fails when both --all and --install are specified" do
+    expect { brew "desc", "--all", "--installed" }
+      .to output(/Pick one, and only one/).to_stderr
+      .and not_to_output.to_stdout
+      .and be_a_failure
+  end
+
   describe "--search" do
     it "fails when no search term is given" do
       expect { brew "desc", "--search" }
