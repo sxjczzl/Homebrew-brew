@@ -7,50 +7,52 @@ module GitRepositoryExtension
   end
 
   def git_origin
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read("git", "config", "--get", "remote.origin.url").chuzzle
-    end
+    git_client.send_command("config", "--get", "remote.origin.url")
   end
 
   def git_head
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read("git", "rev-parse", "--verify", "-q", "HEAD").chuzzle
-    end
+    git_client.send_command("rev-parse", "--verify", "-q", "HEAD")
   end
 
   def git_short_head
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read(
-        "git", "rev-parse", "--short=4", "--verify", "-q", "HEAD"
-      ).chuzzle
-    end
+    git_client.send_command("rev-parse", "--short=4", "--verify", "-q", "HEAD")
   end
 
   def git_last_commit
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read("git", "show", "-s", "--format=%cr", "HEAD").chuzzle
-    end
+    git_client.send_command("show", "-s", "--format=%cr", "HEAD")
   end
 
   def git_branch
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read(
-        "git", "rev-parse", "--abbrev-ref", "HEAD"
-      ).chuzzle
-    end
+    git_client.send_command("rev-parse", "--abbrev-ref", "HEAD")
   end
 
   def git_last_commit_date
-    return unless git? && Utils.git_available?
-    cd do
-      Utils.popen_read(
-        "git", "show", "-s", "--format=%cd", "--date=short", "HEAD"
-      ).chuzzle
+    git_client.send_command("show", "-s", "--format=%cd", "--date=short", "HEAD")
+  end
+
+  private
+
+  def git_client
+    @client ||= (git? && Utils.git_available?) ? GitClient.new(self) : NullClient.new
+  end
+
+  class GitClient
+    attr_reader :path
+
+    def initialize(path)
+      @path = path
+    end
+
+    def send_command(*args)
+      path.cd do
+        Utils.popen_read("git", *args).chuzzle
+      end
+    end
+  end
+
+  class NullClient
+    def send_command(*_args)
+      nil
     end
   end
 end
