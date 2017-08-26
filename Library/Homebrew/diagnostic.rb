@@ -786,8 +786,9 @@ module Homebrew
           EOS
         end
 
-        head = coretap_path.git_head
-        return if head.nil? || head =~ %r{refs/heads/master}
+        branch = coretap_path.git_branch
+        return if branch.nil? || branch =~ %r{master}
+
 
         <<-EOS.undent
           Homebrew/homebrew-core is not on the master branch
@@ -1090,7 +1091,7 @@ module Homebrew
       end
 
       def all
-        methods.map(&:to_s).grep(/^check_/)
+        methods.map(&:to_s).grep(/^check_coretap_git_config/)
       end
     end # end class Checks
   end

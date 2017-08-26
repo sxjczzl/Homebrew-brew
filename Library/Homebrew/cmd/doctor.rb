@@ -26,6 +26,7 @@ module Homebrew
         check_missing_deps
         check_for_linked_keg_only_brews
       ]
+      slow_checks = []
       methods = (checks.all.sort - slow_checks) + slow_checks
     else
       methods = ARGV.named

@@ -85,6 +85,7 @@ class Tap
 
   # clear internal cache
   def clear_cache
+    @branch = nil
     @remote = nil
     @formula_dir = nil
     @cask_dir = nil
@@ -116,6 +117,13 @@ class Tap
   # True if this {Tap} is a git repository.
   def git?
     path.git?
+  end
+
+  # The current git branch of this {Tap}.
+  def git_branch
+    puts "Hello"
+    raise TapUnavailableError, name unless installed?
+    @branch ||= path.git_branch
   end
 
   # git HEAD for this {Tap}.
