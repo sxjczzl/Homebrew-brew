@@ -756,7 +756,7 @@ module Homebrew
         end
       end
 
-      def check_coretap_git_config
+      def check_coretap_git_origin
         coretap_path = CoreTap.instance.path
         return if !Utils.git_available? || !(coretap_path/".git").exist?
 
