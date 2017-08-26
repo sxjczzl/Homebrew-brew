@@ -121,7 +121,6 @@ class Tap
 
   # The current git branch of this {Tap}.
   def git_branch
-    puts "Hello"
     raise TapUnavailableError, name unless installed?
     @branch ||= path.git_branch
   end

@@ -1091,7 +1091,7 @@ module Homebrew
       end
 
       def all
-        methods.map(&:to_s).grep(/^check_coretap_git_config/)
+        methods.map(&:to_s).grep(/^check_/)
       end
     end # end class Checks
   end
