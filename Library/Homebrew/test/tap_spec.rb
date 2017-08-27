@@ -171,6 +171,7 @@ describe Tap do
     expect(subject.git_short_head).to eq("0453")
     expect(subject.git_last_commit).to match(/\A\d+ .+ ago\Z/)
     expect(subject.git_last_commit_date).to eq("2017-01-22")
+    expect(subject.git_branch).to eq("master")
   end
 
   specify "#private?" do
