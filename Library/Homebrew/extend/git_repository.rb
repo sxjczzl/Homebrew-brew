@@ -7,33 +7,39 @@ module GitRepositoryExtension
   end
 
   def git_origin
-    git_client.send_command("config", "--get", "remote.origin.url")
+    git_client.run("config", "--get", "remote.origin.url")
   end
 
   def git_head
-    git_client.send_command("rev-parse", "--verify", "-q", "HEAD")
+    git_client.run("rev-parse", "--verify", "-q", "HEAD")
   end
 
   def git_short_head
-    git_client.send_command("rev-parse", "--short=4", "--verify", "-q", "HEAD")
+    git_client.run("rev-parse", "--short=4", "--verify", "-q", "HEAD")
   end
 
   def git_last_commit
-    git_client.send_command("show", "-s", "--format=%cr", "HEAD")
+    git_client.run("show", "-s", "--format=%cr", "HEAD")
   end
 
   def git_branch
-    git_client.send_command("rev-parse", "--abbrev-ref", "HEAD")
+    git_client.run("rev-parse", "--abbrev-ref", "HEAD")
   end
 
   def git_last_commit_date
-    git_client.send_command("show", "-s", "--format=%cd", "--date=short", "HEAD")
+    git_client.run("show", "-s", "--format=%cd", "--date=short", "HEAD")
   end
 
   private
 
   def git_client
-    @client ||= (git? && Utils.git_available?) ? GitClient.new(self) : NullClient.new
+    @client ||= begin
+      if git? && Utils.git_available?
+        GitClient.new(self)
+      else
+        NullClient.new
+      end
+    end
   end
 
   class GitClient
@@ -43,7 +49,8 @@ module GitRepositoryExtension
       @path = path
     end
 
-    def send_command(*args)
+    def run(*args)
+      raise TapUnavailableError, path.name unless path.directory?
       path.cd do
         Utils.popen_read("git", *args).chuzzle
       end
@@ -51,8 +58,6 @@ module GitRepositoryExtension
   end
 
   class NullClient
-    def send_command(*_args)
-      nil
-    end
+    def run(*); end
   end
 end

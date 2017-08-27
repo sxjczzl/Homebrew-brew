@@ -105,7 +105,6 @@ class Tap
   # The remote path to this {Tap}.
   # e.g. `https://github.com/user/homebrew-repo`
   def remote
-    raise TapUnavailableError, name unless installed?
     @remote ||= path.git_origin
   end
 
@@ -121,31 +120,26 @@ class Tap
 
   # The current git branch of this {Tap}.
   def git_branch
-    raise TapUnavailableError, name unless installed?
     @branch ||= path.git_branch
   end
 
   # git HEAD for this {Tap}.
   def git_head
-    raise TapUnavailableError, name unless installed?
     path.git_head
   end
 
   # git HEAD in short format for this {Tap}.
   def git_short_head
-    raise TapUnavailableError, name unless installed?
     path.git_short_head
   end
 
   # time since git last commit for this {Tap}.
   def git_last_commit
-    raise TapUnavailableError, name unless installed?
     path.git_last_commit
   end
 
   # git last commit date for this {Tap}.
   def git_last_commit_date
-    raise TapUnavailableError, name unless installed?
     path.git_last_commit_date
   end
 
