@@ -86,6 +86,9 @@ RSpec.configure do |config|
       @__argv = ARGV.dup
       @__env = ENV.to_hash # dup doesn't work on ENV
 
+      # Makes sure config files for git, svn, etc. aren't read
+      ENV["HOME"] = HOMEBREW_CACHE.to_s
+
       unless example.metadata.key?(:focus) || ENV.key?("VERBOSE_TESTS")
         @__stdout = $stdout.clone
         @__stderr = $stderr.clone
