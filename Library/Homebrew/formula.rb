@@ -1,3 +1,4 @@
+require "shellwords"
 require "formula_support"
 require "lock_file"
 require "formula_pin"
@@ -1732,7 +1733,7 @@ class Formula
         pretty_args[i] = "import setuptools..."
       end
     end
-    ohai "#{cmd} #{pretty_args * " "}".strip
+    ohai [cmd, *pretty_args].shelljoin
 
     @exec_count ||= 0
     @exec_count += 1
