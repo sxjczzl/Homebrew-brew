@@ -1867,8 +1867,8 @@ class Formula
       ENV.refurbish_args if setup_py_in_args || setuptools_shim_in_args
     end
 
-    $stdout.reopen(out)
-    $stderr.reopen(out)
+    $stdout = out
+    $stderr = out
     out.close
     args.collect!(&:to_s)
     begin
