@@ -97,6 +97,7 @@ RSpec.configure do |config|
     ensure
       ARGV.replace(@__argv)
       ENV.replace(@__env)
+      Formulary::FORMULAE.clear
 
       unless example.metadata.key?(:focus) || ENV.key?("VERBOSE_TESTS")
         $stdout.reopen(@__stdout)
