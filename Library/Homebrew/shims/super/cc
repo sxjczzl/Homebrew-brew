@@ -224,7 +224,8 @@ class Cmd
       true
     else
       # ignore MacPorts, Boxen's Homebrew, X11, fink
-      !path.start_with?("/opt/local", "/opt/boxen/homebrew", "/opt/X11", "/sw", "/usr/X11")
+      blacklist = ["/opt/local", "/opt/boxen/homebrew", "/opt/X11", "/sw", "/usr/X11"]
+      blacklist.none?{|dir| above_symbolically?(dir, path)}
     end
   end
 
@@ -318,6 +319,10 @@ class Cmd
     path = Pathname.new(path)
     path = path.realpath if path.exist?
     path.to_s
+  end
+
+  def above_symbolically?(dir, path)
+    path.start_with?(dir) || canonical_path(path).start_with?(canonical_path(dir))
   end
 
   def path_flags(prefix, paths)
