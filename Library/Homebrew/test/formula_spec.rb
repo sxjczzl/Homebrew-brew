@@ -763,6 +763,13 @@ describe Formula do
     expect(h["versions"]["bottle"]).to be_truthy
   end
 
+  describe "#system" do
+    it "escapes commands" do
+      f = formula { url "foo-1.0" }
+      expect { f.system("echo", "-n", "") }.to output("==> echo -n ''\n").to_stdout
+    end
+  end
+
   describe "#eligible_kegs_for_cleanup" do
     it "returns Kegs eligible for cleanup" do
       f1 = Class.new(Testball) do
