@@ -3,6 +3,7 @@ require "pathname"
 require "rspec/its"
 require "rspec/wait"
 require "set"
+require "English"
 
 if ENV["HOMEBREW_TESTS_COVERAGE"]
   require "simplecov"
