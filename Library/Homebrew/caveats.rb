@@ -108,7 +108,8 @@ class Caveats
     return unless keg.python_site_packages_installed?
 
     s = nil
-    homebrew_site_packages = Language::Python.homebrew_site_packages
+    version = Language::Python.major_minor_version "python"
+    homebrew_site_packages = Language::Python.homebrew_site_packages version
     user_site_packages = Language::Python.user_site_packages "python"
     pth_file = user_site_packages/"homebrew.pth"
     instructions = <<-EOS.undent.gsub(/^/, "  ")
@@ -117,7 +118,7 @@ class Caveats
     EOS
 
     if f.keg_only?
-      keg_site_packages = f.opt_prefix/"lib/python2.7/site-packages"
+      keg_site_packages = f.opt_prefix/"lib/python#{version}/site-packages"
       unless Language::Python.in_sys_path?("python", keg_site_packages)
         s = <<-EOS.undent
           If you need Python to find bindings for this keg-only formula, run:

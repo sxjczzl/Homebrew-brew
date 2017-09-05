@@ -237,8 +237,9 @@ describe Caveats do
           keg_only "some reason"
         end
         caveats = described_class.new(f).caveats
-        homebrew_site_packages = Language::Python.homebrew_site_packages
-        expect(caveats).to include("echo #{f.opt_prefix}/lib/python2.7/site-packages >> #{homebrew_site_packages/f.name}.pth")
+        version = Language::Python.major_minor_version "python"
+        homebrew_site_packages = Language::Python.homebrew_site_packages version
+        expect(caveats).to include("echo #{f.opt_prefix}/lib/python#{version}/site-packages >> #{homebrew_site_packages/f.name}.pth")
       end
     end
   end
