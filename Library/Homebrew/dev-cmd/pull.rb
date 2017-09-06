@@ -554,7 +554,7 @@ module Homebrew
         puts "Verifying bottle: #{File.basename(url.path)}"
         retry_count = 0
         loop do
-          break if check_publication(f, url)
+          break if check_publication(f, url, max_retries, retry_count)
           if retry_count >= max_retries
             raise "Failed to find published #{f} bottle at #{url}!"
           end
@@ -593,11 +593,18 @@ module Homebrew
     end
   end
 
-  def check_publication(f, url)
+  def check_publication(f, url, max_retries, retry_count)
     http = create_http(url)
     http.start do
       res = get_http_result(http, url)
       return true if res.is_a?(Net::HTTPSuccess)
+      if res.is_a?(Net::HTTPRedirection)
+        retry_count += 1
+        if retry_count >= max_retries
+          raise "Too many redirections for #{url}!"
+        end
+        return check_publication(f, URI(res["location"]), retry_count, max_retries)
+      end
       if res.is_a?(Net::HTTPClientError)
         raise "Failed to find published #{f} bottle at #{url} (#{res.code} #{res.message})!"
       end
