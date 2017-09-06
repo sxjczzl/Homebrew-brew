@@ -552,28 +552,16 @@ module Homebrew
         # 401 error is normal while file is still in async publishing process
         url = URI(bottle_info.url)
         puts "Verifying bottle: #{File.basename(url.path)}"
-        http = Net::HTTP.new(url.host, url.port)
-        http.use_ssl = true
         retry_count = 0
-        http.start do
-          loop do
-            req = Net::HTTP::Head.new bottle_info.url
-            req.initialize_http_header "User-Agent" => HOMEBREW_USER_AGENT_RUBY
-            res = http.request req
-            break if res.is_a?(Net::HTTPSuccess)
-
-            unless res.is_a?(Net::HTTPClientError)
-              raise "Failed to find published #{f} bottle at #{url} (#{res.code} #{res.message})!"
-            end
-
-            if retry_count >= max_retries
-              raise "Failed to find published #{f} bottle at #{url}!"
-            end
-            print(wrote_dots ? "." : "Waiting on Bintray.")
-            wrote_dots = true
-            sleep poll_retry_delay_seconds
-            retry_count += 1
+        loop do
+          break if check_publication(f, url)
+          if retry_count >= max_retries
+            raise "Failed to find published #{f} bottle at #{url}!"
           end
+          print(wrote_dots ? "." : "Waiting on Bintray.")
+          wrote_dots = true
+          sleep poll_retry_delay_seconds
+          retry_count += 1
         end
 
         # Actual download and verification
@@ -603,6 +591,30 @@ module Homebrew
         Pathname.new(filename).verify_checksum(checksum)
       end
     end
+  end
+
+  def check_publication(f, url)
+    http = create_http(url)
+    http.start do
+      res = get_http_result(http, url)
+      return true if res.is_a?(Net::HTTPSuccess)
+      if res.is_a?(Net::HTTPClientError)
+        raise "Failed to find published #{f} bottle at #{url} (#{res.code} #{res.message})!"
+      end
+      return false
+    end
+  end
+
+  def create_http(url)
+    http = Net::HTTP.new(url.host, url.port)
+    http.use_ssl = true
+    return http
+  end
+
+  def get_http_result(http, url)
+    req = Net::HTTP::Head.new url
+    req.initialize_http_header "User-Agent" => HOMEBREW_USER_AGENT_RUBY
+    return http.request req
   end
 
   def check_bintray_mirror(name, url)
