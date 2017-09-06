@@ -7,7 +7,7 @@
 module Homebrew
   module_function
 
-  Command.define_command "commands" do
+  Command.define "commands" do
     desc "Show a list of built-in and external commands."
     option "--quiet" do
       desc <<-EOS.undent
@@ -47,7 +47,7 @@ module Homebrew
   end
 
   def commands
-    Command.run_command("commands")
+    Command.run("commands")
   end
 
   def internal_commands

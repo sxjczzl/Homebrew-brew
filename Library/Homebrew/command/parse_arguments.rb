@@ -3,10 +3,10 @@ require "command/command_options"
 module Homebrew
   module Command
     class ParseArguments < CommandOptions
-      def initialize(cmd_name)
-        # Run the `define_command` DSL for command `cmd_name`
+      def initialize(command_name)
+        # Run the `define` DSL for command `command_name`
         # and initialize `@valid_options` variable
-        super(cmd_name)
+        super(command_name)
         # Get command line arguments
         @argv_tokens = ARGV.dup.uniq
       end

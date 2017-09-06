@@ -1,13 +1,12 @@
-require "cmd/commands"
 require "command/parse_arguments"
 require "command/define_command"
 
-# TODO: Move the test cases of each class/sub-class into seperate files
+# TODO: Move the test cases of each class/sub-class into separate files
 
 describe Homebrew::Command do
   before(:each) { stub_const("ARGV", []) }
   before(:each) do
-    described_class.define_command "test-cmd1" do
+    described_class.define "test-cmd1" do
       desc "this is a test command description"
 
       option "--option1" do
@@ -29,8 +28,8 @@ describe Homebrew::Command do
     end
   end
 
-  it "runs a test command using the `define_command` DSL method" do
-    expect { described_class.run_command("test-cmd1") }
+  it "runs a test command" do
+    expect { described_class.run("test-cmd1") }
       .to output(/the command `test-cmd1` was just executed/).to_stdout
   end
 
