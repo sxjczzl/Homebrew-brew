@@ -9,10 +9,10 @@ module Homebrew
       end
 
       # Overrides the DefineCommand::run method
-      def run(&code_block)
+      def run(&block)
         # Run the contents of the `run do` DSL which is declared inside
         # the `define` DSL
-        Homebrew.instance_eval(&code_block)
+        Homebrew.instance_eval(&block)
       end
     end
   end

@@ -20,17 +20,17 @@ module Homebrew
       # Overridden by sub-class `Homebrew::Command::CommandOptions`. The
       # method is called whenever `option do` DSL is executed inside the
       # `define` DSL
-      def option(*vals, &code_block) end
+      def option(*vals, &block) end
 
       # Overridden by sub-class `Homebrew::Command::CommandOptions`. The
       # method is called whenever `suboption do` DSL is executed inside
       # the `define` DSL
-      def suboption(*vals, &code_block) end
+      def suboption(*vals, &block) end
 
       # Overridden by sub-class `Homebrew::Command::RunCommand`. The
       # method is called whenever `run do` DSL is executed inside the
       # `define` DSL
-      def run(&code_block) end
+      def run(&block) end
     end
   end
 end
