@@ -79,6 +79,12 @@ describe SoftwareSpec do
       expect(subject).not_to have_defined_option("cxx11")
     end
 
+    it "special cases the cxx14 option" do
+      subject.option(:cxx14)
+      expect(subject).to have_defined_option("c++14")
+      expect(subject).not_to have_defined_option("cxx14")
+    end
+
     it "supports options with descriptions" do
       subject.option("bar", "description")
       expect(subject.options.first.description).to eq("description")

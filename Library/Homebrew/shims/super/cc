@@ -245,6 +245,7 @@ class Cmd
   def cxxflags
     args = cflags
     args << "-std=c++11" if cxx11?
+    args << "-std=c++14" if cxx14?
     args << "-stdlib=libc++" if libcxx?
     args << "-stdlib=libstdc++" if libstdcxx?
     args
@@ -296,6 +297,10 @@ class Cmd
 
   def cxx11?
     config.include?("x")
+  end
+
+  def cxx14?
+    config.include?("y")
   end
 
   def libcxx?

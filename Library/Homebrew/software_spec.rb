@@ -15,6 +15,7 @@ class SoftwareSpec
   PREDEFINED_OPTIONS = {
     universal: Option.new("universal", "Build a universal binary"),
     cxx11:     Option.new("c++11",     "Build using C++11 mode"),
+    cxx14:     Option.new("c++14",     "Build using C++14 mode"),
   }.freeze
 
   attr_reader :name, :full_name, :owner

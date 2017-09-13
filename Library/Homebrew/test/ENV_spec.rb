@@ -186,4 +186,36 @@ describe Superenv do
       expect(subject["HOMEBREW_CCCFG"]).to include("g")
     end
   end
+
+  describe "#cxx14" do
+    it "raises an error when the compiler isn't supported" do
+      %w[gcc gcc-4.7 gcc-4.8 gcc-4.9].each do |compiler|
+        subject["HOMEBREW_CC"] = compiler
+
+        expect { subject.cxx14 }
+          .to raise_error(/The selected compiler doesn't support C\+\+14:/)
+
+        expect(subject["HOMEBREW_CCCFG"]).to be nil
+      end
+    end
+
+    it "supports gcc-5" do
+      subject["HOMEBREW_CC"] = "gcc-5"
+      subject.cxx14
+      expect(subject["HOMEBREW_CCCFG"]).to include("y")
+    end
+
+    example "supports gcc-6" do
+      subject["HOMEBREW_CC"] = "gcc-6"
+      subject.cxx14
+      expect(subject["HOMEBREW_CCCFG"]).to include("y")
+    end
+
+    it "supports clang" do
+      subject["HOMEBREW_CC"] = "clang"
+      subject.cxx14
+      expect(subject["HOMEBREW_CCCFG"]).to include("y")
+      expect(subject["HOMEBREW_CCCFG"]).to include("g")
+    end
+  end
 end

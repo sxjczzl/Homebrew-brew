@@ -175,6 +175,17 @@ module Stdenv
     end
   end
 
+  def cxx14
+    if compiler == :clang
+      append "CXX", "-std=c++14"
+      append "CXX", "-stdlib=libc++"
+    elsif gcc_with_cxx14_support?(compiler)
+      append "CXX", "-std=c++14"
+    else
+      raise "The selected compiler doesn't support C++14: #{compiler}"
+    end
+  end
+
   def libcxx
     append "CXX", "-stdlib=libc++" if compiler == :clang
   end

@@ -30,6 +30,7 @@ module RuboCop
 
             if option !~ /with(out)?-/ &&
                option != "cxx11" &&
+               option != "cxx14" &&
                option != "universal"
               problem "Options should begin with with/without."\
                       " Migrate '--#{option}' with `deprecated_option`."
