@@ -29,7 +29,7 @@ module Homebrew
     raise FormulaUnspecifiedError if ARGV.named.empty? && !ARGV.include?("--installed")
     raise "Specifying formulae together with '--installed' flag is not supported " if !ARGV.named.empty? && ARGV.include?("--installed")
 
-    if ARGV.named.empty?
+    if ARGV.include?("--installed")
       enum = Formula.installed.each
     else
       enum = ARGV.resolved_formulae.each
