@@ -358,6 +358,11 @@ describe Version do
         .to be_detected_from("http://github.com/lloyd/yajl/tarball/v1.2.34")
     end
 
+    specify "version github releases" do
+      expect(Version.create("0.1.0"))
+        .to be_detected_from("https://github.com/foo/bar-baz/releases/download/0.1.0/bar-baz.tar.gz")
+    end
+
     specify "yet another version" do
       expect(Version.create("0.15.1b"))
         .to be_detected_from("http://example.com/mad-0.15.1b.tar.gz")
