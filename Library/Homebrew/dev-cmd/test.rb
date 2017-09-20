@@ -86,7 +86,7 @@ module Homebrew
         ofail "#{f.full_name}: failed"
         puts e.message
         failed_formulae << f
-      rescue Exception => e # rubocop:disable Lint/RescueException
+      rescue StandardError => e
         ofail "#{f.full_name}: failed"
         puts e, e.backtrace
         failed_formulae << f
@@ -96,7 +96,7 @@ module Homebrew
     end
     unless failed_formulae.empty?
       ofail "The following formulae failed to successfully complete the tests:"
-      ofail failed_formulae.map{|f| f.full_name}.join(" ")
+      ofail failed_formulae.map(&:full_name).join(" ")
     end
   end
 end
