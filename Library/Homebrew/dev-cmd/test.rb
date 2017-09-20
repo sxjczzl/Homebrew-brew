@@ -94,9 +94,10 @@ module Homebrew
         ENV.replace(env)
       end
     end
-    unless failed_formulae.empty?
-      ofail "The following formulae failed to successfully complete the tests:"
-      ofail failed_formulae.map(&:full_name).join(" ")
-    end
+    return false if failed_formulae.empty?
+    ofail <<-EOF.undent
+      The following formulae failed to complete the tests successfully:
+      #{failed_formulae.map(&:full_name).join(" ")}
+    EOF
   end
 end
