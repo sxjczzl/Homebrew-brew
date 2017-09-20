@@ -30,7 +30,7 @@ module Homebrew
       raise FormulaUnspecifiedError unless ARGV.include?("--installed")
       formulae = Formula.installed
     else
-      raise "Can not specify formulae and '--installed' flag." unless ARGV.named.empty?
+      raise "Can not specify formulae and '--installed' flag." if ARGV.include?("--installed")
       formulae = ARGV.resolved_formulae
     end
 
