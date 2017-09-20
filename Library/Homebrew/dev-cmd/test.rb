@@ -26,6 +26,7 @@ module Homebrew
   def test
     raise FormulaUnspecifiedError if ARGV.named.empty?
 
+    failed_formulae = []
     ARGV.resolved_formulae.each do |f|
       # Cannot test uninstalled formulae
       unless f.installed?
@@ -84,12 +85,18 @@ module Homebrew
       rescue ::Test::Unit::AssertionFailedError => e
         ofail "#{f.full_name}: failed"
         puts e.message
+        failed_formulae << f
       rescue Exception => e # rubocop:disable Lint/RescueException
         ofail "#{f.full_name}: failed"
         puts e, e.backtrace
+        failed_formulae << f
       ensure
         ENV.replace(env)
       end
+    end
+    unless failed_formulae.empty?
+      ofail "The following formulae failed to successfully complete the tests:"
+      ofail failed_formulae.map{|f| f.full_name}.join(" ")
     end
   end
 end
