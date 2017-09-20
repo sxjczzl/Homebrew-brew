@@ -26,17 +26,15 @@ module Homebrew
   module_function
 
   def test
-    raise FormulaUnspecifiedError if ARGV.named.empty? && !ARGV.include?("--installed")
-    raise "Specifying formulae together with '--installed' flag is not supported " if !ARGV.named.empty? && ARGV.include?("--installed")
-
-    if ARGV.include?("--installed")
-      enum = Formula.installed.each
+    if ARGV.named.empty?
+      raise FormulaUnspecifiedError unless ARGV.include?("--installed")
+      formulae = Formula.installed
     else
-      enum = ARGV.resolved_formulae.each
+      raise "Can not specify formulae and '--installed' flag." unless ARGV.named.empty?
+      formulae = ARGV.resolved_formulae
     end
 
-    loop do
-      f = enum.next
+    formulae.each do |f|
       # Cannot test uninstalled formulae
       unless f.installed?
         ofail "Testing requires the latest version of #{f.full_name}"
