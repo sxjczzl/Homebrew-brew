@@ -1,4 +1,4 @@
-#:  * `test` [`--devel`|`--HEAD`] [`--debug`] [`--keep-tmp`] <formula>:
+#:  * `test` [`--devel`|`--HEAD`] [`--debug`] [`--keep-tmp`] [--installed|<formula>]:
 #:    Most formulae provide a test method. `brew test` <formula> runs this
 #:    test method. There is no standard output or return code, but it should
 #:    generally indicate to the user if something is wrong with the installed
@@ -13,6 +13,8 @@
 #:    If `--keep-tmp` is passed, the temporary files created for the test are
 #:    not deleted.
 #:
+#:    If `--installed` is passed, test all installed formulae
+#:
 #:    Example: `brew install jruby && brew test jruby`
 
 require "extend/ENV"
@@ -24,9 +26,15 @@ module Homebrew
   module_function
 
   def test
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    if ARGV.named.empty?
+      raise FormulaUnspecifiedError unless ARGV.include?("--installed")
+      formulae = Formula.installed
+    else
+      raise "Can not specify formulae and '--installed' flag." if ARGV.include?("--installed")
+      formulae = ARGV.resolved_formulae
+    end
 
-    ARGV.resolved_formulae.each do |f|
+    formulae.each do |f|
       # Cannot test uninstalled formulae
       unless f.installed?
         ofail "Testing requires the latest version of #{f.full_name}"
