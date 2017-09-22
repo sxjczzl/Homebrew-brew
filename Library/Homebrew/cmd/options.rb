@@ -5,8 +5,6 @@
 #:    spaces.
 #:
 #:    If `--all` is passed, show options for all formulae.
-#:
-#:    If `--installed` is passed, show options for all installed formulae.
 
 require "formula"
 require "options"
@@ -17,8 +15,6 @@ module Homebrew
   def options
     if ARGV.include? "--all"
       puts_options Formula.to_a
-    elsif ARGV.include? "--installed"
-      puts_options Formula.installed
     else
       raise FormulaUnspecifiedError if ARGV.named.empty?
       puts_options ARGV.formulae
