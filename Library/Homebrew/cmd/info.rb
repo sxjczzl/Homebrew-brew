@@ -143,6 +143,7 @@ module Homebrew
         tab = Tab.for_keg(keg).to_s
         puts "  #{tab}" unless tab.empty?
       end
+      puts "No linked kegs found!" unless kegs.map(&:linked?).any?
     end
 
     puts "From: #{Formatter.url(github_info(f))}"
