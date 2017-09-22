@@ -60,7 +60,7 @@ done
 
 if [[ -n "$HOMEBREW_ENV_FILTERING" ]]
 then
-  PATH="/usr/bin:/bin:/usr/sbin:/sbin"
+  PATH="$HOMEBREW_PREFIX/bin:/usr/bin:/bin:/usr/sbin:/sbin"
 
   FILTERED_ENV=()
   for VAR in HOME SHELL PATH TERM LOGNAME USER "${!HOMEBREW_@}"
