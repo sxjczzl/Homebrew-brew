@@ -139,7 +139,7 @@ install() {
   tar "$tar_args" "$CACHED_LOCATION"
   safe_cd "$VENDOR_DIR/portable-$VENDOR_NAME"
 
-  if "./$VENDOR_VERSION/bin/$VENDOR_NAME" --version >/dev/null 2>&1
+  if "./$VENDOR_VERSION/bin/$VENDOR_NAME" --version >/dev/null
   then
     ln -sfn "$VENDOR_VERSION" current
     # remove old vendor installations by sorting files with modified time.
