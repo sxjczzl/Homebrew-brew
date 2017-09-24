@@ -12,7 +12,7 @@ matrix:
   include:
     - os: osx
       osx_image: xcode8.3
-      rvm: system
+      rvm: 2.3.3
     - os: linux
       sudo: false
       rvm: 2.3.3
@@ -27,6 +27,7 @@ before_install:
       mv "$HOMEBREW_REPOSITORY/Library/Taps" "$PWD/Library";
       sudo rm -rf "$HOMEBREW_REPOSITORY";
       sudo ln -s "$PWD" "$HOMEBREW_REPOSITORY";
+      export HOMEBREW_RUBY_PATH="$HOME/.rvm/rubies/ruby-2.3.3/bin/ruby";
     else
       umask 022;
       git clone --depth=1 https://github.com/Homebrew/homebrew-test-bot Library/Taps/homebrew/homebrew-test-bot;
