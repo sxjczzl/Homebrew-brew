@@ -277,6 +277,14 @@ module Homebrew
         puts "To install one of them, run (for example):\n  brew install #{taps_search_results.first}"
       end
     end
+    if formulae.size > 1 && formulae.map { |f| !f.caveats.to_s.empty? }.any?
+      puts ""
+      ohai "Please review the caveats for the following installed formulae:"
+      formulae.each do |f|
+        puts ""
+        ohai "Caveats for \"#{f}\":", f.caveats.to_s unless f.caveats.to_s.empty?
+      end
+    end
   end
 
   def check_ppc
