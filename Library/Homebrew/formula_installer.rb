@@ -84,8 +84,7 @@ class FormulaInstaller
 
     return false if @pour_failed
 
-    bottle = formula.bottle
-    return false if !bottle && !formula.local_bottle_path
+    return false if !formula.bottled? && !formula.local_bottle_path
     return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
     return false if ARGV.cc
@@ -101,6 +100,7 @@ class FormulaInstaller
       return false
     end
 
+    bottle = formula.bottle_specification
     unless bottle.compatible_cellar?
       if install_bottle_options[:warn]
         opoo <<-EOS.undent
