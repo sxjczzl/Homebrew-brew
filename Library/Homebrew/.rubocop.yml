@@ -29,6 +29,9 @@ Lint/ParenthesesAsGroupedExpression:
 Metrics/ParameterLists:
   CountKeywordArgs: false
 
+Style/AsciiComments:
+  Enabled: false
+
 Style/BlockDelimiters:
   Exclude:
     - '**/*_spec.rb'
