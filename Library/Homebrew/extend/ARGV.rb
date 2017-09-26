@@ -41,11 +41,14 @@ module HomebrewArgvExtension
   def formulae
     require "formula"
     @formulae ||= (downcased_unique_named - casks).map do |name|
-      if name.include?("/") || File.exist?(name)
+      name, version = name.split "=" if name.include? "="
+      formula = if name.include?("/") || File.exist?(name)
         Formulary.factory(name, spec)
       else
         Formulary.find_with_priority(name, spec)
       end
+      formula.version = version if version
+      formula
     end.uniq(&:name)
   end
 
