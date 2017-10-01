@@ -555,12 +555,12 @@ end
 # raised when a single patch file is not found and apply hasn't been specified
 class MissingApplyError < RuntimeError; end
 
-class BottleFormulaUnavailableError < RuntimeError
-  def initialize(bottle_path, formula_path)
+class BottleVersionMismatchError < RuntimeError
+  def initialize(bottle_file, bottle_version, formula, formula_version)
     super <<-EOS.undent
-      This bottle does not contain the formula file:
-        #{bottle_path}
-        #{formula_path}
+      Bottle version mismatch
+      Bottle: #{bottle_file} (#{bottle_version})
+      Formula: #{formula.full_name} (#{formula_version})
     EOS
   end
 end
