@@ -277,15 +277,20 @@ module Homebrew
         puts "To install one of them, run (for example):\n  brew install #{taps_search_results.first}"
       end
     end
-    return unless formulae.size > 1
-    if formulae.map { |f| !f.caveats.to_s.empty? }.any?
-      puts ""
-      ohai "Please review the caveats for the following installed formulae:"
-      formulae.each do |f|
-        puts ""
-        ohai "Caveats for \"#{f}\":", f.caveats.to_s unless f.caveats.to_s.empty?
-      end
-    end
+
+		formulae_deps = formulae.map { |f| f.deps.map(&:to_formula) }
+		formulae_flat_tree = (formulae + formulae_deps).flatten.uniq
+		return if formulae_flat_tree.size == 1
+		return if formulae_flat_tree.map { |f| Caveats.new(f).nil? }.all?
+		puts ""
+		ohai "Please review the caveats for the following formulae"
+		formulae_flat_tree.each do |f|
+			next unless Tab.for_keg(Keg.new(f.opt_prefix.resolved_path)).installed_on_request
+			caveat = Caveats.new(f)
+			next if caveat.nil?
+			# next if formulae_deps.flatten.include?(f) && !formulae.include?(f)
+			ohai "#{f} (caveats):", caveat
+		end
   end
 
   def check_ppc
