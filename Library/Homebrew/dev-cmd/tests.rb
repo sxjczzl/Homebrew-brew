@@ -43,8 +43,6 @@ module Homebrew
         FileUtils.rm_f "test/coverage/.resultset.json"
       end
 
-      ENV["BUNDLE_GEMFILE"] = "#{HOMEBREW_LIBRARY_PATH}/test/Gemfile"
-
       # Override author/committer as global settings might be invalid and thus
       # will cause silent failure during the setup of dummy Git repositories.
       %w[AUTHOR COMMITTER].each do |role|
@@ -54,6 +52,7 @@ module Homebrew
       end
 
       Homebrew.install_gem_setup_path! "bundler"
+      system "bundle", "config", "--delete", "without"
       system "bundle", "install" unless quiet_system("bundle", "check")
 
       parallel = true

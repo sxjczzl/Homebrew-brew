@@ -62,4 +62,5 @@
 !/README.md
 
 # Unignore tests' bundle config
-!/Library/Homebrew/test/.bundle
+!/Library/Homebrew/.bundle
+/Library/Homebrew/.bundle/bin

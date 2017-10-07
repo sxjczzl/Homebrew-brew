@@ -187,7 +187,18 @@ module Homebrew
     _system(cmd, *args)
   end
 
+  def install_and_require_rubocop!
+    install_gem_setup_path! "bundler"
+    require "bundler"
+
+    system "bundle", "install", "--without", "test" unless quiet_system("bundle", "check")
+
+    Bundler.require(:rubocop)
+  end
+
   def install_gem_setup_path!(name, version = nil, executable = name)
+    ENV["BUNDLE_GEMFILE"] = "#{HOMEBREW_LIBRARY_PATH}/Gemfile"
+
     # Respect user's preferences for where gems should be installed.
     ENV["GEM_HOME"] = ENV["GEM_OLD_HOME"].to_s
     ENV["GEM_HOME"] = Gem.user_dir if ENV["GEM_HOME"].empty?
