@@ -217,6 +217,86 @@ describe FormulaAuditor do
     end
   end
 
+  describe "#audit_deps" do
+    describe "a dependency on a macOS-provided keg-only formula" do
+      describe "which is whitelisted" do
+        let(:fa) do
+          formula_auditor "foo", <<-EOS.undent, new_formula: true
+            class Foo < Formula
+              url "http://example.com/foo-1.0.tgz"
+              homepage "http://example.com"
+
+              depends_on "ncurses"
+            end
+          EOS
+        end
+
+        let(:fa_ncurses) do
+          formula_auditor "ncurses", <<-EOS.undent, new_formula: true
+            class Ncurses < Formula
+              url "http://example.com/ncurses-1.0.tgz"
+              homepage "http://example.com"
+
+              keg_only :provided_by_macos
+            end
+          EOS
+        end
+
+        before do
+          allow(fa.formula.deps[0])
+            .to receive(:to_formula).and_return(fa_ncurses.formula)
+        end
+
+        subject { fa }
+        before { fa.audit_deps }
+
+        its(:problems) { are_expected.to be_empty }
+      end
+
+      describe "which is not whitelisted" do
+        let(:fa) do
+          formula_auditor "foo", <<-EOS.undent, new_formula: true
+            class Foo < Formula
+              url "http://example.com/foo-1.0.tgz"
+              homepage "http://example.com"
+
+              depends_on "bc"
+            end
+          EOS
+        end
+
+        let(:fa_bc) do
+          formula_auditor "bc", <<-EOS.undent, new_formula: true
+            class Bc < Formula
+              url "http://example.com/bc-1.0.tgz"
+              homepage "http://example.com"
+
+              keg_only :provided_by_macos
+            end
+          EOS
+        end
+
+        before do
+          allow(fa.formula.deps[0])
+            .to receive(:to_formula).and_return(fa_bc.formula)
+        end
+
+        let(:provided_by_macos) do
+          [
+            "Dependency 'bc' may be unnecessary as it is",
+            "provided by macOS; try to build this formula",
+            "without it.",
+          ].join(" ")
+        end
+
+        subject { fa }
+        before { fa.audit_deps }
+
+        its(:problems) { are_expected.to eq([provided_by_macos]) }
+      end
+    end
+  end
+
   describe "#audit_keg_only_style" do
     specify "keg_only_needs_downcasing" do
       fa = formula_auditor "foo", <<-EOS.undent, strict: true
