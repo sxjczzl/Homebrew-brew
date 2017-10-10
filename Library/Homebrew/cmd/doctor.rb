@@ -16,7 +16,11 @@ module Homebrew
     checks = Diagnostic::Checks.new
 
     if ARGV.include? "--list-checks"
-      puts checks.all.sort
+      if ARGV.named.empty?
+        puts checks.all.sort
+      else
+        ARGV.named.each { |regex| puts checks.all.grep /#{regex}/ }
+      end
       exit
     end
 
@@ -28,7 +32,7 @@ module Homebrew
       ]
       methods = (checks.all.sort - slow_checks) + slow_checks
     else
-      methods = ARGV.named
+      methods = ARGV.named.map { |na| checks.all.grep /#{na}/ }.flatten.uniq
     end
 
     first_warning = true
