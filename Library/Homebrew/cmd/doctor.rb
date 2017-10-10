@@ -19,7 +19,7 @@ module Homebrew
       if ARGV.named.empty?
         puts checks.all.sort
       else
-        ARGV.named.each { |regex| puts checks.all.grep /#{regex}/ }
+        puts ARGV.named.flat_map { |na| checks.all.grep /#{na}/ }.uniq
       end
       exit
     end
@@ -32,7 +32,7 @@ module Homebrew
       ]
       methods = (checks.all.sort - slow_checks) + slow_checks
     else
-      methods = ARGV.named.map { |na| checks.all.grep /#{na}/ }.flatten.uniq
+      methods = ARGV.named.flat_map { |na| checks.all.grep /#{na}/ }.uniq
     end
 
     first_warning = true
