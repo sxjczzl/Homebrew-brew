@@ -33,10 +33,10 @@ A passed build looks like this:
 
 ---
 
-On failed or passed builds you can click the "Details" link to view the result
+On failed or passed builds you can click the “Details” link to view the result
 in Jenkins.
 
-When you click this you'll see the results.
+When you click this you’ll see the results.
 
 A passed build looks like this:
 

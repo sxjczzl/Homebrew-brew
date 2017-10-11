@@ -7,10 +7,10 @@ Installing a custom version of GCC or `autotools` into the `PATH` has the
 potential to break lots of compiles so we prefer the Apple- or Homebrew-provided
 compilers.
 
-Cross-compilers based on GCC will typically be "keg-only" and therefore not
+Cross-compilers based on GCC will typically be “keg-only” and therefore not
 linked into the path by default.
 
-Rather than merging in brews for either of these cases at this time, we're
+Rather than merging in brews for either of these cases at this time, we’re
 listing them on this page. If you come up with a formula for a new version of
 GCC or cross-compiler suite, please link it in here.
 

@@ -6,7 +6,7 @@ _In this document we will be using [jq](https://stedolan.github.io/jq/) to parse
 
 `brew` provides commands for getting common types of information out of the system. `brew list` shows installed formulae. `brew deps foo` shows the dependencies that `foo` needs.
 
-Additional commands, including external commands, can of course be written to provide more detailed information. There are a couple of disadvantages here. First, it means writing Ruby against a possibly changing Homebrew codebase. There will be more code to touch during refactors, and Homebrew can't guarantee that external commands will continue to work. Second, it means designing the commands themselves, specifying input parameters and output formats.
+Additional commands, including external commands, can of course be written to provide more detailed information. There are a couple of disadvantages here. First, it means writing Ruby against a possibly changing Homebrew codebase. There will be more code to touch during refactors, and Homebrew can’t guarantee that external commands will continue to work. Second, it means designing the commands themselves, specifying input parameters and output formats.
 
 To enable users to do rich queries without the problems above, Homebrew provides the `brew info` command.
 
@@ -33,7 +33,7 @@ The schema itself is not currently documented outside of the code that generates
 
 _The top-level element of the JSON output is always an array, so the `map` operator is used to act on the data._
 
-### Pretty-print a single formula's info
+### Pretty-print a single formula’s info
 
 ```sh
 brew info --json=v1 tig | jq .
@@ -47,7 +47,7 @@ To show full JSON information about all installed formulae:
 brew info --json=v1 --all | jq "map(select(.installed != []))"
 ```
 
-You'll note that processing all formulae can be slow; it's quicker to let `brew` do this:
+You’ll note that processing all formulae can be slow; it’s quicker to let `brew` do this:
 
 ```sh
 brew info --json=v1 --installed
@@ -55,7 +55,7 @@ brew info --json=v1 --installed
 
 ### Linked keg-only formulae
 
-Some formulae are marked as "keg-only", meaning that installed files are not linked to the shared `bin`, `lib`, etc. directories, as doing so can cause conflicts. Such formulae can be forced to link to the shared directories, but doing so is not recommended (and will cause `brew doctor` to complain.)
+Some formulae are marked as “keg-only”, meaning that installed files are not linked to the shared `bin`, `lib`, etc. directories, as doing so can cause conflicts. Such formulae can be forced to link to the shared directories, but doing so is not recommended (and will cause `brew doctor` to complain.)
 
 To find the names of linked keg-only formulae:
 
@@ -73,6 +73,6 @@ brew info --json=v1 --installed | jq "map(select(.keg_only == false and .linked_
 
 ## Concluding remarks
 
-Using the JSON output, queries can be made against Homebrew with less risk of being broken due to Homebrew code changes, and without needing to understand Homebrew's Ruby internals.
+Using the JSON output, queries can be made against Homebrew with less risk of being broken due to Homebrew code changes, and without needing to understand Homebrew’s Ruby internals.
 
 If the JSON output does not provide some information that it ought to, please submit a request, preferably with a patch to add the desired information.

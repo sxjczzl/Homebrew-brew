@@ -19,7 +19,7 @@ brew install https://raw.github.com/dsr/homebrew/9b22d42f50fcbc5e52c764448b3ac00
 brew unlink <formula>
 ```
 
-This can be useful if a package can't build against the version of something you have linked into `/usr/local`.
+This can be useful if a package can’t build against the version of something you have linked into `/usr/local`.
 
 And of course, you can simply `brew link <formula>` again afterwards!
 
@@ -39,9 +39,9 @@ Use `brew info <formula>` to check what versions are installed but not currently
 ```
 
 ## Pre-downloading a file for a formula
-Sometimes it's faster to download a file via means other than those
+Sometimes it’s faster to download a file via means other than those
 strategies that are available as part of Homebrew.  For example,
-Erlang provides a torrent that'll let you download at 4–5× the normal
+Erlang provides a torrent that’ll let you download at 4–5× the normal
 HTTP method.
 
 Download the file and drop it in `~/Library/Caches/Homebrew`, but
@@ -56,7 +56,7 @@ run `mv the_tarball $(brew --cache -s <formula>)`.
 You can also pre-cache the download by using the command `brew fetch formula` which also displays the SHA-256 hash. This can be useful for updating formulae to new versions.
 
 ## Using Homebrew behind a proxy
-Behind the scenes, Homebrew uses several commands for downloading files (e.g. `curl`, `git`, `svn`).  Many of these tools can download via a proxy.  It's a common (though not universal) convention for these command-line tools to observe getting the proxy parameters from environment variables (e.g. `http_proxy`).  Unfortunately, most tools are inconsistent in their use of these environment parameters (e.g. `curl` supports `http_proxy`, `HTTPS_PROXY`, `FTP_PROXY`, `GOPHER_PROXY`, `ALL_PROXY`, `NO_PROXY`).
+Behind the scenes, Homebrew uses several commands for downloading files (e.g. `curl`, `git`, `svn`).  Many of these tools can download via a proxy.  It’s a common (though not universal) convention for these command-line tools to observe getting the proxy parameters from environment variables (e.g. `http_proxy`).  Unfortunately, most tools are inconsistent in their use of these environment parameters (e.g. `curl` supports `http_proxy`, `HTTPS_PROXY`, `FTP_PROXY`, `GOPHER_PROXY`, `ALL_PROXY`, `NO_PROXY`).
 
 Luckily, for the majority of cases setting `http_proxy` is enough.
 You can set this environment variable in several ways (search on the
@@ -79,9 +79,9 @@ brew sh          # or: eval $(brew --env)
 gem install ronn # or c-programs
 ```
 
-This imports the `brew` environment into your existing shell; `gem` will pick up the environment variables and be able to build. As a bonus `brew`'s automatically determined optimization flags are set.
+This imports the `brew` environment into your existing shell; `gem` will pick up the environment variables and be able to build. As a bonus `brew`’s automatically determined optimization flags are set.
 
-## Install only a formula's dependencies (not the formula)
+## Install only a formula’s dependencies (not the formula)
 
 ```sh
 brew install --only-dependencies <formula>

@@ -6,4 +6,4 @@ There are times when we may wish to migrate a formula from one tap into another 
 2. Create a pull request to the original tap deleting the formula file and add it to `tap_migrations.json` with a commit message like `gv: migrating to homebrew/science`.
 3. Put a link for each pull request in the other pull request so the maintainers can merge them both at once.
 
-Congratulations, you've moved a formula to a tap!
+Congratulations, you’ve moved a formula to a tap!

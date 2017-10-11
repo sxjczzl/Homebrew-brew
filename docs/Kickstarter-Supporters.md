@@ -5,7 +5,7 @@ This file contains a list of the awesome people who gave £5 or more to
 
 This list is still incomplete as we need addresses for everyone who receives
 a physical reward. Kickstarter recommends asking only when we are ready to
-ship (to avoid changes of address) so we can't ask for more names/URLs
+ship (to avoid changes of address) so we can’t ask for more names/URLs
 until then.
 
 These mind-blowing people supported our Kickstarter by giving us £450 or more:
@@ -268,7 +268,7 @@ These brilliant people supported our Kickstarter by giving us £15 or more:
 * [Steve McKinney](http://stephenmckinney.me)
 * Felix Adusei
 * [Richard Lee](http://dlackty.org/)
-* [Shane O'Grady](http://ogrady.ie)
+* [Shane O’Grady](http://ogrady.ie)
 * [Sebastian Staudt](http://koraktor.de)
 * [Eric Blair](http://room45.co/)
 * [Andreas Behr](http://www.codedreality.com)
@@ -413,7 +413,7 @@ These wonderful people supported our Kickstarter by giving us £10 or more:
 * [Daniel Giribet](http://dani.calidos.com)
 * [Eric Wallmander](http://wallmander.net/)
 * [Teakhouten meubelen](http://teakmeubelen.nl/)
-* [Gerard "smeevil" de Brieder](http://www.govannon.nl)
+* [Gerard “smeevil” de Brieder](http://www.govannon.nl)
 * [Marius Ciocanel](http://mariusciocanel.com)
 * [David Sommers](http://davidsommers.com/)
 * [Ray Grasso](http://raygrasso.com)
@@ -651,10 +651,10 @@ These lovely people supported our Kickstarter by giving us £5 or more:
 * Tsz Ming WONG
 * Balázs Pete
 * Raúl Marcos Lorenzo
-* Federico "sQuEE" Sun
+* Federico “sQuEE” Sun
 * Christopher Gateley
 * Mark S. C. Smith
-* Tim O'Brien
+* Tim O’Brien
 * Joshua Conner
 * Lucas Dohmen
 * Joe VanAndel
@@ -717,9 +717,9 @@ These lovely people supported our Kickstarter by giving us £5 or more:
 * Park Jaeku
 * Matthew Mirande
 * Arnaud
-* Cyriel van 't End
+* Cyriel van ’t End
 * Robert Parini
-* Fiann O'Hagan
+* Fiann O’Hagan
 * Dan Morrow
 * Liam Jones
 * Tony Fernandez

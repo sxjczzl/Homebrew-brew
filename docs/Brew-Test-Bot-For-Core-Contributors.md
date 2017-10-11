@@ -10,7 +10,7 @@ This job automatically builds any pull requests submitted to Homebrew/homebrew-c
 ## [Homebrew Testing](https://jenkins.brew.sh/job/Homebrew%20Testing/)
 This job is manually triggered to run [`brew test-bot`](https://github.com/Homebrew/homebrew-test-bot/blob/master/cmd/brew-test-bot.rb) with user-specified parameters. On a successful build it automatically uploads bottles.
 
-You can manually start this job with parameters to run [`brew test-bot`](https://github.com/Homebrew/homebrew-test-bot/blob/master/cmd/brew-test-bot.rb) with the same parameters. It's often useful to pass a pull request URL, a commit URL, a commit SHA-1 and/or formula names to have the Brew Test Bot test them, report the results and produce bottles.
+You can manually start this job with parameters to run [`brew test-bot`](https://github.com/Homebrew/homebrew-test-bot/blob/master/cmd/brew-test-bot.rb) with the same parameters. It’s often useful to pass a pull request URL, a commit URL, a commit SHA-1 and/or formula names to have the Brew Test Bot test them, report the results and produce bottles.
 
 ## Bottling
 To pull and bottle a pull request with `brew pull`:

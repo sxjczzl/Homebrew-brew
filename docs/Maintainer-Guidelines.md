@@ -17,9 +17,9 @@ This is all that really matters:
   [gem](https://en.wikipedia.org/wiki/RubyGems),
   [cpan](https://en.wikipedia.org/wiki/Cpan) or
   [pip](https://pip.pypa.io/en/stable/).
-- Ensure that any dependencies are accurate and minimal. We don't need to
+- Ensure that any dependencies are accurate and minimal. We don’t need to
   support every possible optional feature for the software.
-- Use the GitHub squash & merge workflow where bottles aren't required.
+- Use the GitHub squash & merge workflow where bottles aren’t required.
 - Use `brew pull` otherwise, which adds messages to auto-close pull requests and pull bottles built by the Brew Test Bot.
 - Thank people for contributing.
 
@@ -50,7 +50,7 @@ We now accept versioned formulae as long as they [meet the requirements](Version
 ### Merging, rebasing, cherry-picking
 Merging should be done in the `Homebrew/brew` repository to preserve history & GPG commit signing,
 and squash/merge via GitHub should be used for formulae where those formulae
-don't need bottles or the change does not require new bottles to be pulled.
+don’t need bottles or the change does not require new bottles to be pulled.
 Otherwise, you should use `brew pull` (or `rebase`/`cherry-pick` contributions).
 
 Don’t `rebase` until you finally `push`. Once `master` is pushed, you can’t
