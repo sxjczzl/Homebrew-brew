@@ -337,6 +337,11 @@ module SharedEnvExtension
     version = cc[/^gcc-(\d+(?:\.\d+)?)$/, 1]
     version && Version.create(version) >= Version.create("4.8")
   end
+
+  def gcc_with_cxx14_support?(cc)
+    version = cc[/^gcc-(\d+(?:\.\d+)?)$/, 1]
+    version && Version.create(version) >= Version.create("5")
+  end
 end
 
 require "extend/os/extend/ENV/shared"
