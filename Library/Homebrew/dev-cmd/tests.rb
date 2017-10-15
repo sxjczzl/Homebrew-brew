@@ -52,7 +52,8 @@ module Homebrew
       end
 
       Homebrew.install_gem_setup_path! "bundler"
-      system "bundle", "config", "--delete", "without"
+      quiet_system "bundle", "config", "--delete", "without"
+      quiet_system "bundle", "config", "--local", "without", "coverage" unless ENV["HOMEBREW_TESTS_COVERAGE"]
       system "bundle", "install" unless quiet_system("bundle", "check")
 
       parallel = true

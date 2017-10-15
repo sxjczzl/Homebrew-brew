@@ -191,13 +191,18 @@ module Homebrew
     install_gem_setup_path! "bundler"
     require "bundler"
 
-    system "bundle", "install", "--without", "test" unless quiet_system("bundle", "check")
+    quiet_system "bundle", "config", "--delete", "without"
+    quiet_system "bundle", "config", "--local", "without", "test"
+    system "bundle", "install" unless quiet_system("bundle", "check")
 
     Bundler.require(:rubocop)
   end
 
   def install_gem_setup_path!(name, version = nil, executable = name)
     ENV["BUNDLE_GEMFILE"] = "#{HOMEBREW_LIBRARY_PATH}/Gemfile"
+    ENV["BUNDLE_PATH"] = "vendor/bundle"
+    ENV["BUNDLE_CLEAN"] = "true"
+    ENV["BUNDLE_DISABLE_SHARED_GEMS"] = "false"
 
     # Respect user's preferences for where gems should be installed.
     ENV["GEM_HOME"] = ENV["GEM_OLD_HOME"].to_s
