@@ -8,7 +8,7 @@ definitely not for everyone.
 ## 1. Use Homebrew
 
 Maintainers of Homebrew should be using it regularly. This is partly because
-you won't be a good maintainer unless you can put yourself in the shoes of our
+you won’t be a good maintainer unless you can put yourself in the shoes of our
 users, but also because you may decide to stop using Homebrew and at that point
 you should also decide not to be a maintainer and find other things to work on.
 
@@ -28,8 +28,8 @@ with the project.
 
 ## 3. Prioritise Maintainers Over Users
 
-It's important to be user-focused but ultimately, as long as you follow #1
-above, Homebrew's minimum number of users will be the number of maintainers.
+It’s important to be user-focused but ultimately, as long as you follow #1
+above, Homebrew’s minimum number of users will be the number of maintainers.
 However, if Homebrew has no maintainers it will quickly become useless to all
 users and the project will die. As a result, no user complaint, behaviour or
 need takes priority over the burnout of maintainers. If users do not like the
@@ -39,8 +39,8 @@ significant, high-quality code contributions and become a maintainer.
 ## 4. Learn To Say No
 
 Homebrew gets a lot of feature requests, non-reproducible bug reports, usage
-questions and PRs we won't accept. These should be closed out as soon as we
-realise that they aren't going to be resolved or merged. This is kinder than
+questions and PRs we won’t accept. These should be closed out as soon as we
+realise that they aren’t going to be resolved or merged. This is kinder than
 deciding this after a long period of review. Our issue tracker should reflect
 work to be done.
 

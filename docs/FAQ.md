@@ -133,7 +133,7 @@ Or:
 brews then save yourself a bunch of hassle and install to
 `/usr/local`!**
 
-It is not always straightforward to tell `gem` to look in non-standard directories for headers and libraries. If you choose `/usr/local`, many things will "just work".
+It is not always straightforward to tell `gem` to look in non-standard directories for headers and libraries. If you choose `/usr/local`, many things will “just work”.
 
 ## Why does Homebrew say sudo is bad?
 **tl;dr** Sudo is dangerous, and you installed TextMate.app without sudo
@@ -208,13 +208,13 @@ Linking /usr/local/Cellar/foo/0.1… 17 symlinks created
 Use `brew log <formula>` to find out! Likely because it had unresolved issues or
 our analytics identified it was not widely used.
 
-## Homebrew is a poor name, it's too generic, why was it chosen?
+## Homebrew is a poor name, it’s too generic, why was it chosen?
 @mxcl was too concerned with the beer theme and didn’t consider that the
 project may actually prove popular. By the time he realized it was, it was too
 late. However, today, the first Google hit for “homebrew” is not beer
 related ;-)
 
-## What does "keg-only" mean?
+## What does “keg-only” mean?
 It means the formula is installed only into the Cellar; it is not linked
 into `/usr/local`. This means most tools will not find it. We don’t do
 this for stupid reasons. You can still link in the formula if you need

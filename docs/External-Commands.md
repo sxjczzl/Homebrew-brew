@@ -6,7 +6,7 @@ Homebrew, like Git, supports *external commands*. This lets you create new comma
 brew mycommand --option1 --option3 formula
 ```
 
-without modifying Homebrew's internals.
+without modifying Homebrew’s internals.
 
 ## Command types
 External commands come in two flavors: Ruby commands and shell scripts.
@@ -14,9 +14,9 @@ External commands come in two flavors: Ruby commands and shell scripts.
 In both cases, the command file should be executable (`chmod +x`) and live somewhere in `PATH`.
 
 ### Ruby commands
-An external command `extcmd` implemented as a Ruby command should be named `brew-extcmd.rb`. The command is executed by doing a `require` on the full pathname. As the command is `require`d, it has full access to the Homebrew "environment", i.e. all global variables and modules that any internal command has access to.
+An external command `extcmd` implemented as a Ruby command should be named `brew-extcmd.rb`. The command is executed by doing a `require` on the full pathname. As the command is `require`d, it has full access to the Homebrew “environment”, i.e. all global variables and modules that any internal command has access to.
 
-The command may `Kernel.exit` with a status code if it needs to; if it doesn't explicitly exit then Homebrew will return 0.
+The command may `Kernel.exit` with a status code if it needs to; if it doesn’t explicitly exit then Homebrew will return 0.
 
 ### Shell scripts
 A shell script for a command named `extcmd` should be named `brew-extcmd`. This file will be run via `exec` with some Homebrew variables set as environment variables, and passed any additional command-line arguments.

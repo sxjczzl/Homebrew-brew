@@ -42,7 +42,7 @@ about the paths. Note, a brewed Python still searches for modules in
 `~/Library/Python/X.Y/lib/python/site-packages`.
 
 ### With system’s Python
-_This is only recommended if you **don't** use a brewed Python._
+_This is only recommended if you **don’t** use a brewed Python._
 
 On macOS, any [Python version X.Y also searches in
 `~/Library/Python/X.Y/lib/python/site-packages` for

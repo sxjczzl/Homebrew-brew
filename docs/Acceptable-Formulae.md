@@ -12,7 +12,7 @@ We now accept stuff that comes with macOS as long as it uses `keg_only :provided
 We now accept versioned formulae as long as they [meet the requirements](Versions.md).
 
 ### We don’t like tools that upgrade themselves
-Software that can upgrade itself does not integrate well with Homebrew's own
+Software that can upgrade itself does not integrate well with Homebrew’s own
 upgrade functionality.
 
 ### We don’t like install-scripts that download things
@@ -52,7 +52,7 @@ The software in question must:
 
 * be maintained (e.g. upstream is still making new releases)
 * be known
-* be stable (e.g. not declared "unstable" or "beta" by upstream)
+* be stable (e.g. not declared “unstable” or “beta” by upstream)
 * be used
 * have a homepage
 
@@ -65,7 +65,7 @@ Don’t forget Homebrew is all Git underneath!
 [Maintain your own tap](How-to-Create-and-Maintain-a-Tap.md) if you have to!
 
 There may be exceptions to these rules in the main repository; we may
-include things that don't meet these criteria or reject things that do.
+include things that don’t meet these criteria or reject things that do.
 Please trust that we need to use our discretion based on our experience
 running a package manager.
 
@@ -73,14 +73,14 @@ running a package manager.
 Don’t make your formula build an `.app` (native macOS Application); we
 don’t want those things in Homebrew. Encourage upstream projects to build and support a `.app` that can be distributed by [Homebrew Cask](https://github.com/caskroom/homebrew-cask) (and used without it, too).
 
-### Stuff that builds a GUI by default (but doesn't have to)
-Make it build a command-line tool or a library by default and, if the GUI is useful and would be widely used, add an option to build the GUI. Don't offer an option for multiple GUI backends e.g. X11 is a bad user experience for GUIs on macOS.
+### Stuff that builds a GUI by default (but doesn’t have to)
+Make it build a command-line tool or a library by default and, if the GUI is useful and would be widely used, add an option to build the GUI. Don’t offer an option for multiple GUI backends e.g. X11 is a bad user experience for GUIs on macOS.
 
-### Stuff that doesn't build with the latest, stable Xcode's Clang
-Clang is the default C/C++ compiler on macOS (and has been for a long time). Software that doesn't build with it hasn't been adequately ported to macOS.
+### Stuff that doesn’t build with the latest, stable Xcode’s Clang
+Clang is the default C/C++ compiler on macOS (and has been for a long time). Software that doesn’t build with it hasn’t been adequately ported to macOS.
 
 ### Stuff that requires heavy manual pre/post-install intervention
-We're a package manager so we want to do things like resolve dependencies and setup applications for our users. If things require too much manual intervention then they aren't useful in a package manager.
+We’re a package manager so we want to do things like resolve dependencies and setup applications for our users. If things require too much manual intervention then they aren’t useful in a package manager.
 
 ### Sometimes there are exceptions
 Even if all criteria are met we may not accept the formula.

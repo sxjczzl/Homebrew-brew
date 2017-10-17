@@ -16,13 +16,13 @@ First, please run `brew update` and `brew doctor`.
 
 Second, read the [Troubleshooting Checklist](https://docs.brew.sh/Troubleshooting.html).
 
-**If you don't read these it will take us far longer to help you with your problem.**
+**If you don’t read these it will take us far longer to help you with your problem.**
 
 ## Contributing
 [![Travis](https://img.shields.io/travis/Homebrew/brew.svg)](https://travis-ci.org/Homebrew/brew)
 [![Codecov](https://img.shields.io/codecov/c/github/Homebrew/brew.svg)](https://codecov.io/gh/Homebrew/brew)
 
-We'd love you to contribute to Homebrew. First, please read our [Contribution Guide](https://github.com/Homebrew/brew/blob/master/CONTRIBUTING.md) and [Code of Conduct](https://github.com/Homebrew/brew/blob/master/CODE_OF_CONDUCT.md#code-of-conduct).
+We’d love you to contribute to Homebrew. First, please read our [Contribution Guide](https://github.com/Homebrew/brew/blob/master/CONTRIBUTING.md) and [Code of Conduct](https://github.com/Homebrew/brew/blob/master/CODE_OF_CONDUCT.md#code-of-conduct).
 
 We explicitly welcome contributions from people who have never contributed to open-source before: we were all beginners once! We can help build on a partially working pull request with the aim of getting it merged. We are also actively seeking to diversify our contributors and especially welcome contributions from women from all backgrounds and people of colour.
 
@@ -32,13 +32,13 @@ A good starting point for contributing is running `brew audit --strict` with som
 Please report security issues to our [HackerOne](https://hackerone.com/homebrew/).
 
 ## Who Are You?
-Homebrew's lead maintainer is [Mike McQuaid](https://github.com/mikemcquaid).
+Homebrew’s lead maintainer is [Mike McQuaid](https://github.com/mikemcquaid).
 
-Homebrew/homebrew-core's lead maintainer is [ilovezfs](https://github.com/ilovezfs).
+Homebrew/homebrew-core’s lead maintainer is [ilovezfs](https://github.com/ilovezfs).
 
-Homebrew's other current maintainers are [Alyssa Ross](https://github.com/alyssais), [Andrew Janke](https://github.com/apjanke), [Alex Dunn](https://github.com/dunn), [FX Coudert](https://github.com/fxcoudert), [Josh Hagins](https://github.com/jawshooah), [JCount](https://github.com/jcount), [Misty De Meo](https://github.com/mistydemeo), [neutric](https://github.com/neutric), [Tomasz Pajor](https://github.com/nijikon), [Markus Reiter](https://github.com/reitermarkus), [Tim Smith](https://github.com/tdsmith), [Tom Schoonjans](https://github.com/tschoonj), [Uladzislau Shablinski](https://github.com/vladshablinsky) and [William Woodruff](https://github.com/woodruffw).
+Homebrew’s other current maintainers are [Alyssa Ross](https://github.com/alyssais), [Andrew Janke](https://github.com/apjanke), [Alex Dunn](https://github.com/dunn), [FX Coudert](https://github.com/fxcoudert), [Josh Hagins](https://github.com/jawshooah), [JCount](https://github.com/jcount), [Misty De Meo](https://github.com/mistydemeo), [neutric](https://github.com/neutric), [Tomasz Pajor](https://github.com/nijikon), [Markus Reiter](https://github.com/reitermarkus), [Tim Smith](https://github.com/tdsmith), [Tom Schoonjans](https://github.com/tschoonj), [Uladzislau Shablinski](https://github.com/vladshablinsky) and [William Woodruff](https://github.com/woodruffw).
 
-Former maintainers with significant contributions include [Baptiste Fontaine](https://github.com/bfontaine), [Xu Cheng](https://github.com/xu-cheng), [Martin Afanasjew](https://github.com/UniqMartin), [Dominyk Tiller](https://github.com/DomT4), [Brett Koonce](https://github.com/asparagui), [Charlie Sharpsteen](https://github.com/Sharpie), [Jack Nagel](https://github.com/jacknagel), [Adam Vandenberg](https://github.com/adamv) and Homebrew's creator: [Max Howell](https://github.com/mxcl).
+Former maintainers with significant contributions include [Baptiste Fontaine](https://github.com/bfontaine), [Xu Cheng](https://github.com/xu-cheng), [Martin Afanasjew](https://github.com/UniqMartin), [Dominyk Tiller](https://github.com/DomT4), [Brett Koonce](https://github.com/asparagui), [Charlie Sharpsteen](https://github.com/Sharpie), [Jack Nagel](https://github.com/jacknagel), [Adam Vandenberg](https://github.com/adamv) and Homebrew’s creator: [Max Howell](https://github.com/mxcl).
 
 ## Community
 - [discourse.brew.sh (forum)](https://discourse.brew.sh)
@@ -46,7 +46,7 @@ Former maintainers with significant contributions include [Baptiste Fontaine](ht
 - [@MacHomebrew (Twitter)](https://twitter.com/MacHomebrew)
 
 ## License
-Code is under the [BSD 2-clause "Simplified" License](https://github.com/Homebrew/brew/tree/master/LICENSE.txt).
+Code is under the [BSD 2-clause “Simplified” License](https://github.com/Homebrew/brew/tree/master/LICENSE.txt).
 Documentation is under the [Creative Commons Attribution license](https://creativecommons.org/licenses/by/4.0/).
 
 ## Donations

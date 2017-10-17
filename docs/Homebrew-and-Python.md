@@ -6,15 +6,15 @@ Homebrew should work with any [CPython](https://stackoverflow.com/questions/2324
 
 Homebrew provides formulae to brew a more up-to-date Python 2.7.x and 3.x.
 
-**Important:** If you choose to install a Python which isn't either of these two (system Python or brewed Python), the Homebrew team can only provide limited support.
+**Important:** If you choose to install a Python which isn’t either of these two (system Python or brewed Python), the Homebrew team can only provide limited support.
 
 ## Python 2.x or Python 3.x
 Homebrew provides one formula for Python 2.7.x and another for Python 3.x. The executables are organized as follows so that Python 2 and Python 3 can both be installed without conflict:
 * `python` points to the macOS system Python (with no manual PATH modification)
-* `python2` points to Homebrew's Python 2.7.x (if installed)
-* `python3` points to Homebrew's Python 3.x (if installed)
-* `pip2` points to Homebrew's Python 2.7.x's pip (if installed)
-* `pip3` points to Homebrew's Python 3.x's pip (if installed)
+* `python2` points to Homebrew’s Python 2.7.x (if installed)
+* `python3` points to Homebrew’s Python 3.x (if installed)
+* `pip2` points to Homebrew’s Python 2.7.x’s pip (if installed)
+* `pip3` points to Homebrew’s Python 3.x’s pip (if installed)
 
 ([Wondering which one to choose?](https://wiki.python.org/moin/Python2orPython3))
 
@@ -49,17 +49,17 @@ The `site-packages` is a directory that contains Python modules (especially bind
 $(brew --prefix)/lib/pythonX.Y/site-packages
 ```
 
-So, for Python 2.7.x, you'll find it at `/usr/local/lib/python2.7/site-packages`.
+So, for Python 2.7.x, you’ll find it at `/usr/local/lib/python2.7/site-packages`.
 
 Python 2.7 also searches for modules in:
 
 - `/Library/Python/2.7/site-packages`
 - `~/Library/Python/2.7/lib/python/site-packages`
 
-Homebrew's `site-packages` directory is first created if (1) any Homebrew formula with Python bindings are installed, or (2) upon `brew install python`.
+Homebrew’s `site-packages` directory is first created if (1) any Homebrew formula with Python bindings are installed, or (2) upon `brew install python`.
 
 ### Why here?
-The reasoning for this location is to preserve your modules between (minor) upgrades or re-installations of Python. Additionally, Homebrew has a strict policy never to write stuff outside of the `brew --prefix`, so we don't spam your system.
+The reasoning for this location is to preserve your modules between (minor) upgrades or re-installations of Python. Additionally, Homebrew has a strict policy never to write stuff outside of the `brew --prefix`, so we don’t spam your system.
 
 ## Homebrew-provided Python bindings
 Some formulae provide Python bindings. Sometimes a `--with-python` or `--with-python3` option has to be passed to `brew install` in order to build the Python bindings. (Check with `brew options <formula>`.)
@@ -83,10 +83,10 @@ CFLAGS=-I$(brew --prefix)/include LDFLAGS=-L$(brew --prefix)/lib pip install <pa
 ## Virtualenv
 **WARNING:** When you `brew install` formulae that provide Python bindings, you should **not be in an active virtual environment**.
 
-Activate the virtualenv *after* you've brewed, or brew in a fresh Terminal window.
-Homebrew will still install Python modules into Homebrew's `site-packages` and *not* into the virtual environment's site-package.
+Activate the virtualenv *after* you’ve brewed, or brew in a fresh Terminal window.
+Homebrew will still install Python modules into Homebrew’s `site-packages` and *not* into the virtual environment’s site-package.
 
-Virtualenv has a `--system-site-packages` switch to allow "global" (i.e. Homebrew's) `site-packages` to be accessible from within the virtualenv.
+Virtualenv has a `--system-site-packages` switch to allow "global" (i.e. Homebrew’s) `site-packages` to be accessible from within the virtualenv.
 
-## Why is Homebrew's Python being installed as a dependency?
-Formulae that depend on the special `:python` target are bottled against the Homebrew Python and require it to be installed. You can avoid installing Homebrew's Python by building these formulae with `--build-from-source`.
+## Why is Homebrew’s Python being installed as a dependency?
+Formulae that depend on the special `:python` target are bottled against the Homebrew Python and require it to be installed. You can avoid installing Homebrew’s Python by building these formulae with `--build-from-source`.
