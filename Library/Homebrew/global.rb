@@ -15,6 +15,7 @@ require "rbconfig"
 require "official_taps"
 require "pp"
 require "English"
+require "command"
 
 ARGV.extend(HomebrewArgvExtension)
 

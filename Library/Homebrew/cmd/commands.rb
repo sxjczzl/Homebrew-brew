@@ -7,29 +7,47 @@
 module Homebrew
   module_function
 
-  def commands
-    if ARGV.include? "--quiet"
-      cmds = internal_commands + external_commands
-      cmds += internal_developer_commands
-      cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if ARGV.include? "--include-aliases"
-      puts Formatter.columns(cmds.sort)
-    else
-      # Find commands in Homebrew/cmd
-      puts "Built-in commands"
-      puts Formatter.columns(internal_commands)
-
-      # Find commands in Homebrew/dev-cmd
-      puts
-      puts "Built-in developer commands"
-      puts Formatter.columns(internal_developer_commands)
-
-      # Find commands in the path
-      unless (exts = external_commands).empty?
-        puts
-        puts "External commands"
-        puts Formatter.columns(exts)
+  Command.define "commands" do
+    desc "Show a list of built-in and external commands."
+    option "--quiet" do
+      desc <<-EOS.undent
+        If #{@option} is passed, list only the names of commands without the header.
+      EOS
+      suboption "--include-aliases" do
+        desc <<-EOS.undent
+          With #{@suboption}, the aliases of internal commands will be included.
+        EOS
       end
     end
+
+    run do
+      if quiet?
+        cmds = internal_commands + external_commands
+        cmds += internal_developer_commands
+        cmds += HOMEBREW_INTERNAL_COMMAND_ALIASES.keys if include_aliases?
+        puts Formatter.columns(cmds.sort)
+      else
+        # Find commands in Homebrew/cmd
+        puts "Built-in commands"
+        puts Formatter.columns(internal_commands)
+
+        # Find commands in Homebrew/dev-cmd
+        puts
+        puts "Built-in developer commands"
+        puts Formatter.columns(internal_developer_commands)
+
+        # Find commands in the path
+        unless (exts = external_commands).empty?
+          puts
+          puts "External commands"
+          puts Formatter.columns(exts)
+        end
+      end
+    end
+  end
+
+  def commands
+    Command.run("commands")
   end
 
   def internal_commands
