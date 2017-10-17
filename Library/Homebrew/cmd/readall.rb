@@ -29,7 +29,7 @@ module Homebrew
 
     options = { aliases: ARGV.include?("--aliases") }
     taps = if ARGV.named.empty?
-      Tap
+      [Tap.fetch("homebrew/core")]
     else
       [Tap.fetch(ARGV.named.first)]
     end
