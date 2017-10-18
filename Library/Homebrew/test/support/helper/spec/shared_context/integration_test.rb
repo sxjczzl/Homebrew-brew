@@ -112,7 +112,7 @@ RSpec.shared_context "integration test" do
       ruby_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
     end
 
-    Bundler.with_clean_env do
+    Bundler.with_original_env do
       stdout, stderr, status = Open3.capture3(env, RUBY_PATH, *@ruby_args, *args)
       $stdout.print stdout
       $stderr.print stderr
