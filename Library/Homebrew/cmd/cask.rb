@@ -5,6 +5,7 @@ module Homebrew
   module_function
 
   def cask
+    odie "The cask command requires macOS." unless OS.mac?
     Hbc::CLI.run(*ARGV)
   end
 end
