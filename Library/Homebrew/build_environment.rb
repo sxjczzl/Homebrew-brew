@@ -34,7 +34,7 @@ end
 module Homebrew
   module_function
 
-  def build_env_keys(env)
+  def common_build_env_keys
     %w[
       CC CXX LD OBJC OBJCXX
       HOMEBREW_CC HOMEBREW_CXX
@@ -46,7 +46,13 @@ module Homebrew
       HOMEBREW_SDKROOT HOMEBREW_BUILD_FROM_SOURCE
       MAKE GIT CPP
       ACLOCAL_PATH PATH CPATH
-    ].select { |key| env.key?(key) }
+    ]
+  end
+
+  def os_specific_build_env_keys; end
+
+  def build_env_keys(env)
+    (common_build_env_keys + os_specific_build_env_keys).select { |key| env.key?(key) }
   end
 
   def dump_build_env(env, f = $stdout)
@@ -64,3 +70,5 @@ module Homebrew
     end
   end
 end
+
+require "extend/os/build_environment"
