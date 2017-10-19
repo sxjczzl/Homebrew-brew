@@ -32,6 +32,7 @@
 #:    List all pinned taps.
 
 require "tap"
+require "formula_store"
 
 module Homebrew
   module_function
@@ -52,6 +53,8 @@ module Homebrew
         tap.install clone_target: ARGV.named[1],
                     full_clone: full_clone?,
                     quiet: ARGV.quieter?
+
+        FormulaStore.store_tap tap
       rescue TapRemoteMismatchError => e
         odie e
       rescue TapAlreadyTappedError, TapAlreadyUnshallowError # rubocop:disable Lint/HandleExceptions

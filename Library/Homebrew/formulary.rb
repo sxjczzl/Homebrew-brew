@@ -1,6 +1,7 @@
 require "digest/md5"
 require "tap"
 require "extend/cachable"
+require "formula_store"
 
 # The Formulary is responsible for creating instances of Formula.
 # It is not meant to be used directly from formulae.
@@ -16,17 +17,44 @@ module Formulary
     cache.fetch(path)
   end
 
-  def self.load_formula(name, path, contents, namespace)
-    if ENV["HOMEBREW_DISABLE_LOAD_FORMULA"]
-      raise "Formula loading disabled by HOMEBREW_DISABLE_LOAD_FORMULA!"
+  def self.load_module_from_store(path, namespace)
+    stored_formula = FormulaStore.store[path.to_s]
+
+    mtime = stored_formula["mtime"]
+    if mtime != path.mtime.to_i
+      stored_formula = FormulaStore.store_formula(path)
     end
 
+    extra_data = stored_formula["extra_data"]
+    byte_code = RubyVM::InstructionSequence.load_from_binary stored_formula["byte_code"]
+
+    byte_code.eval
+
+    mod = Object.const_get(namespace)
+    mod.const_set("DATA", StringIO.new(extra_data)) if extra_data
+    mod
+  end
+
+  def self.load_module_from_file(name, path, contents, namespace)
     mod = Module.new
     const_set(namespace, mod)
     begin
       mod.module_eval(contents, path)
     rescue ScriptError => e
       raise FormulaUnreadableError.new(name, e)
+    end
+    mod
+  end
+
+  def self.load_formula(name, path, contents, namespace)
+    if ENV["HOMEBREW_DISABLE_LOAD_FORMULA"]
+      raise "Formula loading disabled by HOMEBREW_DISABLE_LOAD_FORMULA!"
+    end
+
+    mod = if FormulaStore.stored?(path)
+      load_module_from_store(path, namespace)
+    else
+      load_module_from_file(name, path, contents, namespace)
     end
     class_name = class_s(name)
 
