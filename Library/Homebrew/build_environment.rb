@@ -49,7 +49,9 @@ module Homebrew
     ]
   end
 
-  def os_specific_build_env_keys; end
+  def os_specific_build_env_keys
+    []
+  end
 
   def build_env_keys(env)
     (common_build_env_keys + os_specific_build_env_keys).select { |key| env.key?(key) }
