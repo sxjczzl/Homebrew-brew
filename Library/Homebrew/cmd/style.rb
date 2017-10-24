@@ -70,8 +70,7 @@ module Homebrew
   def check_style_impl(files, output_type, options = {})
     fix = options[:fix]
 
-    Homebrew.install_gem_setup_path! "rubocop", HOMEBREW_RUBOCOP_VERSION
-    require "rubocop"
+    Homebrew.install_and_require_rubocop!
     require_relative "../rubocops"
 
     args = %w[
@@ -120,10 +119,10 @@ module Homebrew
       args << "--debug" if ARGV.debug?
       args << "--display-cop-names" if ARGV.include? "--display-cop-names"
       args << "--format" << "simple" if files
-      system(cache_env, "rubocop", "_#{HOMEBREW_RUBOCOP_VERSION}_", *args)
+      system(cache_env, "bundle", "exec", "rubocop", "_#{HOMEBREW_RUBOCOP_VERSION}_", *args)
       !$CHILD_STATUS.success?
     when :json
-      json, _, status = Open3.capture3(cache_env, "rubocop", "_#{HOMEBREW_RUBOCOP_VERSION}_", "--format", "json", *args)
+      json, _, status = Open3.capture3(cache_env, "bundle", "exec", "rubocop", "_#{HOMEBREW_RUBOCOP_VERSION}_", "--format", "json", *args)
       # exit status of 1 just means violations were found; other numbers mean
       # execution errors.
       # exitstatus can also be nil if RuboCop process crashes, e.g. due to

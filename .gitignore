@@ -60,6 +60,3 @@
 !/CONTRIBUTING.md
 !/LICENSE.txt
 !/README.md
-
-# Unignore tests' bundle config
-!/Library/Homebrew/test/.bundle

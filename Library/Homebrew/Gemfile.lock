@@ -15,6 +15,7 @@ GEM
     parser (2.4.0.0)
       ast (~> 2.2)
     powerpack (0.1.1)
+    public_suffix (3.0.0)
     rainbow (2.2.2)
       rake
     rake (12.1.0)
@@ -43,6 +44,9 @@ GEM
       rainbow (>= 2.2.2, < 3.0)
       ruby-progressbar (~> 1.7)
       unicode-display_width (~> 1.0, >= 1.0.1)
+    rubocop-cask (0.14.2)
+      public_suffix (~> 3.0)
+      rubocop (~> 0.50.0)
     ruby-progressbar (1.9.0)
     simplecov (0.15.1)
       docile (~> 1.1.0)
@@ -62,6 +66,7 @@ DEPENDENCIES
   rspec-its
   rspec-wait
   rubocop (= 0.50.0)
+  rubocop-cask (~> 0.14.2)
   simplecov
 
 BUNDLED WITH
