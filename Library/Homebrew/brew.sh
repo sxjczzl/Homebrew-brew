@@ -13,6 +13,38 @@ else
   HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
 fi
 
+showHelp() {
+  echo '  Example usage:
+    brew search [TEXT|/REGEX/]
+    brew (info|home|options) [FORMULA...]
+    brew install FORMULA...
+    brew update
+    brew upgrade [FORMULA...]
+    brew uninstall FORMULA...
+    brew list [FORMULA...]
+
+  Troubleshooting:
+    brew config
+    brew doctor
+    brew install -vd FORMULA
+
+  Developers:
+    brew create [URL [--no-fetch]]
+    brew edit [FORMULA...]
+    https://docs.brew.sh/Formula-Cookbook.html
+
+  Further help:
+    man brew
+    brew help [COMMAND]
+    brew home';
+  exit 0;
+}
+
+if [[ "$#" -eq "0" || ( "$#" -eq "1" && ( "$1" = "help" || "$1" = "--help" || "$1" = "-h" || "$1" = "--usage" || "$1" = "-?" ) ) ]]
+then
+  showHelp
+fi
+
 case "$*" in
   --prefix)            echo "$HOMEBREW_PREFIX"; exit 0 ;;
   --cellar)            echo "$HOMEBREW_CELLAR"; exit 0 ;;
