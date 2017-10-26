@@ -53,11 +53,10 @@ module Homebrew
         return unless MacOS::Xcode.installed?
         return unless MacOS::Xcode.outdated?
 
-        # Travis CI images are going to end up outdated so don't complain when
+        # CI images are going to end up outdated so don't complain when
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
-        # repository. This only needs to support whatever CI provider
-        # Homebrew/brew is currently using.
-        return if ENV["TRAVIS"]
+        # repository.
+        return if ENV["CIRCLECI"] || ENV["TRAVIS"]
 
         message = <<~EOS
           Your Xcode (#{MacOS::Xcode.version}) is outdated.
@@ -81,11 +80,10 @@ module Homebrew
         return unless MacOS::CLT.installed?
         return unless MacOS::CLT.outdated?
 
-        # Travis CI images are going to end up outdated so don't complain when
+        # CI images are going to end up outdated so don't complain when
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
-        # repository. This only needs to support whatever CI provider
-        # Homebrew/brew is currently using.
-        return if ENV["TRAVIS"]
+        # repository.
+        return if ENV["CIRCLECI"] || ENV["TRAVIS"]
 
         <<~EOS
           A newer Command Line Tools release is available.
