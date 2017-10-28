@@ -58,7 +58,7 @@ module Homebrew
     end
 
     class Checks
-      ############# HELPERS
+      ### HELPERS
       # Finds files in HOMEBREW_PREFIX *and* /usr/local.
       # Specify paths relative to a prefix eg. "include/foo.h".
       # Sets @found for your convenience.
@@ -71,7 +71,7 @@ module Homebrew
       def inject_file_list(list, string)
         list.inject(string) { |acc, elem| acc << "  #{elem}\n" }
       end
-      ############# END HELPERS
+      ### END HELPERS
 
       def development_tools_checks
         %w[
