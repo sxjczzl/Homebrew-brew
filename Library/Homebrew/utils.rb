@@ -157,7 +157,7 @@ def interactive_shell(f = nil)
     FileUtils.touch "#{ENV["HOME"]}/.zshrc"
   end
 
-  Process.wait fork { exec ENV["SHELL"] }
+  Process.wait fork { exec ENV["SHELL"], "--login" }
 
   return if $CHILD_STATUS.success?
   raise "Aborted due to non-zero exit status (#{$CHILD_STATUS.exitstatus})" if $CHILD_STATUS.exited?
