@@ -36,6 +36,6 @@ module Homebrew
       When done, type `exit'.
     EOS
     $stdout.flush
-    exec ENV["SHELL"]
+    exec ENV["SHELL"], "--login"
   end
 end
