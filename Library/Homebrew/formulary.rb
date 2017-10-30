@@ -51,7 +51,7 @@ module Formulary
       raise "Formula loading disabled by HOMEBREW_DISABLE_LOAD_FORMULA!"
     end
 
-    mod = if FormulaStore.stored?(path)
+    mod = if ENV["HOMEBREW_EXPERIMENTAL_FORMULA_STORE"] && FormulaStore.stored?(path)
       load_module_from_store(path, namespace)
     else
       load_module_from_file(name, path, contents, namespace)

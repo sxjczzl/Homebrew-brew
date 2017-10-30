@@ -571,7 +571,10 @@ EOS
         (-n "$HOMEBREW_DEVELOPER" && -z "$HOMEBREW_UPDATE_PREINSTALL") ]]
   then
     unset HOMEBREW_RUBY_PATH
-    brew update-store
+    if [[ -n "$HOMEBREW_EXPERIMENTAL_FORMULA_STORE" ]]
+    then
+        brew update-store
+    fi
     brew update-report "$@"
     return $?
   elif [[ -z "$HOMEBREW_UPDATE_PREINSTALL" ]]

@@ -54,7 +54,7 @@ module Homebrew
                     full_clone: full_clone?,
                     quiet: ARGV.quieter?
 
-        FormulaStore.store_tap tap
+        FormulaStore.store_tap tap if ENV["HOMEBREW_EXPERIMENTAL_FORMULA_STORE"]
       rescue TapRemoteMismatchError => e
         odie e
       rescue TapAlreadyTappedError, TapAlreadyUnshallowError # rubocop:disable Lint/HandleExceptions
