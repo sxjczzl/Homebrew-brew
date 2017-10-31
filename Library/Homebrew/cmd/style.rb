@@ -15,6 +15,8 @@
 #:
 #:    If `--except-cops` is passed, the given Rubocop cop(s)' checks would be skipped.
 #:
+#:    If `--staged` is passed, perform check of files staged for commit.
+#:
 #:    Exits with a non-zero status if any style violations are found.
 
 require "utils"
@@ -35,6 +37,15 @@ module Homebrew
       ARGV.formulae.map(&:path)
     end
 
+    # `--staged`: detect staged files
+    if ARGV.include? "--staged"
+      staged = `git -C "#{HOMEBREW_REPOSITORY}" diff --cached --name-only`.split
+      unless staged.empty?
+        target = [] if target.nil?
+        target |= staged.map { |s| s.insert(0, "#{HOMEBREW_REPOSITORY}/") }
+      end
+    end
+
     only_cops = ARGV.value("only-cops").to_s.split(",")
     except_cops = ARGV.value("except-cops").to_s.split(",")
     if !only_cops.empty? && !except_cops.empty?
@@ -52,7 +63,24 @@ module Homebrew
                                  NewFormulaAudit]
     end
 
+    # `--staged`: record unstaged changes to staged files and temporary remove them
+    if ARGV.include?("--staged")
+      diff = `git -C "#{HOMEBREW_REPOSITORY}" diff`.split
+      unstaged_changes = !diff.empty?
+      if unstaged_changes
+        tf = Tempfile.new(%w[unstaged_changes .diff], HOMEBREW_TEMP)
+        tf.write(diff)
+        tf.close
+        quiet_system "git", "-C", HOMEBREW_REPOSITORY.to_s, "checkout", "--", *staged
+      end
+    end
+
     Homebrew.failed = check_style_and_print(target, options)
+
+    # `--staged`: restore unstaged changes to staged files
+    return unless ARGV.include?("--staged") && unstaged_changes
+    quiet_system "git", "-C", HOMEBREW_REPOSITORY.to_s, "apply", tf.path
+    Pathname.new(tf).unlink
   end
 
   # Checks style for a list of files, printing simple RuboCop output.
