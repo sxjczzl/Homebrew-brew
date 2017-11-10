@@ -152,6 +152,11 @@ class Sandbox
           (regex #"^/dev/ttys?[0-9]*$")
           )
       (deny file-write*) ; deny non-whitelist file write operations
+      (deny file-read*
+          (regex #"^/usr/local/bin.*$")
+          (regex #"^/usr/local/include.*$")
+          (regex #"^/usr/local/lib.*$")
+      )
       (allow process-exec
           (literal "/bin/ps")
           (with no-sandbox)
