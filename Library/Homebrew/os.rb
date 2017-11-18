@@ -1,3 +1,4 @@
+require "PATH"
 require "rbconfig"
 
 module OS
@@ -20,8 +21,12 @@ module OS
       ISSUES_URL = "https://docs.brew.sh/Troubleshooting.html".freeze
     end
     PATH_OPEN = "/usr/bin/open".freeze
+    SYSTEM_PATH = PATH.new("/usr/bin", "/bin").freeze
   elsif OS.linux?
     ISSUES_URL = "https://github.com/Linuxbrew/brew/wiki/troubleshooting".freeze
     PATH_OPEN = "xdg-open".freeze
+    SYSTEM_PATH = PATH.new(HOMEBREW_PREFIX/"bin", "/usr/bin", "/bin").freeze
+  else
+    SYSTEM_PATH = PATH.new(HOMEBREW_PREFIX/"bin", "/usr/bin", "/bin").freeze
   end
 end

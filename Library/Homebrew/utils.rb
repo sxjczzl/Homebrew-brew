@@ -268,7 +268,7 @@ module Homebrew
 end
 
 def with_system_path
-  with_env(PATH: PATH.new("/usr/bin", "/bin")) do
+  with_env(PATH: OS::SYSTEM_PATH) do
     yield
   end
 end
