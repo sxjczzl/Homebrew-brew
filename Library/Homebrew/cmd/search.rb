@@ -65,7 +65,7 @@ module Homebrew
       if $stdout.tty?
         count = local_results.length + tap_results.length
 
-        ohai "Searching blacklisted, migrated and deleted formulae..."
+        ohai "Searching blacklisted, migrated and deleted formulas..."
         if reason = Homebrew::MissingFormula.reason(query, silent: true)
           if count.positive?
             puts
