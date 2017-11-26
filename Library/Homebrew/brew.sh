@@ -110,16 +110,8 @@ then
   # Don't change this from Mac OS X to match what macOS itself does in Safari on 10.12
   HOMEBREW_OS_USER_AGENT_VERSION="Mac OS X $HOMEBREW_MACOS_VERSION"
 
-  printf -v HOMEBREW_MACOS_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_MACOS_VERSION//./ }
-  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101000" ]]
-  then
-    HOMEBREW_SYSTEM_CURL_TOO_OLD="1"
-  fi
-
-  # The system Curl is too old for some modern HTTPS certificates on
-  # older macOS versions.
-  if [[ -n "$HOMEBREW_SYSTEM_CURL_TOO_OLD" &&
-        -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]]
+  # Use local Curl by default to support ProxyChains-NG.
+  if [[ -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]]
   then
     HOMEBREW_CURL="$HOMEBREW_PREFIX/opt/curl/bin/curl"
   fi

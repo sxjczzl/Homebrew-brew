@@ -34,7 +34,7 @@ describe Hbc::DSL::Appcast do
   describe "#calculate_checkpoint" do
     before do
       expect(Hbc::SystemCommand).to receive(:run) do |executable, **options|
-        expect(executable).to eq "/usr/bin/curl"
+        expect(executable).to eq("/usr/bin/curl").or eq("#{ENV["HOMEBREW_PREFIX"]}/opt/curl/bin/curl")
         expect(options[:args]).to include(*cmd_args)
         expect(options[:print_stderr]).to be false
         cmd_result
