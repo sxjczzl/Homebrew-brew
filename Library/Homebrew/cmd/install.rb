@@ -80,7 +80,7 @@ module Homebrew
     unless ARGV.force?
       ARGV.named.each do |name|
         next if File.exist?(name)
-        if name !~ HOMEBREW_TAP_FORMULA_REGEX && name !~ HOMEBREW_CASK_TAP_CASK_REGEX
+        if name !~ HOMEBREW_TAP_FORMULA_REGEX
           next
         end
         tap = Tap.fetch(Regexp.last_match(1), Regexp.last_match(2))
@@ -90,18 +90,6 @@ module Homebrew
 
     begin
       formulae = []
-
-      unless ARGV.casks.empty?
-        args = []
-        args << "--force" if ARGV.force?
-        args << "--debug" if ARGV.debug?
-        args << "--verbose" if ARGV.verbose?
-
-        ARGV.casks.each do |c|
-          ohai "brew cask install #{c} #{args.join " "}"
-          system("#{HOMEBREW_PREFIX}/bin/brew", "cask", "install", c, *args)
-        end
-      end
 
       # if the user's flags will prevent bottle only-installations when no
       # developer tools are available, we need to stop them early on

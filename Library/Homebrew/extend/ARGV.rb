@@ -84,10 +84,6 @@ module HomebrewArgvExtension
     end.uniq(&:name)
   end
 
-  def casks
-    @casks ||= downcased_unique_named.grep HOMEBREW_CASK_TAP_CASK_REGEX
-  end
-
   def kegs
     require "keg"
     require "formula"
