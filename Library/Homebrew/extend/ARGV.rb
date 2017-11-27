@@ -40,7 +40,7 @@ module HomebrewArgvExtension
 
   def formulae
     require "formula"
-    @formulae ||= (downcased_unique_named - casks).map do |name|
+    @formulae ||= downcased_unique_named.map do |name|
       if name.include?("/") || File.exist?(name)
         Formulary.factory(name, spec)
       else
@@ -51,7 +51,7 @@ module HomebrewArgvExtension
 
   def resolved_formulae
     require "formula"
-    @resolved_formulae ||= (downcased_unique_named - casks).map do |name|
+    @resolved_formulae ||= downcased_unique_named.map do |name|
       if name.include?("/") || File.exist?(name)
         f = Formulary.factory(name, spec)
         if f.any_version_installed?
@@ -82,10 +82,6 @@ module HomebrewArgvExtension
 
       f
     end.uniq(&:name)
-  end
-
-  def casks
-    @casks ||= downcased_unique_named.grep HOMEBREW_CASK_TAP_CASK_REGEX
   end
 
   def kegs

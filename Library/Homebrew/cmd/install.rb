@@ -91,18 +91,6 @@ module Homebrew
     begin
       formulae = []
 
-      unless ARGV.casks.empty?
-        args = []
-        args << "--force" if ARGV.force?
-        args << "--debug" if ARGV.debug?
-        args << "--verbose" if ARGV.verbose?
-
-        ARGV.casks.each do |c|
-          ohai "brew cask install #{c} #{args.join " "}"
-          system("#{HOMEBREW_PREFIX}/bin/brew", "cask", "install", c, *args)
-        end
-      end
-
       # if the user's flags will prevent bottle only-installations when no
       # developer tools are available, we need to stop them early on
       FormulaInstaller.prevent_build_flags unless DevelopmentTools.installed?
