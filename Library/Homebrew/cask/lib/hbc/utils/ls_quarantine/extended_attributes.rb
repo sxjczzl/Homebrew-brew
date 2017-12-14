@@ -51,11 +51,9 @@ module LSQuarantine
 
     private
 
-    XATTR_EXECUTABLE = Open3.capture2("which", "xattr")[0].chomp
+    XATTR_EXECUTABLE = "/usr/bin/xattr".freeze
 
     def command(*args)
-      raise StandardError, "xattr not installed." if XATTR_EXECUTABLE.empty?
-
       args.unshift("-s") unless @follow_symlinks
 
       out, error, status = Open3.capture3(XATTR_EXECUTABLE, *args, @file.path)

@@ -12,8 +12,8 @@ module Hbc
     attr_reader :cask, :name, :url, :uri_object, :version
 
     APP_NAME = "Homebrew-Cask".b.freeze
-    TYPE = format("%04d", (LSQuarantine::Database::TYPE_NUMBERS[:web_download]).freeze)
-    STATUS = format("%04d",  (81).freeze)
+    TYPE = format("%04d", (LSQuarantine::Database::TYPE_NUMBERS[:web_download])).freeze
+    STATUS = format("%04d", LSQuarantine::ExtendedAttribute::QUARANTINED_FILE).freeze
 
     def initialize(cask, command: SystemCommand)
       @cask       = cask
@@ -108,7 +108,9 @@ module Hbc
         begin
           LockFile.new(temporary_path.basename).with_lock do
             _fetch
-            LSQuarantine.add(temporary_path, type: TYPE, app_name: APP_NAME, title: @name, url: @url, status: STATUS) unless @cask.quarantine
+            if temporary_path.exist? && @cask.quarantine
+              LSQuarantine.add(temporary_path, type: TYPE, app_name: APP_NAME, title: @name, url: cask.homepage, status: STATUS) unless cask.quarantine
+            end
           end
         rescue ErrorDuringExecution
           # 33 == range not supported

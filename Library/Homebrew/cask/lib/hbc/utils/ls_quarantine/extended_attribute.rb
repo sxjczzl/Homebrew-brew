@@ -4,10 +4,12 @@ require "hbc/utils/ls_quarantine/extended_attributes"
 module LSQuarantine
   # class for reading and writing 'com.apple.quarantine' extended attribute
   class ExtendedAttribute
+    # These quarantine id's apply to the container (.zip, .app, etc.)
+    # Known constants 0x00, 0x20, 0x40 apply instead to the actual executable file
     QUARANTINE_TYPES = {
       unopened:  0x0000,
-      cancelled: 0x0020,
-      opened:    0x0040,
+      cancelled: 0x00A0,
+      opened:    0x00E0,
     }.freeze
 
     ATTRIBUTE_REGEX = /
@@ -16,6 +18,9 @@ module LSQuarantine
       (?<agent_name>.*)\;
       (?<event_identifier>.*)
     /x
+
+    # Empirically determined by downloading .dmg's, .zip's with Safari
+    QUARANTINED_FILE = 0x0081.freeze
 
     def initialize(file)
       @file = ExtendedAttributes.new(File.expand_path(file))
