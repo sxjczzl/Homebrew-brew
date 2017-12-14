@@ -107,7 +107,7 @@ module Hbc
         begin
           LockFile.new(temporary_path.basename).with_lock do
             _fetch
-            LSQuarantine.add(temporary_path, type: TYPE, agent: APP_NAME, title: @name, url: @url) if @cask.quarantine
+            LSQuarantine.add(temporary_path, type: TYPE, app_name: APP_NAME, title: @name, url: @url, status: STATUS) unless @cask.quarantine
           end
         rescue ErrorDuringExecution
           # 33 == range not supported

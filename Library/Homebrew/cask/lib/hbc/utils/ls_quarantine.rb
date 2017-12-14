@@ -4,7 +4,7 @@ require "hbc/utils/ls_quarantine/extended_attribute"
 module LSQuarantine
   module_function
 
-  def add(file, type: nil, app_name: nil, title: nil, url: nil, database_path: nil)
+  def add(file, type: nil, app_name: nil, title: nil, url: nil, status: ExtendedAttribute::QUARANTINE_TYPES[:unopened], database_path: nil)
     attribute = ExtendedAttribute.new(file)
     database  = Database.new(database_path)
 
@@ -13,14 +13,15 @@ module LSQuarantine
     timestamp = Time.now
 
     database_entry = {
-      "LSQuarantineAgentName" => APP_NAME,
+      "LSQuarantineTypeNumber" => type,
+      "LSQuarantineAgentName" => app_name,
       "LSQuarantineEventIdentifier" => uuid,
       "LSQuarantineTimeStamp" => timestamp,
       "LSQuarantineOriginTitle" => title,
       "LSQuarantineOriginURLString" => url,
     }
 
-    attribute.set(type, timestamp, agent: app_name, event_id: uuid) && database.insert(database_entry)
+    attribute.set(status, timestamp, agent: app_name, event_id: uuid) && database.insert(database_entry)
   end
 
   def remove(file, database_path: nil)
