@@ -80,12 +80,12 @@ module LSQuarantine
 
       database_entry = database_entry.each_with_object({}) do |(k, v), h|
         h[k] = map_database_entry(k, v,
-                                  ->(e) { e.nil? }, "NULL",
+                                  ->(e) { e.nil? }, "".freeze,
                                   ->(d) { datetime_to_timestamp(d).to_s },
                                   ->(u) { u.to_s })
       end
 
-      values = FIELDS.map { |field| "'#{database_entry.fetch(field, "NULL")}'" }.join(",")
+      values = FIELDS.map { |field| "'#{database_entry.fetch(field, "")}'" }.join(",")
 
       database_query("INSERT INTO #{TABLE} VALUES(#{values});")[1].success?
     end
