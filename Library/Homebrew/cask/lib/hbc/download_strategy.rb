@@ -1,4 +1,5 @@
 require "cgi"
+require "hbc/utils/ls_quarantine"
 
 # We abuse Homebrew's download strategies considerably here.
 # * Our downloader instances only invoke the fetch and
@@ -9,6 +10,9 @@ require "cgi"
 module Hbc
   class AbstractDownloadStrategy
     attr_reader :cask, :name, :url, :uri_object, :version
+
+    APP_NAME = "Homebrew-Cask".b.freeze
+    TYPE = format("%04d", (LSQuarantine::Database::TYPE_NUMBERS[:web_download] | LSQuarantine::ExtendedAttribute::QUARANTINE_TYPES[:unopened]).freeze)
 
     def initialize(cask, command: SystemCommand)
       @cask       = cask
@@ -103,6 +107,7 @@ module Hbc
         begin
           LockFile.new(temporary_path.basename).with_lock do
             _fetch
+            LSQuarantine.add(temporary_path, type: TYPE, agent: APP_NAME, title: @name, url: @url) if @cask.quarantine
           end
         rescue ErrorDuringExecution
           # 33 == range not supported
