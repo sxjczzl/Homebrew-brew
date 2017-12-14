@@ -12,7 +12,8 @@ module Hbc
     attr_reader :cask, :name, :url, :uri_object, :version
 
     APP_NAME = "Homebrew-Cask".b.freeze
-    TYPE = format("%04d", (LSQuarantine::Database::TYPE_NUMBERS[:web_download] | LSQuarantine::ExtendedAttribute::QUARANTINE_TYPES[:unopened]).freeze)
+    TYPE = format("%04d", (LSQuarantine::Database::TYPE_NUMBERS[:web_download]).freeze)
+    STATUS = format("%04d",  (81).freeze)
 
     def initialize(cask, command: SystemCommand)
       @cask       = cask
