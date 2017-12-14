@@ -23,6 +23,7 @@ module Hbc
         installation_info(cask)
         repo_info(cask)
         name_info(cask)
+        quarantine_info(cask)
         language_info(cask)
         artifact_info(cask)
         Installer.print_caveats(cask)
@@ -30,6 +31,10 @@ module Hbc
 
       def self.formatted_url(url)
         "#{Tty.underline}#{url}#{Tty.reset}"
+      end
+
+      def self.quarantine_info(cask)
+        oh1 "Signed application" if cask.quarantine
       end
 
       def self.installation_info(cask)
