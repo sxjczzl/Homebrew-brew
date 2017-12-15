@@ -47,48 +47,46 @@ module Homebrew
 
       puts "Testing #{f.full_name}"
 
-      env = ENV.to_hash
+      with_env(ENV.to_hash) do
+        begin
+          args = %W[
+            #{RUBY_PATH}
+            -W0
+            -I #{HOMEBREW_LOAD_PATH}
+            --
+            #{HOMEBREW_LIBRARY_PATH}/test.rb
+            #{f.path}
+          ].concat(ARGV.options_only)
 
-      begin
-        args = %W[
-          #{RUBY_PATH}
-          -W0
-          -I #{HOMEBREW_LOAD_PATH}
-          --
-          #{HOMEBREW_LIBRARY_PATH}/test.rb
-          #{f.path}
-        ].concat(ARGV.options_only)
-
-        if f.head?
-          args << "--HEAD"
-        elsif f.devel?
-          args << "--devel"
-        end
-
-        Utils.safe_fork do
-          if Sandbox.test?
-            sandbox = Sandbox.new
-            f.logs.mkpath
-            sandbox.record_log(f.logs/"test.sandbox.log")
-            sandbox.allow_write_temp_and_cache
-            sandbox.allow_write_log(f)
-            sandbox.allow_write_xcode
-            sandbox.allow_write_path(HOMEBREW_PREFIX/"var/cache")
-            sandbox.allow_write_path(HOMEBREW_PREFIX/"var/log")
-            sandbox.allow_write_path(HOMEBREW_PREFIX/"var/run")
-            sandbox.exec(*args)
-          else
-            exec(*args)
+          if f.head?
+            args << "--HEAD"
+          elsif f.devel?
+            args << "--devel"
           end
+
+          Utils.safe_fork do
+            if Sandbox.test?
+              sandbox = Sandbox.new
+              f.logs.mkpath
+              sandbox.record_log(f.logs/"test.sandbox.log")
+              sandbox.allow_write_temp_and_cache
+              sandbox.allow_write_log(f)
+              sandbox.allow_write_xcode
+              sandbox.allow_write_path(HOMEBREW_PREFIX/"var/cache")
+              sandbox.allow_write_path(HOMEBREW_PREFIX/"var/log")
+              sandbox.allow_write_path(HOMEBREW_PREFIX/"var/run")
+              sandbox.exec(*args)
+            else
+              exec(*args)
+            end
+          end
+        rescue ::Test::Unit::AssertionFailedError => e
+          ofail "#{f.full_name}: failed"
+          puts e.message
+        rescue Exception => e # rubocop:disable Lint/RescueException
+          ofail "#{f.full_name}: failed"
+          puts e, e.backtrace
         end
-      rescue ::Test::Unit::AssertionFailedError => e
-        ofail "#{f.full_name}: failed"
-        puts e.message
-      rescue Exception => e # rubocop:disable Lint/RescueException
-        ofail "#{f.full_name}: failed"
-        puts e, e.backtrace
-      ensure
-        ENV.replace(env)
       end
     end
   end
