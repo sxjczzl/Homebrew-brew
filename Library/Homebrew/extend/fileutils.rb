@@ -134,9 +134,9 @@ module FileUtils
 
   # Run `xcodebuild` without Homebrew's compiler environment variables set.
   def xcodebuild(*args)
-    removed = ENV.remove_cc_etc
-    system "xcodebuild", *args
-  ensure
-    ENV.update(removed)
+    with_env(ENV.to_hash) do
+      ENV.remove_cc_etc
+      system "xcodebuild", *args
+    end
   end
 end

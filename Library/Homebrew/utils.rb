@@ -547,7 +547,7 @@ def with_env(hash)
 
     yield if block_given?
   ensure
-    ENV.update(old_values)
+    ENV.replace(old_values)
   end
 end
 
