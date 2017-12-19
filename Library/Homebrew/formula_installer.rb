@@ -449,11 +449,11 @@ class FormulaInstaller
           Requirement.prune
         elsif req.build? && use_default_formula && req_dependency&.installed?
           Requirement.prune
+        elsif req.satisfied?
+          Requirement.prune
         elsif install_requirement_formula?(req_dependency, req, dependent, install_bottle_for_dependent)
           deps.unshift(req_dependency)
           formulae.unshift(req_dependency.to_formula)
-          Requirement.prune
-        elsif req.satisfied?
           Requirement.prune
         elsif !runtime_requirements.include?(req) && install_bottle_for_dependent
           Requirement.prune
