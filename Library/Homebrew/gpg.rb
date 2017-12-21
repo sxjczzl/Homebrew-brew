@@ -1,26 +1,10 @@
-require "utils"
-
 class Gpg
-  def self.find_gpg(executable)
-    which_all(executable).detect do |gpg|
-      gpg_short_version = Utils.popen_read(gpg, "--version")[/\d\.\d/, 0]
-      next unless gpg_short_version
-      gpg_version = Version.create(gpg_short_version.to_s)
-      @version = gpg_version
-      gpg_version >= Version.create("2.0")
-    end
+  def self.available?
+    File.executable?(GPG2Requirement.new.executable.to_s)
   end
 
   def self.executable
-    find_gpg("gpg") || find_gpg("gpg2")
-  end
-
-  def self.available?
-    File.executable?(executable.to_s)
-  end
-
-  def self.version
-    @version if available?
+    GPG2Requirement.new.executable
   end
 
   def self.create_test_key(path)
