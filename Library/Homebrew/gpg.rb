@@ -2,12 +2,14 @@ require "utils"
 
 class Gpg
   def self.find_gpg(executable)
-    which_all(executable).detect do |gpg|
-      gpg_short_version = Utils.popen_read(gpg, "--version")[/\d\.\d/, 0]
-      next unless gpg_short_version
-      gpg_version = Version.create(gpg_short_version.to_s)
-      @version = gpg_version
-      gpg_version >= Version.create("2.0")
+    with_homebrew_path do
+      which_all(executable).detect do |gpg|
+        gpg_short_version = Utils.popen_read(gpg, "--version")[/\d\.\d/, 0]
+        next unless gpg_short_version
+        gpg_version = Version.create(gpg_short_version.to_s)
+        @version = gpg_version
+        gpg_version >= Version.create("2.0")
+      end
     end
   end
 
