@@ -221,7 +221,7 @@ Homebrew-Cask is implemented as a external command for Homebrew. That means
 this project is entirely built upon the Homebrew infrastructure. For
 example, upgrades to the Homebrew-Cask tool are received through Homebrew:
 
-    brew update; brew upgrade; brew cleanup; brew cask cleanup
+    brew update; brew cask upgrade; brew cleanup; brew cask cleanup
 
 And updates to individual Cask definitions are received whenever you issue
 the Homebrew command:
