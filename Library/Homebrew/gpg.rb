@@ -4,7 +4,7 @@ module Gpg
   module_function
 
   def executable
-    which "gpg"
+    with_homebrew_path { which("gpg") }
   end
 
   def available?
