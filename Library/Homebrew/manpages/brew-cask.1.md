@@ -116,6 +116,9 @@ names, and other aspects of this manual are still subject to change.
     Uninstall the given Cask. With `--force`, uninstall even if the Cask
     does not appear to be present.
 
+  * `upgrade` [--force] <token> [ <token> ... ]:
+    Upgrade the given Cask identified by <token>. If no tokens are given on the command line, all Casks are upgraded, if possible.
+
   * `zap` <token> [ <token> ... ]:
     Unconditionally remove _all_ files associated with the given Cask.
 
@@ -218,7 +221,7 @@ Homebrew-Cask is implemented as a external command for Homebrew. That means
 this project is entirely built upon the Homebrew infrastructure. For
 example, upgrades to the Homebrew-Cask tool are received through Homebrew:
 
-    brew update; brew cleanup; brew cask cleanup
+    brew update; brew upgrade; brew cleanup; brew cask cleanup
 
 And updates to individual Cask definitions are received whenever you issue
 the Homebrew command:
