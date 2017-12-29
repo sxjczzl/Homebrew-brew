@@ -116,8 +116,8 @@ names, and other aspects of this manual are still subject to change.
     Uninstall the given Cask. With `--force`, uninstall even if the Cask
     does not appear to be present.
 
-  * `upgrade` [--force] <token> [ <token> ... ]:
-    Upgrade the given Cask identified by <token>. If no tokens are given on the command line, all Casks are upgraded, if possible.
+  * `upgrade` <token> [ <token> ... ]:
+    Upgrades the given Cask.
 
   * `zap` <token> [ <token> ... ]:
     Unconditionally remove _all_ files associated with the given Cask.
