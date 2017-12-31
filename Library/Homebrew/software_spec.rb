@@ -222,10 +222,26 @@ class SoftwareSpec
 
   def add_dep_option(dep)
     dep.option_names.each do |name|
+      next if !dep.optional? && !dep.recommended?
+
+      oldname = if dep.is_a?(Dependency)
+        formula = dep.to_formula
+        name = formula.name
+        formula.oldname
+      end
+
       if dep.optional? && !option_defined?("with-#{name}")
         options << Option.new("with-#{name}", "Build with #{name} support")
+        if oldname
+          deprecated_options << DeprecatedOption.new("with-#{oldname}",
+                                                     "with-#{name}")
+        end
       elsif dep.recommended? && !option_defined?("without-#{name}")
         options << Option.new("without-#{name}", "Build without #{name} support")
+        if oldname
+          deprecated_options << DeprecatedOption.new("without-#{oldname}",
+                                                     "without-#{name}")
+        end
       end
     end
   end
