@@ -5,8 +5,12 @@ then
 fi
 
 # Where we store built products; a Cellar in HOMEBREW_PREFIX (often /usr/local
-# for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY.
-if [[ -d "$HOMEBREW_REPOSITORY/Cellar" ]]
+# for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY or the
+# cellar is already defined via HOMEBREW_CELLAR.
+if [[ -n "$HOMEBREW_CELLAR" ]]
+then
+  :
+elif [[ -d "$HOMEBREW_REPOSITORY/Cellar" ]]
 then
   HOMEBREW_CELLAR="$HOMEBREW_REPOSITORY/Cellar"
 else
