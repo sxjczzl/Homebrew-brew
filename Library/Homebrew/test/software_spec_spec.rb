@@ -174,7 +174,7 @@ describe BottleSpecification do
     end
   end
 
-  %w[root_url prefix cellar rebuild].each do |method|
+  %w[root_url prefix cellar rebuild compression_type].each do |method|
     specify "##{method}" do
       object = Object.new
       subject.public_send(method, object)

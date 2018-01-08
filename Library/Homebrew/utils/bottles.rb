@@ -25,11 +25,11 @@ module Utils
       end
 
       def native_regex
-        /(\.#{Regexp.escape(tag.to_s)}\.bottle\.(\d+\.)?tar\.gz)$/o
+        /(\.#{Regexp.escape(tag.to_s)}\.bottle\.(\d+\.)?tar\.(?:gz|xz))$/o
       end
 
       def receipt_path(bottle_file)
-        path = Utils.popen_read("tar", "-tzf", bottle_file).lines.map(&:chomp).find do |line|
+        path = Utils.popen_read("tar", "-tf", bottle_file).lines.map(&:chomp).find do |line|
           line =~ %r{.+/.+/INSTALL_RECEIPT.json}
         end
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
@@ -38,7 +38,7 @@ module Utils
 
       def resolve_formula_names(bottle_file)
         receipt_file_path = receipt_path bottle_file
-        receipt_file = Utils.popen_read("tar", "-xOzf", bottle_file, receipt_file_path)
+        receipt_file = Utils.popen_read("tar", "-xOf", bottle_file, receipt_file_path)
         name = receipt_file_path.split("/").first
         tap = Tab.from_file_content(receipt_file, "#{bottle_file}/#{receipt_file_path}").tap
 
@@ -59,7 +59,7 @@ module Utils
           name: resolve_formula_names(bottle_file)[0])
         bottle_version = resolve_version bottle_file
         formula_path = "#{name}/#{bottle_version}/.brew/#{name}.rb"
-        contents = Utils.popen_read "tar", "-xOzf", bottle_file, formula_path
+        contents = Utils.popen_read "tar", "-xOf", bottle_file, formula_path
         raise BottleFormulaUnavailableError.new(bottle_file, formula_path) unless $CHILD_STATUS.success?
         contents
       end

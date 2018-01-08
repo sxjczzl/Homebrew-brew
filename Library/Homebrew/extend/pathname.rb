@@ -64,7 +64,7 @@ class Pathname
   include DiskUsageExtension
 
   # @private
-  BOTTLE_EXTNAME_RX = /(\.[a-z0-9_]+\.bottle\.(\d+\.)?tar\.gz)$/
+  BOTTLE_EXTNAME_RX = /(\.[a-z0-9_]+\.bottle\.(\d+\.)?tar\.(?:gz|xz))$/
 
   # Moves a file from the original location to the {Pathname}'s.
   def install(*sources)
