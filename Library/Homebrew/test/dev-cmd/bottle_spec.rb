@@ -25,4 +25,24 @@ describe "brew bottle", :integration_test do
       FileUtils.rm_f Dir.glob("testball-0.1*.bottle.tar.gz")
     end
   end
+
+  it "builds an xz bottle for the given Formula" do
+    begin
+      expect { brew "install", "--build-bottle", testball }
+        .to be_a_success
+
+      setup_test_formula "testball", <<~EOS
+        bottle do
+          compression_type :xz
+        end
+      EOS
+
+      expect { brew "bottle", "--no-rebuild", "testball" }
+        .to output(/testball-0\.1.*\.bottle\.tar\.xz/).to_stdout
+        .and not_to_output.to_stderr
+        .and be_a_success
+    ensure
+      FileUtils.rm_f Dir.glob("testball-0.1*.bottle.tar.xz")
+    end
+  end
 end

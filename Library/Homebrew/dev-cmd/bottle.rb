@@ -245,7 +245,7 @@ module Homebrew
           mv tar_path, relocatable_tar_path
           case compression_type
           when :xz
-            safe_system "#{HOMEBREW_PREFIX}/opt/xz/bin/xz", "-f", relocatable_tar_path
+            safe_system "#{HOMEBREW_SHIMS_PATH}/super/xz", "-f", relocatable_tar_path
             tar_suffix = compression_type.to_s
           else
             safe_system "gzip", "-f", relocatable_tar_path

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+XZ="$(/usr/bin/which "$HOMEBREW_PREFIX/opt/xz/bin/xz" ||
+      echo /usr/bin/xz)"
+exec "$XZ" "$@"
