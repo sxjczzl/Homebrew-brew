@@ -191,7 +191,7 @@ module Homebrew
     end
 
     compression_type = :xz
-    compression_type = :gzip if ARGV.include? "--use-gzip"
+    compression_type = :gzip if ARGV.include?("--use-gzip") || f.name == "xz"
 
     Utils::Bottles.install_dependencies compression_type, ignore_tar: true
 
