@@ -119,6 +119,7 @@ module Formulary
       else
         @bottle_filename = Pathname(bottle_name).realpath
       end
+      Utils::Bottles.install_dependencies @bottle_filename.compression_type
       name, full_name = Utils::Bottles.resolve_formula_names @bottle_filename
       super name, Formulary.path(full_name)
     end

@@ -60,7 +60,9 @@ describe FormulaInstaller do
       bin = HOMEBREW_PREFIX/"bin"
       expect(bin).to be_a_directory
     end
+  end
 
+  specify "basic xz bottle install" do
     temporarily_install_bottle(TestballXzBottle.new) do |f|
       # Copied directly from formula_installer_spec.rb
       # as we expect the same behavior.

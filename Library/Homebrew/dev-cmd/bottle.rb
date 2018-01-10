@@ -190,7 +190,10 @@ module Homebrew
       rebuild = rebuilds.empty? ? 0 : rebuilds.max.to_i + 1
     end
 
-    compression_type = f.bottle_specification.compression_type
+    compression_type = :xz
+    compression_type = :gzip if ARGV.include? "--use-gzip"
+
+    Utils::Bottles.install_dependencies compression_type, ignore_tar: true
 
     filename = Bottle::Filename.create(f, Utils::Bottles.tag, rebuild, compression_type)
     bottle_path = Pathname.pwd/filename
@@ -358,6 +361,7 @@ module Homebrew
           "prefix" => bottle.prefix,
           "cellar" => bottle.cellar.to_s,
           "rebuild" => bottle.rebuild,
+          "compression_type" => bottle.compression_type,
           "tags" => {
             Utils::Bottles.tag.to_s => {
               "filename" => filename.to_s,
@@ -393,6 +397,7 @@ module Homebrew
       bottle.cellar cellar
       bottle.prefix bottle_hash["bottle"]["prefix"]
       bottle.rebuild bottle_hash["bottle"]["rebuild"]
+      bottle.compression_type = bottle_hash["bottle"]["compression_type"].to_sym
       bottle_hash["bottle"]["tags"].each do |tag, tag_hash|
         bottle.sha256 tag_hash["sha256"] => tag.to_sym
       end

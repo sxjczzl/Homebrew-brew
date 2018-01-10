@@ -29,16 +29,16 @@ module Utils
       end
 
       def receipt_path(bottle_file)
-        path = Utils.popen_read("tar", "-tf", bottle_file).lines.map(&:chomp).find do |line|
-          line =~ %r{.+/.+/INSTALL_RECEIPT.json}
-        end
+        command = tar_command "tf", bottle_file, "*/*/INSTALL_RECEIPT.json"
+        path = `#{command}`
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
         path
       end
 
       def resolve_formula_names(bottle_file)
         receipt_file_path = receipt_path bottle_file
-        receipt_file = Utils.popen_read("tar", "-xOf", bottle_file, receipt_file_path)
+        command = tar_command "xOf", bottle_file, receipt_file_path
+        receipt_file = `#{command}`
         name = receipt_file_path.split("/").first
         tap = Tab.from_file_content(receipt_file, "#{bottle_file}/#{receipt_file_path}").tap
 
@@ -59,9 +59,37 @@ module Utils
           name: resolve_formula_names(bottle_file)[0])
         bottle_version = resolve_version bottle_file
         formula_path = "#{name}/#{bottle_version}/.brew/#{name}.rb"
-        contents = Utils.popen_read "tar", "-xOf", bottle_file, formula_path
+        command = tar_command "xOf", bottle_file, formula_path
+        receipt_file = `#{command}`
         raise BottleFormulaUnavailableError.new(bottle_file, formula_path) unless $CHILD_STATUS.success?
         contents
+      end
+
+      def install_dependencies(compression_type, ignore_tar: false)
+        return unless compression_type == :xz
+        return unless ignore_tar || DependencyCollector.tar_needs_xz_dependency?
+        f = Formula["xz"]
+        return if f.optlinked?
+        fi = FormulaInstaller.new(f)
+        fi.installed_as_dependency = true
+        fi.installed_on_request    = false
+        fi.prelude
+        oh1 "Installing bottle dependency: #{Formatter.identifier(f.name)}"
+        fi.install
+        fi.finish
+      end
+
+      private
+
+      def xzpath
+        "#{HOMEBREW_PREFIX}/opt/xz/bin/xz"
+      end
+
+      def tar_command(flags, bottle_file, *args)
+        command = "tar #{flags} #{bottle_file} #{args * " "}"
+        return command unless bottle_file.compression_type == :xz && DependencyCollector.tar_needs_xz_dependency?
+        command.gsub! bottle_file, "-"
+        "#{xzpath} -dc #{bottle_file} | #{command}"
       end
     end
 
