@@ -17,7 +17,7 @@ describe "brew bottle", :integration_test do
         FileUtils.ln_s "not-exist", "symlink"
       end
 
-      expect { brew "bottle", "--no-rebuild" , "--use-gzip", "testball" }
+      expect { brew "bottle", "--no-rebuild", "--use-gzip", "testball" }
         .to output(/testball-0\.1.*\.bottle\.tar\.gz/).to_stdout
         .and not_to_output.to_stderr
         .and be_a_success

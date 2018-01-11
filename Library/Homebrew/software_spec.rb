@@ -257,7 +257,7 @@ class Bottle
       @rebuild = rebuild
       @compression_suffix = case compression_type
       when :xz
-        compression_type.to_s
+        "xz"
       else
         "gz"
       end

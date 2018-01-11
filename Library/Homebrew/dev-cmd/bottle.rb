@@ -190,10 +190,11 @@ module Homebrew
       rebuild = rebuilds.empty? ? 0 : rebuilds.max.to_i + 1
     end
 
-    compression_type = :xz
-    compression_type = :gzip if ARGV.include?("--use-gzip") || f.name == "xz"
-
-    Utils::Bottles.install_dependencies compression_type, ignore_tar: true
+    if ARGV.include?("--use-gzip") || f.name == "xz"
+      compression_type = :gzip
+    else
+      compression_type = :xz
+    end
 
     filename = Bottle::Filename.create(f, Utils::Bottles.tag, rebuild, compression_type)
     bottle_path = Pathname.pwd/filename
@@ -203,6 +204,10 @@ module Homebrew
     prefix = HOMEBREW_PREFIX.to_s
     repository = HOMEBREW_REPOSITORY.to_s
     cellar = HOMEBREW_CELLAR.to_s
+
+    if compression_type == :xz && !which("xz", ENV["HOMEBREW_PATH"])
+      return ofail "xz binary not found. Please try brew install xz"
+    end
 
     ohai "Bottling #{filename}..."
 
@@ -246,13 +251,14 @@ module Homebrew
           tar_path.utime(tab.source_modified_time, tab.source_modified_time)
           relocatable_tar_path = "#{f}-bottle.tar"
           mv tar_path, relocatable_tar_path
+          compression_bin = "gzip"
+          tar_suffix = "gz"
           case compression_type
           when :xz
-            safe_system "#{HOMEBREW_PREFIX}/opt/xz/bin/xz", "-f", relocatable_tar_path
-            tar_suffix = compression_type.to_s
-          else
-            safe_system "gzip", "-f", relocatable_tar_path
-            tar_suffix = "gz"
+            compression_bin = tar_suffix = "xz"
+          end
+          with_homebrew_path do
+            safe_system compression_bin, "-f", relocatable_tar_path
           end
           mv "#{relocatable_tar_path}.#{tar_suffix}", bottle_path
         end
@@ -324,7 +330,7 @@ module Homebrew
 
     old_spec = f.bottle_specification
     if ARGV.include?("--keep-old") && !old_spec.checksums.empty?
-      mismatches = [:root_url, :prefix, :cellar, :rebuild].reject do |key|
+      mismatches = [:root_url, :prefix, :cellar, :rebuild, :compression_type].reject do |key|
         old_spec.send(key) == bottle.send(key)
       end
       mismatches.delete(:cellar) if old_spec.cellar == :any && bottle.cellar == :any_skip_relocation
