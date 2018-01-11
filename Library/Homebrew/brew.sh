@@ -3,7 +3,7 @@ case "$(locale | grep LANG= | sed 's/LANG=//')" in
   *UTF-8*)
     LC_ALL=$(locale | grep LANG= | sed 's/LANG=//')
     ;;
-  default)
+  *)
 	LC_ALL="en_US.UTF-8"
 	;;
 esac
