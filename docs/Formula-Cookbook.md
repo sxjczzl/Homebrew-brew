@@ -616,7 +616,7 @@ prefix.install "file1", "file2"
 Or everything:
 
 ```ruby
-prefix.install Dir["output/*"]
+prefix.install "output/*"
 ```
 
 Generally we'd rather you were specific about what files or directories need to be installed rather than installing everything.
@@ -646,7 +646,7 @@ Generally we'd rather you were specific about what files or directories need to 
 These can be used, for instance, in code such as
 
 ```ruby
-bin.install Dir["output/*"]
+bin.install "output/*"
 ```
 
 to move binaries into their correct location into the Cellar, and
