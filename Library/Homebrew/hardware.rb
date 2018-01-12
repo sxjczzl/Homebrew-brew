@@ -72,7 +72,7 @@ module Hardware
 
       def cores
         return @cores if @cores
-        @cores = Utils.popen_read("getconf", "_NPROCESSORS_ONLN").chomp.to_i
+        @cores = Utils.popen_read("sysctl", "-n", "hw.physicalcpu").chomp.to_i
         @cores = 1 unless $CHILD_STATUS.success?
         @cores
       end
