@@ -30,7 +30,7 @@ module Utils
 
       def receipt_path(bottle_file)
         args = ["tf", bottle_file]
-        args << "--wildcards" if ENV["HOMEBREW_SYSTEM"] == "Linux"
+        args << "--wildcards" if OS.linux?
         args << "*/*/INSTALL_RECEIPT.json"
         path = Utils.popen_read tar_command(*args)
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
