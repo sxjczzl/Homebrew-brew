@@ -37,7 +37,7 @@ describe "brew bottle", :integration_test do
         end
       EOS
 
-      expect { brew "bottle", "--no-rebuild", "testball" }
+      expect { brew "bottle", "--no-rebuild", "testball", {"PATH" => ENV["HOMEBREW_PATH"]} }
         .to output(/testball-0\.1.*\.bottle\.tar\.xz/).to_stdout
         .and not_to_output.to_stderr
         .and be_a_success
