@@ -1,8 +1,13 @@
 # Force UTF-8 to avoid encoding issues for users with broken locale settings.
-if [[ "$(locale charmap 2>/dev/null)" != "UTF-8" ]]
-then
-  export LC_ALL="en_US.UTF-8"
-fi
+case "$(locale | grep LANG= | sed 's/LANG=//')" in 
+  *UTF-8*)
+    LC_ALL=$(locale | grep LANG= | sed 's/LANG=//')
+    ;;
+  *)
+	LC_ALL="en_US.UTF-8"
+	;;
+esac
+
 
 # Where we store built products; a Cellar in HOMEBREW_PREFIX (often /usr/local
 # for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY.
