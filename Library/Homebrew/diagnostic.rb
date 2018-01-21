@@ -346,6 +346,9 @@ module Homebrew
       end
 
       def check_missing_prefix_directories
+        path = HOMEBREW_PREFIX/('.brew-detect' + Time.now.to_i.to_s)
+        Dir.mkdir(path) and Dir.rmdir(path) # and return nil for all-ok
+      rescue SystemCallError # what mkdir/rmdir throws
         missing_dirs = []
         Keg::ALL_TOP_LEVEL_DIRECTORIES.each do |dir|
           path = HOMEBREW_PREFIX/dir
