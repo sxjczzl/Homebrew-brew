@@ -345,6 +345,23 @@ module Homebrew
         EOS
       end
 
+      def check_missing_prefix_directories
+        missing_dirs = []
+        Keg::ALL_TOP_LEVEL_DIRECTORIES.each do |dir|
+          path = HOMEBREW_PREFIX/dir
+          missing_dirs << path unless path.exist?
+        end
+
+        return if missing_dirs.empty?
+
+        <<~EOS
+          The following directories are missing:
+          #{missing_dirs.join("\n")}
+          You should create them:
+            sudo mkdir -p #{missing_dirs.join(" ")}
+        EOS
+      end
+
       def check_access_site_packages
         return unless Language::Python.homebrew_site_packages.exist?
         return if Language::Python.homebrew_site_packages.writable_real?
