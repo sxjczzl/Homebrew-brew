@@ -320,7 +320,8 @@ module Homebrew
       end
 
       def check_access_prefix_directories
-        existing_dirs = Keg::ALL_TOP_LEVEL_PATHS.select(&:exist?)
+        existing_dirs = Keg::ALL_TOP_LEVEL_PATHS.select(&:exist?) +
+          Keg::ALL_SHARE_PATHS.select(&:exist?)
         not_writable_dirs = existing_dirs.reject(&:writable_real?)
         return if not_writable_dirs.empty?
 

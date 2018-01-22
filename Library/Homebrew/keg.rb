@@ -67,7 +67,6 @@ class Keg
   INFOFILE_RX = %r{info/([^.].*?\.info|dir)$}
   TOP_LEVEL_DIRECTORIES = %w[bin etc include lib sbin share var Frameworks].freeze
   ALL_TOP_LEVEL_DIRECTORIES = (TOP_LEVEL_DIRECTORIES + %w[lib/pkgconfig share/locale share/man opt]).freeze
-  ALL_TOP_LEVEL_PATHS = ALL_TOP_LEVEL_DIRECTORIES.map { |dir| HOMEBREW_PREFIX/dir }
   PRUNEABLE_DIRECTORIES = %w[bin etc include lib sbin share opt Frameworks LinkedKegs var/homebrew/linked].map do |dir|
     case dir
     when "LinkedKegs"
@@ -88,6 +87,9 @@ class Keg
     applications gnome gnome/help icons
     mime-info pixmaps sounds postgresql
   ].freeze
+
+  ALL_TOP_LEVEL_PATHS = ALL_TOP_LEVEL_DIRECTORIES.map { |dir| HOMEBREW_PREFIX/dir }
+  ALL_SHARE_PATHS = SHARE_PATHS.map { |dir| HOMEBREW_PREFIX/"share"/dir }
 
   # Given an array of kegs, this method will try to find some other kegs
   # that depend on them.
