@@ -320,8 +320,7 @@ module Homebrew
       end
 
       def check_access_prefix_directories
-        existing_dirs = Keg::ALL_TOP_LEVEL_PATHS.select(&:exist?) +
-          Keg::ALL_SHARE_PATHS.select(&:exist?)
+        existing_dirs = Keg::ALL_TOP_AND_SHARE_PATHS.select(&:exist?)
         not_writable_dirs = existing_dirs.reject(&:writable_real?)
         return if not_writable_dirs.empty?
 
@@ -357,7 +356,7 @@ module Homebrew
       def check_existing_prefix_directories_are_searchable
         return if HOMEBREW_PREFIX.to_s != "/usr/local"
 
-        existing_dirs = (Keg::ALL_TOP_LEVEL_PATHS + Keg::ALL_SHARE_PATHS).select(&:exist?)
+        existing_dirs = Keg::ALL_TOP_AND_SHARE_PATHS.select(&:exist?)
         not_searchable_dirs = existing_dirs.reject(&:executable_real?)
         return if not_searchable_dirs.empty?
 

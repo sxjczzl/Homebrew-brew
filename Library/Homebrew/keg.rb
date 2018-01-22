@@ -90,6 +90,7 @@ class Keg
 
   ALL_TOP_LEVEL_PATHS = ALL_TOP_LEVEL_DIRECTORIES.map { |dir| HOMEBREW_PREFIX/dir }
   ALL_SHARE_PATHS = SHARE_PATHS.map { |dir| HOMEBREW_PREFIX/"share"/dir }
+  ALL_TOP_AND_SHARE_PATHS = ALL_TOP_LEVEL_PATHS + ALL_SHARE_PATHS
 
   # Given an array of kegs, this method will try to find some other kegs
   # that depend on them.
