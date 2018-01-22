@@ -1108,6 +1108,12 @@ module Homebrew
       def all
         methods.map(&:to_s).grep(/^check_/)
       end
+
+      def permission_commands_for(dirs)
+        dirs.compact.each_slice(4).map do |slice|
+          "sudo chmod -R u+rwx,g+rwx #{slice.join(" ")}"
+        end
+      end
     end
   end
 end
