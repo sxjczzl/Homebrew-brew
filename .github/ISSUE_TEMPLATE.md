@@ -1,4 +1,4 @@
-**Please note: Follow the rules, or we'll close without comment. Repeat offenders will be blocked from submitting issues here. For cleanliness we only keep open what we plan to work on, and we normally comment and close your issue, possibly asking for a PR. Thanks for making Homebrew better!**
+**Please note: For cleanliness we only keep open what we plan to work on, and we normally comment and close your issue, possibly asking for a PR. Follow the rules, or we'll close without comment. Repeat offenders will be blocked from submitting issues here. Thanks for making Homebrew better!**
 
 # Fill in this checklist
   [X] Read the note above
