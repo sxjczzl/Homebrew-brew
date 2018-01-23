@@ -1,10 +1,11 @@
 **Please note: Follow the rules, or we'll close without comment. Repeat offenders will be blocked from submitting issues here. For cleanliness we only keep open what we plan to work on, and we normally comment and close your issue, possibly asking for a PR. Thanks for making Homebrew better!**
 
-# Please always follow these steps:
-- [ ] Confirmed this is a problem with running a `brew` command and not `brew install`ing or the post-install behaviour of one or more formulae? If it's a formulae-specific problem please file this issue at the relevant tap e.g. for Homebrew/homebrew-core https://github.com/Homebrew/homebrew-core/issues/new
-- [ ] Ran `brew update` and retried your prior step?
-- [ ] Ran `brew doctor`, fixed all issues and retried your prior step?
-- [ ] Ran `brew config` and `brew doctor` and included their output with your issue?
+# Fill in this checklist
+  [X] Read the note above
+- [ ] Confirm it's a problem with a `brew` command and not from `brew install`ing (see https://docs.brew.sh/Troubleshooting.html), or [installer issues](https://github.com/Homebrew/install/issues/new))
+- [ ] Run `brew update` and retry
+- [ ] Run `brew doctor`, fix all issues and retry
+- [ ] Run `brew config` and `brew doctor` and include their output (gists welcome)
 
 To help us debug your issue please explain:
 - What you were trying to do (and why)
