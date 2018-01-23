@@ -12,9 +12,8 @@ To help us debug your issue please explain:
 - What you expected to happen
 - Step-by-step reproduction instructions (by running `brew` commands)
 
-# Features
-Please replace this section with:
+# Adding a feature?
+Then fill in below:
 - a detailed description of your proposed feature
-- the motivation for the feature
-- how the feature would be relevant to at least 90% of Homebrew users
+- why 90% of Homebrew users would want this
 - what alternatives to the feature you have considered
