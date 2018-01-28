@@ -53,6 +53,9 @@ module Hbc
         @content = IO.read(path)
 
         super
+      rescue
+        onoe "cannot load #{@path}"
+        raise
       end
 
       private
