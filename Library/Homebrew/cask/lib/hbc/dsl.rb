@@ -65,6 +65,7 @@ module Hbc
       :language,
       :languages,
       :name,
+      :quarantine,
       :sha256,
       :staged_path,
       :url,
@@ -180,6 +181,15 @@ module Hbc
             end
           end
         end
+      end
+    end
+
+    def quarantine(arg = nil)
+      set_unique_stanza(:quarantine, arg.nil?) do
+        unless arg.is_a(Boolean)
+          raise CaskInvalidError.new(cask, "invalid 'quarantine' value: #{arg.inspect}")
+        end
+        arg
       end
     end
 

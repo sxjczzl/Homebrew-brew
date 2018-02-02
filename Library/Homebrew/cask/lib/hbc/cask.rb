@@ -114,6 +114,7 @@ module Hbc
         :gpg,
         :accessibility_access,
         :auto_updates,
+        :quarantine,
       ].each do |method|
         odebug "Cask instance method '#{method}':", send(method).to_yaml
       end

@@ -12,6 +12,7 @@ describe "download strategies", :cask do
 
     before do
       allow(downloader.temporary_path).to receive(:rename)
+      allow(cask).to receive(:quarantine)
     end
 
     it "properly assigns a name and uri based on the Cask" do
@@ -100,6 +101,7 @@ describe "download strategies", :cask do
 
     before do
       allow(downloader.temporary_path).to receive(:rename)
+      allow(cask).to receive(:quarantine)
     end
 
     context "with :using and :data specified" do
