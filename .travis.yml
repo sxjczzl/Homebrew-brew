@@ -40,6 +40,7 @@ before_install:
 
 script:
   - brew test-bot
+  - brew xz-benchmark
 
 notifications:
   slack: machomebrew:1XNF7p1JRCdBUuKaeSwsWEc1
