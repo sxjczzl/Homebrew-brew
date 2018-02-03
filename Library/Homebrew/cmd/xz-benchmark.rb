@@ -4,8 +4,8 @@ require "resource"
 require "checksum"
 
 module Homebrew
-  XZ_BOTTLE_PREFIX = "https://dl.bintray.com/kabel/bottles-xz/"
-  BOOST_HIGH_SIERRA_BOTTLE = "boost-1.66.0.high_sierra.bottle.tar"
+  XZ_BOTTLE_PREFIX = "https://dl.bintray.com/kabel/bottles-xz/".freeze
+  BOOST_HIGH_SIERRA_BOTTLE = "boost-1.66.0.high_sierra.bottle.tar".freeze
 
   module_function
 
@@ -29,9 +29,9 @@ module Homebrew
 
     Benchmark.bm(10, ">xz", ">gzip") do |x|
       xz_fetch = x.report("xz:fetch") { nostdout { xz_resource.fetch } }
-      xz_stage = x.report("xz:stage") { nostdout { xz_resource.stage { } } }
+      xz_stage = x.report("xz:stage") { nostdout { xz_resource.stage {} } }
       gzip_fetch = x.report("gzip:fetch") { nostdout { gzip_resource.fetch } }
-      gzip_stage = x.report("gzip:stage") { nostdout { gzip_resource.stage { } } }
+      gzip_stage = x.report("gzip:stage") { nostdout { gzip_resource.stage {} } }
 
       xz_total = xz_fetch + xz_stage
       gzip_total = gzip_fetch + gzip_stage

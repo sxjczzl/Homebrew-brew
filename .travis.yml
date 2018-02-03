@@ -39,8 +39,8 @@ before_install:
     fi
 
 script:
-  - brew test-bot
   - brew xz-benchmark
+  - brew test-bot
 
 notifications:
   slack: machomebrew:1XNF7p1JRCdBUuKaeSwsWEc1
