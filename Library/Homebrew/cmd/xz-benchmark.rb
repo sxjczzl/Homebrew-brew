@@ -1,11 +1,16 @@
 require "benchmark"
-require "formula"
 require "resource"
 require "checksum"
 
 module Homebrew
   XZ_BOTTLE_PREFIX = "https://dl.bintray.com/kabel/bottles-xz/".freeze
   BOOST_HIGH_SIERRA_BOTTLE = "boost-1.66.0.high_sierra.bottle.tar".freeze
+
+  module BoostOwner
+    def name
+      "boost"
+    end
+  end
 
   module_function
 
@@ -20,7 +25,7 @@ module Homebrew
     gzip_resource.checksum = Checksum.new "sha256", "78cb090c515e20aa7307c6619a055ffd8858cc6a3bd756958edbf34f463e4bc1"
 
     xz_resource.name = gzip_resource.name = "benchmark"
-    xz_resource.owner = gzip_resource.owner = Formulary.factory "boost"
+    xz_resource.owner = gzip_resource.owner = BoostOwner
     xz_resource.download_strategy = gzip_resource.download_strategy = CurlBottleDownloadStrategy
     xz_resource.version = gzip_resource.version = PkgVersion.new "1.66", 0
 
