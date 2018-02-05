@@ -54,6 +54,7 @@ before_install:
     fi
 
 script:
+  - brew xz-benchmark
   - brew test-bot
 
 notifications:

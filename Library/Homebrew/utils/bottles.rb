@@ -25,20 +25,21 @@ module Utils
       end
 
       def native_regex
-        /(\.#{Regexp.escape(tag.to_s)}\.bottle\.(\d+\.)?tar\.gz)$/o
+        /(\.#{Regexp.escape(tag.to_s)}\.bottle\.(\d+\.)?tar\.(?:gz|xz))$/o
       end
 
       def receipt_path(bottle_file)
-        path = Utils.popen_read("tar", "-tzf", bottle_file).lines.map(&:chomp).find do |line|
-          line =~ %r{.+/.+/INSTALL_RECEIPT.json}
-        end
+        args = ["tf", bottle_file]
+        args << "--wildcards" if OS.linux?
+        args << "*/*/INSTALL_RECEIPT.json"
+        path = Utils.popen_read tar_command(*args)
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
         path
       end
 
       def resolve_formula_names(bottle_file)
         receipt_file_path = receipt_path bottle_file
-        receipt_file = Utils.popen_read("tar", "-xOzf", bottle_file, receipt_file_path)
+        receipt_file = Utils.popen_read tar_command("xOf", bottle_file, receipt_file_path)
         name = receipt_file_path.split("/").first
         tap = Tab.from_file_content(receipt_file, "#{bottle_file}/#{receipt_file_path}").tap
 
@@ -59,9 +60,33 @@ module Utils
           name: resolve_formula_names(bottle_file)[0])
         bottle_version = resolve_version bottle_file
         formula_path = "#{name}/#{bottle_version}/.brew/#{name}.rb"
-        contents = Utils.popen_read "tar", "-xOzf", bottle_file, formula_path
+        contents = Utils.popen_read tar_command("xOf", bottle_file, formula_path)
         raise BottleFormulaUnavailableError.new(bottle_file, formula_path) unless $CHILD_STATUS.success?
         contents
+      end
+
+      def install_dependencies(compression_type)
+        return unless compression_type == :xz
+        return unless DependencyCollector.tar_needs_xz_dependency?
+        return if which "xz"
+        f = Formula["xz"]
+        return if f.optlinked?
+        fi = FormulaInstaller.new(f)
+        fi.installed_as_dependency = true
+        fi.installed_on_request    = false
+        fi.prelude
+        oh1 "Installing bottle dependency: #{Formatter.identifier(f.name)}"
+        fi.install
+        fi.finish
+      end
+
+      private
+
+      def tar_command(flags, bottle_file, *args)
+        command = "tar #{flags} #{bottle_file} #{args * " "}"
+        return command unless bottle_file.compression_type == :xz && DependencyCollector.tar_needs_xz_dependency?
+        command.gsub! bottle_file, "-"
+        "xz -dc #{bottle_file} | #{command}"
       end
     end
 

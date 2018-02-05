@@ -4,6 +4,7 @@ require "keg"
 require "tab"
 require "test/support/fixtures/testball"
 require "test/support/fixtures/testball_bottle"
+require "test/support/fixtures/testball_xz_bottle"
 
 describe FormulaInstaller do
   alias_matcher :pour_bottle, :be_pour_bottle
@@ -42,6 +43,27 @@ describe FormulaInstaller do
     allow(DevelopmentTools).to receive(:installed?).and_return(false)
 
     temporarily_install_bottle(TestballBottle.new) do |f|
+      # Copied directly from formula_installer_spec.rb
+      # as we expect the same behavior.
+
+      # Test that things made it into the Keg
+      expect(f.bin).to be_a_directory
+
+      expect(f.libexec).to be_a_directory
+
+      expect(f.prefix/"main.c").not_to exist
+
+      # Test that things made it into the Cellar
+      keg = Keg.new f.prefix
+      keg.link
+
+      bin = HOMEBREW_PREFIX/"bin"
+      expect(bin).to be_a_directory
+    end
+  end
+
+  specify "basic xz bottle install" do
+    temporarily_install_bottle(TestballXzBottle.new) do |f|
       # Copied directly from formula_installer_spec.rb
       # as we expect the same behavior.
 

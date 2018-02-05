@@ -50,6 +50,9 @@ BOTTLE_ERB = <<-EOS.freeze
     <% if rebuild.positive? %>
     rebuild <%= rebuild %>
     <% end %>
+    <% if compression_type != BottleSpecification::DEFAULT_COMPRESSION_TYPE %>
+    compression_type :<%= compression_type %>
+    <% end %>
     <% checksums.each do |checksum_type, checksum_values| %>
     <% checksum_values.each do |checksum_value| %>
     <% checksum, macos = checksum_value.shift %>
@@ -187,15 +190,24 @@ module Homebrew
       rebuild = rebuilds.empty? ? 0 : rebuilds.max.to_i + 1
     end
 
-    filename = Bottle::Filename.create(f, Utils::Bottles.tag, rebuild)
+    if ARGV.include?("--use-gzip") || f.name == "xz"
+      compression_type = :gzip
+    else
+      compression_type = :xz
+    end
+
+    filename = Bottle::Filename.create(f, Utils::Bottles.tag, rebuild, compression_type)
     bottle_path = Pathname.pwd/filename
 
-    tar_filename = filename.to_s.sub(/.gz$/, "")
-    tar_path = Pathname.pwd/tar_filename
+    tar_path = Pathname.pwd/filename.tar_filename
 
     prefix = HOMEBREW_PREFIX.to_s
     repository = HOMEBREW_REPOSITORY.to_s
     cellar = HOMEBREW_CELLAR.to_s
+
+    if compression_type == :xz && !which("xz", ENV["HOMEBREW_PATH"])
+      return ofail "xz binary not found. Please try brew install xz"
+    end
 
     ohai "Bottling #{filename}..."
 
@@ -239,10 +251,16 @@ module Homebrew
           tar_path.utime(tab.source_modified_time, tab.source_modified_time)
           relocatable_tar_path = "#{f}-bottle.tar"
           mv tar_path, relocatable_tar_path
-          # Use gzip, faster to compress than bzip2, faster to uncompress than bzip2
-          # or an uncompressed tarball (and more bandwidth friendly).
-          safe_system "gzip", "-f", relocatable_tar_path
-          mv "#{relocatable_tar_path}.gz", bottle_path
+          compression_bin = "gzip"
+          tar_suffix = "gz"
+          case compression_type
+          when :xz
+            compression_bin = tar_suffix = "xz"
+          end
+          with_homebrew_path do
+            safe_system compression_bin, "-f", relocatable_tar_path
+          end
+          mv "#{relocatable_tar_path}.#{tar_suffix}", bottle_path
         end
 
         if bottle_path.size > 1 * 1024 * 1024
@@ -306,12 +324,13 @@ module Homebrew
       bottle.prefix prefix
     end
     bottle.rebuild rebuild
+    bottle.compression_type compression_type
     sha256 = bottle_path.sha256
     bottle.sha256 sha256 => Utils::Bottles.tag
 
     old_spec = f.bottle_specification
     if ARGV.include?("--keep-old") && !old_spec.checksums.empty?
-      mismatches = [:root_url, :prefix, :cellar, :rebuild].reject do |key|
+      mismatches = [:root_url, :prefix, :cellar, :rebuild, :compression_type].reject do |key|
         old_spec.send(key) == bottle.send(key)
       end
       mismatches.delete(:cellar) if old_spec.cellar == :any && bottle.cellar == :any_skip_relocation
@@ -348,6 +367,7 @@ module Homebrew
           "prefix" => bottle.prefix,
           "cellar" => bottle.cellar.to_s,
           "rebuild" => bottle.rebuild,
+          "compression_type" => bottle.compression_type,
           "tags" => {
             Utils::Bottles.tag.to_s => {
               "filename" => filename.to_s,
@@ -383,6 +403,7 @@ module Homebrew
       bottle.cellar cellar
       bottle.prefix bottle_hash["bottle"]["prefix"]
       bottle.rebuild bottle_hash["bottle"]["rebuild"]
+      bottle.compression_type = bottle_hash["bottle"]["compression_type"].to_sym
       bottle_hash["bottle"]["tags"].each do |tag, tag_hash|
         bottle.sha256 tag_hash["sha256"] => tag.to_sym
       end

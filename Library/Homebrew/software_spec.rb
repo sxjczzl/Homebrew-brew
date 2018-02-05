@@ -244,17 +244,23 @@ end
 
 class Bottle
   class Filename
-    attr_reader :name, :version, :tag, :rebuild
+    attr_reader :name, :version, :tag, :rebuild, :compression_suffix
 
-    def self.create(formula, tag, rebuild)
-      new(formula.name, formula.pkg_version, tag, rebuild)
+    def self.create(formula, tag, rebuild, compression_type = :gzip)
+      new(formula.name, formula.pkg_version, tag, rebuild, compression_type)
     end
 
-    def initialize(name, version, tag, rebuild)
+    def initialize(name, version, tag, rebuild, compression_type = :gzip)
       @name = name
       @version = version
       @tag = tag.to_s.gsub(/_or_later$/, "")
       @rebuild = rebuild
+      @compression_suffix = case compression_type
+      when :xz
+        "xz"
+      else
+        "gz"
+      end
     end
 
     def to_s
@@ -268,7 +274,11 @@ class Bottle
 
     def suffix
       s = rebuild.positive? ? ".#{rebuild}" : ""
-      ".bottle#{s}.tar.gz"
+      ".bottle#{s}.tar.#{compression_suffix}"
+    end
+
+    def tar_filename
+      File.basename to_s, ".*"
     end
   end
 
@@ -287,7 +297,7 @@ class Bottle
 
     checksum, tag = spec.checksum_for(Utils::Bottles.tag)
 
-    filename = Filename.create(formula, tag, spec.rebuild)
+    filename = Filename.create(formula, tag, spec.rebuild, spec.compression_type)
     @resource.url(build_url(spec.root_url, filename))
     @resource.download_strategy = CurlBottleDownloadStrategy
     @resource.version = formula.pkg_version
@@ -321,13 +331,15 @@ class BottleSpecification
   DEFAULT_PREFIX = "/usr/local".freeze
   DEFAULT_CELLAR = "/usr/local/Cellar".freeze
   DEFAULT_DOMAIN = (ENV["HOMEBREW_BOTTLE_DOMAIN"] || "https://homebrew.bintray.com").freeze
+  DEFAULT_COMPRESSION_TYPE = :gzip
 
-  attr_rw :prefix, :cellar, :rebuild
+  attr_rw :prefix, :cellar, :rebuild, :compression_type
   attr_accessor :tap
   attr_reader :checksum, :collector
 
   def initialize
     @rebuild = 0
+    @compression_type = DEFAULT_COMPRESSION_TYPE
     @prefix = DEFAULT_PREFIX
     @cellar = DEFAULT_CELLAR
     @collector = Utils::Bottles::Collector.new
