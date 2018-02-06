@@ -320,15 +320,8 @@ module Homebrew
       end
 
       def check_access_prefix_directories
-        not_writable_dirs = []
-
-        Keg::ALL_TOP_LEVEL_DIRECTORIES.each do |dir|
-          path = HOMEBREW_PREFIX/dir
-          next unless path.exist?
-          next if path.writable_real?
-          not_writable_dirs << path
-        end
-
+        existing_dirs = Keg::ALL_TOP_AND_SHARE_PATHS.select(&:exist?)
+        not_writable_dirs = existing_dirs.reject(&:writable_real?)
         return if not_writable_dirs.empty?
 
         <<~EOS
@@ -341,6 +334,40 @@ module Homebrew
 
           You should change the ownership of these directories to your account.
             sudo chown -R $(whoami) #{not_writable_dirs.join(" ")}
+        EOS
+      end
+
+      def check_missing_prefix_directories
+        return if HOMEBREW_PREFIX.to_s != "/usr/local"
+        missing_dirs = Keg::ALL_TOP_LEVEL_PATHS.reject(&:exist?)
+        return if missing_dirs.empty?
+
+        <<~EOS
+          The following directories are missing:
+          #{missing_dirs.join("\n")}
+          You should create them:
+            sudo mkdir -p #{missing_dirs.join(" ")}
+          And change the permissions of these directories:
+          #{permission_commands_for(missing_dirs).join("\n")}
+        EOS
+      end
+
+      def check_existing_prefix_directories_are_searchable
+        return if HOMEBREW_PREFIX.to_s != "/usr/local"
+
+        existing_dirs = Keg::ALL_TOP_AND_SHARE_PATHS.select(&:exist?)
+        not_searchable_dirs = existing_dirs.reject(&:executable_real?)
+        return if not_searchable_dirs.empty?
+
+        <<~EOS
+          The following directories are not searchable:
+          #{not_searchable_dirs.join("\n")}
+
+          This can happen on High Sierra and cause installs to
+          fail during the link step.
+
+          You should change the permissions of these directories:
+          #{permission_commands_for(not_searchable_dirs).join("\n")}
         EOS
       end
 
@@ -1086,6 +1113,12 @@ module Homebrew
 
       def all
         methods.map(&:to_s).grep(/^check_/)
+      end
+
+      def permission_commands_for(dirs)
+        dirs.compact.each_slice(4).map do |slice|
+          "sudo chmod -R u+rwx,g+rwx #{slice.join(" ")}"
+        end
       end
     end
   end
