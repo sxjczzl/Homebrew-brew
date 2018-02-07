@@ -512,7 +512,7 @@ EOS
         git fetch --tags --force "${QUIET_ARGS[@]}" origin \
           "refs/heads/$UPSTREAM_BRANCH_DIR:refs/remotes/origin/$UPSTREAM_BRANCH_DIR" 2>/dev/null
       else
-        if ! git fetch --tags --force "${QUIET_ARGS[@]}" origin \
+        if ! GIT_ASKPASS=true git fetch --tags --force "${QUIET_ARGS[@]}" origin \
           "refs/heads/$UPSTREAM_BRANCH_DIR:refs/remotes/origin/$UPSTREAM_BRANCH_DIR"
         then
           echo "Fetching $DIR failed!" >>"$update_failed_file"
