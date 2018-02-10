@@ -436,11 +436,12 @@ class Pathname
   end
 
   # Writes an exec script that invokes a java jar
-  def write_jar_script(target_jar, script_name, java_opts = "")
+  def write_jar_script(target_jar, script_name, java_opts = "", java_version = "")
     mkpath
+    launcher = java_version.empty? ? "java" : "/usr/libexec/java_home -v #{java_version} --exec java"
     join(script_name).write <<~EOS
       #!/bin/bash
-      exec java #{java_opts} -jar #{target_jar} "$@"
+      exec #{launcher} #{java_opts} -jar #{target_jar} "$@"
     EOS
   end
 
