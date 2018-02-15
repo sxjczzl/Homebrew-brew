@@ -62,7 +62,7 @@ module Homebrew
     end
 
     unless pinned.empty?
-      onoe "Not upgrading #{Formatter.pluralize(pinned.length, "pinned package")}:"
+      opoo "Not upgrading #{Formatter.pluralize(pinned.length, "pinned package")}:"
       puts pinned.map { |f| "#{f.full_specified_name} #{f.pkg_version}" } * ", "
     end
 
