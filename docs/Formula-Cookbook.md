@@ -29,7 +29,7 @@ Make sure you run `brew update` before you start. This turns your Homebrew insta
 
 Before submitting a new formula make sure your package:
 
-*   meets all our [Acceptable Formulae](Acceptable-Formulae) requirements
+*   meets all our [Acceptable Formulae](Acceptable-Formulae.md) requirements
 *   isn't already in Homebrew (check `brew search <formula>`)
 *   isn't in another official [Homebrew tap](https://github.com/Homebrew)
 *   isn't already waiting to be merged (check the [issue tracker](https://github.com/Homebrew/homebrew-core/pulls))
@@ -37,7 +37,7 @@ Before submitting a new formula make sure your package:
 *   has a stable, tagged version (i.e. not just a GitHub repository with no versions)
 *   passes all `brew audit --new-formula <formula>` tests.
 
-Before submitting a new formula make sure you read over our [contribution guidelines](https://github.com/Homebrew/brew/blob/master/CONTRIBUTING).
+Before submitting a new formula make sure you read over our [contribution guidelines](https://github.com/Homebrew/brew/blob/master/CONTRIBUTING.md).
 
 ### Grab the URL
 
