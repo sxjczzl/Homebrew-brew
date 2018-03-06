@@ -313,6 +313,19 @@ EOS
   trap - SIGINT
 }
 
+sync_repositories() {
+  local HOMEBREW_CORE_PATH
+  HOMEBREW_CORE_PATH=Library/Taps/homebrew/homebrew-core
+  if [ -d ${HOMEBREW_REPOSITORY}/${HOMEBREW_CORE_PATH} ]; then
+    pushd ${HOMEBREW_REPOSITORY} &> /dev/null
+      COMMIT_ID=`git rev-list -n 1 stable`
+      TIMESTAMP=`git show -s --format=%ci ${COMMIT_ID}`
+      cd ${HOMEBREW_CORE_PATH}
+      git checkout "master@{${TIMESTAMP}}"
+    popd &> /dev/null
+  fi
+}
+
 homebrew-update() {
   local option
   local DIR
@@ -561,6 +574,8 @@ EOS
       [[ -n "$HOMEBREW_VERBOSE" ]] && echo
     fi
   done
+
+  sync_repositories
 
   safe_cd "$HOMEBREW_REPOSITORY"
 
