@@ -218,6 +218,22 @@ class Version
     version.nil? ? NULL : new(version)
   end
 
+  COMMON_VERSION_PATTERN = /(?:(?:2\.1[12]|2\.20\.11)-|%\d{2})?((?:\d+\.)+\d+(?:[-_.~+]?(?:(?:alpha|beta|preview|pre|rc|cr|final|dev|snapshot|git|gfm)(?:\.?\d+)*|(?:ga|rel|build|[abmprv])?\.?(?:\d+\.)*\d+)|[a-f0-9]{6,}|[a-z0-9]{1,2})?)/i
+  #                         ^----------------A----------------^^^-----C-----^^--^--E---^^--^---------------------------------G---------------------------------^ ^---------------------H--------------------^ ^----I-----^ ^-----J-----^^^^
+  #                                                            |             |          +-----------------------------------------------------------------------F-----------------------------------------------------------------------+||
+  #                                                            |             +-----------------------------------------------------------------------------D-----------------------------------------------------------------------------+|
+  #                                                            +------------------------------------------------------------------------------------B-------------------------------------------------------------------------------------+
+  # A: Known version-like prefixes that are _not_ part of version
+  # B: Captured version
+  # C: Dotted digit series
+  # D: Version suffix & separator
+  # E: Version suffix separator
+  # F: Suffix alternatives
+  # G: String suffixes with optional dotted digits
+  # H: String suffixes with manditory digits
+  # I: 6+ hexadecimal character suffix
+  # J: 1-2 alphanumeric character suffix
+
   def self._parse(spec)
     spec = Pathname.new(spec) unless spec.is_a? Pathname
 
@@ -233,112 +249,42 @@ class Version
       spec.stem
     end
 
-    # date-based versioning
-    # e.g. ltopers-v2017-04-14.tar.gz
-    m = /-v?(\d{4}-\d{2}-\d{2})/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # GitHub tarballs
     # e.g. https://github.com/foo/bar/tarball/v1.2.3
     # e.g. https://github.com/sam-github/libnet/tarball/libnet-1.1.4
     # e.g. https://github.com/isaacs/npm/tarball/v0.2.5-1
     # e.g. https://github.com/petdance/ack/tarball/1.93_02
-    m = %r{github\.com/.+/(?:zip|tar)ball/(?:v|\w+-)?((?:\d+[-._])+\d*)$}.match(spec_s)
-    return m.captures.first unless m.nil?
-
-    # e.g. https://github.com/erlang/otp/tarball/OTP_R15B01 (erlang style)
-    m = /[-_]([Rr]\d+[AaBb]\d*(?:-\d+)?)/.match(spec_s)
-    return m.captures.first unless m.nil?
-
-    # e.g. boost_1_39_0
-    m = /((?:\d+_)+\d+)$/.match(stem)
-    return m.captures.first.tr("_", ".") unless m.nil?
-
+    # e.g. foobar-4.5.0-bin
+    # e.g. foobar4.5.1
+    # e.g. foobar-4.5.1
     # e.g. foobar-4.5.1-1
+    # e.g. foobar-4.5.1b
     # e.g. unrtf_0.20.4-1
     # e.g. ruby-1.9.1-p243
-    m = /[-_]((?:\d+\.)*\d\.\d+-(?:p|rc|RC)?\d+)(?:[-._](?:bin|dist|stable|src|sources))?$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # URL with no extension
     # e.g. https://waf.io/waf-1.8.12
     # e.g. https://codeload.github.com/gsamokovarov/jump/tar.gz/v0.7.1
-    m = /[-v]((?:\d+\.)*\d+)$/.match(spec_s)
-    return m.captures.first unless m.nil?
-
-    # e.g. lame-398-1
-    m = /-((?:\d)+-\d+)/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # e.g. foobar-4.5.1
-    m = /-((?:\d+\.)*\d+)$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # e.g. foobar-4.5.1b
-    m = /-((?:\d+\.)*\d+(?:[abc]|rc|RC)\d*)$/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. foobar-4.5.0-alpha5, foobar-4.5.0-beta1, or foobar-4.50-beta
-    m = /-((?:\d+\.)*\d+-(?:alpha|beta|rc)\d*)$/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. https://ftpmirror.gnu.org/libidn/libidn-1.29-win64.zip
     # e.g. https://ftpmirror.gnu.org/libmicrohttpd/libmicrohttpd-0.9.17-w32.zip
-    m = /-(\d+\.\d+(?:\.\d+)?)-w(?:in)?(?:32|64)$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # Opam packages
     # e.g. https://opam.ocaml.org/archives/sha.1.9+opam.tar.gz
     # e.g. https://opam.ocaml.org/archives/lablgtk.2.18.3+opam.tar.gz
     # e.g. https://opam.ocaml.org/archives/easy-format.1.0.2+opam.tar.gz
-    m = /\.(\d+\.\d+(?:\.\d+)?)\+opam$/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. https://ftpmirror.gnu.org/mtools/mtools-4.0.18-1.i686.rpm
     # e.g. https://ftpmirror.gnu.org/autogen/autogen-5.5.7-5.i386.rpm
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x86.zip
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x64.zip
     # e.g. https://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb
-    m = /[-_](\d+\.\d+(?:\.\d+)?(?:-\d+)?)[-_.](?:i[36]86|x86|x64(?:[-_](?:32|64))?)$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # devel spec
     # e.g. https://registry.npmjs.org/@angular/cli/-/cli-1.3.0-beta.1.tgz
     # e.g. https://github.com/dlang/dmd/archive/v2.074.0-beta1.tar.gz
     # e.g. https://github.com/dlang/dmd/archive/v2.074.0-rc1.tar.gz
     # e.g. https://github.com/premake/premake-core/releases/download/v5.0.0-alpha10/premake-5.0.0-alpha10-src.zip
-    m = /[-.vV]?((?:\d+\.)+\d+[-_.]?(?i:alpha|beta|pre|rc)\.?\d{,2})/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # e.g. foobar4.5.1
-    m = /((?:\d+\.)*\d+)$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # e.g. foobar-4.5.0-bin
-    m = /-((?:\d+\.)+\d+[abc]?)[-._](?:bin|dist|stable|src|sources?)$/.match(stem)
-    return m.captures.first unless m.nil?
-
-    # dash version style
     # e.g. http://www.antlr.org/download/antlr-3.4-complete.jar
     # e.g. https://cdn.nuxeo.com/nuxeo-9.2/nuxeo-server-9.2-tomcat.zip
     # e.g. https://search.maven.org/remotecontent?filepath=com/facebook/presto/presto-cli/0.181/presto-cli-0.181-executable.jar
     # e.g. https://search.maven.org/remotecontent?filepath=org/fusesource/fuse-extra/fusemq-apollo-mqtt/1.3/fusemq-apollo-mqtt-1.3-uber.jar
     # e.g. https://search.maven.org/remotecontent?filepath=org/apache/orc/orc-tools/1.2.3/orc-tools-1.2.3-uber.jar
-    m = /-((?:\d+\.)+\d+)-/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. dash_0.5.5.1.orig.tar.gz (Debian style)
-    m = /_((?:\d+\.)+\d+[abc]?)[.]orig$/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. https://www.openssl.org/source/openssl-0.9.8s.tar.gz
-    m = /-v?([^-]+)/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. astyle_1.23_macosx.tar.gz
-    m = /_([^_]+)/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. http://mirrors.jenkins-ci.org/war/1.486/jenkins.war
     # e.g. https://github.com/foo/bar/releases/download/0.10.11/bar.phar
     # e.g. https://github.com/clojure/clojurescript/releases/download/r1.9.293/cljs.jar
@@ -346,16 +292,28 @@ class Version
     # e.g. https://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_1.9/E.tgz
     # e.g. https://github.com/JustArchi/ArchiSteamFarm/releases/download/2.3.2.0/ASF.zip
     # e.g. https://people.gnome.org/~newren/eg/download/1.7.5.2/eg
-    m = %r{/([rvV]_?)?(\d\.\d+(\.\d+){,2})}.match(spec_s)
-    return m.captures[1] unless m.nil?
-
-    # e.g. http://www.ijg.org/files/jpegsrc.v8d.tar.gz
-    m = /\.v(\d+[a-z]?)/.match(stem)
-    return m.captures.first unless m.nil?
-
     # e.g. https://secure.php.net/get/php-7.1.10.tar.bz2/from/this/mirror
-    m = /[-.vV]?((?:\d+\.)+\d+(?:[-_.]?(?i:alpha|beta|pre|rc)\.?\d{,2})?)/.match(spec_s)
+    # e.g. https://github.com/lihaoyi/Ammonite/releases/download/1.0.5/2.12-1.0.5
+    # e.g. http://download.jboss.org/wildfly/12.0.0.CR1/wildfly-12.0.0.CR1.tar.gz
+    m = COMMON_VERSION_PATTERN.match(stem)
     return m.captures.first unless m.nil?
+
+    m = spec_s.scan(COMMON_VERSION_PATTERN)
+    return m.last.first unless m.empty?
+
+    # e.g. https://github.com/erlang/otp/tarball/OTP_R15B01 (erlang style)
+    m = /[-_]([R]\d+[AB]\d*(?:-\d+)?)/i.match(spec_s)
+    return m.captures.first unless m.nil?
+
+    # e.g. ltopers-v2017-04-14.tar.gz
+    # e.g. boost_1_39_0
+    # e.g. lame-398-1
+    # e.g. http://www.ijg.org/files/jpegsrc.v8d.tar.gz
+    # e.g. https://github.com/kykim/rem/archive/20150618.tar.gz
+    # e.g. http://www.iozone.org/src/current/iozone3_471.tar
+    # e.g. http://www.leonerd.org.uk/code/libvterm/libvterm-0+bzr681.tar.gz
+    m = /(?:-0\+bzr|build|iozone|hping|[\W_vr]|^)((?:\d+[_-])*\d+(?:[-_][a-z]\d+|\.[a-f0-9]{7,}|[a-z]{0,2}))/i.match(stem)
+    return m.captures.first.tr("_", ".") unless m.nil?
   end
 
   private_class_method :_parse

@@ -334,6 +334,8 @@ describe Version do
     specify "version single digit" do
       expect(Version.create("45"))
         .to be_detected_from("http://example.com/foo_bar.45.tar.gz")
+      expect(Version.create("20040914"))
+        .to be_detected_from("https://mirrors.ocf.berkeley.edu/debian/pool/main/l/lcrack/lcrack_20040914.orig.tar.gz")
     end
 
     specify "noseparator single digit" do
@@ -391,6 +393,10 @@ describe Version do
     specify "rc style" do
       expect(Version.create("1.2.2rc1"))
         .to be_detected_from("http://downloads.xiph.org/releases/vorbis/libvorbis-1.2.2rc1.tar.bz2")
+      expect(Version.create("3.2p2"))
+        .to be_detected_from("https://downloads.sourceforge.net/project/owfs/owfs/3.2p2/owfs-3.2p2.tar.gz")
+      expect(Version.create("2.17.9build1"))
+        .to be_detected_from("https://launchpad.net/ubuntu/+archive/primary/+files/devscripts_2.17.9build1.tar.xz")
     end
 
     specify "dash rc style" do
@@ -472,6 +478,16 @@ describe Version do
         .to be_detected_from("https://github.com/dlang/dmd/archive/v2.074.0-rc1.tar.gz")
       expect(Version.create("5.0.0-alpha10"))
         .to be_detected_from("https://github.com/premake/premake-core/releases/download/v5.0.0-alpha10/premake-5.0.0-alpha10-src.zip")
+      expect(Version.create("2.40.5"))
+        .to be_detected_from("http://www.mathematik.uni-ulm.de/users/ag/yaze-ag/devel/yaze-ag-2.40.5_with_keytrans.tar.gz")
+      expect(Version.create("1.0.1"))
+        .to be_detected_from("https://mediaarea.net/download/binary/avimetaedit/1.0.1/AVIMetaEdit_CLI_1.0.1_GNU_FromSource.tar.bz2")
+      expect(Version.create("6.12.06"))
+        .to be_detected_from("https://root.cern.ch/download/root_v6.12.06.source.tar.gz")
+      expect(Version.create("3.8.1.Final"))
+        .to be_detected_from("https://downloads.jboss.org/forge/releases/3.8.1.Final/forge-distribution-3.8.1.Final-offline.zip")
+      expect(Version.create("3.4.9-2.9"))
+        .to be_detected_from("https://www.percona.com/downloads/percona-server-mongodb-3.4/percona-server-mongodb-3.4.9-2.9/source/tarball/percona-server-mongodb-3.4.9-2.9.tar.gz")
     end
 
     specify "jenkins version style" do
@@ -495,6 +511,8 @@ describe Version do
         .to be_detected_from("https://github.com/JustArchi/ArchiSteamFarm/releases/download/2.3.2.0/ASF.zip")
       expect(Version.create("1.7.5.2"))
         .to be_detected_from("https://people.gnome.org/~newren/eg/download/1.7.5.2/eg")
+      expect(Version.create("60.2"))
+        .to be_detected_from("https://ssl.icu-project.org/files/icu4c/60.2/icu4c-60_2-src.tgz")
     end
 
     specify "dash version style" do
@@ -647,16 +665,27 @@ describe Version do
     specify "dash separated version" do
       expect(Version.create("6-20151227"))
         .to be_detected_from("ftp://gcc.gnu.org/pub/gcc/snapshots/6-20151227/gcc-6-20151227.tar.bz2")
+      expect(Version.create("2015-02-08"))
+        .to be_detected_from("https://github.com/paleg/sqtop/archive/v2015-02-08.tar.gz")
+      expect(Version.create("2017-03-R2"))
+        .to be_detected_from("https://github.com/greatscottgadgets/ubertooth/releases/download/2017-03-R2/ubertooth-2017-03-R2.tar.xz")
     end
 
     specify "semver in middle of URL" do
       expect(Version.create("7.1.10"))
         .to be_detected_from("https://php.net/get/php-7.1.10.tar.gz/from/this/mirror")
+      expect(Version.create("9.1.0.8"))
+        .to be_detected_from("https://downloads.sourceforge.net/project/saxon/Saxon-B/9.1.0.8/saxonb9-1-0-8j.zip")
     end
 
     specify "from URL" do
       expect(Version.create("1.2.3"))
         .to be_detected_from("http://github.com/foo/bar.git", tag: "v1.2.3")
+    end
+
+    specify "date with hex suffix" do
+      expect(Version.create("20161228.7cae89f"))
+        .to be_detected_from("https://mirrors.kernel.org/debian/pool/main/s/sgt-puzzles/sgt-puzzles_20161228.7cae89f.orig.tar.gz")
     end
   end
 end
