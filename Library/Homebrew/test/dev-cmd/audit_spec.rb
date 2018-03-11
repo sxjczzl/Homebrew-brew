@@ -527,7 +527,7 @@ describe FormulaAuditor do
     specify "it detects a url containing darwin and x86_64" do
       fa = formula_auditor "foo", <<~EOS, official_tap: true
         class Foo < Formula
-          url "https://example.com/example-darwin.x86_64.tar.gz"
+          url "https://example.com/example-1.0-darwin.x86_64.tar.gz"
         end
       EOS
 
@@ -540,7 +540,7 @@ describe FormulaAuditor do
     specify "it detects a url containing darwin and amd64" do
       fa = formula_auditor "foo", <<~EOS, official_tap: true
         class Foo < Formula
-          url "https://example.com/example-darwin.amd64.tar.gz"
+          url "https://example.com/example-1.0-darwin.amd64.tar.gz"
         end
       EOS
 
@@ -556,7 +556,7 @@ describe FormulaAuditor do
           url "https://example.com/valid-1.0.tar.gz"
 
           devel do
-            url "https://example.com/example-darwin.x86_64.tar.gz"
+            url "https://example.com/example-1.0-darwin.x86_64.tar.gz"
           end
         end
       EOS
