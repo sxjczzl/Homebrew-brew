@@ -295,17 +295,17 @@ module Homebrew
 
     if ARGV.dry_run?
       if ARGV.include? "--strict"
-        ohai "brew audit --strict #{formula.path.basename}"
+        ohai "brew audit --strict --online #{formula.path.basename}"
       elsif ARGV.include? "--audit"
-        ohai "brew audit #{formula.path.basename}"
+        ohai "brew audit --online #{formula.path.basename}"
       end
     else
       failed_audit = false
       if ARGV.include? "--strict"
-        system HOMEBREW_BREW_FILE, "audit", "--strict", formula.path
+        system HOMEBREW_BREW_FILE, "audit", "--strict", "--online", formula.path
         failed_audit = !$CHILD_STATUS.success?
       elsif ARGV.include? "--audit"
-        system HOMEBREW_BREW_FILE, "audit", formula.path
+        system HOMEBREW_BREW_FILE, "audit", "--online", formula.path
         failed_audit = !$CHILD_STATUS.success?
       end
       if failed_audit
