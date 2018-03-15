@@ -13,6 +13,10 @@ You can be added as a maintainer for one of the Homebrew organization taps and a
 
 ## Other interesting taps
 
+*   [danielbayley/adobe](https://github.com/danielbayley/homebrew-adobe): A tap for Adobe apps, and even plugins.
+
+*   [danielbayley/alfred](https://github.com/danielbayley/homebrew-alfred): Manage your Alfred workflows with Homebrew.
+
 *   [denji/nginx](https://github.com/denji/homebrew-nginx): A tap for NGINX modules, intended for its `nginx-full` formula which includes more module options.
 
 *   [InstantClientTap/instantclient](https://github.com/InstantClientTap/homebrew-instantclient): A tap for Oracle Instant Client. The packages need to be downloaded manually.
