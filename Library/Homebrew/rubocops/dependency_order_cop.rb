@@ -2,7 +2,7 @@ require_relative "./extend/formula_cop"
 
 module RuboCop
   module Cop
-    module NewFormulaAudit
+    module FormulaAuditStrict
       # This cop checks for correct order of `depends_on` in a Formula
       #
       # precedence order:
