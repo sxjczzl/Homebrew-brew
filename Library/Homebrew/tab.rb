@@ -32,10 +32,7 @@ class Tab < OpenStruct
       "compiler" => compiler,
       "stdlib" => stdlib,
       "aliases" => formula.aliases,
-      "runtime_dependencies" => formula.runtime_dependencies.map do |dep|
-        f = dep.to_formula
-        { "full_name" => f.full_name, "version" => f.version.to_s }
-      end,
+      "runtime_dependencies" => runtime_dependencies_fullname_version(formula),
       "source" => {
         "path" => formula.specified_path.to_s,
         "tap" => formula.tap ? formula.tap.name : nil,
@@ -50,6 +47,13 @@ class Tab < OpenStruct
     }
 
     new(attributes)
+  end
+
+  def self.runtime_dependencies_fullname_version(formula)
+    formula.runtime_dependencies.map do |dep|
+      f = dep.to_formula
+      { "full_name" => f.full_name, "version" => f.version.to_s }
+    end
   end
 
   # Returns the Tab for an install receipt at `path`.
