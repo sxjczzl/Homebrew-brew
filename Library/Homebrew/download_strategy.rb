@@ -15,6 +15,7 @@ class AbstractDownloadStrategy
     @url = resource.url
     @version = resource.version
     @meta = resource.specs
+    extend Pourable if meta[:bottle]
   end
 
   # Download and cache the resource as {#cached_location}.
@@ -127,6 +128,13 @@ class AbstractDownloadStrategy
       #{HOMEBREW_PREFIX}/bin/fossil
       #{HOMEBREW_PREFIX}/opt/fossil/bin/fossil
     ].find { |p| File.executable? p }
+  end
+
+  module Pourable
+    def stage
+      ohai "Pouring #{cached_location.basename}"
+      super
+    end
   end
 end
 
@@ -442,25 +450,12 @@ class NoUnzipCurlDownloadStrategy < CurlDownloadStrategy
   end
 end
 
-# This strategy extracts our binary packages.
-class CurlBottleDownloadStrategy < CurlDownloadStrategy
-  def stage
-    ohai "Pouring #{cached_location.basename}"
-    super
-  end
-end
-
 # This strategy extracts local binary packages.
 class LocalBottleDownloadStrategy < AbstractFileDownloadStrategy
   attr_reader :cached_location
 
   def initialize(path)
     @cached_location = path
-  end
-
-  def stage
-    ohai "Pouring #{cached_location.basename}"
-    super
   end
 end
 
@@ -472,25 +467,66 @@ end
 # because it lets you use a private S3 bucket as a repo for internal
 # distribution.  (It will work for public buckets as well.)
 class S3DownloadStrategy < CurlDownloadStrategy
+  attr_reader :url
+
   def _fetch
-    if @url !~ %r{^https?://([^.].*)\.s3\.amazonaws\.com/(.+)$}
-      raise "Bad S3 URL: " + @url
+    curl_download s3_url, to: temporary_path
+  end
+
+  def s3_url
+    @s3_url ||= request_s3_url
+  end
+
+  def request_s3_url
+    # Put the aws-sdk-s3 gem requirement here (vs top of file) so it's only
+    # a dependency of S3 users, not all Homebrew users
+    require_aws_s3_sdk
+
+    with_env(AWS_ACCESS_KEY_ID: ENV["HOMEBREW_AWS_ACCESS_KEY_ID"],
+             AWS_SECRET_ACCESS_KEY: ENV["HOMEBREW_AWS_SECRET_ACCESS_KEY"]) do
+      # use the s3 api to get a presigned URL that
+      # curl can use with a basic GET
+      begin
+        s3_object_summary.presigned_url(:get)
+      rescue Aws::Errors::MissingCredentialsError
+        ohai "AWS credentials missing, using unsigned URL."
+        url
+      end
     end
-    bucket = Regexp.last_match(1)
-    key = Regexp.last_match(2)
+  end
 
-    ENV["AWS_ACCESS_KEY_ID"] = ENV["HOMEBREW_AWS_ACCESS_KEY_ID"]
-    ENV["AWS_SECRET_ACCESS_KEY"] = ENV["HOMEBREW_AWS_SECRET_ACCESS_KEY"]
+  def require_aws_s3_sdk
+    require "aws-sdk-s3"
+  rescue LoadError
+    onoe "please install the aws-sdk-s3 gem into the gem repo used by brew"
+    onoe "example: gem install aws-sdk-s3 --no-rdoc --no-ri --user-install"
+    raise
+  end
 
-    begin
-      signer = Aws::S3::Presigner.new
-      s3url = signer.presigned_url :get_object, bucket: bucket, key: key
-    rescue Aws::Sigv4::Errors::MissingCredentialsError
-      ohai "AWS credentials missing, trying public URL instead."
-      s3url = @url
-    end
+  def s3_object_summary
+    @s3_object_summary ||= create_s3_object_summary
+  end
 
-    curl_download s3url, to: temporary_path
+  def create_s3_object_summary
+    Aws::S3::ObjectSummary.new(s3_bucket, s3_key)
+  end
+
+  def s3_bucket
+    @s3_bucket ||= parse_s3_bucket
+  end
+
+  def s3_key
+    @s3_key ||= parse_s3_key
+  end
+
+  def parse_s3_bucket
+    raise ErrorDuringExecution, "Bad S3 URL: #{url}" if url !~ %r{^https?://([^.].*)\.s3\.amazonaws\.com/(.+)$}
+    Regexp.last_match(1)
+  end
+
+  def parse_s3_key
+    raise ErrorDuringExecution, "Bad S3 URL: #{url}" if url !~ %r{^https?://([^.].*)\.s3\.amazonaws\.com/(.+)$}
+    Regexp.last_match(2)
   end
 end
 
