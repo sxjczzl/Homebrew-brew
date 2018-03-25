@@ -879,6 +879,7 @@ class FormulaInstaller
     tab.installed_as_dependency = installed_as_dependency
     tab.installed_on_request = installed_on_request
     tab.aliases = formula.aliases
+    tab.runtime_dependencies = Tab.runtime_dependencies_fullname_version(formula)
     tab.write
   end
 
