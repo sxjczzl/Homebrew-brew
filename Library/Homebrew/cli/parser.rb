@@ -1,5 +1,5 @@
 require "optparse"
-require "ostruct"
+require "cli/arguments"
 
 module Homebrew
   module CLI
@@ -10,7 +10,7 @@ module Homebrew
 
       def initialize(&block)
         @parser = OptionParser.new
-        @parsed_args = OpenStruct.new
+        @parsed_args = Arguments.new
         instance_eval(&block)
       end
 
@@ -59,7 +59,7 @@ module Homebrew
 
       def enable_switch(*names)
         names.each do |name|
-          @parsed_args["#{option_to_name(name)}?"] = true
+          @parsed_args[option_to_name(name)] = true
         end
       end
 

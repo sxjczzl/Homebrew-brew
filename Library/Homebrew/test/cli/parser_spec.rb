@@ -45,6 +45,12 @@ describe Homebrew::CLI::Parser do
       args = parser.parse([])
       expect(args.pry?).to be true
     end
+
+    it "can handle options that are named the same as Object instance methods" do
+      parser.switch "--tap"
+      args = parser.parse(["--tap"])
+      expect(args.tap).to be true
+    end
   end
 
   describe "test long flag options" do
