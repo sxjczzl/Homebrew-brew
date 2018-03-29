@@ -5,7 +5,7 @@
 #:    If `--pry` is passed or HOMEBREW_PRY is set, pry will be
 #:    used instead of irb.
 
-require "cli_parser"
+require "cli/parser"
 
 class Symbol
   def f(*args)

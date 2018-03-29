@@ -15,7 +15,7 @@
 #:    If `--online` is passed, include tests that use the GitHub API and tests
 #:    that use any of the taps for official external commands.
 
-require "cli_parser"
+require "cli/parser"
 require "fileutils"
 require "tap"
 
