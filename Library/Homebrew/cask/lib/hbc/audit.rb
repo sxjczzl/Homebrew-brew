@@ -58,7 +58,7 @@ module Hbc
 
       return if @cask.sourcefile_path.nil?
 
-      tap = @cask.tap
+      tap = Tap.select { |t| t.cask_file?(@cask.sourcefile_path) }.first
       return if tap.nil? || tap.user != "caskroom"
 
       return unless cask.artifacts.any? { |k| k.is_a?(Hbc::Artifact::Pkg) && k.stanza_options.key?(:allow_untrusted) }
@@ -110,7 +110,7 @@ module Hbc
     def check_version_and_checksum
       return if @cask.sourcefile_path.nil?
 
-      tap = @cask.tap
+      tap = Tap.select { |t| t.cask_file?(@cask.sourcefile_path) }.first
       return if tap.nil?
 
       return if commit_range.nil?
