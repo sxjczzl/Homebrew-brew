@@ -14,7 +14,7 @@
 #:    If `--keep-tmp` is passed, retain the temporary directory containing
 #:    the new repository clone.
 
-require "cli_parser"
+require "cli/parser"
 
 module Homebrew
   module_function

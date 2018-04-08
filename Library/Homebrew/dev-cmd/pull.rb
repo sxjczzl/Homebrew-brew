@@ -51,7 +51,7 @@
 require "net/http"
 require "net/https"
 require "json"
-require "cli_parser"
+require "cli/parser"
 require "formula"
 require "formulary"
 require "version"

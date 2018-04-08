@@ -47,7 +47,7 @@ require "cmd/style"
 require "date"
 require "missing_formula"
 require "digest"
-require "cli_parser"
+require "cli/parser"
 
 module Homebrew
   module_function

@@ -5,7 +5,7 @@
 #:
 #:    If `--markdown` is passed, output as a Markdown list.
 
-require "cli_parser"
+require "cli/parser"
 
 module Homebrew
   module_function

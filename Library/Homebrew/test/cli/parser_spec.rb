@@ -1,4 +1,4 @@
-require_relative "../cli_parser"
+require "cli/parser"
 
 describe Homebrew::CLI::Parser do
   describe "test switch options" do
@@ -67,6 +67,12 @@ describe Homebrew::CLI::Parser do
     it "parses a comma array flag option" do
       args = parser.parse(["--files=random1.txt,random2.txt"])
       expect(args.files).to eq %w[random1.txt random2.txt]
+    end
+
+    it "can handle options that are named the same as Object instance methods" do
+      parser.flag "--tap"
+      args = parser.parse(["--tap=homebrew/core"])
+      expect(args.tap).to eq "homebrew/core"
     end
   end
 end
