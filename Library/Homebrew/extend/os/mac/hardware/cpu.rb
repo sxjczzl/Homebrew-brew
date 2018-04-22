@@ -167,15 +167,15 @@ module Hardware
 
       def intel_can_run?(arch)
         case arch
-        when *PPC_32BIT_ARCHS
+        when :ppc
           # Rosetta is still available
           MacOS.version < :lion
-        when *PPC_64BIT_ARCHS
+        when :ppc64
           # Rosetta never supported PPC64
           false
-        when *INTEL_64BIT_ARCHS
+        when :x86_64
           Hardware::CPU.is_64_bit?
-        when *INTEL_32BIT_ARCHS
+        when :i386
           true
         else # dunno
           false
@@ -184,9 +184,9 @@ module Hardware
 
       def ppc_can_run?(arch)
         case arch
-        when *PPC_32BIT_ARCHS
+        when :ppc
           true
-        when *PPC_64BIT_ARCHS
+        when :ppc64
           Hardware::CPU.is_64_bit?
         else
           # Intel is never supported
