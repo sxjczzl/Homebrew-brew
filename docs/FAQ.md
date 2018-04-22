@@ -209,7 +209,7 @@ project may actually prove popular. By the time he realized it was, it was too
 late. However, today, the first Google hit for “homebrew” is not beer
 related ;-)
 
-## What does "keg-only" mean?
+## What does "key-only" mean?
 It means the formula is installed only into the Cellar; it is not linked
 into `/usr/local`. This means most tools will not find it. We don’t do
 this for stupid reasons. You can still link in the formula if you need
