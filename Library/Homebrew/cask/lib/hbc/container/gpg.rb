@@ -9,7 +9,7 @@ module Hbc
 
       def import_key
         if @cask.gpg.nil?
-          raise CaskError, "Expected to find gpg public key in formula. Cask '#{@cask}' must add: 'gpg :embedded, key_id: [Public Key ID]' or 'gpg :embedded, key_url: [Public Key URL]'"
+          raise CaskError, "Expected to find GPG public key. Cask '#{@cask}' must add: 'gpg :embedded, key_id: [Public Key ID]' or 'gpg :embedded, key_url: [Public Key URL]'"
         end
 
         args = if @cask.gpg.key_id
