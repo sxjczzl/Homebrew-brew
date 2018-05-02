@@ -395,8 +395,18 @@ EOS
       odie "Git must be installed and in your PATH!"
     fi
   fi
+  if [[ -n "$HOMEBREW_FORCE_BREWED_SSH" ]]
+    then
+    if [[ ! -x "$HOMEBREW_PREFIX/bin/ssh" ]]
+      then
+        brew install openssh
+    fi
+    HOMEBREW_SSH_EXECUTABLE="$HOMEBREW_PREFIX/bin/ssh"
+  else
+    HOMEBREW_SSH_EXECUTABLE="ssh"
+  fi
   export GIT_TERMINAL_PROMPT="0"
-  export GIT_SSH_COMMAND="ssh -oBatchMode=yes"
+  export GIT_SSH_COMMAND="$HOMEBREW_SSH_EXECUTABLE -oBatchMode=yes"
 
   if [[ -z "$HOMEBREW_VERBOSE" ]]
   then
