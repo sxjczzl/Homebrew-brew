@@ -15,6 +15,7 @@ module Superenv
   undef homebrew_extra_paths,
         homebrew_extra_pkg_config_paths, homebrew_extra_aclocal_paths,
         homebrew_extra_isystem_paths, homebrew_extra_library_paths,
+        homebrew_libxml2_includes,
         homebrew_extra_cmake_include_paths,
         homebrew_extra_cmake_library_paths,
         homebrew_extra_cmake_frameworks_paths,
@@ -47,9 +48,17 @@ module Superenv
     paths
   end
 
+  def homebrew_libxml2_includes
+    paths = []
+    return if deps.any? { |d| d.name == "libxml2" }
+    return unless MacOS::Xcode.version < "9.3"
+    return unless MacOS::Xcode.without_clt?
+    paths << "#{effective_sysroot}/usr/include/libxml2"
+    paths
+  end
+
   def homebrew_extra_isystem_paths
     paths = []
-    paths << "#{effective_sysroot}/usr/include/libxml2" unless deps.any? { |d| d.name == "libxml2" }
     paths << "#{effective_sysroot}/usr/include/apache2" if MacOS::Xcode.without_clt?
     paths << MacOS::X11.include.to_s << "#{MacOS::X11.include}/freetype2" if x11?
     paths << "#{effective_sysroot}/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers"
@@ -65,7 +74,6 @@ module Superenv
 
   def homebrew_extra_cmake_include_paths
     paths = []
-    paths << "#{effective_sysroot}/usr/include/libxml2" unless deps.any? { |d| d.name == "libxml2" }
     paths << "#{effective_sysroot}/usr/include/apache2" if MacOS::Xcode.without_clt?
     paths << MacOS::X11.include.to_s << "#{MacOS::X11.include}/freetype2" if x11?
     paths << "#{effective_sysroot}/System/Library/Frameworks/OpenGL.framework/Versions/Current/Headers"
