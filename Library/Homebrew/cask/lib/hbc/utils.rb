@@ -93,5 +93,18 @@ module Hbc
 
       opoo(poo.join(" ") + "\n" + error_message_with_suggestions)
     end
+
+    def self.gpg(args: [], command: SystemCommand, **options)
+      executable = Formula["gnupg"].opt_bin/"gpg"
+
+      homebrew_keyring = (HOMEBREW_CACHE/"gpg/homebrew-keyring.gpg").tap do |path|
+        path.dirname.mkpath
+      end
+
+      # Ensure GPG installation is initialized.
+      command.run!(executable, args: ["--list-keys"], print_stdout: false, print_stderr: false)
+
+      command.run!(executable, args: ["--no-default-keyring", "--keyring", homebrew_keyring, *args], **options)
+    end
   end
 end

@@ -1,4 +1,5 @@
 require "hbc/container/base"
+require "hbc/utils"
 
 module Hbc
   class Container
@@ -9,27 +10,25 @@ module Hbc
 
       def import_key
         if @cask.gpg.nil?
-          raise CaskError, "Expected to find GPG public key. Cask '#{@cask}' must add: 'gpg :embedded, key_id: [Public Key ID]' or 'gpg :embedded, key_url: [Public Key URL]'"
+          raise CaskError, "Expected to find GPG public key. Cask '#{@cask}' must add `gpg :embedded, key_id: <id>' or 'gpg :embedded, key_url: <url>`."
         end
 
-        args = if @cask.gpg.key_id
-          ["--recv-keys", @cask.gpg.key_id]
+        if @cask.gpg.key_id
+          Utils.gpg(args: ["--receive-keys", @cask.gpg.key_id], command: @command)
         elsif @cask.gpg.key_url
-          ["--fetch-key", @cask.gpg.key_url.to_s]
+          Utils.gpg(args: ["--fetch-keys", @cask.gpg.key_url.to_s], command: @command)
         end
-
-        @command.run!("gpg", args: args)
       end
 
       def extract
-        unless gpg = which("gpg", PATH.new(ENV["PATH"], HOMEBREW_PREFIX/"bin"))
-          raise CaskError, "Expected to find gpg executable. Cask '#{@cask}' must add: depends_on formula: 'gpg'"
+        unless Formula["gnupg"].any_version_installed?
+          raise CaskError, "Formula 'gnupg' is not installed. Cask '#{@cask}' must add `depends_on formula: 'gnupg'`."
         end
 
         import_key
 
         Dir.mktmpdir do |unpack_dir|
-          @command.run!(gpg, args: ["--batch", "--yes", "--output", Pathname(unpack_dir).join(@path.basename(".gpg")), "--decrypt", @path])
+          Utils.gpg(args: ["--batch", "--yes", "--output", Pathname(unpack_dir).join(@path.basename(".gpg")), "--decrypt", @path])
 
           extract_nested_inside(unpack_dir)
         end
