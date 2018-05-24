@@ -35,10 +35,10 @@ class Dependency
     formula
   end
 
-  delegate installed?: :to_formula
+  delegate any_version_installed?: :to_formula
 
   def satisfied?(inherited_options)
-    installed? && missing_options(inherited_options).empty?
+    any_version_installed? && missing_options(inherited_options).empty?
   end
 
   def missing_options(inherited_options)
