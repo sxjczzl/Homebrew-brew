@@ -96,6 +96,12 @@ module Hbc
 
               brew cask install java
           EOS
+        elsif java_version.include?("8")
+          <<~EOS
+            #{@cask} requires Java #{java_version}. You can install it with
+
+              brew cask install java#{java_version}
+          EOS
         else
           <<~EOS
             #{@cask} requires Java #{java_version}. You can install it with
