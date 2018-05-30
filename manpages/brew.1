@@ -688,7 +688,7 @@ Passing \fB\-\-only\-cops=\fR\fIcops\fR will check for violations of only the li
 \fBaudit\fR exits with a non\-zero status if any errors are found\. This is useful, for instance, for implementing pre\-commit hooks\.
 .
 .TP
-\fBbottle\fR [\fB\-\-verbose\fR] [\fB\-\-no\-rebuild\fR|\fB\-\-keep\-old\fR] [\fB\-\-skip\-relocation\fR] [\fB\-\-or\-later\fR] [\fB\-\-root\-url=\fR\fIURL\fR] [\fB\-\-force\-core\-tap\fR] \fIformulae\fR
+\fBbottle\fR [\fB\-\-verbose\fR] [\fB\-\-no\-rebuild\fR|\fB\-\-keep\-old\fR] [\fB\-\-skip\-relocation\fR] [\fB\-\-or\-later\fR] [\fB\-\-root\-url=\fR\fIURL\fR] [\fB\-\-force\-core\-tap\fR [\fB\-\-onto=\fR\fIformulae\fR]] \fIformulae\fR
 Generate a bottle (binary package) from a formula installed with \fB\-\-build\-bottle\fR\.
 .
 .IP
@@ -708,6 +708,9 @@ If \fB\-\-or\-later\fR is passed, append _or_later to the bottle tag\.
 .
 .IP
 If \fB\-\-force\-core\-tap\fR is passed, build a bottle even if \fIformula\fR is not in homebrew/core or any installed taps\.
+.
+.IP
+If \fB\-\-onto\fR is passed, consider the formula an extension of a homebrew/core or tap formula, for purposes of considering rebuilds\.
 .
 .TP
 \fBbottle\fR \fB\-\-merge\fR [\fB\-\-keep\-old\fR] [\fB\-\-write\fR [\fB\-\-no\-commit\fR]] \fIformulae\fR

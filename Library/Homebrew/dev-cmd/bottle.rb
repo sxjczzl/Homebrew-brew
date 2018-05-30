@@ -1,4 +1,4 @@
-#:  * `bottle` [`--verbose`] [`--no-rebuild`|`--keep-old`] [`--skip-relocation`] [`--or-later`] [`--root-url=`<URL>] [`--force-core-tap`] <formulae>:
+#:  * `bottle` [`--verbose`] [`--no-rebuild`|`--keep-old`] [`--skip-relocation`] [`--or-later`] [`--root-url=`<URL>] [`--force-core-tap` [`--onto=`<formulae>]] <formulae>:
 #:    Generate a bottle (binary package) from a formula installed with
 #:    `--build-bottle`.
 #:
@@ -19,6 +19,9 @@
 #:
 #:    If `--force-core-tap` is passed, build a bottle even if <formula> is not
 #:    in homebrew/core or any installed taps.
+#:
+#:    If `--onto` is passed, consider the formula an extension of a homebrew/core
+#:    or tap formula, for purposes of considering rebuilds.
 #:
 #:  * `bottle` `--merge` [`--keep-old`] [`--write` [`--no-commit`]] <formulae>:
 #:    Generate a bottle from a formula and print the new DSL merged into the
@@ -84,6 +87,7 @@ module Homebrew
       switch :verbose
       switch :debug
       flag   "--root-url"
+      flag   "--onto"
     end
 
     return merge if @args.merge?
@@ -203,13 +207,13 @@ module Homebrew
 
     return ofail "Formula has no stable version: #{f.full_name}" unless f.stable
 
-    if @args.no_rebuild? || !f.tap
+    if @args.no_rebuild? || !f.tap && !@args.onto
       rebuild = 0
     elsif @args.keep_old?
       rebuild = f.bottle_specification.rebuild
     else
       ohai "Determining #{f.full_name} bottle rebuild..."
-      versions = FormulaVersions.new(f)
+      versions = @args.onto ? FormulaVersions.new(Formulary.factory(@args.onto)) : FormulaVersions.new(f)
       rebuilds = versions.bottle_version_map("origin/master")[f.pkg_version]
       rebuilds.pop if rebuilds.last.to_i.positive?
       rebuild = rebuilds.empty? ? 0 : rebuilds.max.to_i + 1
