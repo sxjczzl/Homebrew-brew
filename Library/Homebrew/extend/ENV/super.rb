@@ -159,10 +159,15 @@ module Superenv
     []
   end
 
+  def homebrew_libxml2_includes
+    []
+  end
+
   def determine_isystem_paths
     PATH.new(
       HOMEBREW_PREFIX/"include",
       homebrew_extra_isystem_paths,
+      homebrew_libxml2_includes,
     ).existing
   end
 
@@ -199,7 +204,10 @@ module Superenv
   end
 
   def determine_cmake_include_path
-    PATH.new(homebrew_extra_cmake_include_paths).existing
+    PATH.new(
+      homebrew_extra_cmake_include_paths,
+      homebrew_libxml2_includes,
+    ).existing
   end
 
   def homebrew_extra_cmake_library_paths
