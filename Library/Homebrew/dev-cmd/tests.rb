@@ -103,7 +103,7 @@ module Homebrew
         --seed #{seed}
         --color
         --require spec_helper
-        --format NoSeedProgressFormatter
+        --format QuietProgressFormatter
         --format ParallelTests::RSpec::RuntimeLogger
         --out #{HOMEBREW_CACHE}/tests/parallel_runtime_rspec.log
       ]
