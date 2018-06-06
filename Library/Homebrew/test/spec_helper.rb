@@ -19,7 +19,7 @@ $LOAD_PATH.unshift(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/su
 
 require "global"
 
-require "test/support/no_seed_progress_formatter"
+require "test/support/quiet_progress_formatter"
 require "test/support/helper/fixtures"
 require "test/support/helper/formula"
 require "test/support/helper/mktmpdir"
