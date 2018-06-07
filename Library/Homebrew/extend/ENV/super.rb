@@ -190,7 +190,6 @@ module Superenv
   def determine_cmake_prefix_path
     PATH.new(
       keg_only_deps.map(&:opt_prefix),
-      HOMEBREW_PREFIX.to_s,
     ).existing
   end
 
