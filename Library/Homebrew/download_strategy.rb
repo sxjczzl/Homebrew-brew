@@ -92,6 +92,8 @@ class AbstractDownloadStrategy
   end
 end
 
+class NullDownloadStrategy < AbstractDownloadStrategy; end
+
 class VCSDownloadStrategy < AbstractDownloadStrategy
   REF_TYPES = [:tag, :branch, :revisions, :revision].freeze
 

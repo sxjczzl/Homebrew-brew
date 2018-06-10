@@ -737,8 +737,7 @@ class FormulaInstaller
     end
 
     formula.update_head_version
-
-    if !formula.prefix.directory? || Keg.new(formula.prefix).empty_installation?
+    if !formula.prefix.directory? || (!formula.is_a?(MetaFormula) && Keg.new(formula.prefix).empty_installation?)
       raise "Empty installation"
     end
   rescue Exception => e # rubocop:disable Lint/RescueException
