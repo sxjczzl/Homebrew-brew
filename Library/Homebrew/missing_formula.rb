@@ -38,10 +38,6 @@ module Homebrew
           EOS
         when /(lib)?lzma/
           "lzma is now part of the xz formula."
-        when "gtest", "googletest", "google-test" then <<~EOS
-          Installing gtest system-wide is not recommended; it should be vendored
-          in your projects that use it.
-          EOS
         when "gmock", "googlemock", "google-mock" then <<~EOS
           Installing gmock system-wide is not recommended; it should be vendored
           in your projects that use it.
