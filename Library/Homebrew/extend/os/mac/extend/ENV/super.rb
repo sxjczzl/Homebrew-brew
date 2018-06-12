@@ -102,7 +102,15 @@ module Superenv
   end
 
   def effective_sysroot
-    MacOS.sdk_path.to_s if MacOS::Xcode.without_clt?
+    if MacOS::Xcode.without_clt?
+      MacOS.sdk_path.to_s
+    # Possibly a temporary workaround, depending on how the
+    # CLT shakes out this dev cycle.
+    # We need this sysroot set because there are no headers
+    # in /usr.
+    elsif MacOS.version >= :mojave
+      "#{MacOS::CLT::PKG_PATH}/SDKs/MacOSX#{MacOS.version}.sdk"
+    end
   end
 
   def set_x11_env_if_installed
