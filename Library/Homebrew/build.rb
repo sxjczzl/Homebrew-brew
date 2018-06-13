@@ -190,7 +190,11 @@ begin
   build   = Build.new(formula, options)
   build.install
 rescue Exception => e # rubocop:disable Lint/RescueException
-  Marshal.dump(e, error_pipe)
+  begin
+    Marshal.dump(e, error_pipe)
+  rescue TypeError
+    raise e
+  end
   error_pipe.close
   exit! 1
 end
