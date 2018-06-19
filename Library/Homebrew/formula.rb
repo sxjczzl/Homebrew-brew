@@ -146,6 +146,11 @@ class Formula
   # Will only be non-`nil` inside {#test}.
   attr_reader :testpath
 
+  # Unless building with the interactive flag, Homebrew reassigns the HOME
+  # environment variable during {#install} & {#test}. Outside of either of
+  # those this will be `nil`.
+  attr_reader :env_home
+
   # When installing a bottle (binary package) from a local path this will be
   # set to the full path to the bottle tarball. If not, it will be `nil`.
   # @private
@@ -1684,13 +1689,16 @@ class Formula
 
     mktemp("#{name}-test") do |staging|
       staging.retain! if ARGV.keep_tmp?
-      @testpath = staging.tmpdir
-      test_env[:HOME] = @testpath
-      setup_home @testpath
+      @testpath = staging.tmpdir.join("run_test")
+      @env_home = @testpath/"../brew_home"
+      test_env[:HOME] = @env_home
+      setup_home @env_home
       begin
         with_logging("test") do
           with_env(test_env) do
-            test
+            mkdir(@testpath) do
+              test
+            end
           end
         end
       rescue Exception # rubocop:disable Lint/RescueException
@@ -1700,6 +1708,7 @@ class Formula
     end
   ensure
     @testpath = nil
+    @env_home = nil
     @prefix_returns_versioned_prefix = false
   end
 
@@ -2018,21 +2027,20 @@ class Formula
     active_spec.stage do |staging|
       @source_modified_time = active_spec.source_modified_time
       @buildpath = Pathname.pwd
-      env_home = buildpath/".brew_home"
-      mkdir_p env_home
+      @env_home = @buildpath/"../brew_home"
 
       stage_env = {
         HOMEBREW_PATH: nil,
       }
 
       unless ARGV.interactive?
-        stage_env[:HOME] = env_home
+        stage_env[:HOME] = @env_home
         stage_env[:_JAVA_OPTIONS] =
           "#{ENV["_JAVA_OPTIONS"]} -Duser.home=#{HOMEBREW_CACHE}/java_cache"
         stage_env[:CURL_HOME] = ENV["CURL_HOME"] || ENV["HOME"]
       end
 
-      setup_home env_home
+      setup_home @env_home
 
       ENV.clear_sensitive_environment!
 
