@@ -164,7 +164,7 @@ def interactive_shell(f = nil)
     ENV["HOMEBREW_DEBUG_INSTALL"] = f.full_name
   end
 
-  if ENV["SHELL"].include?("zsh") && ENV["HOME"].start_with?(HOMEBREW_TEMP.resolved_path.to_s)
+  if ENV["SHELL"].include?("zsh") && ENV["HOME"].include?("brew_home")
     FileUtils.mkdir_p ENV["HOME"]
     FileUtils.touch "#{ENV["HOME"]}/.zshrc"
   end
