@@ -2040,6 +2040,10 @@ class Formula
         stage_env[:CURL_HOME] = ENV["CURL_HOME"] || ENV["HOME"]
       end
 
+      if @env_home == HOMEBREW_TEMP.realpath/"brew_home"
+        raise "Refusing to create HOME at #{@env_home}; aborting"
+      end
+
       setup_home @env_home
 
       ENV.clear_sensitive_environment!
