@@ -30,6 +30,7 @@ describe "download strategies", :cask do
         "--remote-time",
         "--continue-at", "-",
         "--output", kind_of(Pathname),
+        "--cookie-jar", "/dev/null",
         cask.url.to_s,
         user_agent: :default
       )
