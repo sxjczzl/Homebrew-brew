@@ -33,7 +33,7 @@ module Hbc
       check_download
       check_single_pre_postflight
       check_single_uninstall_zap
-      check_untrusted_pkg
+      check_official_taps
       check_hosting_with_appcast
       check_latest_with_appcast
       check_stanza_requires_uninstall
@@ -54,8 +54,8 @@ module Hbc
 
     private
 
-    def check_untrusted_pkg
-      odebug "Auditing pkg stanza: allow_untrusted"
+    def check_official_taps
+      odebug "Auditing official tap only checks"
 
       return if @cask.sourcefile_path.nil?
 
@@ -63,8 +63,24 @@ module Hbc
       return if tap.nil?
       return if tap.user != "Homebrew"
 
+      check_untrusted_pkg
+      check_uninstall_trash
+      check_zap_delete
+    end
+
+    def check_untrusted_pkg
       return unless cask.artifacts.any? { |k| k.is_a?(Hbc::Artifact::Pkg) && k.stanza_options.key?(:allow_untrusted) }
       add_warning "allow_untrusted is not permitted in official Homebrew-Cask taps"
+    end
+
+    def check_uninstall_trash
+      return unless cask.artifacts.any? { |k| k.is_a?(Hbc::Artifact::Uninstall) && k.directives.key?(:trash) }
+      add_warning "delete should be used instead of trash for the uninstall stanza"
+    end
+
+    def check_zap_delete
+      return unless cask.artifacts.any? { |k| k.is_a?(Hbc::Artifact::Zap) && k.directives.key?(:delete) }
+      add_warning "trash should be used instead of delete for the zap stanza"
     end
 
     def check_stanza_requires_uninstall
