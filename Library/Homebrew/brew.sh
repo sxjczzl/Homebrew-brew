@@ -196,6 +196,17 @@ You have not agreed to the Xcode license. Please resolve this by running:
   sudo xcodebuild -license accept
 EOS
     fi
+    if [[ "$XCRUN_STATUS" -ne 0 && "$XCRUN_OUTPUT" = *"invalid active developer path"* ]]
+    then
+      odie <<EOS
+The Xcode Command Line Tools don't exist in $XCODE_SELECT_PATH.
+This occurs after an OS upgrade or when installing different versions of Xcode.
+It may be fixed by reinstalling the tools:
+  sudo xcode-select --install
+Or if you know the location of the tools:
+  sudo xcode-select --switch <path>
+EOS
+    fi
   fi
 fi
 
