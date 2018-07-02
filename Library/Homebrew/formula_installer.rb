@@ -267,6 +267,8 @@ class FormulaInstaller
       install_dependencies(deps)
     end
 
+    install_cask_requirements
+
     return if only_deps?
 
     if build_bottle? && (arch = ARGV.bottle_arch) && !Hardware::CPU.optimization_flags.include?(arch)
@@ -459,6 +461,8 @@ class FormulaInstaller
           Requirement.prune
         elsif (dep = formula_deps_map[dependent.name]) && dep.build?
           Requirement.prune
+        elsif req.is_a? CaskRequirement # Cask requirements will be installed during `install`
+          next
         else
           unsatisfied_reqs[dependent] << req
         end
@@ -469,6 +473,13 @@ class FormulaInstaller
     req_deps = Dependency.merge_repeats(req_deps)
 
     [unsatisfied_reqs, req_deps]
+  end
+
+  def install_cask_requirements
+    formula.recursive_requirements do |_dependent, req|
+      next unless req.instance_of? CaskRequirement
+      req.install unless req.installed?
+    end
   end
 
   def expand_dependencies(deps)
