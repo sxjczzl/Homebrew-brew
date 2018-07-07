@@ -38,6 +38,7 @@ class FormulaInstaller
   mode_attr_accessor :build_from_source, :force_bottle, :include_test
   mode_attr_accessor :ignore_deps, :only_deps, :interactive, :git
   mode_attr_accessor :verbose, :debug, :quieter
+  mode_attr_accessor :allow_metaformula
 
   def initialize(formula)
     @formula = formula
@@ -62,6 +63,7 @@ class FormulaInstaller
     @poured_bottle = false
     @pour_failed = false
     @start_time = nil
+    @allow_metaformula = ARGV.allow_metaformula?
   end
 
   def self.attempted
@@ -220,6 +222,11 @@ class FormulaInstaller
   end
 
   def install
+    if formula.is_a?(MetaFormula) && !allow_metaformula?
+      message = "'#{formula.name}' is a metaformula and can install casks (possibly large) as dependencies, use --allow-metaformula to enable that."
+      raise CannotInstallFormulaError, message
+    end
+
     if !formula.bottle_unneeded? && !pour_bottle? && DevelopmentTools.installed?
       Homebrew::Install.check_development_tools
     end
@@ -267,7 +274,9 @@ class FormulaInstaller
       install_dependencies(deps)
     end
 
-    install_cask_requirements
+    if formula.is_a?(MetaFormula) && allow_metaformula?
+      install_cask_requirements
+    end
 
     return if only_deps?
 
