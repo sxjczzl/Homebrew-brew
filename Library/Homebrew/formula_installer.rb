@@ -275,7 +275,7 @@ class FormulaInstaller
     end
 
     if formula.is_a?(MetaFormula) && allow_metaformula?
-      install_cask_requirements
+      install_or_upgrade_cask_reqs
     end
 
     return if only_deps?
@@ -484,10 +484,15 @@ class FormulaInstaller
     [unsatisfied_reqs, req_deps]
   end
 
-  def install_cask_requirements
+  def install_or_upgrade_cask_reqs
     formula.recursive_requirements do |_dependent, req|
       next unless req.instance_of? CaskRequirement
-      req.install unless req.installed?
+
+      if !req.installed?
+        req.install
+      elsif req.outdated?
+        req.upgrade
+      end
     end
   end
 

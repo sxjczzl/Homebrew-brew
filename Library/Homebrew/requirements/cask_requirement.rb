@@ -11,14 +11,22 @@ class CaskRequirement < Requirement
     super(tags)
   end
 
-  satisfy(build_env: false) { installed? }
+  satisfy(build_env: false) { installed? && !outdated? }
 
   def installed?
     @cask_loaded.installed?
   end
 
+  def outdated?
+    @cask_loaded.outdated?
+  end
+
   def install
     system(HOMEBREW_BREW_FILE, "cask", "install", @cask)
+  end
+
+  def upgrade
+    system(HOMEBREW_BREW_FILE, "cask", "upgrade", @cask)
   end
 
   def message
