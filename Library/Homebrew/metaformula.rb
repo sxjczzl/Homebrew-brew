@@ -71,6 +71,10 @@ class MetaFormula < Formula
     true
   end
 
+  def cask_deps
+    requirements.select { |req| req.is_a? CaskRequirement }
+  end
+
   class << self
     # DSL not designed to be used in MetaFormula for now are disabled to avoid undefined behaviors
     # This is subject to change if certain functions should be assigned to them.
