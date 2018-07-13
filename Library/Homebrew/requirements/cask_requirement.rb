@@ -37,6 +37,10 @@ class CaskRequirement < Requirement
     end
   end
 
+  def to_s
+    @name
+  end
+
   module Util
     private
 
