@@ -163,5 +163,40 @@ describe MetaFormula do
         [foo_meta, bar_form, baz_cask].each { |f| expect(f).not_to be_outdated }
       end
     end
+
+    describe "brew list" do
+      before do
+        mock_installed_formula("foo", "1.0.0")
+        mock_installed_formula("bar", "1.0.0")
+        mock_installed_cask("baz", "1.0.0")
+
+        setup_test_metaformula "qux", <<~EOS
+          version "1.0.0"
+          depends_on "foo"
+          depends_on :cask => "baz"
+        EOS
+        mock_installed_formula("qux", "1.0.0")
+      end
+
+      it "prints dependencies of metaformulae" do
+        expect { brew "list", "--meta", "foo" }
+          .to output("bar\nbaz\n").to_stdout
+      end
+
+      it "only one level of dependencies will be printed" do
+        expect { brew "list", "--meta", "qux" }
+          .to not_to_output(/bar/).to_stdout
+      end
+
+      it "use --casks to only list cask dependencies" do
+        expect { brew "list", "--meta", "foo", "--casks" }
+          .to output("baz\n").to_stdout
+      end
+
+      it "use --brews to only list formula dependencies" do
+        expect { brew "list", "--meta", "foo", "--brews" }
+          .to output("bar\n").to_stdout
+      end
+    end
   end
 end

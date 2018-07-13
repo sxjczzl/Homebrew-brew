@@ -33,12 +33,17 @@ module Homebrew
       switch "--full-name"
       switch "--multiple", depends_on: "--versions"
       switch :verbose
+      switch "--meta"
+      switch "--brews", depends_on: "--meta"
+      switch "--casks", depends_on: "--meta"
       # passed through to ls
       switch "-1"
       switch "-l"
       switch "-t"
       switch "-r"
     end
+
+    return list_metaformulae if args.meta?
 
     # Use of exec means we don't explicitly exit
     list_unbrewed if args.unbrewed?
@@ -138,6 +143,20 @@ module Homebrew
         next if args.multiple? && versions.length < 2
         puts "#{d.basename} #{versions * " "}"
       end
+    end
+  end
+
+  def list_metaformulae
+    ARGV.formulae.each_with_index do |f, i|
+      puts unless i.zero?
+
+      unless f.is_a? MetaFormula
+        opoo "#{f.name} is not a metaformula"
+        next
+      end
+
+      puts f.deps       if args.brews? || !args.casks?
+      puts f.cask_deps  if !args.brews? || args.casks?
     end
   end
 end
