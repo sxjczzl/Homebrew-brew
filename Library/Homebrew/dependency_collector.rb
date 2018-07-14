@@ -3,6 +3,7 @@ require "dependencies"
 require "requirement"
 require "requirements"
 require "extend/cachable"
+require "metaformula"
 
 ## A dependency is a formula that another formula needs to install.
 ## A requirement is something other than a formula that another formula
@@ -123,6 +124,7 @@ class DependencyCollector
     when :osxfuse    then OsxfuseRequirement.new(tags)
     when :tuntap     then TuntapRequirement.new(tags)
     when :ld64       then ld64_dep_if_needed(tags)
+    when :cask       then CaskRequirement.new(tags)
     else
       raise ArgumentError, "Unsupported special dependency #{spec.inspect}"
     end

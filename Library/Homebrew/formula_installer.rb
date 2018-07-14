@@ -39,6 +39,7 @@ class FormulaInstaller
   mode_attr_accessor :build_from_source, :force_bottle, :include_test
   mode_attr_accessor :ignore_deps, :only_deps, :interactive, :git
   mode_attr_accessor :verbose, :debug, :quieter
+  mode_attr_accessor :allow_metaformula
 
   def initialize(formula)
     @formula = formula
@@ -63,6 +64,7 @@ class FormulaInstaller
     @poured_bottle = false
     @pour_failed = false
     @start_time = nil
+    @allow_metaformula = ARGV.allow_metaformula?
   end
 
   def self.attempted
@@ -221,6 +223,11 @@ class FormulaInstaller
   end
 
   def install
+    if formula.is_a?(MetaFormula) && !allow_metaformula?
+      message = "'#{formula.name}' is a metaformula and can install casks (possibly large) as dependencies, use --allow-metaformula to enable that."
+      raise CannotInstallFormulaError, message
+    end
+
     if !formula.bottle_unneeded? && !pour_bottle? && DevelopmentTools.installed?
       Homebrew::Install.check_development_tools
     end
@@ -266,6 +273,10 @@ class FormulaInstaller
       deps = compute_dependencies
       check_dependencies_bottled(deps) if pour_bottle? && !DevelopmentTools.installed?
       install_dependencies(deps)
+    end
+
+    if formula.is_a?(MetaFormula) && allow_metaformula?
+      install_or_upgrade_cask_reqs
     end
 
     return if only_deps?
@@ -461,6 +472,8 @@ class FormulaInstaller
           Requirement.prune
         elsif (dep = formula_deps_map[dependent.name]) && dep.build?
           Requirement.prune
+        elsif req.is_a? CaskRequirement # Cask requirements will be installed during `install`
+          next
         else
           unsatisfied_reqs[dependent] << req
         end
@@ -471,6 +484,18 @@ class FormulaInstaller
     req_deps = Dependency.merge_repeats(req_deps)
 
     [unsatisfied_reqs, req_deps]
+  end
+
+  def install_or_upgrade_cask_reqs
+    formula.recursive_requirements do |_dependent, req|
+      next unless req.instance_of? CaskRequirement
+
+      if !req.installed?
+        req.install
+      elsif req.outdated?
+        req.upgrade
+      end
+    end
   end
 
   def expand_dependencies(deps)
@@ -754,8 +779,7 @@ class FormulaInstaller
     end
 
     formula.update_head_version
-
-    if !formula.prefix.directory? || Keg.new(formula.prefix).empty_installation?
+    if !formula.prefix.directory? || (!formula.is_a?(MetaFormula) && Keg.new(formula.prefix).empty_installation?)
       raise "Empty installation"
     end
   rescue Exception => e # rubocop:disable Lint/RescueException

@@ -1,4 +1,4 @@
-require "formula"
+require "metaformula"
 
 module Readall
   class << self

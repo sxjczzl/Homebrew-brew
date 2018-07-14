@@ -48,6 +48,7 @@ class Resource
     @checksum = nil
     @using = nil
     @patches = []
+    @download_strategy = NullDownloadStrategy
     instance_eval(&block) if block_given?
   end
 
@@ -144,7 +145,7 @@ class Resource
   end
 
   def verify_download_integrity(fn)
-    if fn.file?
+    if fn&.file? # fn is nil when using Metaformula
       ohai "Verifying #{fn.basename} checksum" if ARGV.verbose?
       fn.verify_checksum(checksum)
     end

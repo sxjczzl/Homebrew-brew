@@ -18,6 +18,7 @@ module HomebrewArgvExtension
       --include-test
       --verbose
       --force
+      --allow-metaformula
       -i
       -v
       -d
@@ -266,6 +267,11 @@ module HomebrewArgvExtension
 
   def fetch_head?
     include? "--fetch-HEAD"
+  end
+
+  def allow_metaformula?
+    # TODO: add CLI doc for this new option
+    include? "--allow-metaformula"
   end
 
   # eg. `foo -ns -i --bar` has three switches, n, s and i
