@@ -4,8 +4,7 @@ cask 'invalid-gpg-signature-url' do
 
   url "file://#{TEST_FIXTURE_DIR}/cask/caffeine.zip"
   homepage 'http://example.com/invalid-gpg-signature-url'
-  gpg 1,
-      key_id: '01234567'
+  gpg 1, key_id: '01234567'
 
   app 'Caffeine.app'
 end

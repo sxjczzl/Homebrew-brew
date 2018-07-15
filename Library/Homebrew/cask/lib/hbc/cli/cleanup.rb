@@ -69,14 +69,19 @@ module Hbc
         cleanup_size = 0
         processed_files = 0
         paths.each do |item|
-          next unless item.exist?
+          next unless item.exist? || item.symlink?
           processed_files += 1
 
           begin
             LockFile.new(item.basename).with_lock do
               puts item
-              cleanup_size += File.size(item)
-              item.rmtree
+
+              if item.exist?
+                cleanup_size += File.size(item)
+                item.realpath.rmtree
+              end
+
+              item.rmtree if item.symlink?
             end
           rescue OperationInProgressError
             puts "skipping: #{item} is locked"
