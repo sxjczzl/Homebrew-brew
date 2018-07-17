@@ -1,15 +1,9 @@
-require "backports/2.4.0"
-
 class String
   # String.chomp, but if result is empty: returns nil instead.
   # Allows `chuzzle || foo` short-circuits.
   def chuzzle
     s = chomp
     s unless s.empty?
-  end
-
-  def strip_prefix(prefix)
-    start_with?(prefix) ? self[prefix.length..-1] : self
   end
 end
 

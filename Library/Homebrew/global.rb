@@ -16,9 +16,19 @@ end
   $LOAD_PATH.push((child/"lib").to_s)
 end
 
+require "backports/2.4.0/string"
+require "backports/2.4.0/regexp"
+require "backports/2.4.0/enumerable"
+require "backports/2.5.0/array"
+require "backports/2.5.0/dir"
+require "backports/2.5.0/enumerable"
+require "backports/2.5.0/kernel"
+require "backports/2.5.0/module"
+require "backports/2.5.0/string"
+require "backports/2.5.0/struct"
+
 require "config"
 
-require "English"
 require "ostruct"
 require "messages"
 
