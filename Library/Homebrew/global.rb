@@ -11,6 +11,11 @@ unless $LOAD_PATH.include?(HOMEBREW_LIBRARY_PATH.to_s)
   $LOAD_PATH.push(HOMEBREW_LIBRARY_PATH.to_s)
 end
 
+(HOMEBREW_LIBRARY_PATH/"vendor").children.each do |child|
+  next unless (child/"lib").directory?
+  $LOAD_PATH.push((child/"lib").to_s)
+end
+
 require "config"
 
 require "English"
