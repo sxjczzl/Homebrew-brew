@@ -45,6 +45,19 @@ describe RuboCop::Cop::FormulaAudit::ComponentsRedundancy do
       RUBY
     end
 
+    it "When `head do` contains more than one line" do
+      expect_no_offenses(<<~RUBY)
+        class Foo < Formula
+          url "http://example.com/foo-1.0.tgz"
+
+          head do
+            url "http://example.com/foo.git"
+            depends_on "maven"
+          end
+        end
+      RUBY
+    end
+
     it "When `stable do` is present with a `head` method" do
       expect_no_offenses(<<~RUBY)
         class Foo < Formula
@@ -65,6 +78,7 @@ describe RuboCop::Cop::FormulaAudit::ComponentsRedundancy do
           end
 
           head do
+            # stuff
             # stuff
           end
         end
