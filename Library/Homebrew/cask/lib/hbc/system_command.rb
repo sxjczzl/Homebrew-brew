@@ -1,5 +1,5 @@
 require "open3"
-require "vendor/plist/plist"
+require "plist"
 require "shellwords"
 
 require "extend/io"
