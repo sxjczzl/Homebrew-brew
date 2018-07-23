@@ -115,6 +115,50 @@ describe Hbc::Audit, :cask do
       end
     end
 
+    describe "uninstall trash checks" do
+      let(:warning_msg) { "delete should be used instead of trash for the uninstall stanza" }
+
+      context "when the Cask has no uninstall stanza" do
+        let(:cask_token) { "basic-cask" }
+
+        it { is_expected.not_to warn_with(warning_msg) }
+      end
+
+      context "when the uninstall stanza does not use trash" do
+        let(:cask_token) { "with-uninstall-delete" }
+
+        it { is_expected.not_to warn_with(warning_msg) }
+      end
+
+      context "when the uninstall stanza uses trash" do
+        let(:cask_token) { "with-uninstall-trash" }
+
+        it { is_expected.to warn_with(warning_msg) }
+      end
+    end
+
+    describe "zap delete checks" do
+      let(:warning_msg) { "trash should be used instead of delete for the zap stanza" }
+
+      context "when the Cask has no zap stanza" do
+        let(:cask_token) { "basic-cask" }
+
+        it { is_expected.not_to warn_with(warning_msg) }
+      end
+
+      context "when the zap stanza does not use delete" do
+        let(:cask_token) { "with-zap-trash" }
+
+        it { is_expected.not_to warn_with(warning_msg) }
+      end
+
+      context "when the zap stanza uses delete" do
+        let(:cask_token) { "with-zap-delete" }
+
+        it { is_expected.to warn_with(warning_msg) }
+      end
+    end
+
     describe "when the Cask stanza requires uninstall" do
       let(:warning_msg) { "installer and pkg stanzas require an uninstall stanza" }
 
