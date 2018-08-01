@@ -200,7 +200,7 @@ module Homebrew
   end
 
   def system(cmd, *args, **options)
-    puts "#{cmd} #{args * " "}" if ARGV.verbose?
+    puts Formatter.verbose_command(cmd, *args, debug: ARGV.debug?) if ARGV.verbose?
     _system(cmd, *args, **options)
   end
 

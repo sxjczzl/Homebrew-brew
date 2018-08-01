@@ -3,6 +3,13 @@ require "utils/tty"
 module Formatter
   module_function
 
+  def verbose_command(*args, debug: false)
+    cmd = args.shelljoin.gsub('\=', "=")
+    load_path = "-I #{$LOAD_PATH.join(File::PATH_SEPARATOR)}"
+    cmd = cmd.sub(" #{load_path} ", " ") unless debug
+    cmd
+  end
+
   def arrow(string, color: nil)
     prefix("==>", string, color)
   end
