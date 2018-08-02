@@ -94,4 +94,18 @@ describe Formatter do
       expect(described_class.comma_and(1, 2, 3)).to eq("1, 2 and 3")
     end
   end
+
+  describe "::verbose_command" do
+    let(:load_path) { $LOAD_PATH.join(File::PATH_SEPARATOR) }
+
+    it "removes the Ruby $LOAD_PATH from the arguments" do
+      expect(described_class.verbose_command("ruby", "-I", load_path, "script.rb"))
+        .to eq "ruby script.rb"
+    end
+
+    it "leaves the $LOAD_PATH when debug: true" do
+      expect(described_class.verbose_command("ruby", "-I", load_path, "script.rb", debug: true))
+        .to eq "ruby -I #{load_path} script.rb"
+    end
+  end
 end
