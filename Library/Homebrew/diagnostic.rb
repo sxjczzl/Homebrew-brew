@@ -616,7 +616,7 @@ module Homebrew
             properly. You can solve this by adding the Homebrew remote:
               git -C "#{HOMEBREW_REPOSITORY}" remote add origin #{Formatter.url("https://github.com/Homebrew/brew.git")}
           EOS
-        elsif origin !~ %r{Homebrew/brew(\.git|/)?$}
+        elsif origin !~ %r{Homebrew/brew(\.git|/)?$}i
           <<~EOS
             Suspicious Homebrew/brew git origin remote found.
 
