@@ -1,8 +1,6 @@
 # This script is loaded by formula_installer as a separate process.
 # Thrown exceptions are propagated back to the parent process over a pipe
 
-old_trap = trap("INT") { exit! 130 }
-
 require "global"
 require "build_options"
 require "cxxstdlib"
@@ -22,7 +20,7 @@ class Build
     trap("INT") { exit! 130 }
 
     yield
-  rescue Exception => e
+  rescue Exception => e # rubocop:disable Lint/RescueException
     Marshal.dump(e, error_pipe) if error_pipe
     error_pipe&.close
     exit! 1
