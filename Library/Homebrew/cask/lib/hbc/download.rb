@@ -1,4 +1,5 @@
 require "fileutils"
+require "hbc/quarantine"
 require "hbc/verify"
 
 module Hbc
@@ -13,6 +14,7 @@ module Hbc
     def perform
       clear_cache
       fetch
+      quarantine
       downloaded_path
     end
 
@@ -37,6 +39,10 @@ module Hbc
       @downloaded_path = downloader.cached_location
     rescue StandardError => e
       raise CaskError, "Download failed on Cask '#{cask}' with message: #{e}"
+    end
+
+    def quarantine
+      Quarantine.all(@cask, @downloaded_path)
     end
   end
 end
