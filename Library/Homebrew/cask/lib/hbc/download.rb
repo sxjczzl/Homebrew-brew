@@ -42,9 +42,7 @@ module Hbc
     end
 
     def quarantine
-      unless Quarantine.detect(downloaded_path)
-        Quarantine.all(@cask, @downloaded_path)
-      end
+      Quarantine.all(@cask, @downloaded_path) unless Quarantine.detect(downloaded_path)
     end
   end
 end
