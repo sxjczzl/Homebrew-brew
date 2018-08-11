@@ -3,12 +3,9 @@
 import Foundation
 import CoreServices
 
-let QUARANTINE_SUCCESS: Int = 0
-let QUARANTINE_FAILURE: Int = 1
-
 if (CommandLine.arguments.count < 4) {
   print("Insufficient parameters: this script needs file_path, data_url, and origin_url")
-  exit(Int32(QUARANTINE_FAILURE))
+  exit(1)
 }
 
 let filepath = CommandLine.arguments[1]
@@ -33,13 +30,13 @@ if (dataLocationUrl.checkResourceIsReachableAndReturnError(&errorBag)) {
   catch {
     let errorString: String = "Homebrew-Cask quarantiner: unable to quarantine \(dataLocationUrl.absoluteString!): \(error.localizedDescription)"
     NSLog(errorString)
-    exit(Int32(QUARANTINE_FAILURE))
+    exit(1)
   }
 }
 else {
   let errorString: String = "Homebrew-Cask quarantiner: unable to quarantine \(dataLocationUrl.absoluteString!): \(errorBag!.localizedDescription)"
   NSLog(errorString)
-  exit(Int32(QUARANTINE_FAILURE))
+  exit(1)
 }
 
-exit(Int32(QUARANTINE_SUCCESS))
+exit(0)
