@@ -1,7 +1,5 @@
-# This script is loaded by formula_installer as a separate instance.
+# This script is loaded by formula_installer as a separate process.
 # Thrown exceptions are propagated back to the parent process over a pipe
-
-old_trap = trap("INT") { exit! 130 }
 
 require "global"
 require "build_options"
@@ -14,6 +12,19 @@ require "socket"
 
 class Build
   attr_reader :formula, :deps, :reqs
+
+  def self.guard_with_error_pipe
+    error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
+    error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
+
+    trap("INT") { exit! 130 }
+
+    yield
+  rescue Exception => e # rubocop:disable Lint/RescueException
+    Marshal.dump(e, error_pipe) if error_pipe
+    error_pipe&.close
+    exit! 1
+  end
 
   def initialize(formula, options)
     @formula = formula
@@ -179,18 +190,13 @@ class Build
   end
 end
 
-begin
-  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
-  error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
-
-  trap("INT", old_trap)
-
-  formula = ARGV.formulae.first
-  options = Options.create(ARGV.flags_only)
-  build   = Build.new(formula, options)
-  build.install
-rescue Exception => e # rubocop:disable Lint/RescueException
-  Marshal.dump(e, error_pipe)
-  error_pipe.close
-  exit! 1
+# If build.rb is not being called through exec(2), then
+# we expected the caller to perform this state construction.
+if ENV["HOMEBREW_NO_BUILD_EXEC"].nil?
+  Build.guard_with_error_pipe do
+    formula = ARGV.formulae.first
+    options = Options.create(ARGV.flags_only)
+    build   = Build.new(formula, options)
+    build.install
+  end
 end

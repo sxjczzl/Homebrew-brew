@@ -752,6 +752,13 @@ class FormulaInstaller
         sandbox.allow_write_xcode
         sandbox.allow_write_cellar(formula)
         sandbox.exec(*args)
+      elsif ARGV.no_sandbox? && ENV["HOMEBREW_NO_BUILD_EXEC"]
+        require "#{HOMEBREW_LIBRARY_PATH}/build"
+
+        Build.guard_with_error_pipe do
+          build = Build.new(formula, Options.create(build_argv))
+          build.install
+        end
       else
         exec(*args)
       end
