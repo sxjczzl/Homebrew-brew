@@ -16,7 +16,7 @@ module UnpackStrategy
 
     def extract_to_dir(unpack_dir, basename:, verbose:)
       path.children.each do |child|
-        FileUtils.copy_entry child, unpack_dir/child.basename, true, false
+        FileUtils.mv child, unpack_dir/child.basename
       end
     end
   end
