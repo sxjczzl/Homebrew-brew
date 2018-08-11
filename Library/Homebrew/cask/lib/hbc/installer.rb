@@ -7,6 +7,7 @@ require "hbc/cask_dependencies"
 require "hbc/download"
 require "hbc/staged"
 require "hbc/verify"
+require "hbc/quarantine"
 
 require "cgi"
 
@@ -171,6 +172,15 @@ module Hbc
         end
       else
         primary_container.extract_nestedly(to: @cask.staged_path, basename: basename, verbose: verbose?)
+      end
+
+      unless Quarantine.detect(@downloaded_path)
+        raise CaskError, "#{@downloaded_path} was not quarantined properly."
+      end
+
+      @cask.staged_path.each_child do |path|
+        Quarantine.all(@downloaded_path, path) unless Quarantine.detect(path)
+        raise CaskError, "#{path} was not quarantined properly." unless Quarantine.detect(path)
       end
     end
 
