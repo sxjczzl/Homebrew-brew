@@ -6,15 +6,16 @@ module Hbc
   class Download
     attr_reader :cask
 
-    def initialize(cask, force: false)
+    def initialize(cask, force: false, quarantine: true)
       @cask = cask
       @force = force
+      @quarantine = quarantine
     end
 
     def perform
       clear_cache
       fetch
-      quarantine
+      quarantine if @quarantine
       downloaded_path
     end
 
