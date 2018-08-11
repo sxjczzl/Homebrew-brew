@@ -2,21 +2,26 @@ require "hbc/download"
 
 module Hbc
   class Auditor
-    def self.audit(cask, audit_download: false, check_token_conflicts: false, commit_range: nil)
-      new(cask, audit_download, check_token_conflicts, commit_range).audit
+    def self.audit(cask, audit_download: false, check_token_conflicts: false, quarantine: true, commit_range: nil)
+      new(cask, audit_download, check_token_conflicts, quarantine, commit_range).audit
     end
 
     attr_reader :cask, :commit_range
 
-    def initialize(cask, audit_download, check_token_conflicts, commit_range)
+    def initialize(cask, audit_download, check_token_conflicts, quarantine, commit_range)
       @cask = cask
       @audit_download = audit_download
+      @quarantine = quarantine
       @commit_range = commit_range
       @check_token_conflicts = check_token_conflicts
     end
 
     def audit_download?
       @audit_download
+    end
+
+    def quarantine?
+      @quarantine
     end
 
     def check_token_conflicts?
