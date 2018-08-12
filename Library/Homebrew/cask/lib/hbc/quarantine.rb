@@ -19,11 +19,11 @@ module Hbc
     def detect(file)
       odebug "Verifying Gatekeeper status of #{file}"
 
-      quarantine_status = Quarantine.status(file)
+      quarantine_status = !Quarantine.status(file).empty?
 
-      odebug "Quarantine status of #{file}: #{quarantine_status}"
+      odebug "#{file} is #{quarantine_status ? "quarantined" : "not quarantined"}"
 
-      !quarantine_status.empty?
+      quarantine_status
     end
 
     def status(file, command = SystemCommand)
@@ -34,7 +34,9 @@ module Hbc
 
     def cask(cask, downloaded_path, command = SystemCommand)
       odebug "Quarantining #{downloaded_path}"
-      command.run!(swift, args: ["#{HOMEBREW_LIBRARY_PATH}/cask/lib/hbc/utils/quarantine.swift", downloaded_path, cask.url.to_s, cask.homepage.to_s])
+      quarantiner = command.run(swift, args: ["#{HOMEBREW_LIBRARY_PATH}/cask/lib/hbc/utils/quarantine.swift", downloaded_path, cask.url.to_s, cask.homepage.to_s])
+
+      raise CaskError, "when quarantining #{downloaded_path}: #{quarantiner.stderr}" unless quarantiner.success? 
     end
 
     def all(downloaded_path, base_path, command = SystemCommand)

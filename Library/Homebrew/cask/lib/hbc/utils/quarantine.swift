@@ -3,24 +3,24 @@
 import Foundation
 import CoreServices
 
-if (CommandLine.arguments.count < 4) {
-  print("Insufficient parameters: this script needs file_path, data_url, and origin_url")
-  exit(1)
+struct swifterr: TextOutputStream {
+  public static var stream = swifterr()
+  mutating func write(_ string: String) { fputs(string, stderr) }
 }
 
-let filepath = CommandLine.arguments[1]
-let agent: String = "Homebrew-Cask"
-let dataUrl: String = CommandLine.arguments[2]
-let originUrl: String = CommandLine.arguments[3]
+if (CommandLine.arguments.count < 4) {
+  print("Insufficient parameters", to: &swifterr.stream)
+  exit(2)
+}
 
 let quarantineProperties: [String: Any] = [
-  kLSQuarantineAgentNameKey as String: agent,
+  kLSQuarantineAgentNameKey as String: "Homebrew-Cask",
   kLSQuarantineTypeKey as String: kLSQuarantineTypeWebDownload,
-  kLSQuarantineDataURLKey as String: dataUrl,
-  kLSQuarantineOriginURLKey as String: originUrl
+  kLSQuarantineDataURLKey as String: CommandLine.arguments[2],
+  kLSQuarantineOriginURLKey as String: CommandLine.arguments[3]
 ]
 
-let dataLocationUrl: NSURL = NSURL.init(fileURLWithPath: filepath)
+let dataLocationUrl: NSURL = NSURL.init(fileURLWithPath: CommandLine.arguments[1])
 var errorBag: NSError?
 
 if (dataLocationUrl.checkResourceIsReachableAndReturnError(&errorBag)) {
@@ -28,14 +28,12 @@ if (dataLocationUrl.checkResourceIsReachableAndReturnError(&errorBag)) {
     try dataLocationUrl.setResourceValue(quarantineProperties as NSDictionary, forKey: URLResourceKey.quarantinePropertiesKey)
   }
   catch {
-    let errorString: String = "Homebrew-Cask quarantiner: unable to quarantine \(dataLocationUrl.absoluteString!): \(error.localizedDescription)"
-    NSLog(errorString)
+    print(error.localizedDescription, to: &swifterr.stream)
     exit(1)
   }
 }
 else {
-  let errorString: String = "Homebrew-Cask quarantiner: unable to quarantine \(dataLocationUrl.absoluteString!): \(errorBag!.localizedDescription)"
-  NSLog(errorString)
+  print(errorBag!.localizedDescription, to: &swifterr.stream)
   exit(1)
 }
 
