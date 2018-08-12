@@ -21,6 +21,17 @@ describe Hbc::Quarantine, :cask do
       ).to be true
     end
 
+    it "quarantines Cask audits" do
+      Hbc::CLI::Audit.run("local-transmission", "--download")
+
+      local_transmission = Hbc::CaskLoader.load(cask_path("local-transmission"))
+      cached_location = Hbc::Download.new(local_transmission, force: false, quarantine: false).perform
+
+      expect(
+        described_class.detect(cached_location),
+      ).to be true
+    end
+
     it "quarantines non-DMG Cask installs too" do
       Hbc::CLI::Install.run("container-tar-gz")
 
@@ -63,6 +74,17 @@ describe Hbc::Quarantine, :cask do
 
       expect(
         described_class.detect(Hbc::Config.global.appdir.join("container")),
+      ).to be false
+    end
+
+    it "does not quarantine Cask audits" do
+      Hbc::CLI::Audit.run("local-transmission", "--download", "--no-quarantine")
+
+      local_transmission = Hbc::CaskLoader.load(cask_path("local-transmission"))
+      cached_location = Hbc::Download.new(local_transmission, force: false, quarantine: false).perform
+
+      expect(
+        described_class.detect(cached_location),
       ).to be false
     end
   end
