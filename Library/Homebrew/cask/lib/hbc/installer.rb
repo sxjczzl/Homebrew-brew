@@ -176,7 +176,7 @@ module Hbc
         primary_container.extract_nestedly(to: @cask.staged_path, basename: basename, verbose: verbose?)
       end
 
-      return unless quarantine? && Quarantine.available?
+      return unless quarantine?
 
       unless Quarantine.detect(@downloaded_path)
         raise CaskError, "#{@downloaded_path} was not quarantined properly."

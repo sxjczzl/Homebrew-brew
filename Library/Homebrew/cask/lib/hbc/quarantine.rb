@@ -5,17 +5,6 @@ module Hbc
 
     QUARANTINE_ATTRIBUTE = "com.apple.quarantine".freeze
 
-    # @private
-    def swift
-      @swift ||= DevelopmentTools.locate("swift")
-    end
-
-    def available?
-      status = !swift.nil?
-      odebug "Quarantine is #{status ? "available" : "not available"}."
-      !swift.nil?
-    end
-
     def detect(file)
       odebug "Verifying Gatekeeper status of #{file}"
 
@@ -34,7 +23,7 @@ module Hbc
 
     def cask(cask, downloaded_path, command = SystemCommand)
       odebug "Quarantining #{downloaded_path}"
-      quarantiner = command.run(swift, args: ["#{HOMEBREW_LIBRARY_PATH}/cask/lib/hbc/utils/quarantine.swift", downloaded_path, cask.url.to_s, cask.homepage.to_s])
+      quarantiner = command.run("/usr/bin/osascript", args: ["#{HOMEBREW_LIBRARY_PATH}/cask/lib/hbc/utils/quarantine.applescript", downloaded_path, cask.url.to_s, cask.homepage.to_s])
 
       raise CaskError, "when quarantining #{downloaded_path}: #{quarantiner.stderr}" unless quarantiner.success?
     end

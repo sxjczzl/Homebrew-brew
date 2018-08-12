@@ -15,7 +15,7 @@ module Hbc
     def perform
       clear_cache
       fetch
-      quarantine if @quarantine && Quarantine.available?
+      quarantine if @quarantine
       downloaded_path
     end
 
