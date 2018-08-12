@@ -36,7 +36,7 @@ module Hbc
       odebug "Quarantining #{downloaded_path}"
       quarantiner = command.run(swift, args: ["#{HOMEBREW_LIBRARY_PATH}/cask/lib/hbc/utils/quarantine.swift", downloaded_path, cask.url.to_s, cask.homepage.to_s])
 
-      raise CaskError, "when quarantining #{downloaded_path}: #{quarantiner.stderr}" unless quarantiner.success? 
+      raise CaskError, "when quarantining #{downloaded_path}: #{quarantiner.stderr}" unless quarantiner.success?
     end
 
     def all(downloaded_path, base_path, command = SystemCommand)
