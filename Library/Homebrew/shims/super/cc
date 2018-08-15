@@ -238,6 +238,11 @@ class Cmd
     elsif path.start_with?(prefix, tmpdir)
       true
     elsif path.start_with?("/opt/local", "/opt/boxen/homebrew", "/opt/X11", "/sw", "/usr/X11")
+      # Don't ignore either `/opt/x11` or `/usr/x11` for formulas which `depends_on :x11`:
+      if path.start_with?("/opt/X11", "/usr/X11")
+         && # `formula.requirements.include?(:x11)` or similar, but I don't know how to hook this up
+            # yet.
+        return true
       # ignore MacPorts, Boxen's Homebrew, X11, fink
       false
     elsif mac?
