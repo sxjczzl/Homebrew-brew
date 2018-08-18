@@ -1,18 +1,21 @@
 require "fileutils"
+require "hbc/quarantine"
 require "hbc/verify"
 
 module Hbc
   class Download
     attr_reader :cask
 
-    def initialize(cask, force: false)
+    def initialize(cask, force: false, quarantine: true)
       @cask = cask
       @force = force
+      @quarantine = quarantine
     end
 
     def perform
       clear_cache
       fetch
+      quarantine if @quarantine
       downloaded_path
     end
 
@@ -37,6 +40,10 @@ module Hbc
       @downloaded_path = downloader.cached_location
     rescue StandardError => e
       raise CaskError, "Download failed on Cask '#{cask}' with message: #{e}"
+    end
+
+    def quarantine
+      Quarantine.cask(@cask, @downloaded_path) unless Quarantine.detect(@downloaded_path)
     end
   end
 end

@@ -65,10 +65,11 @@ module Hbc
         ohai "Backing #{self.class.english_name} '#{target.basename}' up to '#{source}'."
         source.dirname.mkpath
 
+        # We need to preserve extended attributes between copies.
         if target.parent.writable?
-          FileUtils.cp_r(target, source)
+          command.run!("/bin/cp", args: ["-pR", target, source])
         else
-          command.run!("/bin/cp", args: ["-r", target, source], sudo: true)
+          command.run!("/bin/cp", args: ["-pR", target, source], sudo: true)
         end
 
         delete(target, force: force, command: command, **options)

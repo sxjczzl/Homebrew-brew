@@ -16,7 +16,7 @@ module UnpackStrategy
 
     def extract_to_dir(unpack_dir, basename:, verbose:)
       path.children.each do |child|
-        FileUtils.copy_entry child, unpack_dir/child.basename, true, false
+        system_command! "cp", args: ["-pR", child, unpack_dir]
       end
     end
   end

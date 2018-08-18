@@ -7,6 +7,7 @@ require "hbc/cask_dependencies"
 require "hbc/download"
 require "hbc/staged"
 require "hbc/verify"
+require "hbc/quarantine"
 
 require "cgi"
 
@@ -23,7 +24,7 @@ module Hbc
 
     PERSISTENT_METADATA_SUBDIRS = ["gpg"].freeze
 
-    def initialize(cask, command: SystemCommand, force: false, skip_cask_deps: false, binaries: true, verbose: false, require_sha: false, upgrade: false, installed_as_dependency: false)
+    def initialize(cask, command: SystemCommand, force: false, skip_cask_deps: false, binaries: true, verbose: false, require_sha: false, upgrade: false, installed_as_dependency: false, quarantine: true)
       @cask = cask
       @command = command
       @force = force
@@ -34,9 +35,10 @@ module Hbc
       @reinstall = false
       @upgrade = upgrade
       @installed_as_dependency = installed_as_dependency
+      @quarantine = quarantine
     end
 
-    attr_predicate :binaries?, :force?, :skip_cask_deps?, :require_sha?, :upgrade?, :verbose?, :installed_as_dependency?
+    attr_predicate :binaries?, :force?, :skip_cask_deps?, :require_sha?, :upgrade?, :verbose?, :installed_as_dependency?, :quarantine?
 
     def self.print_caveats(cask)
       odebug "Printing caveats"
@@ -86,6 +88,7 @@ module Hbc
       uninstall_existing_cask if @reinstall
 
       oh1 "Installing Cask #{Formatter.identifier(@cask)}"
+      opoo "MacOS's Gatekeeper has been disabled for this Cask" unless quarantine?
       stage
       install_artifacts
       enable_accessibility_access
@@ -133,7 +136,7 @@ module Hbc
 
     def download
       odebug "Downloading"
-      @downloaded_path = Download.new(@cask, force: false).perform
+      @downloaded_path = Download.new(@cask, force: false, quarantine: quarantine?).perform
       odebug "Downloaded to -> #{@downloaded_path}"
       @downloaded_path
     end
@@ -171,6 +174,17 @@ module Hbc
         end
       else
         primary_container.extract_nestedly(to: @cask.staged_path, basename: basename, verbose: verbose?)
+      end
+
+      return unless quarantine?
+
+      unless Quarantine.detect(@downloaded_path)
+        raise CaskError, "#{@downloaded_path} was not quarantined properly."
+      end
+
+      @cask.staged_path.each_child do |path|
+        Quarantine.all(@downloaded_path, path) unless Quarantine.detect(path)
+        raise CaskError, "#{path} was not quarantined properly." unless Quarantine.detect(path)
       end
     end
 
