@@ -7,7 +7,6 @@ require "debrew"
 require "formula_assertions"
 require "fcntl"
 require "socket"
-require "json/add/core"
 
 TEST_TIMEOUT_SECONDS = 5 * 60
 

@@ -1,7 +1,5 @@
 require "fcntl"
 require "socket"
-require "json"
-require "json/add/core"
 
 module Utils
   def self.safe_fork(&_block)
@@ -38,7 +36,33 @@ module Utils
           data = read.read
           read.close
           Process.wait(pid) unless socket.nil?
-          raise ChildProcessError, JSON.parse(data) unless data.nil? || data.empty?
+
+          # If we've rescued a ChildProcessError and that ChildProcessError
+          # contains a BuildError, then we reconstruct the inner build error
+          # to make analytics happy.
+          # if e.is_a?(ChildProcessError) && e.inner["json_class"] == "BuildError"
+          #   build_error = BuildError.new(formula, e["cmd"], e["args"], e["env"])
+          #   build_error.set_backtrace e.backtrace
+          #   build_error.options = display_options(formula)
+
+          #   e = build_error
+          # end
+
+          error_hash = JSON.parse(data) unless data.nil? || data.empty?
+
+          if error_hash
+            e = case error_hash["json_class"]
+            when "ErrorDuringExecution"
+              ErrorDuringExecution.new(error_hash["cmd"],
+                                       status: error_hash["status"],
+                                       output: error_hash["output"])
+            else
+              ChildProcessError.new(error_hash)
+            end
+
+            raise e
+          end
+
           raise Interrupt if $CHILD_STATUS.exitstatus == 130
           raise "Forked child process failed: #{$CHILD_STATUS}" unless $CHILD_STATUS.success?
         end

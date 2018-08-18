@@ -528,10 +528,14 @@ end
 
 # raised by safe_system in utils.rb
 class ErrorDuringExecution < RuntimeError
+  attr_reader :cmd
   attr_reader :status
+  attr_reader :output
 
   def initialize(cmd, status:, output: nil)
+    @cmd = cmd
     @status = status
+    @output = output
 
     s = "Failure while executing; `#{cmd.shelljoin.gsub(/\\=/, "=")}` exited with #{status.exitstatus}."
 
