@@ -4,7 +4,6 @@ require "global"
 require "debrew"
 require "fcntl"
 require "socket"
-require "json/add/core"
 
 begin
   error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
