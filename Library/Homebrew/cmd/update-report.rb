@@ -7,6 +7,7 @@ require "migrator"
 require "formulary"
 require "descriptions"
 require "cleanup"
+require "hbc/cask_loader"
 
 module Homebrew
   module_function
@@ -125,6 +126,7 @@ module Homebrew
         hub.dump
         hub.reporters.each(&:migrate_tap_migration)
         hub.reporters.each(&:migrate_formula_rename)
+        hub.reporters.each(&:migrate_modified_casks)
         Descriptions.update_cache(hub)
       end
       puts if ARGV.include?("--preinstall")
@@ -420,9 +422,10 @@ class Reporter
       next unless dst.extname == ".rb"
 
       if paths.any? { |p| tap.cask_file?(p) }
-        # Currently only need to handle Cask deletion/migration.
-        if status == "D"
-          # Have a dedicated report array for deleted casks.
+        case status
+        when "M"
+          @report[:MC] << [tap, src]
+        when "D"
           @report[:DC] << tap.formula_file_to_name(src)
         end
       end
@@ -569,6 +572,24 @@ class Reporter
         tabs.each { |tab| tab.tap = new_tap }
         tabs.each(&:write)
       end
+    end
+  end
+
+  def migrate_modified_casks
+    report[:MC].each do |tap, path|
+      cask = Hbc::CaskLoader.load(tap.path/path)
+      next unless cask.installed?
+
+      current_version = cask.version
+      installed_version = cask.versions.last
+
+      current_caskfile = cask.sourcefile_path
+      installed_caskfile = cask.installed_caskfile
+
+      next unless current_version == installed_version
+      next if current_caskfile.sha256 == installed_caskfile.sha256
+
+      installed_caskfile.atomic_write File.read(current_caskfile)
     end
   end
 
