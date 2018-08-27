@@ -396,6 +396,7 @@ class S3DownloadStrategy < CurlDownloadStrategy
 
     ENV["AWS_ACCESS_KEY_ID"] = ENV["HOMEBREW_AWS_ACCESS_KEY_ID"]
     ENV["AWS_SECRET_ACCESS_KEY"] = ENV["HOMEBREW_AWS_SECRET_ACCESS_KEY"]
+    ENV["AWS_SESSION_TOKEN"] = ENV["HOMEBREW_AWS_SESSION_TOKEN"]
 
     begin
       signer = Aws::S3::Presigner.new
