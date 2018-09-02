@@ -96,7 +96,7 @@ class Keg
   alias generic_recursive_fgrep_args recursive_fgrep_args
 
   def each_unique_file_matching(string)
-    Utils.popen_read("fgrep", recursive_fgrep_args, string, to_s) do |io|
+    Utils.popen_read("/usr/bin/fgrep", recursive_fgrep_args, string, to_s) do |io|
       hardlinks = Set.new
 
       until io.eof?
