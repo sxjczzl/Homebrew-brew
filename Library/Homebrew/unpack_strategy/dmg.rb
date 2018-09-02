@@ -137,7 +137,9 @@ module UnpackStrategy
           cdr_path = mount_dir/path.basename.sub_ext(".cdr")
 
           system_command! "hdiutil",
-                          args: ["convert", "-quiet", "-format", "UDTO", "-o", cdr_path, path],
+                          args: ["convert", "-quiet", "-format", "UDTO",
+                                 "-srcimagekey", "diskimage-class=CRawDiskImage",
+                                 "-o", cdr_path, path],
                           verbose: verbose
 
           with_eula = system_command! "hdiutil",
