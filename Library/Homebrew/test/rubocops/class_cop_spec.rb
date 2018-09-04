@@ -139,4 +139,17 @@ describe RuboCop::Cop::FormulaAuditStrict::Test do
       end
     RUBY
   end
+
+  it "reports an offense when test is overly simple" do
+    expect_offense(<<~RUBY)
+      class Foo < Formula
+        url 'https://example.com/foo-1.0.tgz'
+
+        test do
+        ^^^^^^^ Simple tests should be a last resort. Please try to write a test that exercises a deeper level of functionality
+          assert_match version.to_s, shell_output("\#{bin}/blah")
+        end
+      end
+    RUBY
+  end
 end

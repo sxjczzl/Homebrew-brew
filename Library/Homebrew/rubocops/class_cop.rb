@@ -82,6 +82,14 @@ module RuboCop
             return
           end
 
+          if test.body.single_line? &&
+             test.body.source.to_s.include?("version") ||
+             test.body.source.to_s.include?("help")
+            problem "Simple tests should be a last resort. " \
+                    "Please try to write a test that exercises a " \
+                    "deeper level of functionality"
+          end
+
           return unless test.body.single_line? &&
                         test.body.source.to_s == "true"
           problem "`test do` should contain a real test"
