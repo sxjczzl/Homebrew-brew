@@ -1,4 +1,4 @@
-describe Hbc::Artifact::Installer, :cask do
+describe Cask::Artifact::Installer, :cask do
   let(:staged_path) { mktmpdir }
   let(:cask) { instance_double("Cask", staged_path: staged_path, config: nil) }
   subject(:installer) { described_class.new(cask, **args) }

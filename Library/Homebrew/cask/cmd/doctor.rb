@@ -1,7 +1,7 @@
 require "system_config"
 require "cask/checkable"
 
-module Hbc
+module Cask
   class Cmd
     class Doctor < AbstractCommand
       include Checkable
@@ -33,7 +33,7 @@ module Hbc
       end
 
       def check_software_versions
-        ohai "Homebrew Cask Version", Hbc.full_version
+        ohai "Homebrew Cask Version", Cask.full_version
         ohai "macOS", MacOS.full_version
         ohai "SIP", self.class.check_sip
         ohai "Java", SystemConfig.describe_java

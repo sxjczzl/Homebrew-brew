@@ -1,4 +1,4 @@
-module Hbc
+module Cask
   def self.full_version
     @full_version ||= begin
       <<~EOS

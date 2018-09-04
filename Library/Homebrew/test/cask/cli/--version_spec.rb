@@ -1,4 +1,4 @@
-describe Hbc::Cmd::Version, :cask do
+describe Cask::Cmd::Version, :cask do
   describe "::run" do
     it "outputs the current Homebrew Cask version" do
       expect { described_class.run }
