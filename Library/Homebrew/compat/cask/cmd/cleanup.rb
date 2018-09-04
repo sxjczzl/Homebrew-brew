@@ -4,7 +4,7 @@ require "cleanup"
 using CleanupRefinement
 
 module Hbc
-  class Cmd
+  module Cmd
     class Cleanup < AbstractCommand
       OUTDATED_DAYS = 10
       OUTDATED_TIMESTAMP = Time.now - (60 * 60 * 24 * OUTDATED_DAYS)

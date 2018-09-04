@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class Style < AbstractCommand
       def self.help
         "checks Cask style using RuboCop"

@@ -2,7 +2,7 @@ require "system_config"
 require "cask/checkable"
 
 module Hbc
-  class Cmd
+  module Cmd
     class Doctor < AbstractCommand
       include Checkable
 

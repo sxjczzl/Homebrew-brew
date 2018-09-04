@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     module Options
       def self.included(klass)
         klass.extend(ClassMethods)

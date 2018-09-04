@@ -2,7 +2,7 @@ require_relative "options"
 require "search"
 
 module Hbc
-  class Cmd
+  module Cmd
     class AbstractCommand
       include Options
       include Homebrew::Search

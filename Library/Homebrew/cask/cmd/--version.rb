@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class Version < AbstractCommand
       def self.command_name
         "--#{super}"
