@@ -1,4 +1,4 @@
-module Hbc
+module Cask
   class Cmd
     class Version < AbstractCommand
       def self.command_name
@@ -12,7 +12,7 @@ module Hbc
       end
 
       def run
-        puts Hbc.full_version
+        puts Cask.full_version
       end
 
       def self.help
