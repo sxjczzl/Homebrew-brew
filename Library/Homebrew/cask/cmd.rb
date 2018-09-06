@@ -31,7 +31,7 @@ require "cask/cmd/internal_help"
 require "cask/cmd/internal_stanza"
 
 module Hbc
-  class Cmd
+  module Cmd
     ALIASES = {
       "ls"       => "list",
       "homepage" => "home",

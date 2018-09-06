@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class AbstractInternalCommand < AbstractCommand
       def self.command_name
         super.sub(/^internal_/i, "_")

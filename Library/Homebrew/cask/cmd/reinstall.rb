@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class Reinstall < Install
       def run
         casks.each do |cask|

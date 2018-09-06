@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class List < AbstractCommand
       option "-1", :one, false
       option "--versions", :versions, false

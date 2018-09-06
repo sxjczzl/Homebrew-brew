@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class InternalHelp < AbstractInternalCommand
       def initialize(*)
         super

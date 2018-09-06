@@ -1,5 +1,5 @@
 module Hbc
-  class Cmd
+  module Cmd
     class Uninstall < AbstractCommand
       option "--force", :force, false
 
