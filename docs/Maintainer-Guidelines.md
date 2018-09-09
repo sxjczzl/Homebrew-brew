@@ -7,6 +7,8 @@ definitely not a beginner’s guide.
 
 Maybe you were looking for the [Formula Cookbook](Formula-Cookbook.md)?
 
+Homebrew's system of governance is documented [here](Governance.md).
+
 This document is current practice. If you wish to change or discuss any of the below: open a PR to suggest a change.
 
 ## Quick checklist
@@ -121,14 +123,6 @@ Formulae that:
 
 should not be removed from Homebrew. The exception to this rule are [versioned formulae](Versions.md) for which there are higher standards of usage and a maximum number of versions for a given formula.
 
-### Closing issues/PRs
-Maintainers (including the lead maintainer) should not close issues or pull requests (note a merge is not considered a close in this case) opened by other maintainers unless they are stale (i.e. have seen no updates for 28 days) in which case they can be closed by any maintainer. Any maintainer is encouraged to reopen a closed issue when they wish to do additional work on the issue.
-
-Any maintainer can merge any PR they have carefully reviewed and is passing CI that has been opened by any other maintainer. If you do not wish to have other maintainers merge your PRs: please use the `do not merge` label to indicate that until you're ready to merge it yourself.
-
-## Reverting PRs
-Any maintainer can revert a PR created by another maintainer after a user submitted issue or CI failure that results. The maintainer who created the original PR should be given no less than an hour to fix the issue themselves or decide to revert the PR themselves if they would rather.
-
 ## Communication
 Maintainers have a variety of ways to communicate with each other:
 
@@ -139,16 +133,3 @@ Maintainers have a variety of ways to communicate with each other:
 All communication should ideally occur in public on GitHub. Where this is not possible or appropriate (e.g. a security disclosure, interpersonal issue between two maintainers, urgent breakage that needs to be resolved) this can move to maintainers' private group communication and, if necessary, 1:1 communication. Technical decisions should not happen in 1:1 communications but if they do (or did in the past) they must end up back as something linkable on GitHub. For example, if a technical decision was made a year ago on Slack and another maintainer/contributor/user asks about it on GitHub, that's a good chance to explain it to them and have something that can be linked to in the future.
 
 This makes it easier for other maintainers, contributors and users to follow along with what we're doing (and, more importantly, why we're doing it) and means that decisions have a linkable URL.
-
-All maintainers (and lead maintainer) communication through any medium is bound by [Homebrew's Code of Conduct](CODE_OF_CONDUCT.md#code-of-conduct). Abusive behaviour towards other maintainers, contributors or users will not be tolerated; the maintainer will be given a warning and if their behaviour continues they will be removed as a maintainer.
-
-Maintainers should feel free to pleasantly disagree with the work and decisions of other maintainers. Healthy, friendly, technical disagreement between maintainers is actively encouraged and should occur in public on the issue tracker to make the project better. Interpersonal issues should be handled privately in Slack, ideally with moderation. If work or decisions are insufficiently documented or explained any maintainer or contributor should feel free to ask for clarification. No maintainer may ever justify a decision with e.g. "because I say so" or "it was I who did X" alone. Off-topic discussions on the issue tracker, [bike-shedding](https://en.wikipedia.org/wiki/Law_of_triviality) and personal attacks are forbidden.
-
-## Lead maintainer guidelines
-There should be one lead maintainer for Homebrew. Decisions are determined by a consensus of the maintainers. When a consensus is not reached, the lead maintainer has the final say in determining the outcome of any decision (though this power should be used sparingly). They should also be seen as the product manager for Homebrew itself and ensuring that changes made to the entire Homebrew ecosystem are consistent and providing an increasingly positive experience for Homebrew's users.
-
-In the same way that Homebrew maintainers are expected to be spending more of their time reviewing and merging contributions from non-maintainer contributors than making their own contributions, the lead maintainer should be spending most of their time reviewing work from and mentoring other maintainers.
-
-Individual Homebrew repositories should not have formal lead maintainers (although those who do the most work will have the loudest voices).
-
-Maintainers should feel even more free to pleasantly disagree with the work and decisions of the lead maintainer: with greater authority comes greater responsibility to handle and moderate technical disagreements.
