@@ -93,6 +93,7 @@ class Tap
     @repo_var = nil
     @formula_dir = nil
     @cask_dir = nil
+    @lib_dir = nil
     @command_dir = nil
     @formula_files = nil
     @alias_dir = nil
@@ -368,6 +369,15 @@ class Tap
     @cask_dir ||= path/"Casks"
   end
 
+  # path to the directory of all library files for this {Tap}.
+  def lib_dir
+    @lib_dir ||= path/"lib"
+  end
+
+  def lib_dir?
+    lib_dir.directory?
+  end
+
   def contents
     contents = []
 
@@ -381,6 +391,10 @@ class Tap
 
     if (formula_count = formula_files.count).positive?
       contents << "#{formula_count} #{"formula".pluralize(formula_count)}"
+    end
+
+    if lib_dir?
+      contents << "custom code library"
     end
 
     contents
@@ -599,6 +613,11 @@ class Tap
   # An array of all tap cmd directory {Pathname}s
   def self.cmd_directories
     Pathname.glob TAP_DIRECTORY/"*/*/cmd"
+  end
+
+  # an array of all tap lib directory {Pathname}s
+  def self.lib_directories
+    Pathname.glob TAP_DIRECTORY/"*/*/lib"
   end
 
   # @private

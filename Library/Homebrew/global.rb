@@ -18,6 +18,7 @@ I18n.backend.store_translations :en, support: { array: { last_word_connector: " 
 
 ActiveSupport::Inflector.inflections(:en) do |inflect|
   inflect.irregular "formula", "formulae"
+  inflect.irregular "library", "libraries"
   inflect.irregular "is", "are"
   inflect.irregular "it", "they"
 end
@@ -156,6 +157,8 @@ require "utils"
 require "official_taps"
 require "tap"
 require "tap_constants"
+
+Tap.lib_directories.each { |lib_dir| LoadPath << lib_dir }
 
 if !ARGV.include?("--no-compat") && !ENV["HOMEBREW_NO_COMPAT"]
   require "compat"

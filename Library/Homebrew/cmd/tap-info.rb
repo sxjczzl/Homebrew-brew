@@ -39,12 +39,14 @@ module Homebrew
       tap_count = 0
       formula_count = 0
       command_count = 0
+      library_count = 0
       pinned_count = 0
       private_count = 0
       Tap.each do |tap|
         tap_count += 1
         formula_count += tap.formula_files.size
         command_count += tap.command_files.size
+        library_count += 1 if tap.lib_dir?
         pinned_count += 1 if tap.pinned?
         private_count += 1 if tap.private?
       end
@@ -53,6 +55,7 @@ module Homebrew
       info += ", #{private_count} private"
       info += ", #{formula_count} #{"formula".pluralize(formula_count)}"
       info += ", #{command_count} #{"command".pluralize(command_count)}"
+      info += ", #{library_count} #{"library".pluralize(library_count)}"
       info += ", #{Tap::TAP_DIRECTORY.abv}" if Tap::TAP_DIRECTORY.directory?
       puts info
     else
