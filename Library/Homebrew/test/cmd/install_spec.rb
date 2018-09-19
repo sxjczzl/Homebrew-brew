@@ -17,7 +17,16 @@ describe "brew install", :integration_test do
       .and output(/Searching for similarly named formulae/).to_stdout
       .and be_a_failure
 
+    expect { brew "install", "testball" }
+      .to output(/No available formula/).to_stderr
+      .and output(/This similarly named formula was found:/).to_stdout
+
     setup_test_formula "testball2"
+
+    expect { brew "install", "testball" }
+      .to output(/No available formula/).to_stderr
+      .and output(/These similarly named formulae were found:/).to_stdout
+
     install_and_rename_coretap_formula "testball1", "testball2"
     expect { brew "install", "testball2" }
       .to output(/testball1 already installed, it's just not migrated/).to_stderr
