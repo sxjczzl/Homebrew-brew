@@ -53,7 +53,7 @@ describe "brew deps", :integration_test do
       .to output(/Invalid usage/).to_stderr
       .and not_to_output.to_stdout
 
-    expect {brew "deps", "--tree" }
+    expect { brew "deps", "--tree" }
       .to output(/Invalid usage/).to_stderr
       .and not_to_output.to_stdout
   end
