@@ -17,6 +17,27 @@ describe "brew info", :integration_test do
       .to output(a_json_string).to_stdout
       .and not_to_output.to_stderr
       .and be_a_success
+
+    expect { brew "info", "--all", "--json=v1" }
+      .to output(a_json_string).to_stdout
+      .and not_to_output.to_stderr
+      .and be_a_success
+
+    expect { brew "info", "--installed", "--json=v1" }
+      .to output(a_json_string).to_stdout
+      .and not_to_output.to_stderr
+      .and be_a_success
+  end
+
+  it "prints a Formula's dependencies" do
+    setup_test_formula "testball2", <<~RUBY
+      depends_on "testball"
+    RUBY
+
+    expect { brew "info", "testball2" }
+      .to output(/Dependencies\nRequired: testball/).to_stdout
+      .and not_to_output.to_stderr
+      .and be_a_success
   end
 end
 
