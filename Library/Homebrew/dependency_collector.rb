@@ -122,6 +122,7 @@ class DependencyCollector
     when :macos      then MacOSRequirement.new(tags)
     when :arch       then ArchRequirement.new(tags)
     when :java       then JavaRequirement.new(tags)
+    when :mono       then MonoRequirement.new(tags)
     when :osxfuse    then OsxfuseRequirement.new(tags)
     when :tuntap     then TuntapRequirement.new(tags)
     when :ld64       then ld64_dep_if_needed(tags)
