@@ -212,8 +212,9 @@ class SoftwareSpec
   end
 
   def fails_with(compiler, &block)
-    odisabled "fails_with :llvm" if compiler == :llvm
-    compiler_failures << CompilerFailure.create(compiler, &block)
+    failure = CompilerFailure.create(compiler, &block)
+    odisabled "fails_with #{compiler.inspect}" unless CompilerSelector::COMPILERS.include? failure.name
+    compiler_failures << failure
   end
 
   def needs(*standards)
