@@ -64,13 +64,6 @@ describe Cask::Cmd, :cask do
 
       expect(Cask::Config.global.appdir).to eq(Pathname.new("/custom/appdir"))
     end
-
-    it "exits with a status of 1 when something goes wrong" do
-      allow(described_class).to receive(:lookup_command).and_raise(Cask::CaskError)
-      command = described_class.new("noop")
-      expect(command).to receive(:exit).with(1)
-      command.run
-    end
   end
 
   it "provides a help message for all visible commands" do

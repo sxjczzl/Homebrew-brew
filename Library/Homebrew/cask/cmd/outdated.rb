@@ -28,7 +28,7 @@ module Cask
           puts cask.token
         end
 
-        Cmd.failed = true
+        Homebrew.failed = true
       end
 
       def self.help
