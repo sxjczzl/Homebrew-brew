@@ -68,6 +68,15 @@ module Cask
     # override default handling of --version
     option "--version", ->(*) { raise OptionParser::InvalidOption }
 
+    class << self
+      attr_writer :failed
+
+      def failed?
+        @failed ||= false
+        @failed == true
+      end
+    end
+
     def self.command_classes
       @command_classes ||= constants.map(&method(:const_get))
                                     .select { |klass| klass.respond_to?(:run) }
@@ -141,29 +150,33 @@ module Cask
     end
 
     def run
-      command_name, *args = detect_command_and_arguments(*@args)
-      command = if help?
-        args.unshift(command_name) unless command_name.nil?
-        "help"
-      else
-        self.class.lookup_command(command_name)
+      begin
+        command_name, *args = detect_command_and_arguments(*@args)
+        command = if help?
+          args.unshift(command_name) unless command_name.nil?
+          "help"
+        else
+          self.class.lookup_command(command_name)
+        end
+
+        MacOS.full_version = ENV["MACOS_VERSION"] unless ENV["MACOS_VERSION"].nil?
+
+        Tap.default_cask_tap.install unless Tap.default_cask_tap.installed?
+        self.class.run_command(command, *args)
+      rescue CaskError, MethodDeprecatedError, ArgumentError, OptionParser::InvalidOption => e
+        msg = e.message
+        msg << e.backtrace.join("\n").prepend("\n") if ARGV.debug?
+        onoe msg
+        Cmd.failed = true
+      rescue StandardError, ScriptError, NoMemoryError => e
+        msg = "#{e.message}\n"
+        msg << Utils.error_message_with_suggestions
+        msg << e.backtrace.join("\n")
+        onoe msg
+        Cmd.failed = true
       end
 
-      MacOS.full_version = ENV["MACOS_VERSION"] unless ENV["MACOS_VERSION"].nil?
-
-      Tap.default_cask_tap.install unless Tap.default_cask_tap.installed?
-      self.class.run_command(command, *args)
-    rescue CaskError, MethodDeprecatedError, ArgumentError, OptionParser::InvalidOption => e
-      msg = e.message
-      msg << e.backtrace.join("\n").prepend("\n") if ARGV.debug?
-      onoe msg
-      exit 1
-    rescue StandardError, ScriptError, NoMemoryError => e
-      msg = "#{e.message}\n"
-      msg << Utils.error_message_with_suggestions
-      msg << e.backtrace.join("\n")
-      onoe msg
-      exit 1
+      exit Cmd.failed? ? 1 : 0
     end
 
     def self.nice_listing(cask_list)

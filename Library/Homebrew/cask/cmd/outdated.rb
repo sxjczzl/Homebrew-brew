@@ -27,6 +27,8 @@ module Cask
         else
           puts cask.token
         end
+
+        Cmd.failed = true
       end
 
       def self.help
