@@ -8,13 +8,13 @@ BUG_REPORTS_URL = "https://github.com/Homebrew/homebrew-cask#reporting-bugs".fre
 module Cask
   module Utils
     def self.only_gain_permissions(path, command: SystemCommand)
-      if path.respond_to?(:rmtree) && path.exist?
-        gain_permissions(path, ["-R"], command) do |p|
-          raise CaskError, "The file #{p} cannot be accessed." unless p.writable?
-        end
-      elsif File.symlink?(path)
+      if path.symlink?
         gain_permissions(path, ["-h"], command) do |p|
           raise CaskError, "The symbolic link #{p} cannot be accessed." unless p.writable?
+        end
+      elsif path.exist?
+        gain_permissions(path, ["-R"], command) do |p|
+          raise CaskError, "#{p} cannot be accessed." unless p.writable?
         end
       end
     end
