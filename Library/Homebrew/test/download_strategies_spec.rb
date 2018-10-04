@@ -565,6 +565,18 @@ describe DownloadStrategyDetector do
       it { is_expected.to eq(GitHubGitDownloadStrategy) }
     end
 
+    context "when given an Apache direct-download URL" do
+      let(:url) { "https://www.apache.org/dyn/closer.cgi?action=download&filename=package/package-1.0.0.tar.bz2" }
+
+      it { is_expected.to eq(CurlDownloadStrategy) }
+    end
+
+    context "when given an Apache download page URL" do
+      let(:url) { "https://www.apache.org/dyn/closer.cgi?path=package/package-1.0.0.tar.bz2" }
+
+      it { is_expected.to eq(CurlApacheMirrorDownloadStrategy) }
+    end
+
     context "when given an S3 URL" do
       let(:url) { "s3://bucket/homebrew/brew.tar.gz" }
 
