@@ -287,6 +287,10 @@ module Cask
       end
 
       def trash_paths(*paths, command: nil, **_)
+        paths.each do |p|
+          next if p.parent.writable?
+          Utils.only_gain_permissions(p, command: command)
+        end
         result = command.run!("/usr/bin/osascript", args: ["-e", <<~APPLESCRIPT, *paths])
           on run argv
             repeat with i from 1 to (count argv)
