@@ -1225,8 +1225,9 @@ class DownloadStrategyDetector
     when %r{^https?://.+\.git$},
          %r{^git://}
       GitDownloadStrategy
-    when %r{^https?://www\.apache\.org/dyn/closer\.cgi},
-         %r{^https?://www\.apache\.org/dyn/closer\.lua}
+    when %r{^https?://www\.apache\.org/dyn/closer\.(cgi|lua)\?action=download&filename=}
+      CurlDownloadStrategy
+    when %r{^https?://www\.apache\.org/dyn/closer\.(cgi|lua)}
       CurlApacheMirrorDownloadStrategy
     when %r{^https?://(.+?\.)?googlecode\.com/svn},
          %r{^https?://svn\.},
