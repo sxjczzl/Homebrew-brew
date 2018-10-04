@@ -1200,6 +1200,68 @@ class FossilDownloadStrategy < VCSDownloadStrategy
   end
 end
 
+# ArtifactoryDownloadStrategy downloads files using the Jfrog command-line
+# interface client. To use it, add `:using => :artifactory` to the URL
+# section of your formula. If the download URL matches the scheme
+# `https://<SERVER_ID>/artifactory/<REPO_NAME>/<REPO_PATH>`, this strategy
+# may use the credentials specified by running `jfrog rt config <SERVER_ID>`
+# for authentication.
+class ArtifactoryDownloadStrategy < AbstractFileDownloadStrategy
+  def initialize(url, name, version, **meta)
+    super
+    parse_url_pattern
+  end
+
+  def parse_url_pattern
+    unless match = url.match(%r{https://([^/]+)/artifactory/([^/]+)/(\S+)})
+      raise "Download failed: Invalid url pattern for Artifactory Repository."
+    end
+
+    _, @server, @repo, @filepath = *match
+  end
+
+  def jfrog_cli
+    Formulary.factory("jfrog-cli-go").installed_prefix/"bin/jfrog"
+  end
+
+  def fetch
+    ohai "Downloading #{url}"
+
+    if cached_location.exist?
+      puts "Already downloaded: #{cached_location}"
+    else
+      validate_jfrog_cli!
+      validate_server_config!
+
+      system_command! jfrog_cli,
+                      args: ["rt", "download", "--server-id", @server, "#{@repo}/#{@filepath}", temporary_path.to_s],
+                      print_stdout: false
+
+      ignore_interrupts { temporary_path.rename(cached_location) }
+    end
+  end
+
+  def validate_jfrog_cli!
+    jfrog_cli
+  rescue FormulaUnavailableError
+    raise <<~EOS
+      Download failed: The Jfrog command-line interface client is missing.
+      Please run `brew install jfrog-cli-go` to install it.
+    EOS
+  end
+
+  def validate_server_config!
+    system_command! jfrog_cli,
+                    args: ["rt", "config", "show", @server],
+                    print_stdout: false
+  rescue ErrorDuringExecution
+    raise <<~EOS
+      Download failed: Artifactory server id '#{@server}' is invalid.
+      Please run `jfrog rt config #{@server}` to configure it.
+    EOS
+  end
+end
+
 class DownloadStrategyDetector
   def self.detect(url, using = nil)
     strategy = if using.nil?
@@ -1271,6 +1333,7 @@ class DownloadStrategyDetector
     when :cvs                    then CVSDownloadStrategy
     when :post                   then CurlPostDownloadStrategy
     when :fossil                 then FossilDownloadStrategy
+    when :artifactory            then ArtifactoryDownloadStrategy
     else
       raise "Unknown download strategy #{symbol} was requested."
     end
