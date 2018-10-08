@@ -218,6 +218,24 @@ describe S3DownloadStrategy do
   end
 end
 
+describe GCSDownloadStrategy do
+  subject { described_class.new(url, name, version) }
+
+  let(:name) { "foo" }
+  let(:url) { "https://storage.googleapis.com/foo.tar.gz" }
+  let(:version) { nil }
+
+  describe "#fetch" do
+    context "when given Bas GCS URL" do
+      let(:url) { "http://example.com/foo.tar.gz" }
+
+      it "raises SignedUrlUnavailable error" do
+        expect { subject.fetch }.to raise_error(RuntimeError, /GCS/)
+      end
+    end
+  end
+end
+
 describe CurlDownloadStrategy do
   subject { described_class.new(url, name, version, **specs) }
 
