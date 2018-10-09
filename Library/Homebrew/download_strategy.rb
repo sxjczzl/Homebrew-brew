@@ -1203,6 +1203,43 @@ class FossilDownloadStrategy < VCSDownloadStrategy
   end
 end
 
+# GCSDownloadStrategy downloads files from Google Cloud Storage
+# To use it, add `:using => :gs` to the URL section of your formula.
+# This strategy requires a GCS "project id" and a "credentials file",
+# information available here
+# https://cloud.google.com/storage/docs/authentication
+# You'll need to set the following environment variables in order for this
+# strategy to work properly:
+#  export HOMEBREW_GCS_PROJECT=<your google project id>
+#  export HOMEBREW_GCS_CREDENTIALS=<See link above for how to obtain this file>
+# This strategy should allow you to use private Google Cloud Buckets as well as
+# public buckets
+class GCSDownloadStrategy < CurlDownloadStrategy
+  def _fetch(url:, resolved_url:)
+    if url !~ %r{^https://storage\.googleapis\.com/([a-zA-Z0-9\._-]+)/(.+)$} &&
+       url !~ %r{gs://([a-zA-Z0-9\._-]+)/(.+)$}
+      raise "Bad GCS URL:" + url
+    end
+
+    bucket = Regexp.last_match(1)
+    object = Regexp.last_match(2)
+
+    ENV["CLOUDSDK_ACTIVE_CONFIG_NAME"] = ENV["HOMEBREW_GCS_CLOUDSDK_ACTIVE_CONFIG_NAME"]
+    ENV["STORAGE_CREDENTIALS"] = ENV["HOMEBREW_GCS_CREDENTIALS"]
+
+    begin
+      storage = Google::Cloud::Storage.new
+      bucket_obj = storage.bucket bucket
+      gcs_url = bucket_obj.signed_url object, method: "GET", expires: 300
+    rescue Google::Cloud::Storage::SignedUrlUnavailable
+      ohai "GCS Credentials missing, trying public URL instead"
+      gcs_url = url
+    end
+
+    curl_download gcs_url, to: temporary_path
+  end
+end
+
 class DownloadStrategyDetector
   def self.detect(url, using = nil)
     strategy = if using.nil?
@@ -1217,6 +1254,7 @@ class DownloadStrategyDetector
     end
 
     require_aws_sdk if strategy == S3DownloadStrategy
+    require_gcs_sdk if strategy == GCSDownloadStrategy
 
     strategy
   end
@@ -1254,6 +1292,8 @@ class DownloadStrategyDetector
       S3DownloadStrategy
     when %r{^scp://}
       ScpDownloadStrategy
+    when %r{^gs://}
+      GCSDownloadStrategy
     else
       CurlDownloadStrategy
     end
@@ -1274,6 +1314,7 @@ class DownloadStrategyDetector
     when :cvs                    then CVSDownloadStrategy
     when :post                   then CurlPostDownloadStrategy
     when :fossil                 then FossilDownloadStrategy
+    when :gs                     then GCSDownloadStrategy
     else
       raise "Unknown download strategy #{symbol} was requested."
     end
@@ -1282,5 +1323,10 @@ class DownloadStrategyDetector
   def self.require_aws_sdk
     Homebrew.install_gem! "aws-sdk-s3", "~> 1.8"
     require "aws-sdk-s3"
+  end
+
+  def self.require_gcs_sdk
+    Homebrew.install_gem! "google-cloud-storage", "~> 1.10"
+    require "google-cloud-storage"
   end
 end
