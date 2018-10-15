@@ -278,7 +278,7 @@ module Cask
     end
 
     def bad_osdn_url?
-      bad_url_format?(/osd/, [%r{\Ahttps?://([^/]+.)?dl\.osdn\.jp/}])
+      bad_url_format?(/osd/, [%r{\Ahttps://osdn\.net/(dl|downloads)/}])
     end
 
     def check_generic_artifacts
