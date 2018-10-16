@@ -63,6 +63,7 @@ module CleanupRefinement
     private
 
     def stale_formula?(scrub)
+      return false if dirname == "Cask"
       return false unless HOMEBREW_CELLAR.directory?
 
       version = if to_s.match?(Pathname::BOTTLE_EXTNAME_RX)
@@ -109,6 +110,7 @@ module CleanupRefinement
     end
 
     def stale_cask?(scrub)
+      return false unless dirname == "Cask"
       return false unless name = basename.to_s[/\A(.*?)\-\-/, 1]
 
       cask = begin
