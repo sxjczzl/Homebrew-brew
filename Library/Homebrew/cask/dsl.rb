@@ -66,6 +66,7 @@ module Cask
       :language,
       :languages,
       :name,
+      :desc,
       :sha256,
       :staged_path,
       :url,
