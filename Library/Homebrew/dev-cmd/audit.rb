@@ -194,10 +194,8 @@ module Homebrew
       errors_summary += ", #{corrected_problem_plural} corrected"
     end
 
-    if problem_count.positive? ||
-       (new_formula_problem_count.positive? && !created_pr_comment)
-      ofail errors_summary
-    end
+    return if problem_count.zero? && new_formula_problem_count.zero?
+    ofail errors_summary
   end
 
   def format_problem_lines(problems)
