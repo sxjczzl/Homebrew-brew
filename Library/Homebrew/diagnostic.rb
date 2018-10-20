@@ -104,6 +104,21 @@ module Homebrew
         EOS
       end
 
+      def check_for_missing_legacy_headers
+        return unless DevelopmentTools.installed?
+
+        return if Dir.exist? "/usr/include/"
+
+        <<~EOS
+          Starting in Xcode 10, headers are no longer installed in /usr/include/.
+          Please install the macOS_SDK_headers_for_macOS package located at:
+
+          /Library/Developer/CommandLineTools/Packages/
+
+          Without these headers, some formulae may fail to compile.
+        EOS
+      end
+
       def check_build_from_source
         return unless ENV["HOMEBREW_BUILD_FROM_SOURCE"]
 
