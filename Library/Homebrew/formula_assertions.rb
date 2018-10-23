@@ -6,7 +6,7 @@ module Homebrew
     # Returns the output of running cmd, and asserts the exit status
     def shell_output(cmd, result = 0)
       ohai cmd
-      output = `#{cmd}`
+      output = `#{cmd} 2>&1`
       assert_equal result, $CHILD_STATUS.exitstatus
       output
     end
@@ -15,7 +15,7 @@ module Homebrew
     # optionally asserts the exit status
     def pipe_output(cmd, input = nil, result = nil)
       ohai cmd
-      output = IO.popen(cmd, "w+") do |pipe|
+      output = IO.popen(cmd, "w+", err: [:child, :out]) do |pipe|
         pipe.write(input) unless input.nil?
         pipe.close_write
         pipe.read
