@@ -901,8 +901,6 @@ module Homebrew
         problem "Use `depends_on :java` to set JAVA_HOME"
       end
 
-      return unless @strict
-
       if @core_tap && line.include?("env :std")
         problem "`env :std` in `core` formulae is deprecated"
       end
