@@ -34,9 +34,7 @@ module RuboCop
                   "Length is calculated as #{@formula_name} + desc. (currently #{desc_length})"
         end
       end
-    end
 
-    module FormulaAuditStrict
       # This cop audits `desc` in Formulae.
       #
       # - Checks for leading/trailing whitespace in `desc`
