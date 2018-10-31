@@ -392,6 +392,13 @@ module Homebrew
         pr_message = <<~EOS
           Created with `brew bump-formula-pr`.
         EOS
+        if requested_spec == :stable && formula.stable.resources.any?
+          pr_message += "\n" + <<~EOS
+            ---
+
+            __Formula uses resource blocks, they may need to be updated.__
+          EOS
+        end
         user_message = args.message
         if user_message
           pr_message += "\n" + <<~EOS
