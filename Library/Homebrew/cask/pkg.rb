@@ -63,15 +63,15 @@ module Cask
     end
 
     def pkgutil_bom_files
-      @pkgutil_bom_files ||= pkgutil_bom_all.select(&:file?) - pkgutil_bom_specials
+      pkgutil_bom_all.select(&:file?) - pkgutil_bom_specials
     end
 
     def pkgutil_bom_specials
-      @pkgutil_bom_specials ||= pkgutil_bom_all.select(&method(:special?))
+      pkgutil_bom_all.select(&method(:special?))
     end
 
     def pkgutil_bom_dirs
-      @pkgutil_bom_dirs ||= pkgutil_bom_all.select(&:directory?) - pkgutil_bom_specials
+      pkgutil_bom_all.select(&:directory?) - pkgutil_bom_specials
     end
 
     def pkgutil_bom_all
