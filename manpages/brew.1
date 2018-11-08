@@ -294,7 +294,7 @@ If \fB\-\-HEAD\fR is passed, and \fIformula\fR defines it, install the HEAD vers
 If \fB\-\-keep\-tmp\fR is passed, the temporary files created during installation are not deleted\.
 .
 .IP
-If \fB\-\-build\-bottle\fR is passed, prepare the formula for eventual bottling during installation\.
+If \fB\-\-build\-bottle\fR is passed, prepare the formula for eventual bottling during installation\. A formula installed this way is not guaranteed to be usable normally\. If you wish to use the formula locally, too, then install it with this switch, build a bottle, uninstall the formula, then install the bottle (or install the formula without the switch)\.
 .
 .IP
 If \fB\-\-force\fR (or \fB\-f\fR) is passed, install without checking for previously installed keg\-only or non\-migrated versions

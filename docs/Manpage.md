@@ -289,7 +289,10 @@ With `--verbose` or `-v`, many commands print extra debugging information. Note 
     are not deleted.
 
     If `--build-bottle` is passed, prepare the formula for eventual bottling
-    during installation.
+    during installation. A formula installed this way is not guaranteed to be
+    usable normally. If you wish to use the formula locally, too, then
+    install it with this switch, build a bottle, uninstall the formula,
+    then install the bottle (or install the formula without the switch).
 
     If `--force` (or `-f`) is passed, install without checking for previously
     installed keg-only or non-migrated versions
