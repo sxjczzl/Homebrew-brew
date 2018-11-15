@@ -79,6 +79,10 @@ module Homebrew
           If you wish to use the 2.x release you can install with Homebrew Cask:
             brew cask install ngrok
         EOS
+        when "heroku" then <<~EOS
+          We no longer package heroku but it can be installed using heroku/brew's tap:
+            brew install heroku/brew/heroku
+        EOS
         end
       end
       alias generic_blacklisted_reason blacklisted_reason

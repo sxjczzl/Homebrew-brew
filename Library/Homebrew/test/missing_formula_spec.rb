@@ -77,6 +77,10 @@ describe Homebrew::MissingFormula do
     specify "Xcode is blacklisted", :needs_macos do
       expect(%w[xcode Xcode]).to all be_blacklisted
     end
+
+    specify "heroku is blacklisted" do
+      expect("heroku").to be_blacklisted
+    end
   end
 
   describe "::tap_migration_reason" do
