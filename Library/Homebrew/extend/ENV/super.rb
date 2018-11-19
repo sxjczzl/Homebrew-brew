@@ -139,7 +139,7 @@ module Superenv
 
   def determine_pkg_config_libdir
     PATH.new(
-      homebrew_extra_pkg_config_paths,
+      homebrew_extra_pkg_config_libdirs,
     ).existing
   end
 
