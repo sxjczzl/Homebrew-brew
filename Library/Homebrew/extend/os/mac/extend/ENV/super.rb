@@ -13,7 +13,7 @@ module Superenv
   alias x11? x11
 
   undef homebrew_extra_paths,
-        homebrew_extra_pkg_config_paths, homebrew_extra_aclocal_paths,
+        homebrew_extra_pkg_config_libdirs, homebrew_extra_aclocal_paths,
         homebrew_extra_isystem_paths, homebrew_extra_library_paths,
         homebrew_extra_cmake_include_paths,
         homebrew_extra_cmake_library_paths,
