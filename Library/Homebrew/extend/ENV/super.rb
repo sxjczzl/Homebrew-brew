@@ -126,15 +126,15 @@ module Superenv
     path.existing
   end
 
-  def homebrew_extra_pkg_config_libdirs
-    []
-  end
-
   def determine_pkg_config_path
     PATH.new(
       deps.map { |d| d.opt_lib/"pkgconfig" },
       deps.map { |d| d.opt_share/"pkgconfig" },
     ).existing
+  end
+
+  def homebrew_extra_pkg_config_libdirs
+    []
   end
 
   def determine_pkg_config_libdir
