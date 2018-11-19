@@ -126,7 +126,7 @@ module Superenv
     path.existing
   end
 
-  def homebrew_extra_pkg_config_paths
+  def homebrew_extra_pkg_config_libdirs
     []
   end
 
