@@ -311,8 +311,7 @@ module Homebrew
           #{not_exist_dirs.join("\n")}
 
           You should create these directories and change their ownership to your account.
-            sudo mkdir -p #{not_exist_dirs.join(" ")}
-            sudo chown -R $(whoami) #{not_exist_dirs.join(" ")}
+            sudo install -d -o $(whoami) #{not_exist_dirs.join(" ")}
         EOS
       end
 
