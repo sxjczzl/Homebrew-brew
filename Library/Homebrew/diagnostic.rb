@@ -312,7 +312,7 @@ module Homebrew
 
           You should create these directories and change their ownership to your account.
             sudo mkdir -p #{not_exist_dirs.join(" ")}
-            sudo chown -R $(whoami) #{not_exist_dirs.join(" ")}
+            sudo chown -R #{Utils::Shell.subshell('whoami')} #{not_exist_dirs.join(" ")}
         EOS
       end
 
@@ -327,7 +327,7 @@ module Homebrew
           #{not_writable_dirs.join("\n")}
 
           You should change the ownership of these directories to your user.
-            sudo chown -R $(whoami) #{not_writable_dirs.join(" ")}
+            sudo chown -R #{Utils::Shell.subshell('whoami')} #{not_writable_dirs.join(" ")}
         EOS
       end
 
@@ -599,7 +599,7 @@ module Homebrew
           Homebrew/homebrew-core is not on the master branch
 
           Check out the master branch by running:
-            git -C "$(brew --repo homebrew/core)" checkout master
+            git -C "#{Utils::Shell.subshell('brew --repo homebrew/core')}" checkout master
         EOS
       end
 

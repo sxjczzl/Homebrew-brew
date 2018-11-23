@@ -1,3 +1,5 @@
+require "utils/shell"
+
 module Language
   module Java
     def self.java_home_cmd(version = nil)
@@ -6,11 +8,11 @@ module Language
     end
 
     def self.java_home_env(version = nil)
-      { JAVA_HOME: "$(#{java_home_cmd(version)})" }
+      { JAVA_HOME: Utils::Shell.subshell(java_home_cmd(version)) }
     end
 
     def self.overridable_java_home_env(version = nil)
-      { JAVA_HOME: "${JAVA_HOME:-$(#{java_home_cmd(version)})}" }
+      { JAVA_HOME: "${JAVA_HOME:-#{Utils::Shell.subshell(java_home_cmd(version))}" }
     end
   end
 end

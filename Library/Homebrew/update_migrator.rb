@@ -1,5 +1,6 @@
 require "cask/cask_loader"
 require "cask/download"
+require "utils/shell"
 
 module UpdateMigrator
   class << self
@@ -270,7 +271,7 @@ module UpdateMigrator
           You should change the ownership and permissions of #{HOMEBREW_PREFIX}
           temporarily back to your user account so we can complete the Homebrew
           repository migration:
-            sudo chown -R $(whoami) #{HOMEBREW_PREFIX}
+            sudo chown -R #{Utils::Shell.subshell('whoami')} #{HOMEBREW_PREFIX}
         EOS
         return
       end
@@ -354,7 +355,7 @@ module UpdateMigrator
           Could not create symlink at #{dst}!
           Please do this manually with:
             sudo ln -sf #{src} #{dst}
-            sudo chown $(whoami) #{dst}
+            sudo chown #{Utils::Shell.subshell('whoami')} #{dst}
         EOS
       end
 

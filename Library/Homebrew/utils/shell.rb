@@ -62,6 +62,14 @@ module Utils
       end
     end
 
+    def subshell(cmd):
+      case preferred
+      when :fish
+        "(#{cmd})"
+      else
+        "$(#{cmd})"
+    end
+
     SHELL_PROFILE_MAP = {
       bash: "~/.bash_profile",
       csh:  "~/.cshrc",

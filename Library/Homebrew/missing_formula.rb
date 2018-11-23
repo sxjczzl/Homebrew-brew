@@ -1,4 +1,5 @@
 require "formulary"
+require "utils/shell"
 
 module Homebrew
   module MissingFormula
@@ -132,7 +133,7 @@ module Homebrew
             if (tap.path/".git/shallow").exist?
               opoo <<~EOS
                 #{tap} is shallow clone. To get complete history run:
-                  git -C "$(brew --repo #{tap})" fetch --unshallow
+                  git -C "#{Utils::Shell.subshell('brew --repo ' + tap)}" fetch --unshallow
 
               EOS
             end
@@ -159,7 +160,7 @@ module Homebrew
               #{commit_message}
 
             To show the formula before removal run:
-              git -C "$(brew --repo #{tap})" show #{short_hash}^:#{relative_path}
+              git -C "#{Utils::Shell.subshell('brew --repo ' + tap)}" show #{short_hash}^:#{relative_path}
 
             If you still use this formula consider creating your own tap:
               https://docs.brew.sh/How-to-Create-and-Maintain-a-Tap

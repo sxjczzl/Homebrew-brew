@@ -3,6 +3,7 @@
 #:    recognizes can be passed before the formula list.
 
 require "formula"
+require "utils/shell"
 
 module Homebrew
   module_function
@@ -22,10 +23,10 @@ module Homebrew
     repo = Utils.popen_read("git rev-parse --show-toplevel").chomp
     if tap
       name = tap.to_s
-      git_cd = "$(brew --repo #{tap})"
+      git_cd = Utils::Shell.subshell("brew --repo #{tap}")
     elsif cd_dir == HOMEBREW_REPOSITORY
       name = "Homebrew/brew"
-      git_cd = "$(brew --repo)"
+      git_cd = Utils::Shell.subshell("brew --repo")
     else
       name, git_cd = cd_dir
     end

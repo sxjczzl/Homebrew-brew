@@ -52,6 +52,19 @@ describe Utils::Shell do
     end
   end
 
+  describe "::subshell" do
+    it "returns (...) for fish" do
+      ENV["SHELL"] = "/usr/bin/fish"
+      expect(subject.subshell('whoami')).to eq("(whoami)")
+    end
+    %w[bash csh ksh sh tcsh zsh].each |shell| do
+      it "returns $(...) for #{shell}" do
+        ENV["SHELL"] = "/bin/#{shell}"
+        expect(subject.subshell('whoami')).to eq("$(whoami)")
+      end
+    end
+  end
+
   specify "::sh_quote" do
     expect(subject.send(:sh_quote, "")).to eq("''")
     expect(subject.send(:sh_quote, "\\")).to eq("\\\\")
