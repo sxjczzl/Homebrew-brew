@@ -92,3 +92,75 @@ describe Utils::Shell do
     end
   end
 end
+
+describe "String#for_shell" do
+  using Utils::Shell
+
+  subject { "prefix $(whoami) suffix" }
+
+  it "returns (...) for fish" do
+    ENV["SHELL"] = "/usr/local/bin/fish"
+    expect(subject.for_shell).to eq("prefix (whoami) suffix")
+  end
+  %w[bash csh ksh sh tcsh zsh].each do |shell|
+    it "returns $(...) for #{shell}" do
+      ENV["SHELL"] = "/bin/#{shell}"
+      expect(subject.for_shell).to eq("prefix $(whoami) suffix")
+    end
+  end
+
+  context "fish-shell" do
+    before do
+      ENV["SHELL"] = "/usr/local/bin/fish"
+    end
+
+    it "unquotes enclosed subshells" do
+      expect('ls "$(brew --repo)"'.for_shell).to eq("ls (brew --repo)")
+    end
+
+    it "chains with heredoc" do
+      expect(
+        <<~EOS.for_shell
+          prefix $(whoami) suffix
+        EOS
+      ).to eq("prefix (whoami) suffix\n")
+    end
+
+    it "converts existing example commands" do
+      expect(
+        <<~EOS.for_shell
+          Homebrew/homebrew-core is not on the master branch
+
+          Check out the master branch by running:
+            git -C "$(brew --repo homebrew/core)" checkout master
+        EOS
+      ).to eq(
+        <<~EOS
+          Homebrew/homebrew-core is not on the master branch
+
+          Check out the master branch by running:
+            git -C (brew --repo homebrew/core) checkout master
+        EOS
+      )
+    end
+
+    it "converts existing example commands with string substitution" do
+      name = "Homebrew/brew"
+      git_cd = "$(brew --repo)"
+
+      expect(
+        <<~EOS.for_shell
+          #{name} is a shallow clone so only partial output will be shown.
+          To get a full clone run:
+            git -C "#{git_cd}" fetch --unshallow
+        EOS
+      ).to eq(
+        <<~EOS
+          Homebrew/brew is a shallow clone so only partial output will be shown.
+          To get a full clone run:
+            git -C (brew --repo) fetch --unshallow
+        EOS
+      )
+    end
+  end
+end

@@ -1,4 +1,7 @@
 require "formulary"
+require "utils/shell"
+
+using Utils::Shell
 
 module Homebrew
   module MissingFormula
@@ -130,7 +133,7 @@ module Homebrew
           unless silent
             ohai "Searching for a previously deleted formula (in the last month)..."
             if (tap.path/".git/shallow").exist?
-              opoo <<~EOS
+              opoo <<~EOS.for_shell
                 #{tap} is shallow clone. To get complete history run:
                   git -C "$(brew --repo #{tap})" fetch --unshallow
 
@@ -154,7 +157,7 @@ module Homebrew
           commit_message.sub!(/ \(#(\d+)\)$/, " (#{tap.issues_url}/\\1)")
           commit_message.gsub!(/(Closes|Fixes) #(\d+)/, "\\1 #{tap.issues_url}/\\2")
 
-          <<~EOS
+          <<~EOS.for_shell
             #{name} was deleted from #{tap.name} in commit #{short_hash}:
               #{commit_message}
 

@@ -3,6 +3,9 @@
 #:    recognizes can be passed before the formula list.
 
 require "formula"
+require "utils/shell"
+
+using Utils::Shell
 
 module Homebrew
   module_function
@@ -31,7 +34,7 @@ module Homebrew
     end
 
     if File.exist? "#{repo}/.git/shallow"
-      opoo <<~EOS
+      opoo <<~EOS.for_shell
         #{name} is a shallow clone so only partial output will be shown.
         To get a full clone run:
           git -C "#{git_cd}" fetch --unshallow

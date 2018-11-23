@@ -98,5 +98,25 @@ module Utils
       str.gsub!(/\n/, "'\n'")
       str
     end
+
+    def subshell(str)
+      case preferred
+      when :fish
+        str.
+          # fish capturing sub-shells are (...)
+          gsub("$(", "(").
+          # fish sub-shells don't work in quoted strings (but don't need
+          # quoting since the captured result doesn't split on IFS)
+          gsub(/"\((.*)\)"/, '(\1)')
+      else
+        str
+      end
+    end
+
+    refine String do
+      def for_shell
+        Utils::Shell.subshell(self)
+      end
+    end
   end
 end

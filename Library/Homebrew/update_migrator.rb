@@ -1,5 +1,8 @@
 require "cask/cask_loader"
 require "cask/download"
+require "utils/shell"
+
+using Utils::Shell
 
 module UpdateMigrator
   class << self
@@ -264,7 +267,7 @@ module UpdateMigrator
       ohai "Migrating HOMEBREW_REPOSITORY (please wait)..."
 
       unless HOMEBREW_PREFIX.writable_real?
-        ofail <<~EOS
+        ofail <<~EOS.for_shell
           #{HOMEBREW_PREFIX} is not writable.
 
           You should change the ownership and permissions of #{HOMEBREW_PREFIX}
@@ -350,7 +353,7 @@ module UpdateMigrator
       begin
         FileUtils.ln_s(src.relative_path_from(dst.parent), dst)
       rescue Errno::EACCES, Errno::ENOENT
-        ofail <<~EOS
+        ofail <<~EOS.for_shell
           Could not create symlink at #{dst}!
           Please do this manually with:
             sudo ln -sf #{src} #{dst}

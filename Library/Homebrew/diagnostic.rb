@@ -5,6 +5,8 @@ require "version"
 require "development_tools"
 require "utils/shell"
 
+using Utils::Shell
+
 module Homebrew
   module Diagnostic
     def self.missing_deps(ff, hide = nil)
@@ -306,7 +308,7 @@ module Homebrew
         not_exist_dirs = Keg::MUST_EXIST_DIRECTORIES.reject(&:exist?)
         return if not_exist_dirs.empty?
 
-        <<~EOS
+        <<~EOS.for_shell
           The following directories do not exist:
           #{not_exist_dirs.join("\n")}
 
@@ -322,7 +324,7 @@ module Homebrew
                                            .reject(&:writable_real?)
         return if not_writable_dirs.empty?
 
-        <<~EOS
+        <<~EOS.for_shell
           The following directories are not writable by your user:
           #{not_writable_dirs.join("\n")}
 
@@ -595,7 +597,7 @@ module Homebrew
         branch = coretap_path.git_branch
         return if branch.nil? || branch =~ /master/
 
-        <<~EOS
+        <<~EOS.for_shell
           Homebrew/homebrew-core is not on the master branch
 
           Check out the master branch by running:

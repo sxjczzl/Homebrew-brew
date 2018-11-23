@@ -1,3 +1,5 @@
+require "utils/shell"
+
 module Language
   module Java
     def self.java_home_cmd(version = nil)
