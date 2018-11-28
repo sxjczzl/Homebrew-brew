@@ -25,7 +25,7 @@ A shell script for a command named `extcmd` should be named `brew-extcmd`. This 
 |------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `HOMEBREW_CACHE`       | Where Homebrew caches downloaded tarballs to, by default `~/Library/Caches/Homebrew`.                                                                                       |
 | `HOMEBREW_CELLAR`      | The location of the Homebrew Cellar, where software is staged. This will be `HOMEBREW_PREFIX/Cellar` if that directory exists, or `HOMEBREW_REPOSITORY/Cellar` otherwise.   |
-| `HOMEBREW_LIBRARY_PATH`| The directory containing Homebrew’s own application code.                                                                                                                   |
+| `HOMEBREW_LIBRARY`| The directory containing Homebrew’s own application code.                                                                                                                   |
 | `HOMEBREW_PREFIX`      | Where Homebrew installs software. This is always the grandparent directory of the `brew` executable, `/usr/local` by default.                                               |
 | `HOMEBREW_REPOSITORY`  | If installed from a Git clone, the repository directory (i.e. where Homebrew’s `.git` directory lives).                                                                       |
 
