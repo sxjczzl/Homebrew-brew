@@ -108,7 +108,7 @@ class Keg
     man/cat5 man/cat6 man/cat7 man/cat8
     applications gnome gnome/help icons
     mime-info pixmaps sounds postgresql
-  ].freeze
+  ].map { |dir| Regexp.new(dir) }.freeze
 
   # Given an array of kegs, this method will try to find some other kegs
   # that depend on them. If it does, it returns:
