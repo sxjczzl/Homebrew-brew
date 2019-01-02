@@ -107,7 +107,13 @@ module Homebrew
       Migrator.migrate_if_needed(f)
       begin
         upgrade_formula(f)
-        next if !ARGV.include?("--cleanup") && !ENV["HOMEBREW_UPGRADE_CLEANUP"] && !ENV["HOMEBREW_INSTALL_CLEANUP"]
+
+        cleanup_formula = ARGV.include?("--cleanup")
+        if !cleanup_formula && !ENV["HOMEBREW_NO_INSTALL_CLEANUP"]
+          cleanup_formula = ENV["HOMEBREW_INSTALL_CLEANUP"] ||
+                            ENV["HOMEBREW_UPGRADE_CLEANUP"]
+        end
+        next unless cleanup_formula
         next unless f.installed?
 
         Cleanup.new.cleanup_formula(f)

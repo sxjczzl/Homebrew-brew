@@ -257,7 +257,9 @@ module Homebrew
       formulae.each do |f|
         Migrator.migrate_if_needed(f)
         install_formula(f)
-        Cleanup.new.cleanup_formula(f) if ENV["HOMEBREW_INSTALL_CLEANUP"]
+        if !ENV["HOMEBREW_NO_INSTALL_CLEANUP"] && ENV["HOMEBREW_INSTALL_CLEANUP"]
+          Cleanup.new.cleanup_formula(f)
+        end
       end
       Homebrew.messages.display_messages
     rescue FormulaUnreadableError, FormulaClassUnavailableError,
