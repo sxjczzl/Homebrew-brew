@@ -451,6 +451,7 @@ class Keg
       # Lua, Lua51, Lua53 all need the same handling.
       when %r{^lua/} then :mkpath
       when %r{^guile/} then :mkpath
+      when %r{^terminfo/} then :mkpath
       when *SHARE_PATHS then :mkpath
       else :link
       end
