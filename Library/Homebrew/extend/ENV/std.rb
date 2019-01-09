@@ -37,8 +37,8 @@ module Stdenv
       self["CMAKE_FRAMEWORK_PATH"] = frameworks.to_s
     end
 
-    # Os is the default Apple uses for all its stuff so let's trust them
-    define_cflags "-Os #{SAFE_CFLAGS_FLAGS}"
+    # O2 enables the optimizations that do not involve a space-speed tradeoff
+    define_cflags "-O2 #{SAFE_CFLAGS_FLAGS}"
 
     append "LDFLAGS", "-Wl,-headerpad_max_install_names"
 
