@@ -46,6 +46,7 @@ quiet_stderr() {
 }
 
 fetch() {
+  echo "./Library/Homebrew/cmd/vendor-install.sh: fetch"
   local -a curl_args
   local sha
   local temporary_path
@@ -79,6 +80,7 @@ fetch() {
   fi
 
   temporary_path="$CACHED_LOCATION.incomplete"
+  echo "./Library/Homebrew/cmd/vendor-install.sh: temporary_path=$temporary_path"
 
   mkdir -p "$HOMEBREW_CACHE"
   [[ -n "$HOMEBREW_QUIET" ]] || echo "==> Downloading $VENDOR_URL" >&2
@@ -88,20 +90,24 @@ fetch() {
   else
     if [[ -f "$temporary_path" ]]
     then
+      echo "./Library/Homebrew/cmd/vendor-install.sh: $HOMEBREW_CURL ${curl_args[@]} -C - $VENDOR_URL -o $temporary_path"
       "$HOMEBREW_CURL" "${curl_args[@]}" -C - "$VENDOR_URL" -o "$temporary_path"
       if [[ $? -eq 33 ]]
       then
         [[ -n "$HOMEBREW_QUIET" ]] || echo "Trying a full download" >&2
         rm -f "$temporary_path"
+        echo "./Library/Homebrew/cmd/vendor-install.sh: $HOMEBREW_CURL ${curl_args[@]} $VENDOR_URL -o $temporary_path"
         "$HOMEBREW_CURL" "${curl_args[@]}" "$VENDOR_URL" -o "$temporary_path"
       fi
     else
+      echo "./Library/Homebrew/cmd/vendor-install.sh: $HOMEBREW_CURL ${curl_args[@]} $VENDOR_URL -o $temporary_path"
       "$HOMEBREW_CURL" "${curl_args[@]}" "$VENDOR_URL" -o "$temporary_path"
     fi
 
     if [[ ! -f "$temporary_path" ]]
     then
       [[ -n "$HOMEBREW_QUIET" ]] || echo "==> Downloading $VENDOR_URL2" >&2
+      echo "./Library/Homebrew/cmd/vendor-install.sh: $HOMEBREW_CURL ${curl_args[@]} $VENDOR_URL2 -o $temporary_path"
       "$HOMEBREW_CURL" "${curl_args[@]}" "$VENDOR_URL2" -o "$temporary_path"
     fi
 
@@ -124,9 +130,11 @@ EOS
 
   if [[ -x "/usr/bin/shasum" ]]
   then
+    echo "./Library/Homebrew/cmd/vendor-install.sh: sha=\"$(/usr/bin/shasum -a 256 \"$CACHED_LOCATION\" | cut -d\' \' -f1)\""
     sha="$(/usr/bin/shasum -a 256 "$CACHED_LOCATION" | cut -d' ' -f1)"
   elif [[ -x "$(type -P sha256sum)" ]]
   then
+    echo "./Library/Homebrew/cmd/vendor-install.sh: sha=\"$(sha256sum \"$CACHED_LOCATION\" | cut -d\' \' -f1)\""
     sha="$(sha256sum "$CACHED_LOCATION" | cut -d' ' -f1)"
   elif [[ -x "$(type -P ruby)" ]]
   then
@@ -154,6 +162,7 @@ EOS
 }
 
 install() {
+  echo "./Library/Homebrew/cmd/vendor-install.sh: install"
   local tar_args
 
   if [[ -n "$HOMEBREW_VERBOSE" ]]
@@ -164,8 +173,10 @@ install() {
   fi
 
   mkdir -p "$VENDOR_DIR/portable-$VENDOR_NAME"
+  echo "./Library/Homebrew/cmd/vendor-install.sh: safe_cd \"$VENDOR_DIR/portable-$VENDOR_NAME\""
   safe_cd "$VENDOR_DIR/portable-$VENDOR_NAME"
 
+  echo "./Library/Homebrew/cmd/vendor-install.sh: trap \'\' SIGINT"
   trap '' SIGINT
 
   if [[ -d "$VENDOR_VERSION" ]]
@@ -173,9 +184,12 @@ install() {
     mv "$VENDOR_VERSION" "$VENDOR_VERSION.reinstall"
   fi
 
+  echo "./Library/Homebrew/cmd/vendor-install.sh: safe_cd \"$VENDOR_DIR\""
   safe_cd "$VENDOR_DIR"
   [[ -n "$HOMEBREW_QUIET" ]] || echo "==> Pouring $(basename "$VENDOR_URL")" >&2
+  echo "./Library/Homebrew/cmd/vendor-install.sh: tar \"$tar_args\" \"$CACHED_LOCATION\""
   tar "$tar_args" "$CACHED_LOCATION"
+  echo "./Library/Homebrew/cmd/vendor-install.sh: safe_cd \"$VENDOR_DIR/portable-$VENDOR_NAME\""
   safe_cd "$VENDOR_DIR/portable-$VENDOR_NAME"
 
   if quiet_stderr "./$VENDOR_VERSION/bin/$VENDOR_NAME" --version >/dev/null
@@ -242,6 +256,8 @@ EOS
 
   VENDOR_VERSION="$(<"$VENDOR_DIR/portable-$VENDOR_NAME-version")"
   CACHED_LOCATION="$HOMEBREW_CACHE/$(basename "$VENDOR_URL")"
+  echo "./Library/Homebrew/cmd/vendor-install.sh: VENDOR_VERSION=$VENDOR_VERSION"
+  echo "./Library/Homebrew/cmd/vendor-install.sh: CACHED_LOCATION=$CACHED_LOCATION"
 
   lock "vendor-install-$VENDOR_NAME"
   fetch

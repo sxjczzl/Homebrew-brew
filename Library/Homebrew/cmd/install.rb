@@ -87,6 +87,7 @@ module Homebrew
 
   def install
     raise FormulaUnspecifiedError if ARGV.named.empty?
+    ohai "./Library/Homebrew/cmd/install.rb: install"
 
     if ARGV.include? "--head"
       raise "Specify `--HEAD` in uppercase to build from trunk."
@@ -121,6 +122,7 @@ module Homebrew
 
       # if the user's flags will prevent bottle only-installations when no
       # developer tools are available, we need to stop them early on
+      puts("./Library/Homebrew/cmd/install.rb: prevent_build_flags")
       FormulaInstaller.prevent_build_flags unless DevelopmentTools.installed?
 
       ARGV.formulae.each do |f|
@@ -311,6 +313,7 @@ module Homebrew
   end
 
   def install_formula(f)
+    ohai "./Library/Homebrew/cmd/install.rb: install_formula"
     f.print_tap_action
     build_options = f.build
 

@@ -3,6 +3,7 @@ if [[ "$(locale charmap 2>/dev/null)" != "UTF-8" ]]
 then
   export LC_ALL="en_US.UTF-8"
 fi
+echo "./Library/Homebrew/brew.sh: LC_ALL=$LC_ALL"
 
 # Where we store built products; a Cellar in HOMEBREW_PREFIX (often /usr/local
 # for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY.
@@ -12,7 +13,9 @@ then
 else
   HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
 fi
+echo "./Library/Homebrew/brew.sh: HOMEBREW_CELLAR=$HOMEBREW_CELLAR"
 
+echo "./Library/Homebrew/brew.sh: \$*=$*"
 case "$*" in
   --prefix)            echo "$HOMEBREW_PREFIX"; exit 0 ;;
   --cellar)            echo "$HOMEBREW_CELLAR"; exit 0 ;;
@@ -22,6 +25,7 @@ esac
 # A depth of 1 means this command was directly invoked by a user.
 # Higher depths mean this command was invoked by another Homebrew command.
 export HOMEBREW_COMMAND_DEPTH=$((HOMEBREW_COMMAND_DEPTH + 1))
+echo "./Library/Homebrew/brew.sh: HOMEBREW_COMMAND_DEPTH=$HOMEBREW_COMMAND_DEPTH"
 
 onoe() {
   if [[ -t 2 ]] # check whether stderr is a tty.
@@ -48,6 +52,7 @@ safe_cd() {
 }
 
 brew() {
+  echo "./Library/Homebrew/brew.sh: brew() \"$HOMEBREW_BREW_FILE\" \"$@\""
   "$HOMEBREW_BREW_FILE" "$@"
 }
 
@@ -68,6 +73,8 @@ then
   HOMEBREW_VERSION=">=1.7.1 (shallow or no git repository)"
   HOMEBREW_USER_AGENT_VERSION="1.X.Y"
 fi
+echo "./Library/Homebrew/brew.sh: HOMEBREW_VERSION=$HOMEBREW_VERSION"
+echo "./Library/Homebrew/brew.sh: HOMEBREW_USER_AGENT_VERSION=$HOMEBREW_USER_AGENT_VERSION"
 
 if [[ "$HOMEBREW_PREFIX" = "/" || "$HOMEBREW_PREFIX" = "/usr" ]]
 then
@@ -346,6 +353,7 @@ then
   fi
   HOMEBREW_BASH_COMMAND="$HOMEBREW_LIBRARY/Homebrew/dev-cmd/$HOMEBREW_COMMAND.sh"
 fi
+echo "./Library/Homebrew/brew.sh: HOMEBREW_BASH_COMMAND=$HOMEBREW_BASH_COMMAND"
 
 check-run-command-as-root() {
   [[ "$(id -u)" = 0 ]] || return
@@ -362,6 +370,7 @@ As Homebrew does not drop privileges on installation you would be giving all
 build scripts full access to your system.
 EOS
 }
+echo "./Library/Homebrew/brew.sh: check-run-command-as-root"
 check-run-command-as-root
 
 check-prefix-is-not-tmpdir() {
@@ -377,6 +386,7 @@ in the Homebrew temporary directory.
 EOS
   fi
 }
+echo "./Library/Homebrew/brew.sh: check-prefix-is-not-tmpdir"
 check-prefix-is-not-tmpdir
 
 if [[ "$HOMEBREW_PREFIX" = "/usr/local" &&
@@ -394,7 +404,9 @@ fi
 
 # Don't need shellcheck to follow this `source`.
 # shellcheck disable=SC1090
+echo "./Library/Homebrew/brew.sh: source $HOMEBREW_LIBRARY/Homebrew/utils/analytics.sh"
 source "$HOMEBREW_LIBRARY/Homebrew/utils/analytics.sh"
+echo "./Library/Homebrew/brew.sh: setup-analytics"
 setup-analytics
 
 # Let user know we're still updating Homebrew if brew update --preinstall
@@ -405,6 +417,7 @@ update-preinstall-timer() {
 }
 
 update-preinstall() {
+  echo "./Library/Homebrew/brew.sh: update-preinstall()"
   [[ -z "$HOMEBREW_HELP" ]] || return
   [[ -z "$HOMEBREW_NO_AUTO_UPDATE" ]] || return
   [[ -z "$HOMEBREW_AUTO_UPDATING" ]] || return
@@ -418,6 +431,7 @@ update-preinstall() {
 
     if [[ -z "$HOMEBREW_VERBOSE" ]]
     then
+      echo "./Library/Homebrew/brew.sh: update-preinstall-timer &"
       update-preinstall-timer &
       timer_pid=$!
     fi
@@ -425,6 +439,7 @@ update-preinstall() {
     # Allow auto-update migration now we have a fix in place (below in this function).
     export HOMEBREW_ENABLE_AUTO_UPDATE_MIGRATION="1"
 
+    echo "./Library/Homebrew/brew.sh: brew update --preinstall"
     brew update --preinstall
 
     if [[ -n "$timer_pid" ]]
@@ -439,6 +454,8 @@ update-preinstall() {
     export HOMEBREW_AUTO_UPDATE_CHECKED="1"
 
     # exec a new process to set any new environment variables.
+    echo "./Library/Homebrew/brew.sh: exec \"$HOMEBREW_BREW_FILE\" \"$@\""
+    echo "./Library/Homebrew/brew.sh: 1. ---------------------------------------------"
     exec "$HOMEBREW_BREW_FILE" "$@"
   fi
 
@@ -446,6 +463,7 @@ update-preinstall() {
   export HOMEBREW_AUTO_UPDATE_CHECKED="1"
 }
 
+echo "./Library/Homebrew/brew.sh: HOMEBREW_BASH_COMMAND=$HOMEBREW_BASH_COMMAND"
 if [[ -n "$HOMEBREW_BASH_COMMAND" ]]
 then
   # source rather than executing directly to ensure the entire file is read into
@@ -455,15 +473,31 @@ then
   #
   # Don't need shellcheck to follow this `source`.
   # shellcheck disable=SC1090
+  echo "./Library/Homebrew/brew.sh: source $HOMEBREW_BASH_COMMAND"
   source "$HOMEBREW_BASH_COMMAND"
-  { update-preinstall "$@"; "homebrew-$HOMEBREW_COMMAND" "$@"; exit $?; }
+  {
+    echo "./Library/Homebrew/brew.sh: update-preinstall $@"
+    update-preinstall "$@"; 
+
+    echo "./Library/Homebrew/brew.sh: homebrew-$HOMEBREW_COMMAND $@; exit $?"
+    "homebrew-$HOMEBREW_COMMAND" "$@"; exit $?; 
+  }
 else
   # Don't need shellcheck to follow this `source`.
   # shellcheck disable=SC1090
+  echo "./Library/Homebrew/brew.sh: source $HOMEBREW_LIBRARY/Homebrew/utils/ruby.sh"
   source "$HOMEBREW_LIBRARY/Homebrew/utils/ruby.sh"
+  echo "./Library/Homebrew/brew.sh: setup-ruby-path"
   setup-ruby-path
 
   # Unshift command back into argument list (unless argument list was empty).
   [[ "$HOMEBREW_ARG_COUNT" -gt 0 ]] && set -- "$HOMEBREW_COMMAND" "$@"
-  { update-preinstall "$@"; exec "$HOMEBREW_RUBY_PATH" $HOMEBREW_RUBY_WARNINGS "$HOMEBREW_LIBRARY/Homebrew/brew.rb" "$@"; }
+  { 
+    echo "./Library/Homebrew/brew.sh: update-preinstall $@"
+    update-preinstall "$@"; 
+
+    echo "./Library/Homebrew/brew.sh: exec $HOMEBREW_RUBY_PATH $HOMEBREW_RUBY_WARNINGS $HOMEBREW_LIBRARY/Homebrew/brew.rb $@"
+    echo "./Library/Homebrew/brew.sh: 2. ---------------------------------------------"
+    exec "$HOMEBREW_RUBY_PATH" $HOMEBREW_RUBY_WARNINGS "$HOMEBREW_LIBRARY/Homebrew/brew.rb" "$@"; 
+  }
 fi

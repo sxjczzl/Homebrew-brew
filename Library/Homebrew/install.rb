@@ -8,6 +8,7 @@ module Homebrew
     module_function
 
     def check_cpu
+      puts("./Library/Homebrew/install.rb: check_cpu: #{Hardware::CPU.type}")
       case Hardware::CPU.type
       when :ppc
         abort <<~EOS
@@ -18,6 +19,7 @@ module Homebrew
     end
 
     def attempt_directory_creation
+      puts("./Library/Homebrew/install.rb: attempt_directory_creation:")
       Keg::MUST_EXIST_DIRECTORIES.each do |dir|
         begin
           FileUtils.mkdir_p(dir) unless dir.exist?
@@ -40,6 +42,7 @@ module Homebrew
     module_function :generic_perform_preinstall_checks
 
     def fatal_checks(type)
+      puts("./Library/Homebrew/install.rb: fatal_checks: #{type}")
       @checks ||= Diagnostic::Checks.new
       failed = false
       @checks.public_send(type).each do |check|

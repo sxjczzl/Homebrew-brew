@@ -41,6 +41,7 @@ class FormulaInstaller
   mode_attr_accessor :verbose, :debug, :quieter
 
   def initialize(formula)
+    ohai "./Library/Homebrew/formula_installer.rb: initialize(#{formula})"
     @formula = formula
     @link_keg = !formula.keg_only?
     @show_header = false
@@ -152,6 +153,7 @@ class FormulaInstaller
   end
 
   def check_install_sanity
+    ohai "./Library/Homebrew/formula_installer.rb: check_install_sanity"
     raise FormulaInstallationAlreadyAttemptedError, formula if self.class.attempted.include?(formula)
 
     return if ignore_deps?
@@ -207,6 +209,7 @@ class FormulaInstaller
   end
 
   def install
+    ohai "./Library/Homebrew/formula_installer.rb: install"
     start_time = Time.now
     if !formula.bottle_unneeded? && !pour_bottle? && DevelopmentTools.installed?
       Homebrew::Install.perform_development_tools_checks
@@ -343,6 +346,7 @@ class FormulaInstaller
   end
 
   def check_conflicts
+    ohai "./Library/Homebrew/formula_installer.rb: check_conflicts"
     return if ARGV.force?
 
     conflicts = formula.conflicts.select do |c|
@@ -539,6 +543,7 @@ class FormulaInstaller
   end
 
   def install_dependencies(deps)
+    ohai "./Library/Homebrew/formula_installer.rb: install_dependencies(#{deps})"
     if deps.empty? && only_deps?
       puts "All dependencies for #{formula.full_name} are satisfied."
     elsif !deps.empty?
@@ -552,6 +557,7 @@ class FormulaInstaller
   end
 
   def install_dependency(dep, inherited_options)
+    ohai "./Library/Homebrew/formula_installer.rb: install_dependency(#{dep}, #{inherited_options})"
     df = dep.to_formula
     tab = Tab.for_formula(df)
 
@@ -590,7 +596,8 @@ class FormulaInstaller
     fi.installed_as_dependency = true
     fi.installed_on_request    = df.any_version_installed? && tab.installed_on_request
     fi.prelude
-    oh1 "Installing #{formula.full_name} dependency: #{Formatter.identifier(dep.name)}"
+
+    oh1 "./Library/Homebrew/formula_installer.rb: Installing #{formula.full_name} dependency: #{Formatter.identifier(dep.name)}"
     fi.install
     fi.finish
   rescue Exception # rubocop:disable Lint/RescueException
@@ -724,6 +731,7 @@ class FormulaInstaller
   end
 
   def build
+    ohai "./Library/Homebrew/formula_installer.rb: build()"
     FileUtils.rm_rf(formula.logs)
 
     @start_time = Time.now
@@ -779,6 +787,7 @@ class FormulaInstaller
   end
 
   def link(keg)
+    ohai "./Library/Homebrew/formula_installer.rb: link(#{keg})"
     unless link_keg
       begin
         keg.optlink
@@ -855,6 +864,7 @@ class FormulaInstaller
   end
 
   def install_plist
+    ohai "./Library/Homebrew/formula_installer.rb: install_plist()"
     return unless formula.plist
 
     formula.plist_path.atomic_write(formula.plist)

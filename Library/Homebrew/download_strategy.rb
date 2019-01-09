@@ -285,7 +285,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
     begin
       url = urls.shift
 
-      ohai "Downloading #{url}"
+      ohai "./Library/Homebrew/download_strategy.rb: Downloading #{url}"
 
       resolved_url, _, url_time = resolve_url_basename_time(url)
 
@@ -296,7 +296,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
       end
 
       if cached_location.exist? && fresh
-        puts "Already downloaded: #{cached_location}"
+        puts "./Library/Homebrew/download_strategy.rb: Already downloaded: #{cached_location}"
       else
         begin
           _fetch(url: url, resolved_url: resolved_url)

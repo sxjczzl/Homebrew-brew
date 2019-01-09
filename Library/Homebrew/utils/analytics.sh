@@ -1,13 +1,16 @@
 # Migrate analytics UUID to its new home in Homebrew repo's git config and
 # remove the legacy UUID file if detected.
 migrate-legacy-uuid-file() {
+  echo "./Library/Homebrew/utils/analytics.sh: migrate-legacy-uuid-file"
   local legacy_uuid_file analytics_uuid
 
   legacy_uuid_file="$HOME/.homebrew_analytics_user_uuid"
+  echo "./Library/Homebrew/utils/analytics.sh: legacy_uuid_file=$legacy_uuid_file"
 
   if [[ -f "$legacy_uuid_file" ]]
   then
     analytics_uuid="$(<"$legacy_uuid_file")"
+    echo "./Library/Homebrew/utils/analytics.sh: analytics_uuid=$analytics_uuid"
     if [[ -n "$analytics_uuid" ]]
     then
       git config --file="$HOMEBREW_REPOSITORY/.git/config" --replace-all homebrew.analyticsuuid "$analytics_uuid" 2>/dev/null
@@ -17,6 +20,7 @@ migrate-legacy-uuid-file() {
 }
 
 setup-analytics() {
+  echo "./Library/Homebrew/utils/analytics.sh: setup-analytics"
   local git_config_file="$HOMEBREW_REPOSITORY/.git/config"
 
   migrate-legacy-uuid-file

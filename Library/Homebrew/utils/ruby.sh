@@ -1,4 +1,5 @@
 setup-ruby-path() {
+  echo "./Library/Homebrew/utils/ruby.sh: setup-ruby-path"
   local vendor_dir
   local vendor_ruby_current_version
   local vendor_ruby_path
@@ -8,6 +9,9 @@ setup-ruby-path() {
   vendor_dir="$HOMEBREW_LIBRARY/Homebrew/vendor"
   vendor_ruby_current_version="$vendor_dir/portable-ruby/current"
   vendor_ruby_path="$vendor_ruby_current_version/bin/ruby"
+  echo "./Library/Homebrew/utils/ruby.sh: vendor_dir=$vendor_dir"
+  echo "./Library/Homebrew/utils/ruby.sh: vendor_ruby_current_version=$vendor_ruby_current_version"
+  echo "./Library/Homebrew/utils/ruby.sh: vendor_ruby_path=$vendor_ruby_path"
 
   if [[ -z "$HOMEBREW_DEVELOPER" ]]
   then
@@ -19,7 +23,9 @@ setup-ruby-path() {
     if [[ -x "$vendor_ruby_path" ]]
     then
       HOMEBREW_RUBY_PATH="$vendor_ruby_path"
+      echo "./Library/Homebrew/utils/ruby.sh: HOMEBREW_RUBY_PATH=$HOMEBREW_RUBY_PATH"
 
+      echo "if [[ $(readlink \"$vendor_ruby_current_version\") != \"$(<\"$vendor_dir/portable-ruby-version\")\" ]]"
       if [[ $(readlink "$vendor_ruby_current_version") != "$(<"$vendor_dir/portable-ruby-version")" ]]
       then
         if ! brew vendor-install ruby
@@ -34,6 +40,7 @@ setup-ruby-path() {
       else
         HOMEBREW_RUBY_PATH="$(type -P ruby)"
       fi
+      echo "./Library/Homebrew/utils/ruby.sh: HOMEBREW_RUBY_PATH=$HOMEBREW_RUBY_PATH"
 
       if [[ -n "$HOMEBREW_RUBY_PATH" && -z "$HOMEBREW_FORCE_VENDOR_RUBY" ]]
       then
@@ -54,4 +61,5 @@ setup-ruby-path() {
   fi
 
   export HOMEBREW_RUBY_PATH
+  echo "./Library/Homebrew/utils/ruby.sh: setup-ruby-path end"
 }

@@ -37,6 +37,8 @@ begin
   # Add SCM wrappers.
   path.prepend(HOMEBREW_SHIMS_PATH/"scm")
   homebrew_path.prepend(HOMEBREW_SHIMS_PATH/"scm")
+  puts("./Library/Homebrew/brew.rb: path=#{path}")
+  puts("./Library/Homebrew/brew.rb: homebrew_path=#{homebrew_path}")
 
   ENV["PATH"] = path
 
@@ -48,6 +50,7 @@ begin
       internal_cmd = internal_dev_cmd
       if internal_dev_cmd && !ARGV.homebrew_developer?
         if (HOMEBREW_REPOSITORY/".git/config").exist?
+          puts("./Library/Homebrew/brew.rb: git config --file HOMEBREW_REPOSITORY=#{HOMEBREW_REPOSITORY} --replace-all homebrew.devcmdrun true")
           system "git", "config", "--file=#{HOMEBREW_REPOSITORY}/.git/config",
                                   "--replace-all", "homebrew.devcmdrun", "true"
         end
@@ -77,6 +80,7 @@ begin
 
   # Uninstall old brew-cask if it's still around; we just use the tap now.
   if cmd == "cask" && (HOMEBREW_CELLAR/"brew-cask").exist?
+    puts("./Library/Homebrew/brew.rb: uninstall old brew-cast if it\'s still around; we just use the tap now")
     system(HOMEBREW_BREW_FILE, "uninstall", "--force", "brew-cask")
   end
 
@@ -84,19 +88,25 @@ begin
     odeprecated("HOMEBREW_BUILD_FROM_SOURCE", "--build-from-source")
   end
 
+  ohai "./Library/Homebrew/brew.rb: cmd=#{cmd}"
   if internal_cmd
+    temp_cmd = cmd.to_s.tr("-", "_").downcase
+    puts("./Library/Homebrew/brew.rb: internal_cmd=#{temp_cmd}")
     Homebrew.send cmd.to_s.tr("-", "_").downcase
   elsif which "brew-#{cmd}"
     %w[CACHE LIBRARY_PATH].each do |env|
       ENV["HOMEBREW_#{env}"] = Object.const_get("HOMEBREW_#{env}").to_s
     end
+    puts("./Library/Homebrew/brew.rb: exec \"brew-#{cmd}\", *ARGV")
     exec "brew-#{cmd}", *ARGV
   elsif (path = which("brew-#{cmd}.rb")) && require?(path)
+    puts("./Library/Homebrew/brew.rb: failed=#{Homebrew.failed}")
     exit Homebrew.failed? ? 1 : 0
   else
     possible_tap = OFFICIAL_CMD_TAPS.find { |_, cmds| cmds.include?(cmd) }
     possible_tap = Tap.fetch(possible_tap.first) if possible_tap
 
+    puts("./Library/Homebrew/brew.rb: Unknown command: #{cmd}")
     odie "Unknown command: #{cmd}" if !possible_tap || possible_tap.installed?
 
     brew_uid = HOMEBREW_BREW_FILE.stat.uid
