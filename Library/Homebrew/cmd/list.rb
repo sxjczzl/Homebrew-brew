@@ -17,6 +17,9 @@
 #:    If `--pinned` is passed, show the versions of pinned formulae, or only the
 #:    specified (pinned) formulae if <formulae> are given.
 #:    See also `pin`, `unpin`.
+#:
+#:    If `--full-name` is passed, print formulae with fully-qualified names
+#:    i.e. user/tap/formula.
 
 require "metafiles"
 require "formula"
