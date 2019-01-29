@@ -373,7 +373,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
            .map(&Time.public_method(:parse))
            .last
 
-    basename = filenames.last || parse_basename(redirect_url)
+    basename = filenames.last || parse_basename(url)
 
     @resolved_info_cache[url] = [redirect_url, basename, time]
   end
