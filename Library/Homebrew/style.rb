@@ -29,7 +29,7 @@ module Homebrew
       else
         args << "--parallel"
       end
-      
+
       args += ["--extra-details", "--display-cop-names"] if Homebrew.args.verbose?
 
       if options[:except_cops]
