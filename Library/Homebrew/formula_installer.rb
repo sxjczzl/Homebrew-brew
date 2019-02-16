@@ -48,13 +48,13 @@ class FormulaInstaller
     @only_deps = false
     @build_from_source = ARGV.build_from_source?
     @build_bottle = false
-    @force_bottle = ARGV.force_bottle?
+    @force_bottle = Homebrew.args.force_bottle?
     @include_test = ARGV.include?("--include-test")
     @interactive = false
     @git = false
-    @verbose = ARGV.verbose?
-    @quieter = ARGV.quieter?
-    @debug = ARGV.debug?
+    @verbose = Homebrew.args.verbose?
+    @quieter = Homebrew.args.quieter?
+    @debug = Homebrew.args.debug?
     @installed_as_dependency = false
     @installed_on_request = true
     @options = Options.new
@@ -91,7 +91,7 @@ class FormulaInstaller
     return false if !formula.bottled? && !formula.local_bottle_path
     return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
-    return false if ARGV.cc
+    return false if Homebrew.args.cc
     return false unless options.empty?
     return false if formula.bottle_disabled?
 
@@ -340,7 +340,7 @@ class FormulaInstaller
   end
 
   def check_conflicts
-    return if ARGV.force?
+    return if Homebrew.args.force?
 
     conflicts = formula.conflicts.select do |c|
       begin
@@ -691,12 +691,12 @@ class FormulaInstaller
     args << "--interactive" if interactive?
     args << "--verbose" if verbose?
     args << "--debug" if debug?
-    args << "--cc=#{ARGV.cc}" if ARGV.cc
+    args << "--cc=#{Homebrew.args.cc}" if Homebrew.args.cc
     args << "--default-fortran-flags" if ARGV.include? "--default-fortran-flags"
-    args << "--keep-tmp" if ARGV.keep_tmp?
+    args << "--keep-tmp" if Homebrew.args.keep_tmp?
 
-    if ARGV.env
-      args << "--env=#{ARGV.env}"
+    if Homebrew.args.env
+      args << "--env=#{Homebrew.args.env}"
     elsif formula.env.std? || formula.deps.select(&:build?).any? { |d| d.name == "scons" }
       args << "--env=std"
     end
@@ -742,7 +742,7 @@ class FormulaInstaller
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"build.sandbox.log")
-        sandbox.allow_write_path(ENV["HOME"]) if ARGV.interactive?
+        sandbox.allow_write_path(ENV["HOME"]) if Homebrew.args.interactive?
         sandbox.allow_write_temp_and_cache
         sandbox.allow_write_log(formula)
         sandbox.allow_cvs

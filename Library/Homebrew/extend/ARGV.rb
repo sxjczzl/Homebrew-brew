@@ -135,64 +135,12 @@ module HomebrewArgvExtension
     val.split(",")
   end
 
-  def force?
-    flag? "--force"
-  end
-
-  def verbose?
-    flag?("--verbose") || !ENV["VERBOSE"].nil? || !ENV["HOMEBREW_VERBOSE"].nil?
-  end
-
-  def debug?
-    flag?("--debug") || !ENV["HOMEBREW_DEBUG"].nil?
-  end
-
-  def quieter?
-    flag? "--quieter"
-  end
-
-  def interactive?
-    flag? "--interactive"
-  end
-
-  def one?
-    flag? "--1"
-  end
-
   def dry_run?
     include?("--dry-run") || switch?("n")
   end
 
-  def keep_tmp?
-    include? "--keep-tmp"
-  end
-
-  def git?
-    flag? "--git"
-  end
-
   def homebrew_developer?
     !ENV["HOMEBREW_DEVELOPER"].nil?
-  end
-
-  def sandbox?
-    include?("--sandbox") || !ENV["HOMEBREW_SANDBOX"].nil?
-  end
-
-  def no_sandbox?
-    include?("--no-sandbox") || !ENV["HOMEBREW_NO_SANDBOX"].nil?
-  end
-
-  def ignore_deps?
-    include? "--ignore-dependencies"
-  end
-
-  def only_deps?
-    include? "--only-dependencies"
-  end
-
-  def json
-    value "json"
   end
 
   def build_head?
@@ -236,27 +184,11 @@ module HomebrewArgvExtension
     options_only.include?(flag) || switch?(flag[2, 1])
   end
 
-  def force_bottle?
-    include?("--force-bottle")
-  end
-
-  def fetch_head?
-    include? "--fetch-HEAD"
-  end
-
   # e.g. `foo -ns -i --bar` has three switches: `n`, `s` and `i`
   def switch?(char)
     return false if char.length > 1
 
     options_only.any? { |arg| arg.scan("-").size == 1 && arg.include?(char) }
-  end
-
-  def cc
-    value "cc"
-  end
-
-  def env
-    value "env"
   end
 
   # If the user passes any flags that trigger building over installing from

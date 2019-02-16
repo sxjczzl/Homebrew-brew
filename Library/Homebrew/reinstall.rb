@@ -21,8 +21,8 @@ module Homebrew
     fi = FormulaInstaller.new(f)
     fi.options              = options
     fi.build_bottle         = ARGV.build_bottle? || (!f.bottle_defined? && f.build.bottle?)
-    fi.interactive          = ARGV.interactive?
-    fi.git                  = ARGV.git?
+    fi.interactive          = Homebrew.args.interactive?
+    fi.git                  = Homebrew.args.git?
     fi.link_keg           ||= keg_was_linked if keg_had_linked_opt
     fi.build_from_source    = true if build_from_source
     fi.prelude

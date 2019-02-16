@@ -11,13 +11,13 @@ class Sandbox
   def self.formula?(_formula)
     return false unless available?
 
-    !ARGV.no_sandbox?
+    !Homebrew.args.no_sandbox?
   end
 
   def self.test?
     return false unless available?
 
-    !ARGV.no_sandbox?
+    !Homebrew.args.no_sandbox?
   end
 
   def initialize
@@ -125,7 +125,7 @@ class Sandbox
         end
       end
 
-      if @failed && ARGV.verbose?
+      if @failed && Homebrew.args.verbose?
         ohai "Sandbox log"
         puts logs
         $stdout.flush # without it, brew test-bot would fail to catch the log

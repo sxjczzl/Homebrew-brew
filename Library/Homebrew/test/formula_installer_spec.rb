@@ -87,10 +87,8 @@ describe FormulaInstaller do
   end
 
   specify "Formula is not poured from bottle when compiler specified" do
-    expect(ARGV.cc).to be nil
-
-    cc_arg = "--cc=clang"
-    ARGV << cc_arg
+    expect(Homebrew.args.cc).to be nil
+    allow(Homebrew.args).to receive(:cc).and_return("clang")
 
     temporary_install(TestballBottle.new) do |f|
       tab = Tab.for_formula(f)

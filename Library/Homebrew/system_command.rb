@@ -32,7 +32,7 @@ class SystemCommand
   end
 
   def run!
-    puts command.shelljoin.gsub(/\\=/, "=") if verbose? || ARGV.debug?
+    puts command.shelljoin.gsub(/\\=/, "=") if verbose? || Homebrew.args.debug?
 
     @output = []
 
@@ -223,7 +223,7 @@ class SystemCommand
     end
 
     def warn_plist_garbage(garbage)
-      return unless ARGV.verbose?
+      return unless Homebrew.args.verbose?
       return unless garbage =~ /\S/
 
       opoo "Received non-XML output from #{Formatter.identifier(command.first)}:"
