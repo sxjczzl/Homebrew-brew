@@ -30,7 +30,7 @@ module Homebrew
         args << "--parallel"
       end
 
-      if ARGV.verbose?
+      if Homebrew.args.verbose?
         args += ["--extra-details", "--display-cop-names"]
       end
 
@@ -81,7 +81,7 @@ module Homebrew
 
       case output_type
       when :print
-        args << "--debug" if ARGV.debug?
+        args << "--debug" if Homebrew.args.debug?
         args << "--display-cop-names" if ARGV.include? "--display-cop-names"
         args << "--format" << "simple" if files
         system(cache_env, "rubocop", *args)

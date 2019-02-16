@@ -156,7 +156,7 @@ module Cask
       self.class.run_command(command, *args)
     rescue CaskError, MethodDeprecatedError, ArgumentError, OptionParser::InvalidOption => e
       msg = e.message
-      msg << e.backtrace.join("\n").prepend("\n") if ARGV.debug?
+      msg << e.backtrace.join("\n").prepend("\n") if Homebrew.args.debug?
       onoe msg
       exit 1
     rescue StandardError, ScriptError, NoMemoryError => e

@@ -1,4 +1,5 @@
 require "sandbox"
+require "cli_parser"
 
 describe Sandbox do
   define_negated_matcher :not_matching, :matching
@@ -37,7 +38,7 @@ describe Sandbox do
     end
 
     it "complains on failure" do
-      ENV["HOMEBREW_VERBOSE"] = "1"
+      allow(Homebrew.args).to receive(:verbose?).and_return(true)
 
       expect(Utils).to receive(:popen_read).and_return("foo")
 
@@ -47,7 +48,7 @@ describe Sandbox do
     end
 
     it "ignores bogus Python error" do
-      ENV["HOMEBREW_VERBOSE"] = "1"
+      allow(Homebrew.args).to receive(:verbose?).and_return(true)
 
       with_bogus_error = <<~EOS
         foo

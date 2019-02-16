@@ -24,20 +24,20 @@ rescue LoadError => e
 end
 
 def ohai(title, *sput)
-  title = Tty.truncate(title) if $stdout.tty? && !ARGV.verbose?
+  title = Tty.truncate(title) if $stdout.tty? && !Homebrew.args.verbose?
   puts Formatter.headline(title, color: :blue)
   puts sput
 end
 
 def odebug(title, *sput)
-  return unless ARGV.debug?
+  return unless Homebrew.args.debug?
 
   puts Formatter.headline(title, color: :magenta)
   puts sput unless sput.empty?
 end
 
 def oh1(title, options = {})
-  if $stdout.tty? && !ARGV.verbose? && options.fetch(:truncate, :auto) == :auto
+  if $stdout.tty? && !Homebrew.args.verbose? && options.fetch(:truncate, :auto) == :auto
     title = Tty.truncate(title)
   end
   puts Formatter.headline(title, color: :green)
@@ -199,7 +199,7 @@ module Homebrew
   end
 
   def system(cmd, *args, **options)
-    puts "#{cmd} #{args * " "}" if ARGV.verbose?
+    puts "#{cmd} #{args * " "}" if Homebrew.args.verbose?
     _system(cmd, *args, **options)
   end
 
@@ -432,7 +432,7 @@ ensure
 end
 
 def nostdout
-  if ARGV.verbose?
+  if Homebrew.args.verbose?
     yield
   else
     begin

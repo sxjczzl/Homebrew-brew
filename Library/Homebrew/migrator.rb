@@ -106,7 +106,7 @@ class Migrator
     end
   end
 
-  def initialize(formula, force: ARGV.force?)
+  def initialize(formula, force: Homebrew.args.force?)
     @oldname = formula.oldname
     @newname = formula.name
     raise MigratorNoOldnameError, formula unless oldname
@@ -209,7 +209,7 @@ class Migrator
   rescue Exception => e # rubocop:disable Lint/RescueException
     onoe "Error occurred while migrating."
     puts e
-    puts e.backtrace if ARGV.debug?
+    puts e.backtrace if Homebrew.args.debug?
     puts "Backing up..."
     ignore_interrupts { backup_oldname }
   ensure
@@ -320,7 +320,7 @@ class Migrator
     rescue Exception => e # rubocop:disable Lint/RescueException
       onoe "An unexpected error occurred during linking"
       puts e
-      puts e.backtrace if ARGV.debug?
+      puts e.backtrace if Homebrew.args.debug?
       ignore_interrupts { new_keg.unlink }
       raise
     end
