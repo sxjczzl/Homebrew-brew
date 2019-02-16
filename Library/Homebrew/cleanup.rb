@@ -160,6 +160,7 @@ module Homebrew
 
     def self.install_formula_clean!(f)
       return if ENV["HOMEBREW_NO_INSTALL_CLEANUP"]
+      return if ENV["CI"]
 
       cleanup = Cleanup.new
       if cleanup.periodic_clean_due?
@@ -171,6 +172,7 @@ module Homebrew
 
     def periodic_clean_due?
       return false if ENV["HOMEBREW_NO_INSTALL_CLEANUP"]
+      return false if ENV["CI"]
       return true unless PERIODIC_CLEAN_FILE.exist?
 
       PERIODIC_CLEAN_FILE.mtime < CLEANUP_DEFAULT_DAYS.days.ago
