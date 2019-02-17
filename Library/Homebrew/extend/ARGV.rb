@@ -267,12 +267,12 @@ module HomebrewArgvExtension
   end
 
   def cc
-    odeprecated("cc")
+    odeprecated("ARGV.cc", "Homebrew.args.cc")
     Homebrew.args.cc
   end
 
   def env
-    odeprecated("env")
+    odeprecated("ARGV.env", "Homebrew.args.env")
     Homebrew.args.env
   end
 
