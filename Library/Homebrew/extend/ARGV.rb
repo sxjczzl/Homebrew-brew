@@ -131,32 +131,32 @@ module HomebrewArgvExtension
   end
 
   def force?
-    odeprecated("force?")
+    odeprecated("ARGV.force?", "Homebrew.args.force?")
     Homebrew.args.force?
   end
 
   def verbose?
-    odeprecated("verbose?")
+    odeprecated("ARGV.verbose?", "Homebrew.args.verbose?")
     Homebrew.args.verbose?
   end
 
   def debug?
-    odeprecated("debug?")
+    odeprecated("ARGV.debug?", "Homebrew.args.debug?")
     Homebrew.args.debug?
   end
 
   def quieter?
-    odeprecated("quieter?")
+    odeprecated("ARGV.quieter?", "Homebrew.args.quieter?")
     Homebrew.args.quieter?
   end
 
   def interactive?
-    odeprecated("interactive?")
+    odeprecated("ARGV.interactive?", "Homebrew.args.interactive?")
     Homebrew.args.interactive?
   end
 
   def one?
-    odeprecated("one?")
+    odeprecated("ARGV.one?", "Homebrew.args.one?")
     Homebrew.args.one?
   end
 
@@ -165,12 +165,12 @@ module HomebrewArgvExtension
   end
 
   def keep_tmp?
-    odeprecated("keep_tmp?")
+    odeprecated("ARGV.keep_tmp?", "Homebrew.args.keep_tmp?")
     Homebrew.args.keep_tmp?
   end
 
   def git?
-    odeprecated("git?")
+    odeprecated("ARGV.git?", "Homebrew.args.git?")
     Homebrew.args.git?
   end
 
@@ -179,27 +179,27 @@ module HomebrewArgvExtension
   end
 
   def sandbox?
-    odeprecated("sandbox?")
+    odeprecated("ARGV.sandbox?", "Homebrew.args.sandbox?")
     Homebrew.args.sandbox?
   end
 
   def no_sandbox?
-    odeprecated("no_sandbox?")
+    odeprecated("ARGV.no_sandbox?", "Homebrew.args.no_sandbox?")
     Homebrew.args.no_sandbox?
   end
 
   def ignore_deps?
-    odeprecated("ignore_deps?")
+    odeprecated("ARGV.ignore_deps?", "Homebrew.args.ignore_deps?")
     Homebrew.args.ignore_deps?
   end
 
   def only_deps?
-    odeprecated("only_deps?")
+    odeprecated("ARGV.only_deps?", "Homebrew.args.only_deps?")
     Homebrew.args.only_deps?
   end
 
   def json
-    odeprecated("json")
+    odeprecated("ARGV.json", "Homebrew.args.json")
     Homebrew.args.json
   end
 
@@ -245,12 +245,12 @@ module HomebrewArgvExtension
   end
 
   def force_bottle?
-    odeprecated("force_bottle?")
+    odeprecated("ARGV.force_bottle?", "Homebrew.args.force_bottle?")
     Homebrew.args.force_bottle?
   end
 
   def fetch_head?
-    odeprecated("fetch_head?")
+    odeprecated("ARGV.fetch_head?", "Homebrew.args.fetch_head?")
     Homebrew.args.fetch_head?
   end
 
