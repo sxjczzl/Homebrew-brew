@@ -135,12 +135,77 @@ module HomebrewArgvExtension
     val.split(",")
   end
 
+  def force?
+    odeprecated("force?")
+    Homebrew.args.force?
+  end
+
+  def verbose?
+    odeprecated("verbose?")
+    Homebrew.args.verbose?
+  end
+
+  def debug?
+    odeprecated("debug?")
+    Homebrew.args.debug?
+  end
+
+  def quieter?
+    odeprecated("quieter?")
+    Homebrew.args.quieter?
+  end
+
+  def interactive?
+    odeprecated("interactive?")
+    Homebrew.args.interactive?
+  end
+
+  def one?
+    odeprecated("one?")
+    Homebrew.args.one?
+  end
+
   def dry_run?
     include?("--dry-run") || switch?("n")
   end
 
+  def keep_tmp?
+    odeprecated("keep_tmp?")
+    Homebrew.args.keep_tmp?
+  end
+
+  def git?
+    odeprecated("git?")
+    Homebrew.args.git?
+  end
+
   def homebrew_developer?
     !ENV["HOMEBREW_DEVELOPER"].nil?
+  end
+
+  def sandbox?
+    odeprecated("sandbox?")
+    Homebrew.args.sandbox?
+  end
+
+  def no_sandbox?
+    odeprecated("no_sandbox?")
+    Homebrew.args.no_sandbox?
+  end
+
+  def ignore_deps?
+    odeprecated("ignore_deps?")
+    Homebrew.args.ignore_deps?
+  end
+
+  def only_deps?
+    odeprecated("only_deps?")
+    Homebrew.args.only_deps?
+  end
+
+  def json
+    odeprecated("json")
+    Homebrew.args.json
   end
 
   def build_head?
@@ -184,11 +249,31 @@ module HomebrewArgvExtension
     options_only.include?(flag) || switch?(flag[2, 1])
   end
 
+  def force_bottle?
+    odeprecated("force_bottle?")
+    Homebrew.args.force_bottle?
+  end
+
+  def fetch_head?
+    odeprecated("fetch_head?")
+    Homebrew.args.fetch_head?
+  end
+
   # e.g. `foo -ns -i --bar` has three switches: `n`, `s` and `i`
   def switch?(char)
     return false if char.length > 1
 
     options_only.any? { |arg| arg.scan("-").size == 1 && arg.include?(char) }
+  end
+
+  def cc
+    odeprecated("cc")
+    Homebrew.args.cc
+  end
+
+  def env
+    odeprecated("env")
+    Homebrew.args.env
   end
 
   # If the user passes any flags that trigger building over installing from
