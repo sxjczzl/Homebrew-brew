@@ -129,6 +129,10 @@ then
   HOMEBREW_SYSTEM_TEMP="/private/tmp"
 else
   HOMEBREW_PROCESSOR="$(uname -m)"
+  if [[ "$HOMEBREW_PROCESSOR" == "aarch64" ]]
+  then
+    HOMEBREW_PROCESSOR="arm64v8"
+  fi
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
   [[ -n "$HOMEBREW_LINUX" ]] && HOMEBREW_OS_VERSION="$(lsb_release -sd 2>/dev/null)"
   : "${HOMEBREW_OS_VERSION:=$(uname -r)}"
