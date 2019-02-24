@@ -58,6 +58,15 @@ module Homebrew
     end
 
     class Checks
+      ############# CONSTANTS
+      CONFIG_SCRIPT_WHITELIST_FILE = File.join(
+        ENV['HOME'],
+        '.config',
+        'Homebrew',
+        'config_script_whitelist'
+      )
+      ############# END CONSTANTS
+
       ############# HELPERS
       # Finds files in `HOMEBREW_PREFIX` *and* /usr/local.
       # Specify paths relative to a prefix e.g. "include/foo.h".
@@ -445,6 +454,12 @@ module Homebrew
           /Applications/Server.app/Contents/ServerRoot/usr/bin
           /Applications/Server.app/Contents/ServerRoot/usr/sbin
         ].map(&:downcase)
+
+        if File.exist?(CONFIG_SCRIPT_WHITELIST_FILE)
+          File.foreach(CONFIG_SCRIPT_WHITELIST_FILE) do |line|
+            whitelist << line.chomp.downcase
+          end
+        end
 
         paths.each do |p|
           next if whitelist.include?(p.downcase) || !File.directory?(p)
