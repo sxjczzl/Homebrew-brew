@@ -872,39 +872,32 @@ class Formula
     @active_log_type = old_log_type
   end
 
-  # This method can be overridden to provide a plist.
+  # This method can be used to provide a plist.
   # @see https://www.unix.com/man-page/all/5/plist/ Apple's plist(5) man page
-  # <pre>def plist; <<~EOS
-  #  <?xml version="1.0" encoding="UTF-8"?>
-  #  <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-  #  <plist version="1.0">
-  #  <dict>
-  #    <key>Label</key>
-  #      <string>#{plist_name}</string>
-  #    <key>ProgramArguments</key>
-  #    <array>
-  #      <string>#{opt_bin}/example</string>
-  #      <string>--do-this</string>
-  #    </array>
-  #    <key>RunAtLoad</key>
-  #    <true/>
-  #    <key>KeepAlive</key>
-  #    <true/>
-  #    <key>StandardErrorPath</key>
-  #    <string>/dev/null</string>
-  #    <key>StandardOutPath</key>
-  #    <string>/dev/null</string>
-  #  </dict>
-  #  </plist>
-  #  EOS
+  # <pre>plist do
+  #  {
+  #    Label: "#{plist_name}.override",
+  #    ProgramArguments: ["#{opt_bin}/example", "--do-this"],
+  #    RunAtLoad: true,
+  #    KeepAlive: true,
+  #    StandardErrorPath: "/dev/null",
+  #    StandardOutPath: "/dev/null",
+  #  }
   # end</pre>
   def plist
-    nil
+    return if self.class.plist.empty?
+    @plists ||= {}
+    self.class.plist.each do |block|
+      plist_hash = instance_eval(&block)
+      plist_hash[:Label] ||= plist_name
+      @plists[plist_hash[:Label]] = plist_hash.to_plist
+    end
+    @plists
   end
 
   # The generated launchd {.plist} service name.
   def plist_name
-    "homebrew.mxcl." + name
+    self.class.plist_name("homebrew.mxcl." + name)
   end
 
   # The generated launchd {.plist} file path.
@@ -2443,6 +2436,18 @@ class Formula
     def plist_options(options)
       @plist_startup = options[:startup]
       @plist_manual = options[:manual]
+    end
+
+    # @private
+    def plist_name(label)
+      label
+    end
+
+    # @private
+    def plist(&block)
+      @plist_hashes ||= []
+      return @plist_hashes unless block_given?
+      @plist_hashes << block
     end
 
     # @private

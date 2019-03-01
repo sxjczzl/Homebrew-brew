@@ -15,6 +15,7 @@ require "cache_store"
 require "linkage_checker"
 require "install"
 require "messages"
+require "plist"
 
 class FormulaInstaller
   include FormulaCellarChecks
@@ -863,12 +864,18 @@ class FormulaInstaller
   end
 
   def install_plist
-    return unless formula.plist
+    plist = formula.plist
+    return unless plist
 
-    formula.plist_path.atomic_write(formula.plist)
-    formula.plist_path.chmod 0644
-    log = formula.var/"log"
-    log.mkpath if formula.plist.include? log.to_s
+    plist = { formula.plist_name => plist } if plist.is_a? String
+
+    plist.each do |label, xml|
+      plist_path = formula.plist_path.sub(formula.plist_path.stem, label)
+      plist_path.atomic_write(xml)
+      plist_path.chmod 0644
+      log = formula.var/"log"
+      log.mkpath if formula.plist.include? log.to_s
+    end
   rescue Exception => e # rubocop:disable Lint/RescueException
     onoe "Failed to install plist file"
     ohai e, e.backtrace if debug?
