@@ -25,7 +25,7 @@ git_init_if_necessary() {
   then
     CORE_OFFICIAL_REMOTE="https://github.com/Homebrew/homebrew-core"
   else
-    CORE_OFFICIAL_REMOTE="https://github.com/Linuxbrew/homebrew-core"
+    CORE_OFFICIAL_REMOTE="https://github.com/Homebrew/linuxbrew-core"
   fi
 
   safe_cd "$HOMEBREW_REPOSITORY"
@@ -510,7 +510,13 @@ EOS
         if ! git fetch --tags --force "${QUIET_ARGS[@]}" origin \
           "refs/heads/$UPSTREAM_BRANCH_DIR:refs/remotes/origin/$UPSTREAM_BRANCH_DIR"
         then
-          echo "Fetching $DIR failed!" >>"$update_failed_file"
+          if [[ "$UPSTREAM_SHA_HTTP_CODE" = "404" ]]
+          then
+            TAP="${DIR#$HOMEBREW_LIBRARY/Taps/}"
+            echo "$TAP does not exist! Run 'brew untap $TAP'" >>"$update_failed_file"
+          else
+            echo "Fetching $DIR failed!" >>"$update_failed_file"
+          fi
         fi
       fi
     ) &
