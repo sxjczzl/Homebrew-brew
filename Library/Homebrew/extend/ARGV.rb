@@ -30,8 +30,7 @@ module HomebrewArgvExtension
   end
 
   def named
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    self - options_only
+    @named ||= self - options_only
   end
 
   def options_only
@@ -44,8 +43,7 @@ module HomebrewArgvExtension
 
   def formulae
     require "formula"
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    (downcased_unique_named - casks).map do |name|
+    @formulae ||= (downcased_unique_named - casks).map do |name|
       if name.include?("/") || File.exist?(name)
         Formulary.factory(name, spec)
       else
@@ -56,22 +54,19 @@ module HomebrewArgvExtension
 
   def resolved_formulae
     require "formula"
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    (downcased_unique_named - casks).map do |name|
+    @resolved_formulae ||= (downcased_unique_named - casks).map do |name|
       Formulary.resolve(name, spec: spec(nil))
     end.uniq(&:name)
   end
 
   def casks
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    downcased_unique_named.grep HOMEBREW_CASK_TAP_CASK_REGEX
+    @casks ||= downcased_unique_named.grep HOMEBREW_CASK_TAP_CASK_REGEX
   end
 
   def kegs
     require "keg"
     require "formula"
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    downcased_unique_named.map do |name|
+    @kegs ||= downcased_unique_named.map do |name|
       raise UsageError if name.empty?
 
       rack = Formulary.to_rack(name.downcase)
@@ -114,7 +109,7 @@ module HomebrewArgvExtension
   end
 
   def include?(arg)
-    !index(arg).nil?
+    !(@n = index(arg)).nil?
   end
 
   def next
@@ -136,33 +131,27 @@ module HomebrewArgvExtension
   end
 
   def force?
-    odeprecated("ARGV.force?", "Homebrew.args.force?")
-    Homebrew.args.force?
+    flag? "--force"
   end
 
   def verbose?
-    odeprecated("ARGV.verbose?", "Homebrew.args.verbose?")
-    Homebrew.args.verbose?
+    flag?("--verbose") || !ENV["VERBOSE"].nil? || !ENV["HOMEBREW_VERBOSE"].nil?
   end
 
   def debug?
-    odeprecated("ARGV.debug?", "Homebrew.args.debug?")
-    Homebrew.args.debug?
+    flag?("--debug") || !ENV["HOMEBREW_DEBUG"].nil?
   end
 
   def quieter?
-    odeprecated("ARGV.quieter?", "Homebrew.args.quieter?")
-    Homebrew.args.quieter?
+    flag? "--quieter"
   end
 
   def interactive?
-    odeprecated("ARGV.interactive?", "Homebrew.args.interactive?")
-    Homebrew.args.interactive?
+    flag? "--interactive"
   end
 
   def one?
-    odeprecated("ARGV.one?", "Homebrew.args.one?")
-    Homebrew.args.one?
+    flag? "--1"
   end
 
   def dry_run?
@@ -170,13 +159,11 @@ module HomebrewArgvExtension
   end
 
   def keep_tmp?
-    odeprecated("ARGV.keep_tmp?", "Homebrew.args.keep_tmp?")
-    Homebrew.args.keep_tmp?
+    include? "--keep-tmp"
   end
 
   def git?
-    odeprecated("ARGV.git?", "Homebrew.args.git?")
-    Homebrew.args.git?
+    flag? "--git"
   end
 
   def homebrew_developer?
@@ -184,28 +171,23 @@ module HomebrewArgvExtension
   end
 
   def sandbox?
-    odeprecated("ARGV.sandbox?", "Homebrew.args.sandbox?")
-    Homebrew.args.sandbox?
+    include?("--sandbox") || !ENV["HOMEBREW_SANDBOX"].nil?
   end
 
   def no_sandbox?
-    odeprecated("ARGV.no_sandbox?", "Homebrew.args.no_sandbox?")
-    Homebrew.args.no_sandbox?
+    include?("--no-sandbox") || !ENV["HOMEBREW_NO_SANDBOX"].nil?
   end
 
   def ignore_deps?
-    odeprecated("ARGV.ignore_deps?", "Homebrew.args.ignore_deps?")
-    Homebrew.args.ignore_deps?
+    include? "--ignore-dependencies"
   end
 
   def only_deps?
-    odeprecated("ARGV.only_deps?", "Homebrew.args.only_deps?")
-    Homebrew.args.only_deps?
+    include? "--only-dependencies"
   end
 
   def json
-    odeprecated("ARGV.json", "Homebrew.args.json")
-    Homebrew.args.json
+    value "json"
   end
 
   def build_head?
@@ -250,13 +232,11 @@ module HomebrewArgvExtension
   end
 
   def force_bottle?
-    odeprecated("ARGV.force_bottle?", "Homebrew.args.force_bottle?")
-    Homebrew.args.force_bottle?
+    include?("--force-bottle")
   end
 
   def fetch_head?
-    odeprecated("ARGV.fetch_head?", "Homebrew.args.fetch_head?")
-    Homebrew.args.fetch_head?
+    include? "--fetch-HEAD"
   end
 
   # e.g. `foo -ns -i --bar` has three switches: `n`, `s` and `i`
@@ -267,13 +247,11 @@ module HomebrewArgvExtension
   end
 
   def cc
-    odeprecated("ARGV.cc", "Homebrew.args.cc")
-    Homebrew.args.cc
+    value "cc"
   end
 
   def env
-    odeprecated("ARGV.env", "Homebrew.args.env")
-    Homebrew.args.env
+    value "env"
   end
 
   # If the user passes any flags that trigger building over installing from
@@ -303,8 +281,7 @@ module HomebrewArgvExtension
 
   def downcased_unique_named
     # Only lowercase names, not paths, bottle filenames or URLs
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    named.map do |arg|
+    @downcased_unique_named ||= named.map do |arg|
       if arg.include?("/") || arg.end_with?(".tar.gz") || File.exist?(arg)
         arg
       else
