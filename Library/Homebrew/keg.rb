@@ -567,7 +567,9 @@ class Keg
     begin
       keg = Keg.for(src)
     rescue NotAKegError
-      puts "Won't resolve conflicts for symlink #{dst} as it doesn't resolve into the Cellar" if Homebrew.args.verbose?
+      if Homebrew.args.verbose?
+        puts "Won't resolve conflicts for symlink #{dst} as it doesn't resolve into the Cellar"
+      end
       return
     end
 
