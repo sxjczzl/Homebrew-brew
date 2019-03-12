@@ -1,4 +1,4 @@
-![Linuxbrew logo](https://linuxbrew.sh/images/linuxbrew-256x256.png)
+![Linuxbrew logo](https://brew.sh/assets/img/linuxbrew-256x256.png)
 
 # Linuxbrew
 
