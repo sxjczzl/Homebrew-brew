@@ -14,6 +14,10 @@ describe FormulaInstaller do
     match(&:poured_from_bottle)
   end
 
+  before(:all) do
+    Homebrew.args = OpenStruct.new
+  end
+
   def temporary_install(formula)
     expect(formula).not_to be_installed
 
