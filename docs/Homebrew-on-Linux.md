@@ -5,7 +5,10 @@ redirect_from:
   - /Linux
   - /Linuxbrew
 ---
+
+<p style="text-align:center">
 <img src="https://brew.sh/assets/img/linuxbrew.png" alt="Linuxbrew logo" style="min-width:128px" height="128" width="128">
+</p>
 
 The Homebrew package manager may be used on Linux and [Windows Subsystem for Linux (WSL)](https://docs.microsoft.com/en-us/windows/wsl/about). Homebrew was formerly referred to as Linuxbrew when running on Linux or WSL. It can be installed in your home directory, in which case it does not use *sudo*. Homebrew does not use any libraries provided by your host system, except *glibc* and *gcc* if they are new enough. Homebrew can install its own current versions of *glibc* and *gcc* for older distributions of Linux.
 
@@ -95,6 +98,8 @@ eval $(~/.linuxbrew/bin/brew shellenv)
 
 Our binary packages (bottles) are built on [CircleCI](https://circleci.com/) and hosted by [Bintray](https://bintray.com/linuxbrew).
 
-[<img alt="CircleCI logo" style="height:1in" src="https://assets.brandfolder.com/otz6k5-cj8pew-e4rk9u/original/circle-logo-horizontal-black.png">](https://circleci.com/)
-
-[![Downloads by Bintray](https://bintray.com/docs/images/downloads_by_bintray_96.png)](https://bintray.com/linuxbrew)
+<p style="text-align:center">
+<a href="https://circleci.com/"><img alt="CircleCI logo" src="https://assets.brandfolder.com/otz6k5-cj8pew-e4rk9u/original/circle-logo-horizontal-black.png" style="min-height:1in" width="256" height="72"></a>
+&nbsp;
+<a href="https://bintray.com/linuxbrew"><img alt="Downloads by Bintray" src="https://bintray.com/docs/images/downloads_by_bintray_96.png" style="min-height:1in" width="" width=96 height="77"></a>
+</p>
