@@ -98,6 +98,10 @@ module Cask
         file.a_path.match?(%r{\ACasks/[^/]+\.rb\Z})
       end
 
+      def check_allowed_chars(line)
+        line.sub(/.*'(.+)'.*/, '\1').match?(/^[0-9\.\-_,:]+$/)
+      end
+
       def diff_only_version_or_checksum_changed(diff)
         lines = diff.files.flat_map(&:hunks).flat_map(&:lines)
 
@@ -108,7 +112,11 @@ module Cask
         return false if additions.count != deletions.count
         return false if additions.count > 2
 
-        changed_lines.all? { |line| diff_line_is_version(line.to_s) || diff_line_is_sha256(line.to_s) }
+        changed_lines.all? do |line|
+          next true if diff_line_is_version(line.to_s)
+          next true if check_allowed_chars(line.to_s)
+          next true if diff_line_is_sha256(line.to_s)
+        end
       end
 
       def diff_line_is_sha256(line)
