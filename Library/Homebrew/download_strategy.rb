@@ -141,10 +141,10 @@ class VCSDownloadStrategy < AbstractDownloadStrategy
 
     return unless @ref_type == :tag
     return unless @revision && current_revision
-    return if current_revision == @revision
+    return if current_revision =~ /^#{@revision}/
 
     raise <<~EOS
-      #{@ref} tag should be #{@revision}
+      #{@ref} tag should match #{@revision}
       but is actually #{current_revision}
     EOS
   end
