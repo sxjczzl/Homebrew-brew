@@ -7,6 +7,24 @@ if ! [[ -d "$PWD" ]]; then
   exit 1
 fi
 
+resolve_link() {
+  $(type -p greadlink readlink | head -1) "$1"
+}
+
+abs_dirname() {
+  local cwd="$(pwd)"
+  local path="$1"
+
+  while [ -n "$path" ]; do
+    cd "${path%/*}"
+    local name="${path##*/}"
+    path="$(resolve_link "$name" || true)"
+  done
+
+  pwd
+  cd "$cwd"
+}
+
 quiet_cd() {
   cd "$@" >/dev/null || return
 }
@@ -19,7 +37,7 @@ symlink_target_directory() {
   quiet_cd "$directory" && quiet_cd "$target_dirname" && pwd -P
 }
 
-BREW_FILE_DIRECTORY="$(quiet_cd "${0%/*}/" && pwd -P)"
+BREW_FILE_DIRECTORY="$(abs_dirname "$0")"
 HOMEBREW_BREW_FILE="${BREW_FILE_DIRECTORY%/}/${0##*/}"
 HOMEBREW_PREFIX="${HOMEBREW_BREW_FILE%/*/*}"
 
