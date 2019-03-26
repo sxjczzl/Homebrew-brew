@@ -12,17 +12,19 @@ resolve_link() {
 }
 
 abs_dirname() {
-  local cwd="$(pwd)"
-  local path="$1"
+  local cwd path
+  cwd="$(pwd)"
+  path="$1"
 
   while [ -n "$path" ]; do
-    cd "${path%/*}"
-    local name="${path##*/}"
+    cd "${path%/*}" || return
+    local name
+    name="${path##*/}"
     path="$(resolve_link "$name" || true)"
   done
 
   pwd
-  cd "$cwd"
+  cd "$cwd" || return
 }
 
 quiet_cd() {
