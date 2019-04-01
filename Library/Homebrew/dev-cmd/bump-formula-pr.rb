@@ -345,6 +345,13 @@ module Homebrew
         pr_message = <<~EOS
           Created with `brew bump-formula-pr`.
         EOS
+
+        args.each_pair do |k, v|
+          next unless k.to_s.scan(/url|version|sha256|tag|revision/) != []
+
+          pr_message += "#{k}: #{v}\n"
+        end
+
         user_message = args.message
         if user_message
           pr_message += "\n" + <<~EOS
