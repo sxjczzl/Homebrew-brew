@@ -37,12 +37,20 @@ class File
 
       if old_stat
         # Set correct permissions on new file
+        # Decouple the operations to at least copy the permissions
         begin
-          chown(old_stat.uid, old_stat.gid, temp_file.path)
+          # Copy the ownership in two steps in case gid is invalid
+          chown(old_stat.uid, nil, temp_file.path)
+          chown(nil, old_stat.gid, temp_file.path)
+        rescue Errno::EPERM, Errno::EACCES => e
+          # Changing file ownership failed, moving on.
+        end
+
+        begin
           # This operation will affect filesystem ACL's
           chmod(old_stat.mode, temp_file.path)
         rescue Errno::EPERM, Errno::EACCES
-          # Changing file ownership failed, moving on.
+          # Changing file permissions failed, moving on.
         end
       end
 
