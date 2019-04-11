@@ -37,6 +37,9 @@ module Homebrew
         description: "Handle bottles, pulling the bottle-update commit and publishing files on Bintray."
       switch "--bump",
         description: "For one-formula PRs, automatically reword commit message to our preferred format."
+      switch "--squash-pristine",
+        description: "For one-formula PRs, squash multiple commits into a single commit and use the "\
+                     "canonical re-worded commit message."
       switch "--clean",
         description: "Do not rewrite or otherwise modify the commits found in the pulled PR."
       switch "--ignore-whitespace",
@@ -87,6 +90,7 @@ module Homebrew
     end
 
     do_bump = args.bump? && !args.clean?
+    do_squash = args.squash_pristine? && !args.clean?
 
     # Formulae with affected bottles that were published
     bintray_published_formulae = []
@@ -150,6 +154,16 @@ module Homebrew
         odie "Can not bump if non-formula files are changed" unless patch_changes[:others].empty?
       end
       old_versions = current_versions_from_info_external(patch_changes[:formulae].first) if is_bumpable
+
+      is_squashable = patch_changes[:formulae].length == 1 && patch_changes[:others].empty?
+      if do_squash
+        odie "No changed formulae found to squash" if patch_changes[:formulae].empty?
+        if patch_changes[:formulae].length > 1
+          odie "Can only quash one changed formula; squashed #{patch_changes[:formulae]}"
+        end
+        odie "Can not squash if non-formula files are changed" unless patch_changes[:others].empty?
+      end
+
       patch_puller.apply_patch
 
       changed_formulae_names = []
@@ -210,17 +224,21 @@ module Homebrew
       if changed_formulae_names.empty?
         odie "cannot bump: no changed formulae found after applying patch" if do_bump
         is_bumpable = false
+        odie "cannot squash: no changed formulae found after applying patch" if do_squash
+        is_squashable = false
       end
 
       is_bumpable = false if args.clean?
       is_bumpable = false if ENV["HOMEBREW_DISABLE_LOAD_FORMULA"]
+      is_squashable = false if args.clean?
+      is_squashable = false if ENV["HOMEBREW_DISABLE_LOAD_FORMULA"]
 
-      if is_bumpable
+      if is_bumpable || is_squashable
         formula = Formula[changed_formulae_names.first]
         new_versions = current_versions_from_info_external(patch_changes[:formulae].first)
         orig_subject = message.empty? ? "" : message.lines.first.chomp
         bump_subject = subject_for_bump(formula, old_versions, new_versions)
-        if do_bump
+        if do_bump || do_squash
           odie "No version changes found for #{formula.name}" if bump_subject.nil?
           unless orig_subject == bump_subject
             ohai "New bump commit subject: #{bump_subject}"
@@ -233,7 +251,11 @@ module Homebrew
         end
       end
 
-      if message != orig_message && !args.clean?
+      if do_squash && is_squashable && !args.clean?
+        safe_system "git", "reset", "--soft", orig_revision
+        safe_system "git", "add", patch_changes[:files]
+        safe_system "git", "commit", "--signoff", "--allow-empty", "-q", "-m", message
+      elsif message != orig_message && !args.clean?
         safe_system "git", "commit", "--amend", "--signoff", "--allow-empty", "-q", "-m", message
       end
 
