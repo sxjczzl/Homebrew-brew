@@ -830,6 +830,8 @@ testing job URL.
   Handle bottles, pulling the bottle-update commit and publishing files on Bintray.
 * `--bump`:
   For one-formula PRs, automatically reword commit message to our preferred format.
+* `--squash-pristine`:
+  For one-formula PRs, squash multiple commits into a single commit and use the canonical re-worded commit message.
 * `--clean`:
   Do not rewrite or otherwise modify the commits found in the pulled PR.
 * `--ignore-whitespace`:
