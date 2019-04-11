@@ -253,7 +253,7 @@ module Homebrew
 
       if do_squash && is_squashable && !args.clean?
         safe_system "git", "reset", "--soft", orig_revision
-        safe_system "git", "add", patch_changes[:files]
+        safe_system "git", "add", *patch_changes[:files]
         safe_system "git", "commit", "--signoff", "--allow-empty", "-q", "-m", message
       elsif message != orig_message && !args.clean?
         safe_system "git", "commit", "--amend", "--signoff", "--allow-empty", "-q", "-m", message
