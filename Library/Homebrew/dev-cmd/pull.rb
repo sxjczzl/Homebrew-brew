@@ -159,7 +159,7 @@ module Homebrew
       if do_squash
         odie "No changed formulae found to squash" if patch_changes[:formulae].empty?
         if patch_changes[:formulae].length > 1
-          odie "Can only quash one changed formula; squashed #{patch_changes[:formulae]}"
+          odie "Can only squash one changed formula; squashed #{patch_changes[:formulae]}"
         end
         odie "Can not squash if non-formula files are changed" unless patch_changes[:others].empty?
       end
