@@ -21,13 +21,14 @@ class XcodeRequirement < Requirement
   def message
     version = " #{@version}" if @version
     message = <<~EOS
-      A full installation of Xcode.app#{version} is required to compile
+      A full installation of Xcode.app#{version} is required for
       this software. Installing just the Command Line Tools is not sufficient.
     EOS
     unless xcode_swift_compatability?
       message += <<~EOS
 
-        Xcode >=10.2 requires macOS >=10.14.4 to build many formulae.
+        For Xcode >=10.2, we require macOS >=10.14.4
+        because it is necessary to build many formulae.
       EOS
     end
     if @version && Version.new(MacOS::Xcode.latest_version) < Version.new(@version)
