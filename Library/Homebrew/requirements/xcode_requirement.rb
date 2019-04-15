@@ -28,7 +28,9 @@ class XcodeRequirement < Requirement
       message += <<~EOS
 
         For Xcode >=10.2, we require macOS >=10.14.4
-        because it is necessary to build many formulae.
+        to work around a problem in Xcode 10.2; see
+        https://github.com/Homebrew/brew/pull/5940#issuecomment-477583315
+        for details.
       EOS
     end
     if @version && Version.new(MacOS::Xcode.latest_version) < Version.new(@version)
