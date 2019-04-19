@@ -80,7 +80,7 @@ case "$HOMEBREW_SYSTEM" in
   Darwin) HOMEBREW_MACOS="1" ;;
   Linux)  HOMEBREW_LINUX="1" ;;
   CYGWIN*)
-    HOMEBREW_LINUS="1"
+    HOMEBREW_LINUX="1"
     HOMEBREW_SYSTEM="Cygwin"
     ;;
 esac

@@ -4,6 +4,7 @@ setup-ruby-path() {
   local vendor_ruby_path
   local ruby_version_new_enough
   local minimum_ruby_version="2.3.7"
+  local non_macos_minimum_ruby_version="2.3"
 
   vendor_dir="$HOMEBREW_LIBRARY/Homebrew/vendor"
   vendor_ruby_current_version="$vendor_dir/portable-ruby/current"
@@ -33,6 +34,7 @@ setup-ruby-path() {
         HOMEBREW_RUBY_PATH="/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
       else
         HOMEBREW_RUBY_PATH="$(type -P ruby)"
+        minimum_ruby_version=$non_macos_minimum_ruby_version
       fi
 
       if [[ -n "$HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH" ]]
