@@ -24,15 +24,15 @@ module PEShim
   end
 
   def read_signature
-	unless read(DOS_HEADER_ASCII.size, DOS_HEADER_OFFSET) == DOS_HEADER_ASCII
+    unless read(DOS_HEADER_ASCII.size, DOS_HEADER_OFFSET) == DOS_HEADER_ASCII
       @pe = false
       return
     end
 	
-	pe_offset = read_int32(PE_TOKEN_OFFSET)
+    pe_offset = read_int32(PE_TOKEN_OFFSET)
     @pe = read(PE_ASCII.size, pe_offset) == PE_ASCII
     
-	if @pe
+    if @pe
 	  arch_token = read_uint16(pe_offset + ARCHITECTURE_OFFSET)
 	  @arch = case arch_token
         when ARCHITECTURE_I386 then :i386
@@ -43,7 +43,7 @@ module PEShim
       end
     end
 	  
-	pe_characteristics = read_uint16(pe_offset + PE_CHARACTERISTIC_OFFSET)
+    pe_characteristics = read_uint16(pe_offset + PE_CHARACTERISTIC_OFFSET)
 
     if pe_characteristics & DLL_MARKER == DLL_MARKER
       @pe_type = :dylib
