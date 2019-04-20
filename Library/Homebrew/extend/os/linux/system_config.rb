@@ -11,8 +11,8 @@ class SystemConfig
       elsif (redhat_release = Pathname.new("/etc/redhat-release")).readable?
         redhat_release.read.chomp
       elsif OS.cygwin?
-         release = `uname -r`.chomp
-         "Cygwin (#{release})"
+        release = `uname -r`.chomp
+        "Cygwin (#{release})"
       else
         "N/A"
       end
