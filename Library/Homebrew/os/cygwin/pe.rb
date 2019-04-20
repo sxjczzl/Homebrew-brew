@@ -35,10 +35,10 @@ module PEShim
     if @pe
       arch_token = read_uint16(pe_offset + ARCHITECTURE_OFFSET)
       @arch = case arch_token
-        when ARCHITECTURE_I386 then :i386
-        when ARCHITECTURE_X86_64 then :x86_64
-        when ARCHITECTURE_ARM then :arm
-        when ARCHITECTURE_AARCH64 then :arm64
+      when ARCHITECTURE_I386 then :i386
+      when ARCHITECTURE_X86_64 then :x86_64
+      when ARCHITECTURE_ARM then :arm
+      when ARCHITECTURE_AARCH64 then :arm64
         else :dunno
       end
     end
@@ -56,18 +56,18 @@ module PEShim
     return @pe if defined? @pe
 
     read_signature
-    return @pe
+    @pe
   end
 
   def pe_type
     return :dunno unless pe?
 
-    return @pe_type
+    @pe_type
   end
 
   def arch
     return :dunno unless pe?
 
-    return @arch
+    @arch
   end
 end
