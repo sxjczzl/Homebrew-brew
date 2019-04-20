@@ -10,6 +10,7 @@ module PEShim
   ARCHITECTURE_I386 = 0x014c
   ARCHITECTURE_ARM = 0x01c4
   ARCHITECTURE_X86_64 = 0x8664
+  ARCHITECTURE_AARCH64 = 0xaa64
 
   def read_uint8(offset)
     value = read(1, offset).unpack("C").first
@@ -34,13 +35,14 @@ module PEShim
         when ARCHITECTURE_I386 then :i386
         when ARCHITECTURE_X86_64 then :x86_64
         when ARCHITECTURE_ARM then :arm
+		when ARCHITECTURE_AARCH64 then :arm64
         else :dunno
       end
 
       if characteristics & DLL_MARKER == DLL_MARKER
-        @exe_type = :dylib
+        @pe_type = :dylib
       else
-        @exe_type = :executable
+        @pe_type = :executable
       end
 	end
   end
@@ -51,19 +53,14 @@ module PEShim
 	return @pe
   end
 
+  def pe_type
+    return :dunno unless pe?
+    return @pe_type
+  end
+  
   def arch
     return :dunno unless pe?
     return @arch
-  end
-
-  def dylib?
-    return :dunno unless pe?
-    return @exe_type == :dylib
-  end
-
-  def binary_executable?
-    return :dunno unless pe?
-    return @exe_type == :executable
   end
 end
 
