@@ -12,13 +12,13 @@ module PEShim
   ARCHITECTURE_ARM = 0x01c4
   ARCHITECTURE_X86_64 = 0x8664
   ARCHITECTURE_AARCH64 = 0xaa64
-  
+
   PE_CHARACTERISTIC_OFFSET = 0x16
 
   def read_uint16(offset)
     read(2, offset).unpack("v").first
   end
-  
+
   def read_int32(offset)
     read(4, offset).unpack("l").first
   end
@@ -28,13 +28,13 @@ module PEShim
       @pe = false
       return
     end
-	
+
     pe_offset = read_int32(PE_TOKEN_OFFSET)
     @pe = read(PE_ASCII.size, pe_offset) == PE_ASCII
-    
+
     if @pe
-	  arch_token = read_uint16(pe_offset + ARCHITECTURE_OFFSET)
-	  @arch = case arch_token
+      arch_token = read_uint16(pe_offset + ARCHITECTURE_OFFSET)
+      @arch = case arch_token
         when ARCHITECTURE_I386 then :i386
         when ARCHITECTURE_X86_64 then :x86_64
         when ARCHITECTURE_ARM then :arm
@@ -42,7 +42,7 @@ module PEShim
         else :dunno
       end
     end
-	  
+
     pe_characteristics = read_uint16(pe_offset + PE_CHARACTERISTIC_OFFSET)
 
     if pe_characteristics & DLL_MARKER == DLL_MARKER
@@ -51,20 +51,23 @@ module PEShim
       @pe_type = :executable
     end
   end
-  
+
   def pe?
     return @pe if defined? @pe
+
     read_signature
-	return @pe
+    return @pe
   end
 
   def pe_type
     return :dunno unless pe?
+
     return @pe_type
   end
-  
+
   def arch
     return :dunno unless pe?
+
     return @arch
   end
 end
