@@ -181,7 +181,7 @@ class Build
 end
 
 begin
-  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"])
+  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
   error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
 
   trap("INT", old_trap)
