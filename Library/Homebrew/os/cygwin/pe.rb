@@ -39,7 +39,7 @@ module PEShim
       when ARCHITECTURE_X86_64 then :x86_64
       when ARCHITECTURE_ARM then :arm
       when ARCHITECTURE_AARCH64 then :arm64
-        else :dunno
+      else :dunno
       end
     end
 
