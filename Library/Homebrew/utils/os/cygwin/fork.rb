@@ -1,5 +1,5 @@
 # frozen_string_literal: true
- 
+
 module Utils
   def self.fork_child_initialize(server) end
 
@@ -12,6 +12,6 @@ module Utils
       data = socket.read
       socket.close
     end
-    return data # rubocop:disable Style/RedundantReturn
+    data
   end
 end

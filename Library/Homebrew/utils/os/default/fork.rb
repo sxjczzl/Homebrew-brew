@@ -1,5 +1,5 @@
 # frozen_string_literal: true
- 
+
 module Utils
   def self.fork_child_initialize(server)
     server.close
@@ -11,6 +11,6 @@ module Utils
   end
 
   def self.read_from_child(_, read)
-    return read.read
+    read.read
   end
 end

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
- 
+
 require "extend/ENV"
 require "fcntl"
 require "socket"
@@ -10,11 +10,10 @@ class UniversalServer
     Dir.mktmpdir("homebrew", HOMEBREW_TEMP) do |tmpdir|
       server = UNIXServer.open("#{tmpdir}/socket")
       ENV["HOMEBREW_ERROR_PIPE"] = server.path
-      if block_given?
-        yield server
-      else
-        return server
-      end
+
+      return server unless block_given?
+
+      yield server
     end
   end
 end

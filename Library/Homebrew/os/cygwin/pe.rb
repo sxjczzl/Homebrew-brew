@@ -1,9 +1,10 @@
 # frozen_string_literal: true
+
 # @see https://www.red-gate.com/simple-talk/blogs/anatomy-of-a-net-assembly-pe-headers/
 module PEShim
   DOS_HEADER_OFFSET = 0x0
-  DOS_HEADER_ASCII = "MZ".freeze
-  PE_ASCII = "PE".freeze
+  DOS_HEADER_ASCII = "MZ"
+  PE_ASCII = "PE"
   DLL_MARKER = 0x2000
   PE_TOKEN_LENGTH = 0x4
   PE_TOKEN_OFFSET = 0x3c
