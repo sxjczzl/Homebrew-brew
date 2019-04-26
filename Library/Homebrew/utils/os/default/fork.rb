@@ -10,7 +10,7 @@ module Utils
     socket.close
   end
 
-  def self.read_from_child(socket, read)
+  def self.read_from_child(_, read)
     return read.read
   end
 end
