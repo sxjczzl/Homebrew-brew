@@ -4,10 +4,10 @@ require "global"
 require "debrew"
 require "fcntl"
 require "socket"
+require "os/universal_socket"
 
 begin
-  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
-  error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
+  error_pipe = UniversalSocket.open
 
   trap("INT", old_trap)
 

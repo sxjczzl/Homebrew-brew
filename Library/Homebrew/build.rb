@@ -11,6 +11,7 @@ require "extend/ENV"
 require "debrew"
 require "fcntl"
 require "socket"
+require "os/universal_socket"
 
 class Build
   attr_reader :formula, :deps, :reqs
@@ -181,8 +182,7 @@ class Build
 end
 
 begin
-  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
-  error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
+  error_pipe = UniversalSocket.open
 
   trap("INT", old_trap)
 

@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 # @see https://www.red-gate.com/simple-talk/blogs/anatomy-of-a-net-assembly-pe-headers/
 module PEShim
   DOS_HEADER_OFFSET = 0x0
