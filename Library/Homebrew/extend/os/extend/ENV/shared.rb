@@ -2,4 +2,6 @@ if OS.mac?
   require "extend/os/mac/extend/ENV/shared"
 elsif OS.linux?
   require "extend/os/linux/extend/ENV/shared"
+elsif OS.cygwin?
+  require "extend/os/cygwin/extend/ENV/shared"
 end

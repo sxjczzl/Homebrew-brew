@@ -23,6 +23,9 @@ describe Cleaner do
       elsif OS.linux?
         cp "#{TEST_FIXTURE_DIR}/elf/hello", f.bin
         cp Dir["#{TEST_FIXTURE_DIR}/elf/libhello.so.0"], f.lib
+      elsif OS.cygwin?
+        cp "#{TEST_FIXTURE_DIR}/pe/hello.exe", f.bin
+        cp Dir["#{TEST_FIXTURE_DIR}/pe/cyghello.dll"], f.lib
       end
 
       subject.clean
@@ -35,6 +38,9 @@ describe Cleaner do
       elsif OS.linux?
         expect((f.bin/"hello").stat.mode).to eq(0100555)
         expect((f.lib/"libhello.so.0").stat.mode).to eq(0100555)
+      elsif OS.cygwin?
+        expect((f.bin/"hello.exe").stat.mode).to eq(0100555)
+        expect((f.lib/"cyghello.dll").stat.mode).to eq(0100555)
       end
     end
 

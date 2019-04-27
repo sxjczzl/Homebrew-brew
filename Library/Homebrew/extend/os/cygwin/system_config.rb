@@ -4,22 +4,12 @@ require "os/linux/glibc"
 class SystemConfig
   class << self
     def host_os_version
-      if which("lsb_release")
-        description = `lsb_release -d`.chomp.sub("Description:\t", "")
-        codename = `lsb_release -c`.chomp.sub("Codename:\t", "")
-        "#{description} (#{codename})"
-      elsif (redhat_release = Pathname.new("/etc/redhat-release")).readable?
-        redhat_release.read.chomp
-      else
-        "N/A"
-      end
+      release = `uname -r`.chomp
+      "Cygwin (#{release})"
     end
 
     def host_glibc_version
-      version = OS::Linux::Glibc.system_version
-      return "N/A" if version.null?
-
-      version
+      "N/A"
     end
 
     def host_gcc_version

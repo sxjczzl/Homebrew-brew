@@ -126,7 +126,7 @@ RSpec.shared_context "integration test" do
   def setup_test_formula(name, content = nil)
     case name
     when /^testball/
-      tarball = if OS.linux?
+      tarball = if OS.linux? || OS.cygwin?
         TEST_FIXTURE_DIR/"tarballs/testball-0.1-linux.tbz"
       else
         TEST_FIXTURE_DIR/"tarballs/testball-0.1.tbz"

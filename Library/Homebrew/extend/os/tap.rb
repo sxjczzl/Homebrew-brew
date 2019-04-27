@@ -1,1 +1,5 @@
-require "extend/os/linux/tap" if OS.linux?
+if OS.linux?
+  require "extend/os/linux/tap"
+elsif OS.cygwin?
+  require "extend/os/cygwin/tap"
+end

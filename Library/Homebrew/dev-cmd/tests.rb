@@ -122,6 +122,11 @@ module Homebrew
         files = files.reject { |p| p =~ %r{^test/os/linux(/.*|_spec\.rb)$} }
       end
 
+      unless OS.cygwin?
+        bundle_args << "--tag" << "~needs_cygwin"
+        files = files.reject { |p| p =~ %r{^test/os/cygwin(/.*|_spec\.rb)$} }
+      end
+
       puts "Randomized with seed #{seed}"
 
       # Let `bundle` in PATH find its gem.

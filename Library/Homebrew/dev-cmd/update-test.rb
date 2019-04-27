@@ -49,7 +49,7 @@ module Homebrew
           if (HOMEBREW_REPOSITORY/".git/shallow").exist?
             safe_system "git", "fetch", "--tags", "--depth=1"
             tags = Utils.popen_read("git", "tag", "--list", "--sort=-version:refname")
-          elsif OS.linux?
+          elsif OS.linux? || OS.cygwin?
             tags = Utils.popen_read("git tag --list | sort -rV")
           end
           tags.lines.second

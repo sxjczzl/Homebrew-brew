@@ -13,8 +13,6 @@ module Homebrew
     ].freeze
 
     def symlink_ld_so
-      return if ENV["HOMEBREW_SYSTEM"] == "Cygwin"
-
       brew_ld_so = HOMEBREW_PREFIX/"lib/ld.so"
       return if brew_ld_so.readable?
 
