@@ -122,6 +122,7 @@ class DependencyCollector
     when :codesign      then CodesignRequirement.new(tags)
     when :java          then java_dep_if_needed(tags)
     when :linux         then LinuxRequirement.new(tags)
+    when :cygwin        then CygwinRequirement.new(tags)
     when :macos         then MacOSRequirement.new(tags)
     when :maximum_macos then MaximumMacOSRequirement.new(tags)
     when :osxfuse       then OsxfuseRequirement.new(tags)

@@ -7,12 +7,12 @@ require "debrew"
 require "formula_assertions"
 require "fcntl"
 require "socket"
+require "os/universal_socket"
 
 TEST_TIMEOUT_SECONDS = 5 * 60
 
 begin
-  error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
-  error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
+  error_pipe = UniversalSocket.open
 
   ENV.extend(Stdenv)
   ENV.setup_build_environment

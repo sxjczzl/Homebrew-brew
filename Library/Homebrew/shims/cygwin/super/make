@@ -15,7 +15,7 @@ then
   export MAKE="$HOMEBREW_MAKE"
 else
   SAVED_PATH="$PATH"
-  pathremove "$HOMEBREW_LIBRARY/Homebrew/shims/linux/super"
+  pathremove "$HOMEBREW_LIBRARY/Homebrew/shims/cygwin/super"
   export MAKE="$(which make)"
   export PATH="$SAVED_PATH"
 fi

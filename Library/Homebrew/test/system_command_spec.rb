@@ -35,7 +35,7 @@ describe SystemCommand do
       it "unsets them" do
         expect {
           command.run!
-        }.to raise_error(/C: parameter null or not set/)
+        }.to raise_error(/C: parameter .*not set/)
       end
     end
 

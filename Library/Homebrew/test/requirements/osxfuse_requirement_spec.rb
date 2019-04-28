@@ -43,6 +43,10 @@ describe OsxfuseRequirement do
       expect(requirement.message).to match("libfuse is required to install this formula")
     end
 
+    it "prompts for installation of 'libfuse' on Cygwin", :needs_cygwin do
+      expect(requirement.message).to match("libfuse is required to install this formula")
+    end
+
     it "prompts for installation of 'osxFuse' on macOS", :needs_macos do
       expect(requirement.message).to match("osxfuse.github.io")
     end

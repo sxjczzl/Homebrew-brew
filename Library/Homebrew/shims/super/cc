@@ -23,6 +23,10 @@ def linux?
   RUBY_PLATFORM[/linux/]
 end
 
+def cygwin?
+  RUBY_PLATFORM[/cygwin/]
+end
+
 class Cmd
   attr_reader :config, :prefix, :cellar, :opt, :cachedir, :tmpdir, :sysroot, :deps
   attr_reader :archflags, :optflags, :keg_regex, :formula_prefix
@@ -299,6 +303,12 @@ class Cmd
       wl = "-Wl,"
       args << "-B#{@opt}/glibc/lib"
     end
+    args += rpath_flags("#{wl}-rpath=", rpath_paths)
+    args += ["#{wl}--dynamic-linker=#{dynamic_linker_path}"] if dynamic_linker_path
+    args
+  end
+
+  def ldflags_cygwin(args)
     args += rpath_flags("#{wl}-rpath=", rpath_paths)
     args += ["#{wl}--dynamic-linker=#{dynamic_linker_path}"] if dynamic_linker_path
     args
