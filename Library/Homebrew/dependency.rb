@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "dependable"
 
 # A dependency on another Homebrew formula.
@@ -7,7 +9,7 @@ class Dependency
 
   attr_reader :name, :tags, :env_proc, :option_names
 
-  DEFAULT_ENV_PROC = proc {}
+  DEFAULT_ENV_PROC = proc {}.freeze
 
   def initialize(name, tags = [], env_proc = DEFAULT_ENV_PROC, option_names = [name])
     raise ArgumentError, "Dependency must have a name!" unless name

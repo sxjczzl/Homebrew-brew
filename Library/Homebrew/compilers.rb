@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 # @private
 module CompilerConstants
   GNU_GCC_VERSIONS = %w[4.9 5 6 7 8].freeze
@@ -8,8 +10,8 @@ module CompilerConstants
     "llvm_clang" => :llvm_clang,
   }.freeze
 
-  COMPILERS = COMPILER_SYMBOL_MAP.values +
-              GNU_GCC_VERSIONS.map { |n| "gcc-#{n}" }
+  COMPILERS = (COMPILER_SYMBOL_MAP.values +
+               GNU_GCC_VERSIONS.map { |n| "gcc-#{n}" }).freeze
 end
 
 class CompilerFailure

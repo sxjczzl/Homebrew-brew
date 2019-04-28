@@ -1,10 +1,12 @@
+# frozen_string_literal: true
+
 require "uri"
 require "tempfile"
 
 module GitHub
   module_function
 
-  API_URL = "https://api.github.com".freeze
+  API_URL = "https://api.github.com"
 
   CREATE_GIST_SCOPES = ["gist"].freeze
   CREATE_ISSUE_FORK_OR_PR_SCOPES = ["public_repo"].freeze
@@ -12,7 +14,7 @@ module GitHub
   ALL_SCOPES_URL = Formatter.url(
     "https://github.com/settings/tokens/new?scopes=#{ALL_SCOPES.join(",")}&description=Homebrew",
   ).freeze
-  PR_ENV_KEY = "HOMEBREW_NEW_FORMULA_PULL_REQUEST_URL".freeze
+  PR_ENV_KEY = "HOMEBREW_NEW_FORMULA_PULL_REQUEST_URL"
   PR_ENV = ENV[PR_ENV_KEY]
 
   class Error < RuntimeError
@@ -45,7 +47,7 @@ module GitHub
   class AuthenticationFailedError < Error
     def initialize(github_message)
       @github_message = github_message
-      message = "GitHub #{github_message}:"
+      message = +"GitHub #{github_message}:"
       if ENV["HOMEBREW_GITHUB_API_TOKEN"]
         message << <<~EOS
           HOMEBREW_GITHUB_API_TOKEN may be invalid or expired; check:
@@ -61,7 +63,7 @@ module GitHub
           #{Utils::Shell.set_variable_in_profile("HOMEBREW_GITHUB_API_TOKEN", "your_token_here")}
         EOS
       end
-      super message
+      super message.freeze
     end
   end
 

@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 module Cask
   class Cmd
     class InternalStanza < AbstractInternalCommand
@@ -22,8 +24,8 @@ module Cask
       #
 
       ARTIFACTS =
-        DSL::ORDINARY_ARTIFACT_CLASSES.map(&:dsl_key) +
-        DSL::ARTIFACT_BLOCK_CLASSES.map(&:dsl_key)
+        (DSL::ORDINARY_ARTIFACT_CLASSES.map(&:dsl_key) +
+         DSL::ARTIFACT_BLOCK_CLASSES.map(&:dsl_key)).freeze
 
       option "--table",   :table,   false
       option "--quiet",   :quiet,   false

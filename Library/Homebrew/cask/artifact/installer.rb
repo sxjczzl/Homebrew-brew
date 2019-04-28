@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "cask/artifact/abstract_artifact"
 
 require "extend/hash_validator"
@@ -6,10 +8,10 @@ using HashValidator
 module Cask
   module Artifact
     class Installer < AbstractArtifact
-      VALID_KEYS = Set.new [
-        :manual,
-        :script,
-      ]
+      VALID_KEYS = Set.new([
+                             :manual,
+                             :script,
+                           ]).freeze
 
       module ManualInstaller
         def install_phase(**)

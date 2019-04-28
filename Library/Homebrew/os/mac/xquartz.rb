@@ -1,13 +1,15 @@
+# frozen_string_literal: true
+
 module OS
   module Mac
-    X11 = XQuartz = Module.new
+    X11 = XQuartz = Module.new # rubocop:disable Style/MutableConstant
 
     module XQuartz
       module_function
 
       DEFAULT_BUNDLE_PATH = Pathname.new("Applications/Utilities/XQuartz.app").freeze
-      FORGE_BUNDLE_ID = "org.macosforge.xquartz.X11".freeze
-      FORGE_PKG_ID = "org.macosforge.xquartz.pkg".freeze
+      FORGE_BUNDLE_ID = "org.macosforge.xquartz.X11"
+      FORGE_PKG_ID = "org.macosforge.xquartz.pkg"
 
       PKGINFO_VERSION_MAP = {
         "2.6.34"  => "2.6.3",

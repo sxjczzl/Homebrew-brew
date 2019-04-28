@@ -1,3 +1,7 @@
+# Uses ERB so can't use Frozen String Literals until >=Ruby 2.4:
+# https://bugs.ruby-lang.org/issues/12031
+# frozen_string_literal: false
+
 require "formula"
 require "erb"
 require "ostruct"
@@ -8,13 +12,13 @@ Dir.glob("#{HOMEBREW_LIBRARY_PATH}/{dev-,}cmd/*.rb").each { |cmd| require cmd }
 module Homebrew
   module_function
 
-  SOURCE_PATH = HOMEBREW_LIBRARY_PATH/"manpages"
-  TARGET_MAN_PATH = HOMEBREW_REPOSITORY/"manpages"
-  TARGET_DOC_PATH = HOMEBREW_REPOSITORY/"docs"
+  SOURCE_PATH = (HOMEBREW_LIBRARY_PATH/"manpages").freeze
+  TARGET_MAN_PATH = (HOMEBREW_REPOSITORY/"manpages").freeze
+  TARGET_DOC_PATH = (HOMEBREW_REPOSITORY/"docs").freeze
 
   def man_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
+      usage_banner <<~EOS.freeze
         `man` [<options>]
 
         Generate Homebrew's manpages.

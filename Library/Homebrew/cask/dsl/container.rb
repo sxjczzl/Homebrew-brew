@@ -1,12 +1,14 @@
+# frozen_string_literal: true
+
 require "unpack_strategy"
 
 module Cask
   class DSL
     class Container
-      VALID_KEYS = Set.new [
-        :type,
-        :nested,
-      ]
+      VALID_KEYS = Set.new([
+                             :type,
+                             :nested,
+                           ]).freeze
 
       attr_accessor(*VALID_KEYS)
       attr_accessor :pairs

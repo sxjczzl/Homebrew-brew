@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "utils/bottles"
 require "utils/gems"
 require "formula"
@@ -119,7 +121,7 @@ module Homebrew
   class Cleanup
     extend Predicable
 
-    PERIODIC_CLEAN_FILE = HOMEBREW_CACHE/".cleaned"
+    PERIODIC_CLEAN_FILE = (HOMEBREW_CACHE/".cleaned").freeze
 
     attr_predicate :dry_run?, :scrub?
     attr_reader :args, :days, :cache

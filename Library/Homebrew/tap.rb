@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 require "extend/cachable"
 require "readall"
 require "description_cache_store"
@@ -11,7 +13,7 @@ require "description_cache_store"
 class Tap
   extend Cachable
 
-  TAP_DIRECTORY = HOMEBREW_LIBRARY/"Taps"
+  TAP_DIRECTORY = (HOMEBREW_LIBRARY/"Taps").freeze
 
   def self.fetch(*args)
     case args.length
