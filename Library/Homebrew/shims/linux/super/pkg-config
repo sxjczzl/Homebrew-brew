@@ -1,0 +1,25 @@
+#!/bin/bash
+
+pathremove () {
+        local IFS=':' NEWPATH="" DIR="" PATHVARIABLE=${2:-PATH}
+        for DIR in ${!PATHVARIABLE} ; do
+                if [ "$DIR" != "$1" ] ; then
+                  NEWPATH=${NEWPATH:+$NEWPATH:}$DIR
+                fi
+        done
+        export $PATHVARIABLE="$NEWPATH"
+}
+
+if [[ -n "$HOMEBREW_PKG_CONFIG" && "$HOMEBREW_PKG_CONFIG" != "pkg-config" ]]
+then
+  export PKG_CONFIG="$HOMEBREW_PKG_CONFIG"
+else
+  SAVED_PATH="$PATH"
+  pathremove "$HOMEBREW_LIBRARY/Homebrew/shims/linux/super"
+  export PKG_CONFIG="$HOMEBREW_PREFIX/bin/pkg-config"
+  export PATH="$SAVED_PATH"
+fi
+
+export HOMEBREW_CCCFG="O$HOMEBREW_CCCFG"
+
+exec "$PKG_CONFIG" "$@"
