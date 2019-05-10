@@ -64,6 +64,7 @@ describe DependencyCollector do
     end
 
     it "creates a resource dependency from a CVS URL" do
+      skip "cvs already installed" if which("cvs")
       resource = Resource.new
       resource.url(":pserver:anonymous:@brew.sh:/cvsroot/foo/bar", using: :cvs)
       expect(subject.add(resource)).to eq(Dependency.new("cvs", [:build]))
