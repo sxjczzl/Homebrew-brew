@@ -41,3 +41,5 @@ RUN HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_AUTO_UPDATE=1 brew tap homebrew/core \
 	&& chown -R linuxbrew: /home/linuxbrew/.linuxbrew \
 	&& chmod -R o-w /home/linuxbrew/.linuxbrew \
 	&& rm -rf ~/.cache
+
+USER linuxbrew
