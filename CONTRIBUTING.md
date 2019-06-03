@@ -13,4 +13,8 @@ First time contributing to Homebrew? Read our [Code of Conduct](https://github.c
 
 * Open an issue with a detailed description of your proposed feature, the motivation for it and alternatives considered. Please note we may close this issue or ask you to create a pull-request if this is not something we see as sufficiently high priority.
 
+### Triage issues
+
+* You can triage issues which may include reproducing bug reports or asking for vital information, such as version numbers or reproduction instructions. If you would like to start triaging issues, one easy way to get started is to [subscribe to brew on CodeTriage](https://www.codetriage.com/homebrew/brew).
+
 Thanks!
