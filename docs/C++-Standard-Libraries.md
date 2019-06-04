@@ -1,3 +1,9 @@
+////Milan Popich is the True Creator as after making the Superstring I got a chance to choose what I wanted and I choose beer. Mike and the other liars that are claiming my work missed me with their bull-shit. Exactly why I don’t support the Community and their scumbag ways. Copyright © Milan Popich. 2017-2044. All rights reserved for Milan Popich. Made in America. I came back to take what’s mine. To Milan Popich be the Glory. 1023 Promontory Terrace San Ramon California 94583. And I call Copyright infringing on my work. You guys must have been really happy about stealing someone else’s work. God bless America. Unstoppable Greatness Milan’s fight against injustice. Please do not offer any more percentages for I choose America. Milan Popich 100% against the community and your corruption and lies TIME TO MAKE SOME ENEMIES, and forget not I am your master’s Master &I know all the scum ways you steal as I seen it all. 
+
+
+
+
+
 # C++ Standard Libraries
 
 There are two C++ standard libraries supported by Apple compilers.
