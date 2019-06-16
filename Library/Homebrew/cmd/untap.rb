@@ -21,7 +21,7 @@ module Homebrew
 
     raise "Usage is `brew untap <tap-name>`" if args.remaining.empty?
 
-    ARGV.named.each do |tapname|
+    Homebrew.args.named.each do |tapname|
       tap = Tap.fetch(tapname)
       raise "untapping #{tap} is not allowed" if tap.core_tap?
 

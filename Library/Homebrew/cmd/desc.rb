@@ -42,18 +42,18 @@ module Homebrew
     search_type << :desc   if args.description
     if search_type.size > 1
       odie "Pick one, and only one, of -s/--search, -n/--name, or -d/--description."
-    elsif search_type.present? && ARGV.named.empty?
+    elsif search_type.present? && Homebrew.args.named.empty?
       odie "You must provide a search term."
     end
 
     results = if search_type.empty?
-      raise FormulaUnspecifiedError if ARGV.named.empty?
+      raise FormulaUnspecifiedError if Homebrew.args.named.empty?
 
       desc = {}
-      ARGV.formulae.each { |f| desc[f.full_name] = f.desc }
+      Homebrew.args.formulae.each { |f| desc[f.full_name] = f.desc }
       Descriptions.new(desc)
     else
-      arg = ARGV.named.join(" ")
+      arg = Homebrew.args.named.join(" ")
       string_or_regex = query_regexp(arg)
       CacheStoreDatabase.use(:descriptions) do |db|
         cache_store = DescriptionCacheStore.new(db)

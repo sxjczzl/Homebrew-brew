@@ -22,10 +22,10 @@ module Homebrew
   def __cellar
     __cellar_args.parse
 
-    if ARGV.named.empty?
+    if Homebrew.args.named.empty?
       puts HOMEBREW_CELLAR
     else
-      puts ARGV.resolved_formulae.map(&:rack)
+      puts Homebrew.args.resolved_formulae.map(&:rack)
     end
   end
 end

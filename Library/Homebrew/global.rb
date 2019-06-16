@@ -30,8 +30,8 @@ require "extend/ARGV"
 require "messages"
 require "system_command"
 
-ARGV_WITHOUT_MONKEY_PATCHING = ARGV.dup.freeze
-ARGV.extend(HomebrewArgvExtension)
+Homebrew.args_WITHOUT_MONKEY_PATCHING = Homebrew.args.dup.freeze
+Homebrew.args.extend(HomebrewArgvExtension)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
 HOMEBREW_VERSION = ENV["HOMEBREW_VERSION"]
@@ -147,4 +147,4 @@ require "official_taps"
 require "tap"
 require "tap_constants"
 
-require "compat" if !ARGV.include?("--no-compat") && !ENV["HOMEBREW_NO_COMPAT"]
+require "compat" if !Homebrew.args.include?("--no-compat") && !ENV["HOMEBREW_NO_COMPAT"]

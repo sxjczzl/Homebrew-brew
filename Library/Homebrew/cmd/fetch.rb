@@ -46,17 +46,17 @@ module Homebrew
   def fetch
     fetch_args.parse
 
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    raise FormulaUnspecifiedError if Homebrew.args.named.empty?
 
     if args.deps?
       bucket = []
-      ARGV.formulae.each do |f|
+      Homebrew.args.formulae.each do |f|
         bucket << f
         bucket.concat f.recursive_dependencies.map(&:to_formula)
       end
       bucket.uniq!
     else
-      bucket = ARGV.formulae
+      bucket = Homebrew.args.formulae
     end
 
     puts "Fetching: #{bucket * ", "}" if bucket.size > 1
@@ -70,7 +70,7 @@ module Homebrew
         rescue Interrupt
           raise
         rescue => e
-          raise if ARGV.homebrew_developer?
+          raise if Homebrew.args.homebrew_developer?
 
           fetched_bottle = false
           onoe e.message

@@ -432,11 +432,11 @@ if __FILE__ == $PROGRAM_NAME
 
   dirname, basename = File.split($0)
 
-  cmd = Cmd.new(basename, ARGV)
+  cmd = Cmd.new(basename, Homebrew.args)
   tool = cmd.tool
   args = cmd.args
 
-  log(basename, ARGV, tool, args)
+  log(basename, Homebrew.args, tool, args)
 
   args << { :close_others => false }
   if mac?

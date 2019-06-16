@@ -13,7 +13,7 @@ module Homebrew
 
   def update_preinstall_header
     @update_preinstall_header ||= begin
-      ohai "Auto-updated Homebrew!" if ARGV.include?("--preinstall")
+      ohai "Auto-updated Homebrew!" if Homebrew.args.include?("--preinstall")
       true
     end
   end
@@ -103,7 +103,7 @@ module Homebrew
       begin
         reporter = Reporter.new(tap)
       rescue Reporter::ReporterRevisionUnsetError => e
-        onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
+        onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew.args.homebrew_developer?
         next
       end
       if reporter.updated?
@@ -119,7 +119,7 @@ module Homebrew
     end
 
     if !updated
-      puts "Already up-to-date." if !ARGV.include?("--preinstall") && !ENV["HOMEBREW_UPDATE_FAILED"]
+      puts "Already up-to-date." if !Homebrew.args.include?("--preinstall") && !ENV["HOMEBREW_UPDATE_FAILED"]
     else
       if hub.empty?
         puts "No changes to formulae."
@@ -132,7 +132,7 @@ module Homebrew
                                .update_from_report!(hub)
         end
       end
-      puts if ARGV.include?("--preinstall")
+      puts if Homebrew.args.include?("--preinstall")
     end
 
     link_completions_manpages_and_docs
@@ -227,7 +227,7 @@ class Reporter
           old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
           next if new_version == old_version
         rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
+          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew.args.homebrew_developer?
         end
         @report[:M] << tap.formula_file_to_name(src)
       when /^R\d{0,3}/
@@ -318,7 +318,7 @@ class Reporter
             system HOMEBREW_BREW_FILE, "link", new_full_name, "--overwrite"
           end
         rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
+          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew.args.homebrew_developer?
         end
         next
       end
@@ -382,7 +382,7 @@ class Reporter
       begin
         f = Formulary.factory(new_full_name)
       rescue Exception => e # rubocop:disable Lint/RescueException
-        onoe "#{e.message}\n#{e.backtrace.join "\n"}" if ARGV.homebrew_developer?
+        onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew.args.homebrew_developer?
         next
       end
 

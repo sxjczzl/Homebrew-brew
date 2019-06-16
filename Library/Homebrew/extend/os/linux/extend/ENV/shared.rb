@@ -3,8 +3,8 @@
 module SharedEnvExtension
   # @private
   def effective_arch
-    if ARGV.build_bottle?
-      ARGV.bottle_arch || Hardware.oldest_cpu
+    if Homebrew.args.build_bottle?
+      Homebrew.args.bottle_arch || Hardware.oldest_cpu
     else
       :native
     end

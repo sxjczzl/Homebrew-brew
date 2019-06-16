@@ -60,7 +60,7 @@ class AbstractDownloadStrategy
                           ref_type: @ref_type, ref: @ref)
                   .extract_nestedly(basename:             basename,
                                     prioritise_extension: true,
-                                    verbose:              ARGV.verbose? && !shutup)
+                                    verbose:              Homebrew.args.verbose? && !shutup)
     chdir
   end
 
@@ -104,7 +104,7 @@ class AbstractDownloadStrategy
       *args,
       print_stdout: !shutup,
       print_stderr: !shutup,
-      verbose:      ARGV.verbose? && !shutup,
+      verbose:      Homebrew.args.verbose? && !shutup,
       env:          env,
       **options,
     )
@@ -495,7 +495,7 @@ class NoUnzipCurlDownloadStrategy < CurlDownloadStrategy
   def stage
     UnpackStrategy::Uncompressed.new(cached_location)
                                 .extract(basename: basename,
-                                         verbose:  ARGV.verbose? && !shutup)
+                                         verbose:  Homebrew.args.verbose? && !shutup)
   end
 end
 
@@ -780,7 +780,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
 
       git_dir = dot_git.read.chomp[/^gitdir: (.*)$/, 1]
       if git_dir.nil?
-        onoe "Failed to parse '#{dot_git}'." if ARGV.homebrew_developer?
+        onoe "Failed to parse '#{dot_git}'." if Homebrew.args.homebrew_developer?
         next
       end
 
@@ -893,7 +893,7 @@ class CVSDownloadStrategy < VCSDownloadStrategy
   end
 
   def quiet_flag
-    "-Q" unless ARGV.verbose?
+    "-Q" unless Homebrew.args.verbose?
   end
 
   def clone_repo

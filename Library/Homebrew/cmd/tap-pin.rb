@@ -24,7 +24,7 @@ module Homebrew
 
     tap_pin_args.parse
 
-    ARGV.named.each do |name|
+    Homebrew.args.named.each do |name|
       tap = Tap.fetch(name)
       raise "pinning #{tap} is not allowed" if tap.core_tap?
 

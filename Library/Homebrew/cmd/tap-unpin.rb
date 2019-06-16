@@ -23,7 +23,7 @@ module Homebrew
 
     tap_unpin_args.parse
 
-    ARGV.named.each do |name|
+    Homebrew.args.named.each do |name|
       tap = Tap.fetch(name)
       raise "unpinning #{tap} is not allowed" if tap.core_tap?
 

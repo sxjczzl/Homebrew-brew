@@ -20,10 +20,10 @@ module Homebrew
   def __repository
     __repository_args.parse
 
-    if ARGV.named.empty?
+    if Homebrew.args.named.empty?
       puts HOMEBREW_REPOSITORY
     else
-      puts ARGV.named.map { |tap| Tap.fetch(tap).path }
+      puts Homebrew.args.named.map { |tap| Tap.fetch(tap).path }
     end
   end
 end

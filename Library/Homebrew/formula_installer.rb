@@ -49,15 +49,15 @@ class FormulaInstaller
     @show_header = false
     @ignore_deps = false
     @only_deps = false
-    @build_from_source = ARGV.build_from_source?
+    @build_from_source = Homebrew.args.build_from_source?
     @build_bottle = false
-    @force_bottle = ARGV.force_bottle?
-    @include_test = ARGV.include?("--include-test")
+    @force_bottle = Homebrew.args.force_bottle?
+    @include_test = Homebrew.args.include?("--include-test")
     @interactive = false
     @git = false
-    @verbose = ARGV.verbose?
-    @quieter = ARGV.quieter?
-    @debug = ARGV.debug?
+    @verbose = Homebrew.args.verbose?
+    @quieter = Homebrew.args.quieter?
+    @debug = Homebrew.args.debug?
     @installed_as_dependency = false
     @installed_on_request = true
     @options = Options.new
@@ -75,14 +75,14 @@ class FormulaInstaller
     @attempted = Set.new
   end
 
-  # When no build tools are available and build flags are passed through ARGV,
+  # When no build tools are available and build flags are passed through Homebrew.args,
   # it's necessary to interrupt the user before any sort of installation
   # can proceed. Only invoked when the user has no developer tools.
   def self.prevent_build_flags
-    build_flags = ARGV.collect_build_flags
+    build_flags = Homebrew.args.collect_build_flags
     return if build_flags.empty?
 
-    all_bottled = ARGV.formulae.all?(&:bottled?)
+    all_bottled = Homebrew.args.formulae.all?(&:bottled?)
     raise BuildFlagsError.new(build_flags, bottled: all_bottled)
   end
 
@@ -98,7 +98,7 @@ class FormulaInstaller
     return false if !formula.bottled? && !formula.local_bottle_path
     return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
-    return false if ARGV.cc
+    return false if Homebrew.args.cc
     return false unless options.empty?
     return false if formula.bottle_disabled?
 
@@ -128,7 +128,7 @@ class FormulaInstaller
 
   def install_bottle_for?(dep, build)
     return pour_bottle? if dep == formula
-    return false if ARGV.build_formula_from_source?(dep)
+    return false if Homebrew.args.build_formula_from_source?(dep)
     return false unless dep.bottle && dep.pour_bottle?
     return false unless build.used_options.empty?
     return false unless dep.bottle.compatible_cellar?
@@ -261,7 +261,7 @@ class FormulaInstaller
 
     return if only_deps?
 
-    if build_bottle? && (arch = ARGV.bottle_arch) && !Hardware::CPU.optimization_flags.include?(arch)
+    if build_bottle? && (arch = Homebrew.args.bottle_arch) && !Hardware::CPU.optimization_flags.include?(arch)
       raise "Unrecognized architecture for --bottle-arch: #{arch}"
     end
 
@@ -299,7 +299,7 @@ class FormulaInstaller
           end
           formula.rack.rmdir_if_possible
         end
-        raise if ARGV.homebrew_developer? ||
+        raise if Homebrew.args.homebrew_developer? ||
                  e.is_a?(Interrupt) ||
                  ENV["HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK"]
 
@@ -348,7 +348,7 @@ class FormulaInstaller
   end
 
   def check_conflicts
-    return if ARGV.force?
+    return if Homebrew.args.force?
 
     conflicts = formula.conflicts.select do |c|
       begin
@@ -366,7 +366,7 @@ class FormulaInstaller
           'conflicts_with \"#{c.name}\"' should be removed from #{formula.path.basename}.
         EOS
 
-        raise if ARGV.homebrew_developer?
+        raise if Homebrew.args.homebrew_developer?
 
         $stderr.puts "Please report this to the #{formula.tap} tap!"
         false
@@ -586,7 +586,7 @@ class FormulaInstaller
     fi.options                |= Tab.remap_deprecated_options(df.deprecated_options, dep.options)
     fi.options                |= inherited_options
     fi.options                &= df.options
-    fi.build_from_source       = ARGV.build_formula_from_source?(df)
+    fi.build_from_source       = Homebrew.args.build_formula_from_source?(df)
     fi.force_bottle            = false
     fi.verbose                 = verbose?
     fi.quieter                 = quieter?
@@ -611,7 +611,7 @@ class FormulaInstaller
   def caveats
     return if only_deps?
 
-    audit_installed if ARGV.homebrew_developer?
+    audit_installed if Homebrew.args.homebrew_developer?
 
     caveats = Caveats.new(formula)
 
@@ -690,19 +690,19 @@ class FormulaInstaller
 
     if build_bottle?
       args << "--build-bottle"
-      args << "--bottle-arch=#{ARGV.bottle_arch}" if ARGV.bottle_arch
+      args << "--bottle-arch=#{Homebrew.args.bottle_arch}" if Homebrew.args.bottle_arch
     end
 
     args << "--git" if git?
     args << "--interactive" if interactive?
     args << "--verbose" if verbose?
     args << "--debug" if debug?
-    args << "--cc=#{ARGV.cc}" if ARGV.cc
-    args << "--default-fortran-flags" if ARGV.include? "--default-fortran-flags"
-    args << "--keep-tmp" if ARGV.keep_tmp?
+    args << "--cc=#{Homebrew.args.cc}" if Homebrew.args.cc
+    args << "--default-fortran-flags" if Homebrew.args.include? "--default-fortran-flags"
+    args << "--keep-tmp" if Homebrew.args.keep_tmp?
 
-    if ARGV.env
-      args << "--env=#{ARGV.env}"
+    if Homebrew.args.env
+      args << "--env=#{Homebrew.args.env}"
     elsif formula.env.std? || formula.deps.select(&:build?).any? { |d| d.name == "scons" }
       args << "--env=std"
     end
@@ -715,7 +715,7 @@ class FormulaInstaller
 
     formula.options.each do |opt|
       name = opt.name[/^([^=]+)=$/, 1]
-      value = ARGV.value(name) if name
+      value = Homebrew.args.value(name) if name
       args << "--#{name}=#{value}" if value
     end
 
@@ -748,7 +748,7 @@ class FormulaInstaller
         sandbox = Sandbox.new
         formula.logs.mkpath
         sandbox.record_log(formula.logs/"build.sandbox.log")
-        sandbox.allow_write_path(ENV["HOME"]) if ARGV.interactive?
+        sandbox.allow_write_path(ENV["HOME"]) if Homebrew.args.interactive?
         sandbox.allow_write_temp_and_cache
         sandbox.allow_write_log(formula)
         sandbox.allow_cvs
@@ -909,7 +909,7 @@ class FormulaInstaller
       --
       #{HOMEBREW_LIBRARY_PATH}/postinstall.rb
       #{formula.path}
-    ].concat(ARGV.options_only) - ["--HEAD", "--devel"]
+    ].concat(Homebrew.args.options_only) - ["--HEAD", "--devel"]
 
     if formula.head?
       args << "--HEAD"
@@ -938,7 +938,7 @@ class FormulaInstaller
   rescue Exception => e # rubocop:disable Lint/RescueException
     opoo "The post-install step did not complete successfully"
     puts "You can try again using `brew postinstall #{formula.full_name}`"
-    ohai e, e.backtrace if debug? || ARGV.homebrew_developer?
+    ohai e, e.backtrace if debug? || Homebrew.args.homebrew_developer?
     Homebrew.failed = true
     @show_summary_heading = true
   end

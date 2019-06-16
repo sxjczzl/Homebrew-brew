@@ -19,7 +19,7 @@ module Homebrew
   def __version
     __version_args.parse
 
-    odie "This command does not take arguments." if ARGV.any?
+    odie "This command does not take arguments." if Homebrew.args.any?
 
     puts "Homebrew #{HOMEBREW_VERSION}"
     puts "#{CoreTap.instance.full_name} #{CoreTap.instance.version_string}"

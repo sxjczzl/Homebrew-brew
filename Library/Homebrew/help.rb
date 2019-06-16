@@ -92,7 +92,7 @@ module Homebrew
 
       help_lines = command_help_lines(path)
       if help_lines.empty?
-        opoo "No help text in: #{path}" if ARGV.homebrew_developer?
+        opoo "No help text in: #{path}" if Homebrew.args.homebrew_developer?
         HOMEBREW_HELP
       else
         Formatter.wrap(help_lines.join.gsub(/^  /, ""), COMMAND_DESC_WIDTH)

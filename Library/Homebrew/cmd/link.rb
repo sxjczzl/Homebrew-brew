@@ -31,14 +31,14 @@ module Homebrew
   def link
     link_args.parse
 
-    raise KegUnspecifiedError if ARGV.named.empty?
+    raise KegUnspecifiedError if Homebrew.args.named.empty?
 
     mode = OpenStruct.new
 
     mode.overwrite = true if args.overwrite?
     mode.dry_run = true if args.dry_run?
 
-    ARGV.kegs.each do |keg|
+    Homebrew.args.kegs.each do |keg|
       keg_only = Formulary.keg_only?(keg.rack)
 
       if keg.linked?
@@ -96,7 +96,7 @@ module Homebrew
           puts "#{n} symlinks created"
         end
 
-        puts_keg_only_path_message(keg) if keg_only && !ARGV.homebrew_developer?
+        puts_keg_only_path_message(keg) if keg_only && !Homebrew.args.homebrew_developer?
       end
     end
   end

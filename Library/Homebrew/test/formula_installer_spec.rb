@@ -46,7 +46,7 @@ describe FormulaInstaller do
   end
 
   specify "basic installation" do
-    ARGV << "--with-invalid_flag" # added to ensure it doesn't fail install
+    Homebrew.args << "--with-invalid_flag" # added to ensure it doesn't fail install
 
     temporary_install(Testball.new) do |f|
       # Test that things made it into the Keg
@@ -89,10 +89,10 @@ describe FormulaInstaller do
   end
 
   specify "Formula is not poured from bottle when compiler specified" do
-    expect(ARGV.cc).to be nil
+    expect(Homebrew.args.cc).to be nil
 
     cc_arg = "--cc=clang"
-    ARGV << cc_arg
+    Homebrew.args << cc_arg
 
     temporary_install(TestballBottle.new) do |f|
       tab = Tab.for_formula(f)

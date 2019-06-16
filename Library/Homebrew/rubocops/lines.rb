@@ -205,10 +205,10 @@ module RuboCop
             end
           end
 
-          find_instance_call(body_node, "ARGV") do |method_node|
+          find_instance_call(body_node, "Homebrew.args") do |method_node|
             next if [:debug?, :verbose?, :value].index(method_node.method_name)
 
-            problem "Use build instead of ARGV to check options"
+            problem "Use build instead of Homebrew.args to check options"
           end
 
           find_instance_method_call(body_node, :man, :+) do |method|
@@ -289,7 +289,7 @@ module RuboCop
             problem "Use 'build.head?' instead of inspecting 'version'"
           end
 
-          find_instance_method_call(body_node, "ARGV", :include?) do |method|
+          find_instance_method_call(body_node, "Homebrew.args", :include?) do |method|
             param = parameters(method).first
             next unless match = regex_match_group(param, /^--(HEAD|devel)/)
 

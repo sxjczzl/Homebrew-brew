@@ -31,14 +31,14 @@ module Homebrew
     raise KegUnspecifiedError if args.remaining.empty?
 
     kegs_by_rack = if args.force?
-      Hash[ARGV.named.map do |name|
+      Hash[Homebrew.args.named.map do |name|
         rack = Formulary.to_rack(name)
         next unless rack.directory?
 
         [rack, rack.subdirs.map { |d| Keg.new(d) }]
       end]
     else
-      ARGV.kegs.group_by(&:rack)
+      Homebrew.args.kegs.group_by(&:rack)
     end
 
     handle_unsatisfied_dependents(kegs_by_rack)
@@ -111,7 +111,7 @@ module Homebrew
   def check_for_dependents(kegs)
     return false unless result = Keg.find_some_installed_dependents(kegs)
 
-    if ARGV.homebrew_developer?
+    if Homebrew.args.homebrew_developer?
       DeveloperDependentsMessage.new(*result).output
     else
       NondeveloperDependentsMessage.new(*result).output
@@ -131,7 +131,7 @@ module Homebrew
     protected
 
     def sample_command
-      "brew uninstall --ignore-dependencies #{ARGV.named.join(" ")}"
+      "brew uninstall --ignore-dependencies #{Homebrew.args.named.join(" ")}"
     end
 
     def are_required_by_deps

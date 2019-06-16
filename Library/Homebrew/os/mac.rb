@@ -64,7 +64,7 @@ module OS
 
     def languages
       @languages ||= [
-        *ARGV.value("language")&.split(","),
+        *Homebrew.args.value("language")&.split(","),
         *ENV["HOMEBREW_LANGUAGES"]&.split(","),
         *Open3.capture2("defaults", "read", "-g", "AppleLanguages")[0].scan(/[^ \n"(),]+/),
       ].uniq

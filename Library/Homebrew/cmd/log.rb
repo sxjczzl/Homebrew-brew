@@ -27,10 +27,10 @@ module Homebrew
   def log
     log_args.parse
 
-    if ARGV.named.empty?
+    if Homebrew.args.named.empty?
       git_log HOMEBREW_REPOSITORY
     else
-      path = Formulary.path(ARGV.named.first)
+      path = Formulary.path(Homebrew.args.named.first)
       tap = Tap.from_path(path)
       git_log path.dirname, path, tap
     end
@@ -56,7 +56,7 @@ module Homebrew
           git -C "#{git_cd}" fetch --unshallow
       EOS
     end
-    args = ARGV.options_only
+    args = Homebrew.args.options_only
     args += ["--follow", "--", path] unless path.nil?
     system "git", "log", *args
   end

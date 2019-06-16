@@ -22,7 +22,7 @@ class Messages
 
   def display_messages
     display_caveats
-    display_install_times if ARGV.include?("--display-times")
+    display_install_times if Homebrew.args.include?("--display-times")
   end
 
   def display_caveats

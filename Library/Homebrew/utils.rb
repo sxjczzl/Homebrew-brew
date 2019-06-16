@@ -27,7 +27,7 @@ rescue LoadError => e
 end
 
 def ohai_title(title)
-  title = Tty.truncate(title) if $stdout.tty? && !ARGV.verbose?
+  title = Tty.truncate(title) if $stdout.tty? && !Homebrew.args.verbose?
   Formatter.headline(title, color: :blue)
 end
 
@@ -37,14 +37,14 @@ def ohai(title, *sput)
 end
 
 def odebug(title, *sput)
-  return unless ARGV.debug?
+  return unless Homebrew.args.debug?
 
   puts Formatter.headline(title, color: :magenta)
   puts sput unless sput.empty?
 end
 
 def oh1(title, options = {})
-  title = Tty.truncate(title) if $stdout.tty? && !ARGV.verbose? && options.fetch(:truncate, :auto) == :auto
+  title = Tty.truncate(title) if $stdout.tty? && !Homebrew.args.verbose? && options.fetch(:truncate, :auto) == :auto
   puts Formatter.headline(title, color: :green)
 end
 
@@ -117,7 +117,7 @@ def odeprecated(method, replacement = nil, disable: false, disable_on: nil, call
   message << tap_message if tap_message
   message.freeze
 
-  if ARGV.homebrew_developer? || disable || Homebrew.raise_deprecation_exceptions?
+  if Homebrew.args.homebrew_developer? || disable || Homebrew.raise_deprecation_exceptions?
     exception = MethodDeprecatedError.new(message)
     exception.set_backtrace(backtrace)
     raise exception
@@ -206,7 +206,7 @@ module Homebrew
   end
 
   def system(cmd, *args, **options)
-    puts "#{cmd} #{args * " "}" if ARGV.verbose?
+    puts "#{cmd} #{args * " "}" if Homebrew.args.verbose?
     _system(cmd, *args, **options)
   end
 
@@ -371,7 +371,7 @@ ensure
 end
 
 def nostdout
-  if ARGV.verbose?
+  if Homebrew.args.verbose?
     yield
   else
     begin

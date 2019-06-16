@@ -26,7 +26,7 @@ describe Utils::Bottles::Collector do
     end
 
     it "does not use older tags when requested not to", :needs_macos do
-      allow(ARGV).to receive(:skip_or_later_bottles?).and_return(true)
+      allow(Homebrew.args).to receive(:skip_or_later_bottles?).and_return(true)
       allow(OS::Mac).to receive(:prerelease?).and_return(true)
       subject[:mavericks] = "foo"
       expect(subject.send(:find_matching_tag, :mavericks)).to eq(:mavericks)
@@ -34,7 +34,7 @@ describe Utils::Bottles::Collector do
     end
 
     it "ignores HOMEBREW_SKIP_OR_LATER_BOTTLES on release versions", :needs_macos do
-      allow(ARGV).to receive(:skip_or_later_bottles?).and_return(true)
+      allow(Homebrew.args).to receive(:skip_or_later_bottles?).and_return(true)
       allow(OS::Mac).to receive(:prerelease?).and_return(false)
       subject[:mavericks] = "foo"
       expect(subject.send(:find_matching_tag, :mavericks)).to eq(:mavericks)

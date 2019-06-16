@@ -25,9 +25,9 @@ module Homebrew
   def migrate
     migrate_args.parse
 
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    raise FormulaUnspecifiedError if Homebrew.args.named.empty?
 
-    ARGV.resolved_formulae.each do |f|
+    Homebrew.args.resolved_formulae.each do |f|
       if f.oldname
         unless (rack = HOMEBREW_CELLAR/f.oldname).exist? && !rack.subdirs.empty?
           raise NoSuchKegError, f.oldname

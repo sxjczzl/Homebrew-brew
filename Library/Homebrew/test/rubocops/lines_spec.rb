@@ -546,13 +546,13 @@ describe RuboCop::Cop::FormulaAudit::Miscellaneous do
       RUBY
     end
 
-    it "Using ARGV to check options" do
+    it "Using Homebrew.args to check options" do
       expect_no_offenses(<<~RUBY)
         class Foo < Formula
           desc "foo"
           url 'https://brew.sh/foo-1.0.tgz'
           def install
-            verbose = ARGV.verbose?
+            verbose = Homebrew.args.verbose?
           end
         end
       RUBY
@@ -737,15 +737,15 @@ describe RuboCop::Cop::FormulaAudit::Miscellaneous do
       RUBY
     end
 
-    it "deprecated ARGV.include? (--HEAD) usage" do
+    it "deprecated Homebrew.args.include? (--HEAD) usage" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           desc "foo"
           url 'https://brew.sh/foo-1.0.tgz'
           test do
-            head = ARGV.include? "--HEAD"
+            head = Homebrew.args.include? "--HEAD"
                                   ^^^^^^ Use "if build.head?" instead
-                   ^^^^ Use build instead of ARGV to check options
+                   ^^^^ Use build instead of Homebrew.args to check options
           end
         end
       RUBY

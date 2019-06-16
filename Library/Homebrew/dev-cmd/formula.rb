@@ -21,8 +21,8 @@ module Homebrew
   def formula
     formula_args.parse
 
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    raise FormulaUnspecifiedError if Homebrew.args.named.empty?
 
-    ARGV.resolved_formulae.each { |f| puts f.path }
+    Homebrew.args.resolved_formulae.each { |f| puts f.path }
   end
 end

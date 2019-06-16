@@ -6,6 +6,6 @@ module Homebrew
   module_function
 
   def cask
-    Cask::Cmd.run(*ARGV)
+    Cask::Cmd.run(*Homebrew.args)
   end
 end

@@ -166,8 +166,8 @@ module RuboCop
 
       # Matches receiver part of method.
       #
-      # - e.g. to match `ARGV.<whatever>()`
-      #   call `find_instance_call(node, "ARGV")`
+      # - e.g. to match `Homebrew.args.<whatever>()`
+      #   call `find_instance_call(node, "Homebrew.args")`
       # - yields to a block with parent node of receiver
       def find_instance_call(node, name)
         node.each_descendant(:send) do |method_node|

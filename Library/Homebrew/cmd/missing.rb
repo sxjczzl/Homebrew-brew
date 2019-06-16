@@ -30,10 +30,10 @@ module Homebrew
     missing_args.parse
     return unless HOMEBREW_CELLAR.exist?
 
-    ff = if ARGV.named.empty?
+    ff = if Homebrew.args.named.empty?
       Formula.installed.sort
     else
-      ARGV.resolved_formulae.sort
+      Homebrew.args.resolved_formulae.sort
     end
 
     ff.each do |f|

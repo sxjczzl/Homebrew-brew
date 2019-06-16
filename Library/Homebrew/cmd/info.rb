@@ -61,14 +61,14 @@ module Homebrew
 
       print_json
     elsif args.github?
-      exec_browser(*ARGV.formulae.map { |f| github_info(f) })
+      exec_browser(*Homebrew.args.formulae.map { |f| github_info(f) })
     else
       print_info
     end
   end
 
   def print_info
-    if ARGV.named.empty?
+    if Homebrew.args.named.empty?
       if args.analytics?
         output_analytics
       elsif HOMEBREW_CELLAR.exist?
@@ -76,7 +76,7 @@ module Homebrew
         puts "#{count} #{"keg".pluralize(count)}, #{HOMEBREW_CELLAR.dup.abv}"
       end
     else
-      ARGV.named.each_with_index do |f, i|
+      Homebrew.args.named.each_with_index do |f, i|
         puts unless i.zero?
         begin
           formula = if f.include?("/") || File.exist?(f)
@@ -110,7 +110,7 @@ module Homebrew
     elsif args.installed?
       Formula.installed.sort
     else
-      ARGV.formulae
+      Homebrew.args.formulae
     end
     json = ff.map(&:to_hash)
     puts JSON.generate(json)

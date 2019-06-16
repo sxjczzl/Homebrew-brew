@@ -36,10 +36,10 @@ module Homebrew
     end
 
     options = { aliases: args.aliases? }
-    taps = if ARGV.named.empty?
+    taps = if Homebrew.args.named.empty?
       Tap
     else
-      ARGV.named.map { |t| Tap.fetch(t) }
+      Homebrew.args.named.map { |t| Tap.fetch(t) }
     end
     taps.each do |tap|
       Homebrew.failed = true unless Readall.valid_tap?(tap, options)

@@ -12,7 +12,7 @@ module Homebrew
     class Parser
       attr_reader :processed_options, :hide_from_man_page
 
-      def self.parse(args = ARGV, &block)
+      def self.parse(args = Homebrew.args, &block)
         new(&block).parse(args)
       end
 
@@ -27,7 +27,7 @@ module Homebrew
 
       def initialize(&block)
         @parser = OptionParser.new
-        @args = Homebrew::CLI::Args.new(argv: ARGV_WITHOUT_MONKEY_PATCHING)
+        @args = Homebrew::CLI::Args.new(argv: Homebrew.args_WITHOUT_MONKEY_PATCHING)
         @constraints = []
         @conflicts = []
         @switch_sources = {}
@@ -127,7 +127,7 @@ module Homebrew
         @parser.to_s
       end
 
-      def parse(cmdline_args = ARGV)
+      def parse(cmdline_args = Homebrew.args)
         raise "Arguments were already parsed!" if @args_parsed
 
         begin
@@ -157,7 +157,7 @@ module Homebrew
       end
 
       def formula_options
-        ARGV.formulae.each do |f|
+        Homebrew.args.formulae.each do |f|
           next if f.options.empty?
 
           f.options.each do |o|

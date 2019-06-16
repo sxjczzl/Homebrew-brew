@@ -504,7 +504,7 @@ class Formula
       return false unless head&.downloader.is_a?(VCSDownloadStrategy)
 
       downloader = head.downloader
-      downloader.shutup! unless ARGV.verbose?
+      downloader.shutup! unless Homebrew.args.verbose?
       downloader.commit_outdated?(version.version.commit)
     else
       false
@@ -1125,13 +1125,13 @@ class Formula
   def brew
     @prefix_returns_versioned_prefix = true
     stage do |staging|
-      staging.retain! if ARGV.keep_tmp?
+      staging.retain! if Homebrew.args.keep_tmp?
       prepare_patches
 
       begin
         yield self, staging
       rescue
-        staging.retain! if ARGV.interactive? || ARGV.debug?
+        staging.retain! if Homebrew.args.interactive? || Homebrew.args.debug?
         raise
       ensure
         cp Dir["config.log", "CMakeCache.txt"], logs
@@ -1717,7 +1717,7 @@ class Formula
     ENV.clear_sensitive_environment!
 
     mktemp("#{name}-test") do |staging|
-      staging.retain! if ARGV.keep_tmp?
+      staging.retain! if Homebrew.args.keep_tmp?
       @testpath = staging.tmpdir
       test_env[:HOME] = @testpath
       setup_home @testpath
@@ -1728,7 +1728,7 @@ class Formula
           end
         end
       rescue Exception # rubocop:disable Lint/RescueException
-        staging.retain! if ARGV.debug?
+        staging.retain! if Homebrew.args.debug?
         raise
       end
     end
@@ -1826,7 +1826,7 @@ class Formula
   # # If there is a "make", "install" available, please use it!
   # system "make", "install"</pre>
   def system(cmd, *args)
-    verbose = ARGV.verbose?
+    verbose = Homebrew.args.verbose?
     verbose_using_dots = !ENV["HOMEBREW_VERBOSE_USING_DOTS"].nil?
 
     # remove "boring" arguments so that the important ones are more likely to
@@ -2030,7 +2030,7 @@ class Formula
         HOMEBREW_PATH: nil,
       }
 
-      unless ARGV.interactive?
+      unless Homebrew.args.interactive?
         stage_env[:HOME] = env_home
         stage_env[:_JAVA_OPTIONS] =
           "#{ENV["_JAVA_OPTIONS"]} -Duser.home=#{HOMEBREW_CACHE}/java_cache"

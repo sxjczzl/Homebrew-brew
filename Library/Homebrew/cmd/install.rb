@@ -106,7 +106,7 @@ module Homebrew
     end
 
     unless args.force?
-      ARGV.named.each do |name|
+      Homebrew.args.named.each do |name|
         next if File.exist?(name)
         next if name !~ HOMEBREW_TAP_FORMULA_REGEX && name !~ HOMEBREW_CASK_TAP_CASK_REGEX
 
@@ -117,13 +117,13 @@ module Homebrew
 
     formulae = []
 
-    unless ARGV.casks.empty?
+    unless Homebrew.args.casks.empty?
       cask_args = []
       cask_args << "--force" if args.force?
       cask_args << "--debug" if args.debug?
       cask_args << "--verbose" if args.verbose?
 
-      ARGV.casks.each do |c|
+      Homebrew.args.casks.each do |c|
         ohai "brew cask install #{c} #{cask_args.join " "}"
         system("#{HOMEBREW_PREFIX}/bin/brew", "cask", "install", c, *cask_args)
       end
@@ -133,7 +133,7 @@ module Homebrew
     # developer tools are available, we need to stop them early on
     FormulaInstaller.prevent_build_flags unless DevelopmentTools.installed?
 
-    ARGV.formulae.each do |f|
+    Homebrew.args.formulae.each do |f|
       # head-only without --HEAD is an error
       if !Homebrew.args.HEAD? && f.stable.nil? && f.devel.nil?
         raise <<~EOS

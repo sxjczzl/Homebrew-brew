@@ -67,7 +67,7 @@ module Formulary
     end
 
     # If this formula was installed with an alias that has since changed,
-    # then it was specified explicitly in ARGV. (Using the alias would
+    # then it was specified explicitly in Homebrew.args. (Using the alias would
     # instead have found the new formula.)
     #
     # Because of this, the user is referring to this specific formula,
@@ -122,7 +122,7 @@ module Formulary
     private
 
     def load_file
-      $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}" if ARGV.debug?
+      $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}" if Homebrew.args.debug?
       raise FormulaUnavailableError, name unless path.file?
 
       Formulary.load_formula_from_path(name, path)
@@ -298,7 +298,7 @@ module Formulary
     end
 
     def klass
-      $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}" if ARGV.debug?
+      $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}" if Homebrew.args.debug?
       namespace = "FormulaNamespace#{Digest::MD5.hexdigest(contents)}"
       Formulary.load_formula(name, path, contents, namespace)
     end

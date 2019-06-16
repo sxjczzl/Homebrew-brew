@@ -13,8 +13,8 @@ begin
 
   trap("INT", old_trap)
 
-  formula = ARGV.resolved_formulae.first
-  formula.extend(Debrew::Formula) if ARGV.debug?
+  formula = Homebrew.args.resolved_formulae.first
+  formula.extend(Debrew::Formula) if Homebrew.args.debug?
   formula.run_post_install
 rescue Exception => e # rubocop:disable Lint/RescueException
   error_pipe.puts e.to_json

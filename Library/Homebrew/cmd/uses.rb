@@ -52,12 +52,12 @@ module Homebrew
 
     used_formulae_missing = false
     used_formulae = begin
-      ARGV.formulae
+      Homebrew.args.formulae
     rescue FormulaUnavailableError => e
       opoo e
       used_formulae_missing = true
       # If the formula doesn't exist: fake the needed formula object name.
-      ARGV.named.map { |name| OpenStruct.new name: name, full_name: name }
+      Homebrew.args.named.map { |name| OpenStruct.new name: name, full_name: name }
     end
 
     formulae = args.installed? ? Formula.installed : Formula
@@ -68,7 +68,7 @@ module Homebrew
                          !args.include_optional? &&
                          !args.skip_recommended?
 
-    includes, ignores = argv_includes_ignores(ARGV)
+    includes, ignores = argv_includes_ignores(Homebrew.args)
 
     uses = formulae.select do |f|
       used_formulae.all? do |ff|

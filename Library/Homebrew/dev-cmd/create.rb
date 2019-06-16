@@ -48,12 +48,12 @@ module Homebrew
   def create
     create_args.parse
 
-    raise UsageError if ARGV.named.empty?
+    raise UsageError if Homebrew.args.named.empty?
 
     # Ensure that the cache exists so we can fetch the tarball
     HOMEBREW_CACHE.mkpath
 
-    url = ARGV.named.first # Pull the first (and only) url from ARGV
+    url = Homebrew.args.named.first # Pull the first (and only) url from Homebrew.args
 
     version = args.set_version
     name = args.set_name

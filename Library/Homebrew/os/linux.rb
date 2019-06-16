@@ -23,7 +23,7 @@ module OS
 
     def languages
       @languages ||= [
-        *ARGV.value("language")&.split(","),
+        *Homebrew.args.value("language")&.split(","),
         *ENV["HOMEBREW_LANGUAGES"]&.split(","),
         *ENV["LANG"]&.slice(/[a-z]+/),
       ].uniq

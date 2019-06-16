@@ -64,11 +64,11 @@ module Homebrew
   end
 
   def pull
-    odie "You meant `git pull --rebase`." if ARGV[0] == "--rebase"
+    odie "You meant `git pull --rebase`." if Homebrew.args[0] == "--rebase"
 
     pull_args.parse
 
-    odie "This command requires at least one argument containing a URL or pull request number" if ARGV.named.empty?
+    odie "This command requires at least one argument containing a URL or pull request number" if Homebrew.args.named.empty?
 
     # Passthrough Git environment variables for e.g. git am
     ENV["GIT_COMMITTER_NAME"] = ENV["HOMEBREW_GIT_NAME"] if ENV["HOMEBREW_GIT_NAME"]
@@ -94,10 +94,10 @@ module Homebrew
     bintray_published_formulae = []
     tap = nil
 
-    ARGV.named.each do |arg|
+    Homebrew.args.named.each do |arg|
       arg = "#{CoreTap.instance.default_remote}/pull/#{arg}" if arg.to_i.positive?
       if (testing_match = arg.match %r{/job/Homebrew.*Testing/(\d+)/})
-        tap = ARGV.value("tap")
+        tap = Homebrew.args.value("tap")
         tap = if tap&.start_with?("homebrew/")
           Tap.fetch("homebrew", tap.delete_prefix("homebrew/"))
         elsif tap

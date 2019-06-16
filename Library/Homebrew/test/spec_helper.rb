@@ -150,7 +150,7 @@ RSpec.configure do |config|
 
       @__files_before_test = find_files
 
-      @__argv = ARGV.dup
+      @__argv = Homebrew.args.dup
       @__env = ENV.to_hash # dup doesn't work on ENV
 
       unless example.metadata.key?(:focus) || ENV.key?("VERBOSE_TESTS")
@@ -162,7 +162,7 @@ RSpec.configure do |config|
 
       example.run
     ensure
-      ARGV.replace(@__argv)
+      Homebrew.args.replace(@__argv)
       ENV.replace(@__env)
 
       unless example.metadata.key?(:focus) || ENV.key?("VERBOSE_TESTS")

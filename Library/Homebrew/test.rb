@@ -21,9 +21,9 @@ begin
 
   trap("INT", old_trap)
 
-  formula = ARGV.resolved_formulae.first
+  formula = Homebrew.args.resolved_formulae.first
   formula.extend(Homebrew::Assertions)
-  formula.extend(Debrew::Formula) if ARGV.debug?
+  formula.extend(Debrew::Formula) if Homebrew.args.debug?
 
   # tests can also return false to indicate failure
   Timeout.timeout TEST_TIMEOUT_SECONDS do

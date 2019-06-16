@@ -48,12 +48,12 @@ module Homebrew
       Tap.each(&:link_completions_and_manpages)
     elsif args.list_pinned?
       puts Tap.select(&:pinned?).map(&:name)
-    elsif ARGV.named.empty?
+    elsif Homebrew.args.named.empty?
       puts Tap.names
     else
-      tap = Tap.fetch(ARGV.named.first)
+      tap = Tap.fetch(Homebrew.args.named.first)
       begin
-        tap.install clone_target:      ARGV.named.second,
+        tap.install clone_target:      Homebrew.args.named.second,
                     force_auto_update: force_auto_update?,
                     full_clone:        full_clone?,
                     quiet:             args.quieter?
@@ -65,7 +65,7 @@ module Homebrew
   end
 
   def full_clone?
-    args.full? || ARGV.homebrew_developer?
+    args.full? || Homebrew.args.homebrew_developer?
   end
 
   def force_auto_update?

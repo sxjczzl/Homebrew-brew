@@ -16,7 +16,7 @@ RSpec/ExampleLength:
 # Configuration parameters: CustomTransform, IgnoreMethods.
 RSpec/FilePath:
   Exclude:
-    - 'ARGV_spec.rb'
+    - 'Homebrew.args_spec.rb'
     - 'PATH_spec.rb'
     - 'bottle_filename_spec.rb'
     - 'cache_store_spec.rb'
@@ -145,7 +145,7 @@ RSpec/MultipleDescribes:
 # Configuration parameters: IgnoreSharedExamples.
 RSpec/NamedSubject:
   Exclude:
-    - 'ARGV_spec.rb'
+    - 'Homebrew.args_spec.rb'
     - 'ENV_spec.rb'
     - 'build_environment_spec.rb'
     - 'build_options_spec.rb'

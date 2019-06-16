@@ -114,7 +114,7 @@ module Cask
       end
 
       if external_command = which("brewcask-#{command}", path)
-        exec external_command, *ARGV[1..-1]
+        exec external_command, *Homebrew.args[1..-1]
       end
 
       NullCommand.new(command, *args).run
@@ -159,7 +159,7 @@ module Cask
       self.class.run_command(command, *args)
     rescue CaskError, MethodDeprecatedError, ArgumentError, OptionParser::InvalidOption => e
       onoe e.message
-      $stderr.puts e.backtrace if ARGV.debug?
+      $stderr.puts e.backtrace if Homebrew.args.debug?
       exit 1
     rescue StandardError, ScriptError, NoMemoryError => e
       onoe e.message

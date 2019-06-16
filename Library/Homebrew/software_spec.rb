@@ -40,7 +40,7 @@ class SoftwareSpec
     @bottle_specification = BottleSpecification.new
     @patches = []
     @options = Options.new
-    @flags = ARGV.flags_only
+    @flags = Homebrew.args.flags_only
     @deprecated_flags = []
     @deprecated_options = []
     @build = BuildOptions.new(Options.create(@flags), options)
@@ -94,7 +94,7 @@ class SoftwareSpec
 
   def bottled?
     bottle_specification.tag?(Utils::Bottles.tag) && \
-      (bottle_specification.compatible_cellar? || ARGV.force_bottle?)
+      (bottle_specification.compatible_cellar? || Homebrew.args.force_bottle?)
   end
 
   def bottle(disable_type = nil, disable_reason = nil, &block)

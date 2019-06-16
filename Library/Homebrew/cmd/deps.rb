@@ -74,14 +74,14 @@ module Homebrew
       else
         raise FormulaUnspecifiedError if args.remaining.empty?
 
-        puts_deps_tree ARGV.formulae, mode.recursive?
+        puts_deps_tree Homebrew.args.formulae, mode.recursive?
       end
       return
     elsif mode.all?
       puts_deps Formula.sort, mode.recursive?
       return
     elsif !args.remaining.empty? && mode.for_each?
-      puts_deps ARGV.formulae, mode.recursive?
+      puts_deps Homebrew.args.formulae, mode.recursive?
       return
     end
 
@@ -99,7 +99,7 @@ module Homebrew
       return
     end
 
-    all_deps = deps_for_formulae(ARGV.formulae, mode.recursive?, &(mode.union? ? :| : :&))
+    all_deps = deps_for_formulae(Homebrew.args.formulae, mode.recursive?, &(mode.union? ? :| : :&))
     all_deps = condense_requirements(all_deps)
     all_deps.select!(&:installed?) if mode.installed?
     all_deps.map!(&method(:dep_display_name))
@@ -140,7 +140,7 @@ module Homebrew
   end
 
   def deps_for_formula(f, recursive = false)
-    includes, ignores = argv_includes_ignores(ARGV)
+    includes, ignores = argv_includes_ignores(Homebrew.args)
 
     deps = f.runtime_dependencies if @only_installed_arg
 

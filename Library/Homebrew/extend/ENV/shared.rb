@@ -162,7 +162,7 @@ module SharedEnvExtension
   #   ENV.append_to_cflags "-I ./missing/includes"
   # end</pre>
   def compiler
-    @compiler ||= if (cc = ARGV.cc)
+    @compiler ||= if (cc = Homebrew.args.cc)
       warn_about_non_apple_gcc($&) if cc =~ GNU_GCC_REGEXP
       fetch_compiler(cc, "--cc")
     elsif (cc = homebrew_cc)
@@ -238,7 +238,7 @@ module SharedEnvExtension
       puts "This is unsupported."
       self["F77"] ||= fc
 
-      if ARGV.include? "--default-fortran-flags"
+      if Homebrew.args.include? "--default-fortran-flags"
         flags = FC_FLAG_VARS.reject { |key| self[key] }
       elsif values_at(*FC_FLAG_VARS).compact.empty?
         opoo <<~EOS
@@ -270,8 +270,8 @@ module SharedEnvExtension
 
   # @private
   def effective_arch
-    if ARGV.build_bottle? && ARGV.bottle_arch
-      ARGV.bottle_arch
+    if Homebrew.args.build_bottle? && Homebrew.args.bottle_arch
+      Homebrew.args.bottle_arch
     else
       Hardware.oldest_cpu
     end
