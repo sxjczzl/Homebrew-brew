@@ -1,5 +1,5 @@
 update_git_diff_output_without_formulae_changes: |
-  M	Library/Homebrew/Homebrew.args+yeast.rb
+  M	Library/Homebrew/ARGV+yeast.rb
   A	Library/Homebrew/beer_events.rb
   A	Library/Homebrew/hardware.rb
   D	Library/Homebrew/hw.model.c
@@ -14,7 +14,7 @@ update_git_diff_output_with_formulae_changes: |
   A	Formula/lua.rb
   M	Formula/xar.rb
   M	Formula/yajl.rb
-  M	Library/Homebrew/Homebrew.args+yeast.rb
+  M	Library/Homebrew/ARGV+yeast.rb
   M	Library/Homebrew/beer_events.rb
   M	Library/Homebrew/hardware.rb
   M	Library/Homebrew/hw.model.c

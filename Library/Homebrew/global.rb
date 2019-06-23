@@ -30,7 +30,7 @@ require "extend/ARGV"
 require "messages"
 require "system_command"
 
-Homebrew.args_WITHOUT_MONKEY_PATCHING = Homebrew.args.dup.freeze
+HOMEBREW_ARGS_WITHOUT_MONKEY_PATCHING = Homebrew.args.dup.freeze
 Homebrew.args.extend(HomebrewArgvExtension)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]

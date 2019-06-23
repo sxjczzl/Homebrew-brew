@@ -27,7 +27,7 @@ module Homebrew
 
       def initialize(&block)
         @parser = OptionParser.new
-        @args = Homebrew::CLI::Args.new(argv: Homebrew.args_WITHOUT_MONKEY_PATCHING)
+        @args = Homebrew::CLI::Args.new(argv: HOMEBREW_ARGS_WITHOUT_MONKEY_PATCHING)
         @constraints = []
         @conflicts = []
         @switch_sources = {}
