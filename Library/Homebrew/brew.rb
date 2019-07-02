@@ -32,25 +32,25 @@ rescue MissingEnvironmentVariables => e
   end
 
   ENV["HOMEBREW_MISSING_ENV_RETRY"] = "1"
-  exec ENV["HOMEBREW_BREW_FILE"], *Homebrew.args
+  exec ENV["HOMEBREW_BREW_FILE"], *ARGV
 end
 
 begin
   trap("INT", std_trap) # restore default CTRL-C handler
 
-  empty_argv = Homebrew.args.empty?
+  empty_argv = ARGV.empty?
   help_flag_list = %w[-h --help --usage -?]
   help_flag = !ENV["HOMEBREW_HELP"].nil?
   cmd = nil
 
-  Homebrew.args.dup.each_with_index do |arg, i|
+  ARGV.dup.each_with_index do |arg, i|
     break if help_flag && cmd
 
     if arg == "help" && !cmd
       # Command-style help: `help <cmd>` is fine, but `<cmd> help` is not.
       help_flag = true
     elsif !cmd && !help_flag_list.include?(arg)
-      cmd = Homebrew.args.delete_at(i)
+      cmd = ARGV.delete_at(i)
     end
   end
 
@@ -69,7 +69,7 @@ begin
     unless internal_cmd
       internal_dev_cmd = require? HOMEBREW_LIBRARY_PATH/"dev-cmd"/cmd
       internal_cmd = internal_dev_cmd
-      if internal_dev_cmd && !Homebrew.args.homebrew_developer?
+      if internal_dev_cmd && !ARGV.homebrew_developer?
         if (HOMEBREW_REPOSITORY/".git/config").exist?
           system "git", "config", "--file=#{HOMEBREW_REPOSITORY}/.git/config",
                  "--replace-all", "homebrew.devcmdrun", "true"
@@ -104,7 +104,7 @@ begin
     %w[CACHE LIBRARY_PATH].each do |env|
       ENV["HOMEBREW_#{env}"] = Object.const_get("HOMEBREW_#{env}").to_s
     end
-    exec "brew-#{cmd}", *Homebrew.args
+    exec "brew-#{cmd}", *ARGV
   elsif (path = which("brew-#{cmd}.rb")) && require?(path)
     exit Homebrew.failed? ? 1 : 0
   else
@@ -124,14 +124,14 @@ begin
     tap_commands += %W[#{HOMEBREW_BREW_FILE} tap #{possible_tap.name}]
     safe_system(*tap_commands)
     ENV["HOMEBREW_HELP"] = "1" if help_flag
-    exec HOMEBREW_BREW_FILE, cmd, *Homebrew.args
+    exec HOMEBREW_BREW_FILE, cmd, *ARGV
   end
 rescue UsageError => e
   require "help"
   Homebrew::Help.help cmd, usage_error: e.message
 rescue SystemExit => e
-  onoe "Kernel.exit" if Homebrew.args.debug? && !e.success?
-  $stderr.puts e.backtrace if Homebrew.args.debug?
+  onoe "Kernel.exit" if ARGV.debug? && !e.success?
+  $stderr.puts e.backtrace if ARGV.debug?
   raise
 rescue Interrupt
   $stderr.puts # seemingly a newline is typical
@@ -144,7 +144,7 @@ rescue RuntimeError, SystemCallError => e
   raise if e.message.empty?
 
   onoe e
-  $stderr.puts e.backtrace if Homebrew.args.debug?
+  $stderr.puts e.backtrace if ARGV.debug?
   exit 1
 rescue MethodDeprecatedError => e
   onoe e
@@ -152,7 +152,7 @@ rescue MethodDeprecatedError => e
     $stderr.puts "If reporting this issue please do so at (not Homebrew/brew or Homebrew/core):"
     $stderr.puts "  #{Formatter.url(e.issues_url)}"
   end
-  $stderr.puts e.backtrace if Homebrew.args.debug?
+  $stderr.puts e.backtrace if ARGV.debug?
   exit 1
 rescue Exception => e # rubocop:disable Lint/RescueException
   onoe e

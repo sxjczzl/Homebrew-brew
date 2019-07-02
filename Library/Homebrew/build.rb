@@ -21,7 +21,7 @@ class Build
     @formula = formula
     @formula.build = BuildOptions.new(options, formula.options)
 
-    if Homebrew.args.ignore_deps?
+    if ARGV.ignore_deps?
       @deps = []
       @reqs = []
     else
@@ -111,26 +111,26 @@ class Build
     }
 
     with_env(new_env) do
-      formula.extend(Debrew::Formula) if Homebrew.args.debug?
+      formula.extend(Debrew::Formula) if ARGV.debug?
 
       formula.brew do |_formula, staging|
         # For head builds, HOMEBREW_FORMULA_PREFIX should include the commit,
         # which is not known until after the formula has been staged.
         ENV["HOMEBREW_FORMULA_PREFIX"] = formula.prefix
 
-        staging.retain! if Homebrew.args.keep_tmp?
+        staging.retain! if ARGV.keep_tmp?
         formula.patch
 
-        if Homebrew.args.git?
+        if ARGV.git?
           system "git", "init"
           system "git", "add", "-A"
         end
-        if Homebrew.args.interactive?
+        if ARGV.interactive?
           ohai "Entering interactive mode"
           puts "Type `exit` to return and finalize the installation"
           puts "Install to this prefix: #{formula.prefix}"
 
-          if Homebrew.args.git?
+          if ARGV.git?
             puts "This directory is now a git repo. Make your changes and then use:"
             puts "  git diff | pbcopy"
             puts "to copy the diff to the clipboard."
@@ -188,8 +188,8 @@ begin
 
   trap("INT", old_trap)
 
-  formula = Homebrew.args.formulae.first
-  options = Options.create(Homebrew.args.flags_only)
+  formula = ARGV.formulae.first
+  options = Options.create(ARGV.flags_only)
   build   = Build.new(formula, options)
   build.install
 rescue Exception => e # rubocop:disable Lint/RescueException
