@@ -208,6 +208,7 @@ class SoftwareSpec
   end
 
   def patch(strip = :p1, src = nil, &block)
+    dependency_collector.add("gpatch" => :build) unless which("patch")
     p = Patch.create(strip, src, &block)
     dependency_collector.add(p.resource) if p.is_a? ExternalPatch
     patches << p
