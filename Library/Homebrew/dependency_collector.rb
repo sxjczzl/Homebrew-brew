@@ -81,6 +81,10 @@ class DependencyCollector
     Dependency.new("bzip2", tags) unless which("bzip2")
   end
 
+  def gpatch_dep_if_needed(tags)
+    Dependency.new("gpatch", tags) unless which("patch")
+  end
+
   def java_dep_if_needed(tags)
     JavaRequirement.new(tags)
   end
