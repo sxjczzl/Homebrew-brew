@@ -30,7 +30,7 @@ require "extend/ARGV"
 require "messages"
 require "system_command"
 
-HOMEBREW_ARGS_WITHOUT_MONKEY_PATCHING = Homebrew.args.dup.freeze
+ARGS_WITHOUT_MONKEY_PATCHING = ARGV.dup.freeze
 ARGV.extend(HomebrewArgvExtension)
 ARGV.extend(Homebrew::CLI::Parser::ArgvExtension)
 
