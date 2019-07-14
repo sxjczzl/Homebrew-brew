@@ -31,7 +31,8 @@ require "messages"
 require "system_command"
 
 HOMEBREW_ARGS_WITHOUT_MONKEY_PATCHING = Homebrew.args.dup.freeze
-Homebrew.args.extend(HomebrewArgvExtension)
+ARGV.extend(HomebrewArgvExtension)
+ARGV.extend(Homebrew::CLI::Parser::ArgvExtension)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
 HOMEBREW_VERSION = ENV["HOMEBREW_VERSION"]
