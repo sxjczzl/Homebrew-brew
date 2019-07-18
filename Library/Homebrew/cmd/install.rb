@@ -13,6 +13,15 @@ module Homebrew
 
   extend Search
 
+  def missing_taps_in_args
+    ARGV.named.map do |name|
+      next if File.exist?(name)
+      next if name !~ HOMEBREW_TAP_FORMULA_REGEX && name !~ HOMEBREW_CASK_TAP_CASK_REGEX
+
+      Tap.fetch(Regexp.last_match(1), Regexp.last_match(2))
+    end.compact.reject(&:installed?)
+  end
+
   def install_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -89,6 +98,11 @@ module Homebrew
       conflicts "--devel", "--HEAD"
       conflicts "--build-from-source", "--build-bottle", "--force-bottle"
       formula_options
+
+      # allow any options starting with `--with` if the formula's tap has not been installed yet.
+      allow_invalid_option do |args|
+        args[0].start_with?("--with") && !Homebrew.missing_taps_in_args.empty?
+      end
     end
   end
 
@@ -105,15 +119,7 @@ module Homebrew
       EOS
     end
 
-    unless args.force?
-      ARGV.named.each do |name|
-        next if File.exist?(name)
-        next if name !~ HOMEBREW_TAP_FORMULA_REGEX && name !~ HOMEBREW_CASK_TAP_CASK_REGEX
-
-        tap = Tap.fetch(Regexp.last_match(1), Regexp.last_match(2))
-        tap.install unless tap.installed?
-      end
-    end
+    missing_taps_in_args.map(&:install) unless args.force?
 
     formulae = []
 
