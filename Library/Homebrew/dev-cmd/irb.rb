@@ -29,6 +29,8 @@ module Homebrew
       switch "--pry",
              env:         :pry,
              description: "Use Pry instead of IRB. Implied if `HOMEBREW_PRY` is set."
+
+      allow_invalid_option
     end
   end
 

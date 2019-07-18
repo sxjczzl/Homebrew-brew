@@ -12,6 +12,8 @@ module Homebrew
 
         Run Homebrew with the Ruby profiler e.g. `brew prof readall`.
       EOS
+
+      allow_invalid_option
     end
   end
 

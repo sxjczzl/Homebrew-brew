@@ -17,6 +17,8 @@ module Homebrew
              description: "Execute the provided string argument as a script."
       switch :verbose
       switch :debug
+
+      allow_invalid_option
     end
   end
 
