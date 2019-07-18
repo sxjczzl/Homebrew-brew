@@ -210,4 +210,22 @@ describe Homebrew::CLI::Parser do
       expect { parser.parse(["--switch-b"]) }.to raise_error(RuntimeError, /Arguments were already parsed!/)
     end
   end
+
+  describe "test #allow_invalid_option" do
+    subject(:parser) {
+      described_class.new do
+        allow_invalid_option do |args|
+          args[0] == "--switch-a"
+        end
+      end
+    }
+
+    it "does not raise exeption if the invalid option is allowed" do
+      expect { parser.parse(["--switch-a"]) }.not_to raise_error
+    end
+
+    it "raises exeption if the invalid option is not allowed" do
+      expect { parser.parse(["--switch-b"]) }.to raise_error(OptionParser::InvalidOption, /--switch-b/)
+    end
+  end
 end
