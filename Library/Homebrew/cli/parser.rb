@@ -105,6 +105,10 @@ module Homebrew
         @conflicts << options.map { |option| option_to_name(option) }
       end
 
+      def allow_invalid_option(&block)
+        @allow_invalid_option = block || proc { |_| true }
+      end
+
       def option_to_name(option)
         option.sub(/\A--?/, "")
               .tr("-", "_")
@@ -133,8 +137,13 @@ module Homebrew
         begin
           remaining_args = @parser.parse(cmdline_args)
         rescue OptionParser::InvalidOption => e
-          $stderr.puts generate_help_text
-          raise e
+          if @allow_invalid_option&.call(e.args)
+            cmdline_args -= e.args
+            retry
+          else
+            $stderr.puts generate_help_text
+            raise e
+          end
         end
         check_constraint_violations
         @args[:remaining] = remaining_args
