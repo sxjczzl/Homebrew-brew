@@ -9,12 +9,12 @@
 homebrew-shellenv() {
   case "$SHELL" in
     */fish)
-      echo "set -gx HOMEBREW_PREFIX \"$HOMEBREW_PREFIX\";"
-      echo "set -gx HOMEBREW_CELLAR \"$HOMEBREW_CELLAR\";"
-      echo "set -gx HOMEBREW_REPOSITORY \"$HOMEBREW_REPOSITORY\";"
-      echo "set -g fish_user_paths \"$HOMEBREW_PREFIX/bin\" \"$HOMEBREW_PREFIX/sbin\" \$fish_user_paths;"
-      echo "set -q MANPATH; or set MANPATH ''; set -gx MANPATH \"$HOMEBREW_PREFIX/share/man\" \$MANPATH;"
-      echo "set -q INFOPATH; or set INFOPATH ''; set -gx INFOPATH \"$HOMEBREW_PREFIX/share/info\" \$INFOPATH;"
+      echo "builtin set -gx HOMEBREW_PREFIX \"$HOMEBREW_PREFIX\";"
+      echo "builtin set -gx HOMEBREW_CELLAR \"$HOMEBREW_CELLAR\";"
+      echo "builtin set -gx HOMEBREW_REPOSITORY \"$HOMEBREW_REPOSITORY\";"
+      echo "builtin set -g fish_user_paths \"$HOMEBREW_PREFIX/bin\" \"$HOMEBREW_PREFIX/sbin\" \$fish_user_paths;"
+      echo "builtin set -q MANPATH; or set MANPATH ''; set -gx MANPATH \"$HOMEBREW_PREFIX/share/man\" \$MANPATH;"
+      echo "builtin set -q INFOPATH; or set INFOPATH ''; set -gx INFOPATH \"$HOMEBREW_PREFIX/share/info\" \$INFOPATH;"
       ;;
     */csh|*/tcsh)
       echo "setenv HOMEBREW_PREFIX $HOMEBREW_PREFIX;"
@@ -25,12 +25,12 @@ homebrew-shellenv() {
       echo "setenv INFOPATH $HOMEBREW_PREFIX/share/info:\$INFOPATH;"
       ;;
     *)
-      echo "export HOMEBREW_PREFIX=\"$HOMEBREW_PREFIX\""
-      echo "export HOMEBREW_CELLAR=\"$HOMEBREW_CELLAR\""
-      echo "export HOMEBREW_REPOSITORY=\"$HOMEBREW_REPOSITORY\""
-      echo "export PATH=\"$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:\$PATH\""
-      echo "export MANPATH=\"$HOMEBREW_PREFIX/share/man:\$MANPATH\""
-      echo "export INFOPATH=\"$HOMEBREW_PREFIX/share/info:\$INFOPATH\""
+      echo "builtin export HOMEBREW_PREFIX=\"$HOMEBREW_PREFIX\""
+      echo "builtin export HOMEBREW_CELLAR=\"$HOMEBREW_CELLAR\""
+      echo "builtin export HOMEBREW_REPOSITORY=\"$HOMEBREW_REPOSITORY\""
+      echo "builtin export PATH=\"$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:\$PATH\""
+      echo "builtin export MANPATH=\"$HOMEBREW_PREFIX/share/man:\$MANPATH\""
+      echo "builtin export INFOPATH=\"$HOMEBREW_PREFIX/share/info:\$INFOPATH\""
       ;;
   esac
 }
