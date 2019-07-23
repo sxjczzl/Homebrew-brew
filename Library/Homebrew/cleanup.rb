@@ -150,9 +150,12 @@ module Homebrew
 
     def periodic_clean_due?
       return false if ENV["HOMEBREW_NO_INSTALL_CLEANUP"]
-      return true unless PERIODIC_CLEAN_FILE.exist?
 
-      PERIODIC_CLEAN_FILE.mtime < CLEANUP_DEFAULT_DAYS.days.ago
+      if PERIODIC_CLEAN_FILE.exist?
+        PERIODIC_CLEAN_FILE.mtime < CLEANUP_DEFAULT_DAYS.days.ago
+      else
+        (HOMEBREW_REPOSITORY/"Library/Taps").mtime < CLEANUP_DEFAULT_DAYS.days.ago
+      end
     end
 
     def periodic_clean!
