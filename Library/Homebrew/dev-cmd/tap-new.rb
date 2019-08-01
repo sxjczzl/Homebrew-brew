@@ -21,9 +21,9 @@ module Homebrew
   def tap_new
     tap_new_args.parse
 
-    raise "A tap argument is required" if ARGV.named.empty?
+    raise "A tap argument is required" if Homebrew.args.named.empty?
 
-    tap = Tap.fetch(ARGV.named.first)
+    tap = Tap.fetch(Homebrew.args.named.first)
     titleized_user = tap.user.dup
     titleized_repo = tap.repo.dup
     titleized_user[0] = titleized_user[0].upcase

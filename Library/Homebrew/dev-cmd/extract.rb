@@ -135,14 +135,14 @@ module Homebrew
         file = repo/path
         result = Git.last_revision_of_file(repo, file, before_commit: rev)
         if result.empty?
-          ohai "Skipping revision #{rev} - file is empty at this revision" if ARGV.debug?
+          ohai "Skipping revision #{rev} - file is empty at this revision" if Homebrew.args.debug?
           next
         end
 
         test_formula = formula_at_revision(repo, name, file, rev)
         break if test_formula.nil? || test_formula.version == version
 
-        ohai "Trying #{test_formula.version} from revision #{rev} against desired #{version}" if ARGV.debug?
+        ohai "Trying #{test_formula.version} from revision #{rev} against desired #{version}" if Homebrew.args.debug?
       end
       odie "Could not find #{name}! The formula or version may not have existed." if test_formula.nil?
     else
@@ -174,14 +174,14 @@ module Homebrew
 
     path = destination_tap.path/"Formula/#{name}@#{version}.rb"
     if path.exist?
-      unless ARGV.force?
+      unless Homebrew.args.force?
         odie <<~EOS
           Destination formula already exists: #{path}
           To overwrite it and continue anyways, run:
             brew extract --force --version=#{version} #{name} #{destination_tap.name}
         EOS
       end
-      ohai "Overwriting existing formula at #{path}" if ARGV.debug?
+      ohai "Overwriting existing formula at #{path}" if Homebrew.args.debug?
       path.delete
     end
     ohai "Writing formula for #{name} from revision #{rev} to #{path}"

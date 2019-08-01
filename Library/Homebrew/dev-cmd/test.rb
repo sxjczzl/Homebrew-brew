@@ -34,11 +34,11 @@ module Homebrew
   def test
     test_args.parse
 
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    raise FormulaUnspecifiedError if Homebrew.args.named.empty?
 
     require "formula_assertions"
 
-    ARGV.resolved_formulae.each do |f|
+    Homebrew.args.resolved_formulae.each do |f|
       # Cannot test uninstalled formulae
       unless f.installed?
         ofail "Testing requires the latest version of #{f.full_name}"
@@ -52,7 +52,7 @@ module Homebrew
       end
 
       # Don't test unlinked formulae
-      if !ARGV.force? && !f.keg_only? && !f.linked?
+      if !Homebrew.args.force? && !f.keg_only? && !f.linked?
         ofail "#{f.full_name} is not linked"
         next
       end
@@ -82,7 +82,7 @@ module Homebrew
           --
           #{HOMEBREW_LIBRARY_PATH}/test.rb
           #{f.path}
-        ].concat(ARGV.options_only)
+        ].concat(Homebrew.args.options_only)
 
         if f.head?
           args << "--HEAD"
