@@ -33,8 +33,8 @@ module Homebrew
   end
 
   def irb
-    # work around IRB modifying ARGV.
-    irb_args.parse(ARGV.dup)
+    # work around IRB modifying Homebrew.args.
+    irb_args.parse(Homebrew.args.dup)
 
     if args.examples?
       puts "'v8'.f # => instance of the v8 formula"

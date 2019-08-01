@@ -78,7 +78,7 @@ module Homebrew
     # Use the user's browser, too.
     ENV["BROWSER"] = ENV["HOMEBREW_BROWSER"]
 
-    formula = ARGV.formulae.first
+    formula = Homebrew.args.formulae.first
 
     if formula
       check_for_duplicate_pull_requests(formula)

@@ -36,7 +36,7 @@ module Homebrew
   def man
     man_args.parse
 
-    raise UsageError unless ARGV.named.empty?
+    raise UsageError unless Homebrew.args.named.empty?
 
     odie "`brew man --link` is now done automatically by `brew update`." if args.link?
 

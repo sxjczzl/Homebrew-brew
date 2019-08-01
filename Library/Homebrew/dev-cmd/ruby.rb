@@ -27,7 +27,7 @@ module Homebrew
       safe_system ENV["HOMEBREW_RUBY_PATH"],
                   "-I", $LOAD_PATH.join(File::PATH_SEPARATOR),
                   "-rglobal", "-rdev-cmd/irb",
-                  *ARGV
+                  *Homebrew.args
     rescue ErrorDuringExecution => e
       exit e.status.exitstatus
     end
