@@ -78,12 +78,12 @@ module Homebrew
     ENV.activate_extensions!
     ENV.setup_build_environment
 
-    if ARGV.named.empty?
+    if Homebrew.args.named.empty?
       ff = Formula
       files = Tap.map(&:formula_dir)
     else
-      ff = ARGV.resolved_formulae
-      files = ARGV.resolved_formulae.map(&:path)
+      ff = Homebrew.args.resolved_formulae
+      files = Homebrew.args.resolved_formulae.map(&:path)
     end
 
     only_cops = args.only_cops
@@ -286,7 +286,7 @@ module Homebrew
           unversioned_name = unversioned_formula.basename(".rb")
           problem "#{formula} is versioned but no #{unversioned_name} formula exists"
         end
-      elsif ARGV.build_stable? && formula.stable? &&
+      elsif Homebrew.args.build_stable? && formula.stable? &&
             !(versioned_formulae = formula.versioned_formulae).empty?
         versioned_aliases = formula.aliases.grep(/.@\d/)
         _, last_alias_version = versioned_formulae.map(&:name).last.split("@")

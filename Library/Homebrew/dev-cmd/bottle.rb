@@ -92,7 +92,7 @@ module Homebrew
     return merge if args.merge?
 
     ensure_relocation_formulae_installed!
-    ARGV.resolved_formulae.each do |f|
+    Homebrew.args.resolved_formulae.each do |f|
       bottle_formula f
     end
   end
@@ -429,7 +429,7 @@ module Homebrew
   def merge
     write = args.write?
 
-    bottles_hash = ARGV.named.reduce({}) do |hash, json_file|
+    bottles_hash = Homebrew.args.named.reduce({}) do |hash, json_file|
       hash.deep_merge(JSON.parse(IO.read(json_file)))
     end
 
