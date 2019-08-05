@@ -150,7 +150,7 @@ module Homebrew
   def generate_cmd_manpages(glob)
     cmd_paths = Pathname.glob(glob).sort
     man_page_lines = []
-    man_args = Homebrew.args
+    man_args = ARGV
     # preserve existing manpage order
     cmd_paths.sort_by(&method(:sort_key_for_path))
              .each do |cmd_path|
@@ -170,7 +170,7 @@ module Homebrew
 
       man_page_lines << cmd_man_page_lines
     end
-    Homebrew.args = man_args
+    ARGV = man_args
     man_page_lines.compact.join("\n")
   end
 

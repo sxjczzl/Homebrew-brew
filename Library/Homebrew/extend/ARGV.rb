@@ -2,11 +2,13 @@
 
 module HomebrewArgvExtension
   def named
+    odeprecated "#named", "Homebrew::CLI::Args#named"
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     self - options_only
   end
 
   def options_only
+    odeprecated "#options_only", "Homebrew::CLI::Args#options_only"
     select { |arg| arg.start_with?("-") }
   end
 
@@ -15,6 +17,7 @@ module HomebrewArgvExtension
   end
 
   def formulae
+    odeprecated "#formulae", "Homebrew::CLI::Args#formulae"
     require "formula"
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     (downcased_unique_named - casks).map do |name|
@@ -27,6 +30,7 @@ module HomebrewArgvExtension
   end
 
   def resolved_formulae
+    odeprecated "#resolved_formulae", "Homebrew::CLI::Args#resolved_formulae"
     require "formula"
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     (downcased_unique_named - casks).map do |name|
@@ -35,11 +39,13 @@ module HomebrewArgvExtension
   end
 
   def casks
+    odeprecated "#casks", "Homebrew::CLI::Args#casks"
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     downcased_unique_named.grep HOMEBREW_CASK_TAP_CASK_REGEX
   end
 
   def kegs
+    odeprecated "#kegs", "Homebrew::CLI::Args#kegs"
     require "keg"
     require "formula"
     require "missing_formula"
@@ -92,12 +98,14 @@ module HomebrewArgvExtension
   end
 
   def value(name)
+    odeprecated "#value?", "Homebrew::CLI::Args#value?"
     arg_prefix = "--#{name}="
     flag_with_value = find { |arg| arg.start_with?(arg_prefix) }
     flag_with_value&.delete_prefix(arg_prefix)
   end
 
   def force?
+    odeprecated "#force?", "Homebrew::CLI::Args#force?"
     flag? "--force"
   end
 
@@ -106,6 +114,7 @@ module HomebrewArgvExtension
   end
 
   def debug?
+    odeprecated "#debug?", "Homebrew::CLI::Args#debug?"
     flag?("--debug") || !ENV["HOMEBREW_DEBUG"].nil?
   end
 
@@ -142,6 +151,7 @@ module HomebrewArgvExtension
   end
 
   def build_stable?
+    odeprecated "#build_stable?", "Homebrew::CLI::Args#build_stable?"
     !(include?("--HEAD") || include?("--devel"))
   end
 
@@ -171,6 +181,7 @@ module HomebrewArgvExtension
   end
 
   def flag?(flag)
+    odeprecated "#flag?", "Homebrew::CLI::Args#flag?"
     options_only.include?(flag) || switch?(flag[2, 1])
   end
 
@@ -213,6 +224,7 @@ module HomebrewArgvExtension
   end
 
   def spec(default = :stable)
+    odeprecated "#spec", "Homebrew::CLI::Args#spec"
     if include?("--HEAD")
       :head
     elsif include?("--devel")
@@ -223,6 +235,7 @@ module HomebrewArgvExtension
   end
 
   def downcased_unique_named
+    odeprecated "#downcased_unique_named", "Homebrew::CLI::Args#downcased_unique_named"
     # Only lowercase names, not paths, bottle filenames or URLs
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     named.map do |arg|
