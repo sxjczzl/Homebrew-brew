@@ -27,12 +27,13 @@ end
 require "config"
 require "os"
 require "extend/ARGV"
+require "cli/args"
 require "messages"
 require "system_command"
 
 ARGV_WITHOUT_MONKEY_PATCHING = ARGV.dup.freeze
 ARGV.extend(HomebrewArgvExtension)
-ARGV.extend(Homebrew::CLI::Parser::ArgvExtension)
+ARGV.extend(Homebrew::CLI::Args)
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
 HOMEBREW_VERSION = ENV["HOMEBREW_VERSION"]
