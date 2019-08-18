@@ -60,7 +60,7 @@ Paste at a terminal prompt:
 sudo apt-get install build-essential curl file git
 ```
 
-### Fedora, CentOS, or Red Hat
+### Amazon Linux, CentOS, Fedora or Red Hat
 
 ```sh
 sudo yum groupinstall 'Development Tools'
@@ -78,7 +78,7 @@ Homebrew does not currently support 32-bit x86 platforms. It would be possible f
 
 ## Alternative Installation
 
-Extract or `git clone` Homebrew wherever you want. Use `/home/linuxbrew/.linuxbrew` if possible (to enabled the use of binary packages).
+Extract or `git clone` Homebrew wherever you want. Use `/home/linuxbrew/.linuxbrew` if possible (to enable the use of binary packages).
 
 ```sh
 git clone https://github.com/Homebrew/brew ~/.linuxbrew/Homebrew
