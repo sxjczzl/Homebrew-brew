@@ -308,7 +308,9 @@ class Tap
     puts <<~EOS
       It looks like you tapped a private repository. To avoid entering your
       credentials each time you update, you can use git HTTP credential
-      caching or issue the following command:
+      caching by issuing the following command:
+        git config --global credential.helper osxkeychain
+      or switch to ssh using the following command:
         cd #{path}
         git remote set-url origin git@github.com:#{full_name}.git
     EOS
