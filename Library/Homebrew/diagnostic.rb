@@ -640,6 +640,19 @@ module Homebrew
         EOS
       end
 
+      def check_tmp_variable
+        tmp = ENV["TMP"]
+        return if tmp.nil?
+        return if File.directory?(tmp) && tmp.length() < 20
+
+        <<~EOS
+          TMP #{tmp.inspect} is set
+          and the path is longer than 20 characters.
+          It may cause problems while processing bottles. You should try to use a
+          shorter path like /tmp or /var/tmp
+        EOS
+      end
+
       def check_missing_deps
         return unless HOMEBREW_CELLAR.exist?
 
