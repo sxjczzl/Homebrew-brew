@@ -643,7 +643,7 @@ module Homebrew
       def check_tmp_variable
         tmp = ENV["TMP"]
         return if tmp.nil?
-        return if File.directory?(tmp) && tmp.length() < 20
+        return if File.directory?(tmp) && tmp.length < 20
 
         <<~EOS
           TMP #{tmp.inspect} is set
