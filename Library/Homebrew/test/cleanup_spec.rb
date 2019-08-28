@@ -30,33 +30,28 @@ describe CleanupRefinement do
 end
 
 describe Homebrew::Cleanup do
-  let(:ds_store) { Pathname.new("#{HOMEBREW_CELLAR}/.DS_Store") }
   let(:lock_file) { Pathname.new("#{HOMEBREW_LOCKS}/foo") }
 
   around do |example|
     begin
-      FileUtils.touch ds_store
       FileUtils.touch lock_file
 
       example.run
     ensure
-      FileUtils.rm_f ds_store
       FileUtils.rm_f lock_file
     end
   end
 
   describe "::cleanup" do
-    it "removes .DS_Store and lock files" do
+    it "removes lock files" do
       subject.clean!
 
-      expect(ds_store).not_to exist
       expect(lock_file).not_to exist
     end
 
     it "doesn't remove anything if `dry_run` is true" do
       described_class.new(dry_run: true).clean!
 
-      expect(ds_store).to exist
       expect(lock_file).to exist
     end
 

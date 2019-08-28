@@ -174,7 +174,6 @@ module Homebrew
 
         unless dry_run?
           cleanup_old_cache_db
-          rm_ds_store
           HOMEBREW_CACHE.mkpath
           FileUtils.touch PERIODIC_CLEAN_FILE
         end
@@ -214,13 +213,11 @@ module Homebrew
       formula.eligible_kegs_for_cleanup(quiet: quiet)
              .each(&method(:cleanup_keg))
       cleanup_cache(Pathname.glob(cache/"#{formula.name}--*"))
-      rm_ds_store([formula.rack])
       cleanup_lockfiles(FormulaLock.new(formula.name).path)
     end
 
     def cleanup_cask(cask)
       cleanup_cache(Pathname.glob(cache/"Cask/#{cask.token}--*"))
-      rm_ds_store([cask.caskroom_path])
       cleanup_lockfiles(CaskLock.new(cask.token).path)
     end
 
@@ -375,19 +372,6 @@ module Homebrew
         cache/"linkage.db",
         cache/"linkage.db.db",
       ]
-    end
-
-    def rm_ds_store(dirs = nil)
-      dirs ||= begin
-        Keg::MUST_EXIST_DIRECTORIES + [
-          HOMEBREW_PREFIX/"Caskroom",
-        ]
-      end
-      dirs.select(&:directory?).each do |dir|
-        system_command "find",
-                       args:         [dir, "-name", ".DS_Store", "-delete"],
-                       print_stderr: false
-      end
     end
 
     def prune_prefix_symlinks_and_directories
