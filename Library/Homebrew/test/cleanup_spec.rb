@@ -46,10 +46,9 @@ describe Homebrew::Cleanup do
   end
 
   describe "::cleanup" do
-    it "removes .DS_Store and lock files" do
+    it "removes lock files" do
       subject.clean!
 
-      expect(ds_store).not_to exist
       expect(lock_file).not_to exist
     end
 
