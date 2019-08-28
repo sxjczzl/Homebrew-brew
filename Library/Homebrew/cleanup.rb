@@ -214,7 +214,6 @@ module Homebrew
       formula.eligible_kegs_for_cleanup(quiet: quiet)
              .each(&method(:cleanup_keg))
       cleanup_cache(Pathname.glob(cache/"#{formula.name}--*"))
-      rm_ds_store([formula.rack])
       cleanup_lockfiles(FormulaLock.new(formula.name).path)
     end
 
