@@ -165,8 +165,9 @@ module Homebrew
     def clean!(quiet: false, periodic: false)
       if args.empty?
         Formula.installed.sort_by(&:name).each do |formula|
-          cleanup_formula(formula, quiet: quiet)
+          cleanup_formula_general(formula, quiet: quiet)
         end
+
         cleanup_cache
         cleanup_logs
         cleanup_lockfiles
@@ -210,12 +211,16 @@ module Homebrew
       @unremovable_kegs ||= []
     end
 
-    def cleanup_formula(formula, quiet: false)
+    def cleanup_formula_general(formula, quiet: true)
       formula.eligible_kegs_for_cleanup(quiet: quiet)
              .each(&method(:cleanup_keg))
       cleanup_cache(Pathname.glob(cache/"#{formula.name}--*"))
-      rm_ds_store([formula.rack])
       cleanup_lockfiles(FormulaLock.new(formula.name).path)
+    end
+
+    def cleanup_formula(formula, quiet: true)
+      cleanup_formula_general(formula.name, quiet: true)
+      rm_ds_store([formula.rack])
     end
 
     def cleanup_cask(cask)
