@@ -214,6 +214,7 @@ module Homebrew
       formula.eligible_kegs_for_cleanup(quiet: quiet)
              .each(&method(:cleanup_keg))
       cleanup_cache(Pathname.glob(cache/"#{formula.name}--*"))
+      rm_ds_store([formula.rack])
       cleanup_lockfiles(FormulaLock.new(formula.name).path)
     end
 
@@ -376,16 +377,12 @@ module Homebrew
       ]
     end
 
-    def rm_ds_store(dirs = nil)
-      dirs ||= begin
-        Keg::MUST_EXIST_DIRECTORIES + [
-          HOMEBREW_PREFIX/"Caskroom",
-        ]
-      end
-      dirs.select(&:directory?).each do |dir|
-        system_command "find",
-                       args:         [dir, "-name", ".DS_Store", "-delete"],
-                       print_stderr: false
+    def rm_ds_store(*dirs)
+      dirs << HOMEBREW_PREFIX if dirs.empty?
+      dirs.each do |dir|
+        Dir.glob(File.join(dir, "**", ".DS_Store")) do |ds_store|
+          File.unlink(ds_store)
+        end
       end
     end
 
