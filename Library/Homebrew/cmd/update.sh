@@ -354,10 +354,10 @@ EOS
   if [[ ! -w "$HOMEBREW_REPOSITORY" ]]
   then
     odie <<EOS
-$HOMEBREW_REPOSITORY is not writable. You should change the
-ownership and permissions of $HOMEBREW_REPOSITORY back to your
+$HOMEBREW_REPOSITORY folders are not writable. You should change the
+ownership and permissions of $HOMEBREW_REPOSITORY folder back to your
 user account:
-  sudo chown -R \$(whoami) $HOMEBREW_REPOSITORY
+  sudo chown -R \$(whoami) $HOMEBREW_REPOSITORY/*
 EOS
   fi
 
