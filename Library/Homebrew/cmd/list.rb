@@ -70,7 +70,7 @@ module Homebrew
         puts Formatter.columns(full_names)
       else
         ENV["CLICOLOR"] = nil
-        ls_args = Homebrew.args.options_only.reject { |opt| ["-v", "--verbose"].include? opt }
+        ls_args = Homebrew.args.options_only.reject { |opt| ["--debug", "--verbose"].include? opt }
         safe_system "ls", *ls_args << HOMEBREW_CELLAR
       end
     elsif args.verbose? || !$stdout.tty?
