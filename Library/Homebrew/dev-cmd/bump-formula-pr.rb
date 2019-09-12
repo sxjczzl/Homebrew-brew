@@ -297,7 +297,10 @@ module Homebrew
         ohai "git checkout --quiet -"
         ohai "create pull request with GitHub API"
       else
-
+        #determine if this tap is linux-core
+        if formula.tap.full_name.includes? "linux-core"
+            #check if formula exists in homebrew-core 
+        end
         begin
           response = GitHub.create_fork(formula.tap.full_name)
           # GitHub API responds immediately but fork takes a few seconds to be ready.
