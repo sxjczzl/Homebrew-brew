@@ -54,7 +54,7 @@ module Homebrew
         end
         process_option(*names, description)
         @parser.on(*names, *wrap_option_desc(description)) do
-          enable_switch(*names.last, from: :args)
+          enable_switch(*names, from: :args)
         end
 
         names.each do |name|
