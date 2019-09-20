@@ -897,7 +897,7 @@ module Homebrew
     end
 
     def audit_lines
-      text.without_patch.split("\n").each_with_index do |line, lineno|
+      text.without_patch.gsub(/"\s*\\\n\s*"/,'').split("\n").each_with_index do |line, lineno|
         line_problems(line, lineno + 1)
       end
     end
