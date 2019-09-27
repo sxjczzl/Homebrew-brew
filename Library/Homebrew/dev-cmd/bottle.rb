@@ -401,6 +401,7 @@ module Homebrew
         "formula" => {
           "pkg_version" => f.pkg_version.to_s,
           "path"        => f.path.to_s.delete_prefix("#{HOMEBREW_REPOSITORY}/"),
+          "homepage"    => f.homepage,
         },
         "bottle"  => {
           "root_url" => bottle.root_url,
