@@ -1,4 +1,4 @@
-FROM ubuntu:xenial
+FROM gitpod/workspace-full
 LABEL maintainer="Shaun Jackman <sjackman@gmail.com>"
 
 RUN apt-get update \
