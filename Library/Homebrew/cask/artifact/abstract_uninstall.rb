@@ -127,10 +127,15 @@ module Cask
       # :quit/:signal must come before :kext so the kext will not be in use by a running process
       def uninstall_quit(*bundle_ids, command: nil, **_)
         bundle_ids.each do |bundle_id|
-          next if running_processes(bundle_id).empty?
+          next unless running?(bundle_id)
 
           unless User.current.gui?
-            ohai "Not logged into a GUI; skipping quitting application ID '#{bundle_id}'."
+            opoo "Not logged into a GUI; skipping quitting application ID '#{bundle_id}'."
+            next
+          end
+
+          unless User.automation_access?
+            opoo "Skipping quitting application ID '#{bundle_id}'. #{User.automation_access_instructions}"
             next
           end
 
@@ -141,10 +146,10 @@ module Cask
               Kernel.loop do
                 next unless quit(bundle_id).success?
 
-                if running_processes(bundle_id).empty?
-                  puts "Application '#{bundle_id}' quit successfully."
-                  break
-                end
+                next if running?(bundle_id)
+
+                puts "Application '#{bundle_id}' quit successfully."
+                break
               end
             end
           rescue Timeout::Error
@@ -152,6 +157,28 @@ module Cask
             next
           end
         end
+      end
+
+      def running?(bundle_id)
+        script = <<~JAVASCRIPT
+          'use strict';
+
+          ObjC.import('stdlib')
+
+          function run(argv) {
+            try {
+              var app = Application(argv[0])
+              if (app.running()) {
+                $.exit(0)
+              }
+            } catch (err) { }
+
+            $.exit(1)
+          }
+        JAVASCRIPT
+
+        system_command("osascript", args:         ["-l", "JavaScript", "-e", script, bundle_id],
+                                    print_stderr: true).status.success?
       end
 
       def quit(bundle_id)
@@ -176,8 +203,7 @@ module Cask
         JAVASCRIPT
 
         system_command "osascript", args:         ["-l", "JavaScript", "-e", script, bundle_id],
-                                    print_stderr: false,
-                                    sudo:         true
+                                    print_stderr: false
       end
       private :quit
 
@@ -214,6 +240,11 @@ module Cask
             ["path", item[:path]]
           else
             ["name", item]
+          end
+
+          unless User.automation_access?
+            opoo "Skipping removal of login item #{id}. #{User.automation_access_instructions}"
+            next
           end
 
           ohai "Removing login item #{id}"

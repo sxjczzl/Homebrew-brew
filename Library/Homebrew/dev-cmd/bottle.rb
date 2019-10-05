@@ -16,7 +16,7 @@ BOTTLE_ERB = <<-EOS.freeze
     <% if !root_url.start_with?(HOMEBREW_BOTTLE_DEFAULT_DOMAIN) %>
     root_url "<%= root_url %>"
     <% end %>
-    <% if ![Homebrew::DEFAULT_PREFIX, "/usr/local"].include?(prefix) %>
+    <% if ![HOMEBREW_DEFAULT_PREFIX, LINUXBREW_DEFAULT_PREFIX].include?(prefix) %>
     prefix "<%= prefix %>"
     <% end %>
     <% if cellar.is_a? Symbol %>
@@ -530,14 +530,13 @@ module Homebrew
 
         unless args.no_commit?
           if ENV["HOMEBREW_GIT_NAME"]
-            ENV["GIT_AUTHOR_NAME"] =
-              ENV["GIT_COMMITTER_NAME"] =
-                ENV["HOMEBREW_GIT_NAME"]
+            ENV["GIT_AUTHOR_NAME"] = ENV["GIT_COMMITTER_NAME"] =
+              ENV["HOMEBREW_GIT_NAME"]
           end
+
           if ENV["HOMEBREW_GIT_EMAIL"]
-            ENV["GIT_AUTHOR_EMAIL"] =
-              ENV["GIT_COMMITTER_EMAIL"] =
-                ENV["HOMEBREW_GIT_EMAIL"]
+            ENV["GIT_AUTHOR_EMAIL"] = ENV["GIT_COMMITTER_EMAIL"] =
+              ENV["HOMEBREW_GIT_EMAIL"]
           end
 
           short_name = formula_name.split("/", -1).last

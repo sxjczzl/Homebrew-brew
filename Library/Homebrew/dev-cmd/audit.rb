@@ -95,7 +95,7 @@ module Homebrew
       odie "--only-cops/--except-cops and --strict/--only cannot be used simultaneously!"
     end
 
-    options = { fix: args.fix?, realpath: true }
+    options = { fix: args.fix? }
 
     if only_cops
       options[:only_cops] = only_cops
@@ -254,7 +254,7 @@ module Homebrew
       wanted_mode = 0100644 & ~File.umask
       actual_mode = formula.path.stat.mode
       unless actual_mode == wanted_mode
-        problem format("Incorrect file permissions (%03<actual>o): chmod %03<wanted>o %{path}",
+        problem format("Incorrect file permissions (%03<actual>o): chmod %03<wanted>o %<path>s",
                        actual: actual_mode & 0777,
                        wanted: wanted_mode & 0777,
                        path:   formula.path)

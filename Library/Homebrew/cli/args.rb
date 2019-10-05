@@ -5,36 +5,50 @@ require "ostruct"
 module Homebrew
   module CLI
     class Args < OpenStruct
+      attr_accessor :processed_options
       # undefine tap to allow --tap argument
       undef tap
 
       def initialize(argv:)
         super
         @argv = argv
+        @processed_options = []
       end
 
-      def to_cli_option(name)
-        if name.length == 2
-          "-#{name.tr("?", "")}"
-        else
-          "--#{name.tr("_", "-").tr("?", "")}"
+      def option_to_name(option)
+        option.sub(/\A--?/, "")
+              .tr("-", "_")
+      end
+
+      def cli_args
+        return @cli_args if @cli_args
+
+        @cli_args = []
+        processed_options.each do |short, long|
+          option = long || short
+          switch = "#{option_to_name(option)}?".to_sym
+          flag = option_to_name(option).to_sym
+          if @table[switch] == true || @table[flag] == true
+            @cli_args << option
+          elsif @table[flag].instance_of? String
+            @cli_args << option + "=" + @table[flag]
+          elsif @table[flag].instance_of? Array
+            @cli_args << option + "=" + @table[flag].join(",")
+          end
         end
+        @cli_args
       end
 
       def options_only
-        to_h.keys
-            .map(&:to_s)
-            .reject { |name| %w[argv remaining].include?(name) }
-            .map(&method(:to_cli_option))
-            .select { |arg| arg.start_with?("-") }
+        @options_only ||= cli_args.select { |arg| arg.start_with?("-") }
       end
 
       def flags_only
-        to_h.keys
-            .map(&:to_s)
-            .reject { |name| %w[argv remaining].include?(name) }
-            .map(&method(:to_cli_option))
-            .select { |arg| arg.start_with?("--") }
+        @flags_only ||= cli_args.select { |arg| arg.start_with?("--") }
+      end
+
+      def passthrough
+        options_only - CLI::Parser.global_options.values.map(&:first).flatten
       end
     end
   end

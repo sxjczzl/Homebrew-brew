@@ -215,20 +215,25 @@ describe Homebrew::CLI::Parser do
     subject(:parser) {
       described_class.new do
         switch "--foo"
-        switch "-v"
-        switch "-d"
+        flag   "--bar"
         switch "-s"
+        switch :verbose
       end
     }
 
     it "#options_only" do
-      parser.parse(["--foo", "-vds", "a", "b", "cdefg"])
-      expect(Homebrew.args.options_only).to eq %w[--foo -v -d -s]
+      parser.parse(["--foo", "--bar=value", "-v", "-s", "a", "b", "cdefg"])
+      expect(Homebrew.args.options_only).to eq %w[--foo --bar=value -s --verbose]
     end
 
     it "#flags_only" do
-      parser.parse(["--foo", "-vds", "a", "b", "cdefg"])
-      expect(Homebrew.args.flags_only).to eq %w[--foo]
+      parser.parse(["--foo", "--bar=value", "-v", "-s", "a", "b", "cdefg"])
+      expect(Homebrew.args.flags_only).to eq %w[--foo --bar=value --verbose]
+    end
+
+    it "#passthrough" do
+      parser.parse(["--foo", "--bar=value", "-v", "-s", "a", "b", "cdefg"])
+      expect(Homebrew.args.passthrough).to eq %w[--foo --bar=value -s]
     end
   end
 end

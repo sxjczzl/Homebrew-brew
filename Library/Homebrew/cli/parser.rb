@@ -10,7 +10,7 @@ OPTION_DESC_WIDTH = 43
 module Homebrew
   module CLI
     class Parser
-      attr_reader :processed_options, :hide_from_man_page, :args
+      attr_reader :processed_options, :hide_from_man_page
 
       def self.parse(args = ARGV, &block)
         new(&block).parse(args)
@@ -139,6 +139,7 @@ module Homebrew
         check_constraint_violations
         @args[:remaining] = remaining_args
         @args_parsed = true
+        @args.processed_options = @processed_options
         Homebrew.args = @args
         cmdline_args.freeze
         @parser

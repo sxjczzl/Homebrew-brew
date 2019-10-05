@@ -801,8 +801,16 @@ a simple example. For the complete API, see:
   Create a basic template for an Autotools-style build.
 * `--cmake`:
   Create a basic template for a CMake-style build.
+* `--go`:
+  Create a basic template for a Go build.
 * `--meson`:
   Create a basic template for a Meson-style build.
+* `--perl`:
+  Create a basic template for a Perl build.
+* `--python`:
+  Create a basic template for a Python build.
+* `--rust`:
+  Create a basic template for a Rust build.
 * `--no-fetch`:
   Homebrew will not download *`URL`* to the cache and will thus not add its SHA-256 to the formula for you, nor will it check the GitHub API for GitHub projects (to fill out its description and homepage).
 * `--HEAD`:
@@ -914,6 +922,8 @@ provided it defaults to `origin/master`.
 Run a Ruby instance with Homebrew's libraries loaded, e.g. `brew ruby -e "puts
 :gcc.f.deps"` or `brew ruby script.rb`.
 
+* `-r`:
+  Load a library using `require`.
 * `-e`:
   Execute the given text string as a script.
 
@@ -1058,7 +1068,7 @@ Note that environment variables must have a value set to be detected. For exampl
   * `HOMEBREW_AUTO_UPDATE_SECS`:
     If set, Homebrew will only check for autoupdates once per this seconds interval.
 
-    *Default:* `60`.
+    *Default:* `300`.
 
   * `HOMEBREW_AWS_ACCESS_KEY_ID`, `HOMEBREW_AWS_SECRET_ACCESS_KEY`:
     When using the `S3` download strategy, Homebrew will look in
@@ -1066,6 +1076,9 @@ Note that environment variables must have a value set to be detected. For exampl
     <https://docs.aws.amazon.com/cli/latest/userguide/cli-chap-getting-started.html#cli-environment>
     to retrieve these access credentials from AWS). If they are not set,
     the `S3` download strategy will download with a public (unsigned) URL.
+
+  * `HOMEBREW_BAT`:
+    If set, Homebrew will use `bat` for the `brew cat` command.
 
   * `HOMEBREW_BOTTLE_DOMAIN`:
     By default, Homebrew uses `https://homebrew.bintray.com/` as its download
