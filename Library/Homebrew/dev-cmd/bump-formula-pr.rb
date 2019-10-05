@@ -297,9 +297,18 @@ module Homebrew
         ohai "git checkout --quiet -"
         ohai "create pull request with GitHub API"
       else
-        #determine if this tap is linux-core
-        if formula.tap.full_name.includes? "linux-core"
-            #check if formula exists in homebrew-core 
+        #determine if this formula has tap  linuxbrew-core
+        if formula.tap.full_name.includes? "linuxbrew-core"
+          #try to identify formula in homebrew core
+            begin 
+              linuxbrew_core_formula = Formulary.factory(formula.gsub('linuxbrew-core','homebrew-core'))
+            #if there's ambiguity print an informative message
+            rescue TapFormulaAmbiguityError 
+              odie "Unable to identify which homebrew-core formula corresponds to this linuxbrew formula. Please open PR against homebrew-core for corresponding formula"
+            end
+            #otherwisereplace the linux-core formula 
+            #with the homebrew-core formula for the rest of the process
+              formula = linuxbrew_core_formula
         end
         begin
           response = GitHub.create_fork(formula.tap.full_name)
