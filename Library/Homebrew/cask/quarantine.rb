@@ -9,23 +9,17 @@ module Cask
 
     QUARANTINE_SCRIPT = (HOMEBREW_LIBRARY_PATH/"cask/utils/quarantine.swift").freeze
 
+    XATTR = (HOMEBREW_LIBRARY_PATH/"cask/utils/xattr.swift").freeze
+
     # @private
     def swift
       @swift ||= DevelopmentTools.locate("swift")
     end
 
-    # @private
-    def xattr
-      @xattr ||= DevelopmentTools.locate("xattr")
-    end
-
     def check_quarantine_support
       odebug "Checking quarantine support"
 
-      if !system_command(xattr, print_stderr: false).success?
-        odebug "There's not a working version of xattr."
-        :xattr_broken
-      elsif swift.nil?
+      if swift.nil?
         odebug "Swift is not available on this system."
         :no_swift
       else
@@ -33,16 +27,28 @@ module Cask
                                    args:         [QUARANTINE_SCRIPT],
                                    print_stderr: false)
 
+        xattr_check = system_command(swift,
+                                     args:         [XATTR],
+                                     print_stderr: false)
+
         case api_check.exit_status
         when 5
           odebug "This feature requires the macOS 10.10 SDK or higher."
           :no_quarantine
         when 2
           odebug "Quarantine is available."
-          :quarantine_available
         else
           odebug "Unknown support status"
           :unknown
+        end
+
+        case xattr_check.exit_status
+        when 2
+          odebug "xattr script is available."
+          :quarantine_available
+        else
+          odebug "xattr script is unsupported"
+          :no_xattr
         end
       end
     end
@@ -66,8 +72,8 @@ module Cask
     end
 
     def status(file)
-      system_command(xattr,
-                     args:         ["-p", QUARANTINE_ATTRIBUTE, file],
+      system_command(swift,
+                     args:         [XATTR, "get", QUARANTINE_ATTRIBUTE, file],
                      print_stderr: false).stdout.rstrip
     end
 
@@ -88,12 +94,8 @@ module Cask
 
       odebug "Releasing #{download_path} from quarantine"
 
-      quarantiner = system_command(xattr,
-                                   args:         [
-                                     "-d",
-                                     QUARANTINE_ATTRIBUTE,
-                                     download_path,
-                                   ],
+      quarantiner = system_command(swift,
+                                   args:         [XATTR, "remove", QUARANTINE_ATTRIBUTE, file],
                                    print_stderr: false)
 
       return if quarantiner.success?
@@ -152,8 +154,9 @@ module Cask
                                    args:         [
                                      "-0",
                                      "--",
-                                     xattr,
-                                     "-w",
+                                     swift,
+                                     XATTR,
+                                     "set",
                                      QUARANTINE_ATTRIBUTE,
                                      quarantine_status,
                                    ],

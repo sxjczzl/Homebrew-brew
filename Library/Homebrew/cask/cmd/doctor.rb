@@ -25,7 +25,6 @@ module Cask
 
       def run
         check_software_versions
-        check_xattr
         check_quarantine_support
         check_install_location
         check_staging_location
@@ -42,6 +41,7 @@ module Cask
         ohai "macOS", MacOS.full_version
         ohai "SIP", self.class.check_sip
         ohai "Java", SystemConfig.describe_java
+        ohai "Swift", self.class.check_swift
       end
 
       # This could be done by calling into Homebrew, but the situation
@@ -122,40 +122,17 @@ module Cask
         (locale_variables + environment_variables).sort.each(&method(:render_env_var))
       end
 
-      def check_xattr
-        ohai "xattr issues"
-        result = system_command "/usr/bin/xattr"
-
-        if result.status.success?
-          puts none_string
-        elsif result.stderr.include? "ImportError: No module named pkg_resources"
-          result = system_command "/usr/bin/python", "--version"
-
-          if result.stdout.include? "Python 2.7"
-            add_error "Your Python installation has a broken version of setuptools."
-            add_error "To fix, reinstall macOS or run 'sudo /usr/bin/python -m pip install -I setuptools'."
-          else
-            add_error "The system Python version is wrong."
-            add_error "To fix, run 'defaults write com.apple.versioner.python Version 2.7'."
-          end
-        elsif result.stderr.include? "pkg_resources.DistributionNotFound"
-          add_error "Your Python installation is unable to find xattr."
-        else
-          add_error "unknown xattr error: #{result.stderr.first}"
-        end
-      end
-
       def check_quarantine_support
         ohai "Gatekeeper support"
 
         case Quarantine.check_quarantine_support
         when :quarantine_available
           puts "Enabled"
-        when :xattr_broken
-          add_error "There's not a working version of xattr."
         when :no_swift
           add_error "Swift is not available on this system."
         when :no_quarantine
+          add_error "This feature requires the macOS 10.10 SDK or higher."
+        when :no_xattr
           add_error "This feature requires the macOS 10.10 SDK or higher."
         else
           onoe "Unknown support status"
@@ -189,6 +166,17 @@ module Cask
              .gsub("System Integrity Protection status: ", "")
              .delete("\t\.")
              .capitalize
+             .strip
+      end
+
+      def self.check_swift
+        swift = "/usr/bin/swift"
+        return "N/A" unless File.executable?(swift)
+
+        Open3.capture2(swift, "--version")
+             .first
+             .lines.first
+             .gsub("Apple Swift version", "")
              .strip
       end
 
