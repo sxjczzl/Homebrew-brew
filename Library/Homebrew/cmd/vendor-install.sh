@@ -236,6 +236,12 @@ processor on $HOMEBREW_PRODUCT!
 EOS
   fi
 
+  if [[ ! -f "$VENDOR_DIR/portable-$VENDOR_NAME-version" ]]
+  then
+    git fetch "https://github.com/Homebrew/brew" master
+    git checkout FETCH_HEAD -- "$VENDOR_DIR"
+  fi
+
   VENDOR_VERSION="$(<"$VENDOR_DIR/portable-$VENDOR_NAME-version")"
   CACHED_LOCATION="$HOMEBREW_CACHE/$(basename "$VENDOR_URL")"
 
