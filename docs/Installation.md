@@ -17,7 +17,19 @@ it does it too. You have to confirm everything it will do before it starts.
   [Xcode](https://itunes.apple.com/us/app/xcode/id497799835) <sup>[3](#3)</sup>
 * A Bourne-compatible shell for installation (e.g. `bash` or `zsh`) <sup>[4](#4)</sup>
 
-## Alternative Installs
+## macOS One-liner for Homebrew auto-install.
+
+* This script uses Ruby, so make sure you have it installed.
+* Install location will be in "/usr/local" so sudo is not needed.
+* If you dont have Command Line Tools install prior to download, this script will also
+  install the latest version of it for you. Just run this one-liner in terminal. 
+  
+  # INSTALL 
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+  # UNINSTALL
+    ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/uninstall)"
+
+### Alternative Installs
 
 ### Linux or Windows 10 Subsystem for Linux
 
