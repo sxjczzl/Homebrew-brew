@@ -11,13 +11,20 @@ class Dependency
 
   DEFAULT_ENV_PROC = proc {}.freeze
 
-  def initialize(name, tags = [], env_proc = DEFAULT_ENV_PROC, option_names = [name])
+  def initialize(name, tags = [], env_proc = nil, option_names = [name])
     raise ArgumentError, "Dependency must have a name!" unless name
 
     @name = name
     @tags = tags
-    @env_proc = env_proc
     @option_names = option_names
+
+    if name.match?(/^openjdk(@|$)/)
+      env_proc ||= proc do
+        ENV["JAVA_HOME"] = to_formula.opt_prefix
+      end
+    end
+
+    @env_proc = env_proc || DEFAULT_ENV_PROC
   end
 
   def to_s
@@ -180,7 +187,7 @@ end
 class TapDependency < Dependency
   attr_reader :tap
 
-  def initialize(name, tags = [], env_proc = DEFAULT_ENV_PROC, option_names = [name.split("/").last])
+  def initialize(name, tags = [], env_proc = nil, option_names = [name.split("/").last])
     @tap = Tap.fetch(name.rpartition("/").first)
     super(name, tags, env_proc, option_names)
   end
