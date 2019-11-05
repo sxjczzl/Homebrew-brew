@@ -264,12 +264,17 @@ module Homebrew
         descendants = Set.new
 
         dependents = kegs.select do |keg|
-          keg = keg.runtime_dependencies
-                   .any? { |d| d["full_name"] == formula.full_name }
-          keg unless scanned.include?(keg)
+          is_dependent = keg.runtime_dependencies
+                            .any? { |d| d["full_name"] == formula.full_name }
+          is_dependent && !scanned.include?(keg)
         end
 
         next if dependents.empty?
+
+        if args.verbose?
+          dependent_names = dependents.map(&:name).join(", ")
+          puts "#{dependents.count} unscanned dependent #{"keg".pluralize(dependents.count)}: #{dependent_names}"
+        end
 
         dependents.each do |keg|
           f = keg.to_formula
@@ -359,10 +364,6 @@ module Homebrew
     end
 
     upgrade_formulae(upgradable)
-
-    # TODO: re-enable when this code actually works.
-    # https://github.com/Homebrew/brew/issues/6671
-    return unless ENV["HOMEBREW_BROKEN_DEPENDENTS"]
 
     # Assess the dependents tree again.
     kegs = formulae_with_runtime_dependencies
