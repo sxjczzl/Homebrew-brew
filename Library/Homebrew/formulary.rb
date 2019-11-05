@@ -201,6 +201,9 @@ module Formulary
         puts <<~EOS
           This will extract your desired #{formula_name} version to a stable tap instead of
           installing from an unstable URL!
+      
+          You need to unshallow the tap before `brew extract` will work if you are looking for an older version:
+          `git -C "$(brew --repo homebrew/core)" fetch --unshallow`
 
         EOS
       end
