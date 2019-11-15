@@ -25,7 +25,7 @@ module Utils
       end
 
       def report(type, metadata = {})
-        return if ENV["HOMEBREW_NO_ANALYTICS"] || ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"]
+        return if ENV["HOMEBREW_NO_ANALYTICS"] || ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] || ENV["DO_NOT_TRACK"]
 
         args = []
 
