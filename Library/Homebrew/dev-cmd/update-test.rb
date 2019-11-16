@@ -45,13 +45,13 @@ module Homebrew
       elsif date = args.before
         Utils.popen_read("git", "rev-list", "-n1", "--before=#{date}", "origin/master").chomp
       elsif args.to_tag?
-        tags = Utils.popen_read("git", "tag", "--list", "--sort=-version:refname")
+        tags = Utils.popen_read("git", "tag", "-l", "--sort=-version:refname")
         if tags.blank?
           tags = if (HOMEBREW_REPOSITORY/".git/shallow").exist?
             safe_system "git", "fetch", "--tags", "--depth=1"
-            Utils.popen_read("git", "tag", "--list", "--sort=-version:refname")
+            Utils.popen_read("git", "tag", "-l", "--sort=-version:refname")
           elsif OS.linux?
-            Utils.popen_read("git tag --list | sort -rV")
+            Utils.popen_read("git tag -l | sort -rV")
           end
         end
         current_tag, previous_tag, = tags.lines

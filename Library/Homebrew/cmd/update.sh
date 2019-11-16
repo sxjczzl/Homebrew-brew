@@ -183,7 +183,7 @@ merge_or_rebase() {
 
   if [[ "$DIR" = "$HOMEBREW_REPOSITORY" && -n "$HOMEBREW_UPDATE_TO_TAG" ]]
   then
-    UPSTREAM_TAG="$(git tag --list |
+    UPSTREAM_TAG="$(git tag -l |
                     sort --field-separator=. --key=1,1nr -k 2,2nr -k 3,3nr |
                     grep --max-count=1 '^[0-9]*\.[0-9]*\.[0-9]*$')"
   else
@@ -435,7 +435,7 @@ EOS
     declare PREFETCH_REVISION"$TAP_VAR"="$(git rev-parse -q --verify refs/remotes/origin/"$UPSTREAM_BRANCH_DIR")"
 
     # Force a full update if we don't have any tags.
-    if [[ "$DIR" = "$HOMEBREW_REPOSITORY" && -z "$(git tag --list)" ]]
+    if [[ "$DIR" = "$HOMEBREW_REPOSITORY" && -z "$(git tag -l)" ]]
     then
       HOMEBREW_UPDATE_FORCE=1
     fi
