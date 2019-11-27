@@ -25,7 +25,7 @@ def curl_args(*extra_args, show_output: false, user_agent: :default)
 
   args << "--user-agent" << case user_agent
   when :browser, :fake
-    HOMEBREW_USER_AGENT_FAKE_SAFARI
+    MacOS.safari_user_agent
   when :default
     HOMEBREW_USER_AGENT_CURL
   else

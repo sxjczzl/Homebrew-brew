@@ -27,7 +27,7 @@ module OS
     # This can be compared to numerics, strings, or symbols
     # using the standard Ruby Comparable methods.
     def full_version
-      @full_version ||= Version.new((ENV["HOMEBREW_MACOS_VERSION"] || ENV["HOMEBREW_OSX_VERSION"]).chomp)
+      @full_version ||= Version.new(ENV["HOMEBREW_MACOS_VERSION"].chomp)
     end
 
     def full_version=(version)
@@ -56,6 +56,27 @@ module OS
 
     def prerelease?
       version > latest_stable_version
+    end
+
+    def safari_user_agent
+      @safari_user_agent ||= begin
+        macos_version = full_version.to_s.tr(".", "_")
+        safari_version, webkit_version = case version
+        when :mavericks
+          ["9.1.3", "537.86.7"]
+        when :yosemite
+          ["10.1.2", "603.3.8"]
+        when :el_capitan
+          ["11.1.2", "605.1.15"]
+        when :sierra
+          ["12.1.2", "605.1.15"]
+        else
+          ["13.0.3", "605.1.15"]
+        end
+
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X #{macos_version}) AppleWebKit/#{webkit_version} " \
+        "(KHTML, like Gecko) Version/#{safari_version} Safari/#{webkit_version}"
+      end
     end
 
     def languages
