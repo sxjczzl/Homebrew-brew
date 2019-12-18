@@ -1,6 +1,7 @@
 FROM ubuntu:xenial
+# manutenção
 LABEL maintainer="Shaun Jackman <sjackman@gmail.com>"
-
+# instalando as depencias
 RUN apt-get update \
 	&& apt-get install -y --no-install-recommends software-properties-common \
 	&& add-apt-repository -y ppa:git-core/ppa \
@@ -21,7 +22,7 @@ RUN apt-get update \
 		sudo \
 		uuid-runtime \
 	&& rm -rf /var/lib/apt/lists/*
-
+# configurando ambiente
 RUN localedef -i en_US -f UTF-8 en_US.UTF-8 \
 	&& useradd -m -s /bin/bash linuxbrew \
 	&& echo 'linuxbrew ALL=(ALL) NOPASSWD:ALL' >>/etc/sudoers
