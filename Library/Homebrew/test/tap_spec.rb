@@ -336,6 +336,15 @@ describe Tap do
       expect(described_class.each).to be_an_instance_of(Enumerator)
     end
   end
+
+  describe "#default_remote" do
+    it "respects env variable HOMEBREW_TAP_DEFAULT_REMOTE_BASE" do
+      ENV["HOMEBREW_TAP_DEFAULT_REMOTE_BASE"] = "http://localhost:4000"
+      expect(subject.default_remote).to eq("http://localhost:4000/Homebrew/homebrew-foo")
+      ENV.delete("HOMEBREW_TAP_DEFAULT_REMOTE_BASE")
+      expect(subject.default_remote).to eq("https://github.com/Homebrew/homebrew-foo")
+    end
+  end
 end
 
 describe CoreTap do
