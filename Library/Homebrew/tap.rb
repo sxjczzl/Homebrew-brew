@@ -115,7 +115,7 @@ class Tap
 
   # The default remote path to this {Tap}.
   def default_remote
-    "#{ENV.fetch('HOMEBREW_TAP_DEFAULT_REMOTE_BASE', 'https://github.com')}/#{full_name}"
+    %(#{ENV.fetch("HOMEBREW_TAP_DEFAULT_REMOTE_BASE", "https://github.com")}/#{full_name})
   end
 
   def repo_var
