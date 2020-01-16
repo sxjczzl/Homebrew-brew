@@ -92,5 +92,27 @@ module Language
         end
       end
     end
+    module Stack
+      # run stack install, using the current latest LTS snapshot on stackage.org
+      def stack_install(*args)
+        system "stack", "install", "--resolver=lts", *args
+      end
+
+      # install tools, sequentially as some tools can depend on other tools
+      def stack_install_tools(*tools)
+        tools.each { |tool| stack_install tool }
+      end
+
+      def install_stack_package(*args, **options)
+        stack_install_tools(*options[:using]) if options[:using]
+
+        flags = "--flags=#{options[:flags].join(" ")}" if options[:flags]
+        args_and_flags = args
+        args_and_flags << flags unless flags.nil?
+        stack_install "--prefix=#{prefix}", *args_and_flags
+
+        yield if block_given?
+      end
+    end
   end
 end
