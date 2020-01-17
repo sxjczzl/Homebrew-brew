@@ -311,6 +311,12 @@ module Homebrew
       EOS
     end
 
+    formula_file = File.read(formula.path)
+    if formula_file.match?("# tag \"linux\"") && formula_file.match?(/:x86_64_linux/)
+      ohai "Removing Linux bottle line..." if args.dry_run?
+      safe_system "sed -i '/\:x86_64_linux$/d' #{formula.path}"
+    end
+
     alias_rename = alias_update_pair(formula, new_formula_version)
     if alias_rename.present?
       ohai "renaming alias #{alias_rename.first} to #{alias_rename.last}"
