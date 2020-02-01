@@ -292,7 +292,15 @@ module Homebrew
 
         cd cellar do
           sudo_purge
-          safe_system "tar", "cf", tar_path, "#{f.name}/#{f.pkg_version}"
+          keg_root = "#{f.name}/#{f.pkg_version}"
+          safe_system "tar", "cf", tar_path,
+                      # Put the two metafiles at the start of the tarball,
+                      # before listing the actual root of the keg.
+                      # This ensures that even a partial tarball download
+                      # should contain these two files.
+                      "#{keg_root}/INSTALL_RECEIPT.json",
+                      "#{keg_root}/#{keg.relative_formula_path}",
+                      keg_root
           sudo_purge
           tar_path.utime(tab.source_modified_time, tab.source_modified_time)
           relocatable_tar_path = "#{f}-bottle.tar"

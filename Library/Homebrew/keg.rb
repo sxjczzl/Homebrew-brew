@@ -549,6 +549,10 @@ class Keg
     find { |pn| FileUtils.rm_rf pn if pn.basename.to_s == "__pycache__" }
   end
 
+  def relative_formula_path
+    ".brew/#{name}.rb"
+  end
+
   private
 
   def resolve_any_conflicts(dst, mode)
