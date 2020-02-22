@@ -475,6 +475,13 @@ class Tap
     @command_dir ||= path/"cmd"
   end
 
+  def command_file?(file)
+    file = Pathname.new(file) unless file.is_a? Pathname
+    file = file.expand_path(path)
+    file.parent == command_dir && file.basename.to_s.match?(/^brew(cask)?-/) &&
+      (file.executable? || file.extname == ".rb")
+  end
+
   # An array of all commands files of this {Tap}.
   def command_files
     @command_files ||= if command_dir.directory?
