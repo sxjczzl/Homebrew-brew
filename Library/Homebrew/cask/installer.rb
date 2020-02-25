@@ -119,6 +119,14 @@ module Cask
       rescue CaskUnavailableError
         next # Ignore conflicting Casks that do not exist.
       end
+
+      @cask.conflicts_with[:formula].each do |conflicting_formula|
+        conflicting_formula = Formula[conflicting_formula]
+        # TODO: create CaskFormulaConflictError class
+        raise CaskConflictError.new(@cask, conflicting_formula) if conflicting_formula.any_version_installed?
+      rescue FormulaUnavailableError
+        next # Ignore conflicting Formulae that do not exist.
+      end
     end
 
     def reinstall
