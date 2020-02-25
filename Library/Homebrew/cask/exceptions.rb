@@ -45,6 +45,19 @@ module Cask
     end
   end
 
+  class CaskFormulaConflictError < AbstractCaskErrorWithToken
+    attr_reader :conflicting_formula
+
+    def initialize(token, conflicting_formula)
+      super(token)
+      @conflicting_formula = conflicting_formula
+    end
+
+    def to_s
+      "Cask '#{token}' conflicts with formula '#{conflicting_formula}'."
+    end
+  end
+
   class CaskUnavailableError < AbstractCaskErrorWithToken
     def to_s
       "Cask '#{token}' is unavailable#{reason.empty? ? "." : ": #{reason}"}"
