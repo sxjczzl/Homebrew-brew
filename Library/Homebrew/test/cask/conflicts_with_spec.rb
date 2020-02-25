@@ -1,7 +1,5 @@
 # frozen_string_literal: true
 
-require "test/support/fixtures/testball"
-
 describe "conflicts_with", :cask do
   describe "conflicts_with cask" do
     let(:local_caffeine) {
@@ -26,12 +24,11 @@ describe "conflicts_with", :cask do
   end
 end
 
-describe "conflicts_with", :formula do
+describe "conflicts_with", :integration_test do
   describe "conflicts_with formula" do
     let(:testball_formula) {
-      # FIXME: figure out how to add formula as Formula["testball"]
-      # so that conflict resolution can work properly
-      Testball.new
+      setup_test_formula "testball"
+      Formula["testball"]
     }
 
     let(:with_conflicts_with_formula_cask) {
