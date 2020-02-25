@@ -23,3 +23,27 @@ describe "conflicts_with", :cask do
     end
   end
 end
+
+describe "conflicts_with", :formula do
+  describe "conflicts_with formula" do
+    let(:cmake_formula) {
+      Formula["cmake"]
+    }
+
+    let(:cmake_cask) {
+      Cask::CaskLoader.load(cask_path("cmake"))
+    }
+
+    it "installs a Formula and a conflicting Cask" do
+      FormulaInstaller.new(cmake_formula).install
+
+      expect(cmake_formula).to be_latest_version_installed
+
+      expect {
+        Cask::Installer.new(cmake_cask).install
+      }.to raise_error(Cask::CaskConflictError, "Cask 'cmake' conflicts with 'cmake'.")
+
+      expect(cmake_cask).not_to be_installed
+    end
+  end
+end
