@@ -274,16 +274,17 @@ class Version
     m = /-(\d+-\d+)/.match(stem)
     return m.captures.first unless m.nil?
 
-    # e.g. foobar-4.5.1
-    m = /-((?:\d+\.)*\d+)$/.match(stem)
+    # devel spec
+    # e.g. foobar-4.5.0-alpha5, foobar-4.5.0-beta1, or foobar-4.50-beta
+    m = /-((?:\d+\.)*\d+-(?:alpha|beta|rc)\d*)$/.match(stem)
     return m.captures.first unless m.nil?
 
     # e.g. foobar-4.5.1b
     m = /-((?:\d+\.)*\d+(?:[abc]|rc|RC)\d*)$/.match(stem)
     return m.captures.first unless m.nil?
 
-    # e.g. foobar-4.5.0-alpha5, foobar-4.5.0-beta1, or foobar-4.50-beta
-    m = /-((?:\d+\.)*\d+-(?:alpha|beta|rc)\d*)$/.match(stem)
+    # e.g. foobar-4.5.1
+    m = /-((?:\d+\.)*\d+)$/.match(stem)
     return m.captures.first unless m.nil?
 
     # e.g. https://ftpmirror.gnu.org/libidn/libidn-1.29-win64.zip
