@@ -91,3 +91,4 @@ Secure password storage and syncing is provided by [1Password for Teams](https:/
 Homebrew is a member of the [Software Freedom Conservancy](https://sfconservancy.org).
 
 [![Software Freedom Conservancy](https://sfconservancy.org/img/conservancy_64x64.png)](https://sfconservancy.org)
+
