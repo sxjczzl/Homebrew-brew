@@ -587,11 +587,7 @@ class MissingApplyError < RuntimeError; end
 class BottleFormulaUnavailableError < RuntimeError
   def initialize(bottle_path, formula_path)
 <<<<<<< HEAD
-<<<<<<< HEAD
     super <<~EOS
-=======
-    super <<-EOS.undent
->>>>>>> sjackman/install-version
 =======
    super <<-EOS.undent
 >>>>>>> TestingBrew

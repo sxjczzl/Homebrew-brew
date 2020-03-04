@@ -13,15 +13,9 @@ module HomebrewArgvExtension
   def formulae
     require "formula"
 <<<<<<< HEAD
-<<<<<<< HEAD
     # TODO: use @instance variable to ||= cache when moving to CLI::Parser
     (downcased_unique_named - casks).map do |name|
       if name.include?("/") || File.exist?(name)
-=======
-    @formulae ||= (downcased_unique_named - casks).map do |name|
-      name, version = name.split "=" if name.include? "="
-      formula = if name.include?("/") || File.exist?(name)
->>>>>>> sjackman/install-version
 =======
     @formulae ||= (downcased_unique_named - casks).map do |name|
       name, version = name.split "=" if name.include? "="

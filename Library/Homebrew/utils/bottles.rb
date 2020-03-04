@@ -37,10 +37,7 @@ module Utils
         end
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
 <<<<<<< HEAD
-<<<<<<< HEAD
 
-=======
->>>>>>> sjackman/install-version
 =======
 
 >>>>>>> TestingBrew
