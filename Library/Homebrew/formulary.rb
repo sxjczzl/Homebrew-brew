@@ -160,6 +160,9 @@ module Formulary
 
     def get_formula(spec, **)
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> TestingBrew
       contents = Utils::Bottles.formula_contents @bottle_filename, name: name
       formula = begin
         Formulary.from_contents name, @bottle_filename, contents, spec
@@ -170,6 +173,7 @@ module Formulary
         EOS
         super
       end
+<<<<<<< HEAD
 =======
       bottle_version = Utils::Bottles.resolve_version @bottle_filename
       formula_path = "#{name}/#{bottle_version}/.brew/#{name}.rb"
@@ -178,6 +182,8 @@ module Formulary
       formula = Formulary.from_contents name, HOMEBREW_CELLAR/formula_path, contents, spec
       formula.bottle_specification.sha256 @bottle_filename.sha256 => Utils::Bottles.tag
 >>>>>>> sjackman/install-version
+=======
+>>>>>>> TestingBrew
       formula.local_bottle_path = @bottle_filename
       formula
     end

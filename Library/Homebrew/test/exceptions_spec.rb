@@ -221,6 +221,7 @@ end
 describe BottleFormulaUnavailableError do
   subject { described_class.new("/foo.bottle.tar.gz", "foo/1.0/.brew/foo.rb") }
 <<<<<<< HEAD
+<<<<<<< HEAD
 
   let(:formula) { double(Formula, full_name: "foo") }
 
@@ -235,4 +236,8 @@ describe BuildFlagsError do
   let(:formula) { double(Formula, full_name: "foo") }
   its(:to_s) { is_expected.to match(/This bottle does not contain the formula file/) }
 >>>>>>> sjackman/install-version
+=======
+  let(:formula) { double(Formula, full_name: "foo") }
+  its(:to_s) { is_expected.to match(/This bottle does not contain the formula file/) }
+>>>>>>> TestingBrew
 end
