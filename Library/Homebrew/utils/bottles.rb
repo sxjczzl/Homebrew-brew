@@ -36,7 +36,10 @@ module Utils
           line =~ %r{.+/.+/INSTALL_RECEIPT.json}
         end
         raise "This bottle does not contain the file INSTALL_RECEIPT.json: #{bottle_file}" unless path
+<<<<<<< HEAD
 
+=======
+>>>>>>> sjackman/install-version
         path
       end
 

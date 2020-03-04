@@ -159,6 +159,7 @@ module Formulary
     end
 
     def get_formula(spec, **)
+<<<<<<< HEAD
       contents = Utils::Bottles.formula_contents @bottle_filename, name: name
       formula = begin
         Formulary.from_contents name, @bottle_filename, contents, spec
@@ -169,6 +170,14 @@ module Formulary
         EOS
         super
       end
+=======
+      bottle_version = Utils::Bottles.resolve_version @bottle_filename
+      formula_path = "#{name}/#{bottle_version}/.brew/#{name}.rb"
+      contents = Utils.popen_read "tar", "-xO", "-f", @bottle_filename, "--strip-components=3", formula_path
+      raise BottleFormulaUnavailableError.new(@bottle_filename, formula_path) unless $CHILD_STATUS.success?
+      formula = Formulary.from_contents name, HOMEBREW_CELLAR/formula_path, contents, spec
+      formula.bottle_specification.sha256 @bottle_filename.sha256 => Utils::Bottles.tag
+>>>>>>> sjackman/install-version
       formula.local_bottle_path = @bottle_filename
       formula
     end

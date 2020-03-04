@@ -374,6 +374,24 @@ class Formula
     end
   end
 
+  # Change the version of this formula.
+  # The format of the version string is version_formularevision.bottlerevision
+  def version=(val)
+    ver, rev = val.split "_"
+    formula_rev, bottle_rev = rev.split(".") if rev
+    ver = Version.new(ver)
+    formula_rev = formula_rev.to_i
+    bottle_rev = bottle_rev.to_i
+    return if ver == version && formula_rev == revision &&
+      bottle_rev == bottle_specification.revision
+    stable.version ver
+    @revision = formula_rev
+    bottle_specification.revision bottle_rev
+    bottle_specification.sha256 "NA" => Utils::Bottles.tag
+    stable.url "NA"
+    stable.sha256 "NA"
+  end
+
   # The {PkgVersion} for this formula with {version} and {#revision} information.
   def pkg_version
     PkgVersion.new(version, revision)
