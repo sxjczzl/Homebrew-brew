@@ -16,6 +16,14 @@ else
   HOMEBREW_CELLAR="$HOMEBREW_PREFIX/Cellar"
 fi
 
+# When /usr/local/Cellar is a symlink to the actual Cellar,
+# set HOMEBREW_CELLAR to /usr/local/Cellar, which permits using
+# bottles without needing write access to /usr/local.
+if [[ $(readlink "/usr/local/Cellar") = "$HOMEBREW_CELLAR" ]]
+then
+  HOMEBREW_CELLAR="/usr/local/Cellar"
+fi
+
 case "$*" in
   --prefix)            echo "$HOMEBREW_PREFIX"; exit 0 ;;
   --cellar)            echo "$HOMEBREW_CELLAR"; exit 0 ;;
