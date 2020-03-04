@@ -12,13 +12,15 @@ module HomebrewArgvExtension
 
   def formulae
     require "formula"
-    # TODO: use @instance variable to ||= cache when moving to CLI::Parser
-    (downcased_unique_named - casks).map do |name|
-      if name.include?("/") || File.exist?(name)
+    @formulae ||= (downcased_unique_named - casks).map do |name|
+      name, version = name.split "=" if name.include? "="
+      formula = if name.include?("/") || File.exist?(name)
         Formulary.factory(name, spec)
       else
         Formulary.find_with_priority(name, spec)
       end
+      formula.version = version if version
+      formula
     end.uniq(&:name)
   end
 

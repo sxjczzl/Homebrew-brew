@@ -150,7 +150,8 @@ class Resource
   end
 
   def version(val = nil)
-    @version ||= begin
+    return @version if @version && val.nil?
+    @version = begin
       version = detect_version(val)
       version.null? ? nil : version
     end

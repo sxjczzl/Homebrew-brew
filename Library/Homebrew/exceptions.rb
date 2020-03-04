@@ -586,7 +586,7 @@ class MissingApplyError < RuntimeError; end
 
 class BottleFormulaUnavailableError < RuntimeError
   def initialize(bottle_path, formula_path)
-    super <<~EOS
+   super <<-EOS.undent
       This bottle does not contain the formula file:
         #{bottle_path}
         #{formula_path}

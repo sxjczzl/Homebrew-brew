@@ -220,14 +220,6 @@ end
 
 describe BottleFormulaUnavailableError do
   subject { described_class.new("/foo.bottle.tar.gz", "foo/1.0/.brew/foo.rb") }
-
   let(:formula) { double(Formula, full_name: "foo") }
-
   its(:to_s) { is_expected.to match(/This bottle does not contain the formula file/) }
-end
-
-describe BuildFlagsError do
-  subject { described_class.new(["-s"]) }
-
-  its(:to_s) { is_expected.to match(/flag:\s+-s\nrequires building tools/) }
 end
