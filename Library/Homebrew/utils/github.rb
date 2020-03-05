@@ -302,7 +302,9 @@ module GitHub
   def issues_for_formula(name, options = {})
     tap = options[:tap] || CoreTap.instance
     tap_full_name = options[:tap_full_name] || tap.full_name
-    search_issues(name, state: "open", repo: tap_full_name, in: "title")
+    issues = search_issues(name, state: "open", repo: tap_full_name, in: "title")
+    issues.delete_if { |issue| issue["state"] != "open" }
+    issues
   end
 
   def user
