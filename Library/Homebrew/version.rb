@@ -254,8 +254,9 @@ class Version
     m = /[-_]([Rr]\d+[AaBb]\d*(?:-\d+)?)/.match(spec_s)
     return m.captures.first unless m.nil?
 
+    # e.g. foobar-4_5_1
     # e.g. boost_1_39_0
-    m = /((?:\d+_)+\d+)$/.match(stem)
+    m = /([-_](?:\d+_)+\d+)$/.match(stem)
     return m.captures.first.tr("_", ".") unless m.nil?
 
     # e.g. foobar-4.5.1-1
@@ -303,7 +304,8 @@ class Version
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x86.zip
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x64.zip
     # e.g. https://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb
-    m = /[-_](\d+\.\d+(?:\.\d+)?(?:-\d+)?)[-_.](?:i[36]86|x86|x64(?:[-_](?:32|64))?)$/.match(stem)
+    # e.g. https://github.com/ethereum/aleth/releases/download/v1.8.0/aleth-1.8.0-darwin-x86_64.tar.gz
+    m = /[-_](\d+\.\d+(?:\.\d+)?(?:-\d+)?)(?:[-_.](?:darwin|linux))?[-_.](?:i[36]86|(?:x86|x64)(?:[-_](?:32|64))?)$/.match(stem)
     return m.captures.first unless m.nil?
 
     # devel spec
