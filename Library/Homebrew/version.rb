@@ -305,7 +305,9 @@ class Version
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x64.zip
     # e.g. https://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb
     # e.g. https://github.com/ethereum/aleth/releases/download/v1.8.0/aleth-1.8.0-darwin-x86_64.tar.gz
+    # rubocop:disable Layout/LineLength
     m = /[-_](\d+\.\d+(?:\.\d+)?(?:-\d+)?)(?:[-_.](?:darwin|linux))?[-_.](?:i[36]86|(?:x86|x64)(?:[-_](?:32|64))?)$/.match(stem)
+    # rubocop:enable Layout/LineLength
     return m.captures.first unless m.nil?
 
     # devel spec
