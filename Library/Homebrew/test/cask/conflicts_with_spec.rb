@@ -24,28 +24,29 @@ describe "conflicts_with", :cask do
   end
 
   describe "conflicts_with formula", :integration_test do
-    FORMULA = "testball"
-    CASK = "with-conflicts-with-formula"
+    let(:formula_name) { "testball" }
+    let(:cask_name) { "with-conflicts-with-formula" }
+    let(:error_msg) { "Cask '#{cask_name}' conflicts with formula '#{formula_name}'." }
 
-    let(:test_formula) {
-      setup_test_formula FORMULA
-      Formula[FORMULA]
+    let(:conflicting_formula) {
+      setup_test_formula formula_name
+      Formula[formula_name]
     }
 
-    let(:test_cask) {
-      Cask::CaskLoader.load(cask_path(CASK))
+    let(:cask) {
+      Cask::CaskLoader.load(cask_path(cask_name))
     }
 
     it "installs a Formula and a conflicting Cask" do
-      FormulaInstaller.new(test_formula).install
+      FormulaInstaller.new(conflicting_formula).install
 
-      expect(test_formula).to be_latest_version_installed
+      expect(conflicting_formula).to be_latest_version_installed
 
       expect {
-        Cask::Installer.new(test_cask).install
-      }.to raise_error(Cask::CaskFormulaConflictError, "Cask '#{CASK}' conflicts with formula '#{FORMULA}'.")
+        Cask::Installer.new(cask).install
+      }.to raise_error(Cask::CaskFormulaConflictError, error_msg)
 
-      expect(test_cask).not_to be_installed
+      expect(cask).not_to be_installed
     end
   end
 end
