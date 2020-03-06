@@ -122,7 +122,7 @@ module Cask
 
       @cask.conflicts_with[:formula].each do |conflicting_formula|
         conflicting_formula = Formula[conflicting_formula]
-        raise CaskFormulaConflictError.new(@cask, conflicting_formula) if conflicting_formula.any_version_installed?
+        raise CaskFormulaConflictError.new(@cask, conflicting_formula) if conflicting_formula.optlinked?
       rescue FormulaUnavailableError
         next # Ignore conflicting Formulae that do not exist.
       end
@@ -336,7 +336,7 @@ module Cask
     def missing_cask_and_formula_dependencies
       collect_cask_and_formula_dependencies.reject do |cask_or_formula|
         (cask_or_formula.try(:installed?) || cask_or_formula.try(:any_version_installed?)) &&
-          (cask_or_formula.respond_to?(:opt_linked?) ? cask_or_formula.opt_linked? : true)
+          (cask_or_formula.respond_to?(:optlinked?) ? cask_or_formula.optlinked? : true)
       end
     end
 

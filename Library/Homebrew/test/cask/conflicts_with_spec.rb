@@ -40,7 +40,10 @@ describe "conflicts_with", :cask do
     it "installs a Formula and a conflicting Cask" do
       FormulaInstaller.new(conflicting_formula).install
 
+      conflicting_formula.opt_or_installed_prefix_keg.link
+
       expect(conflicting_formula).to be_latest_version_installed
+      expect(conflicting_formula).to be_optlinked
 
       expect {
         Cask::Installer.new(cask).install
