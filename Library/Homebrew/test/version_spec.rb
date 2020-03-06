@@ -651,7 +651,9 @@ describe Version do
       expect(described_class.create("4.0.18"))
         .to be_detected_from("https://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb")
       expect(described_class.create("1.8.0"))
-        .to be_detected_from("https://github.com/ethereum/aleth/releases/download/v1.8.0/aleth-1.8.0-darwin-x86_64.tar.gz")
+        .to be_detected_from(
+          "https://github.com/ethereum/aleth/releases/download/v1.8.0/aleth-1.8.0-darwin-x86_64.tar.gz",
+        )
     end
 
     specify "opam version" do
