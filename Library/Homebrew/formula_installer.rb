@@ -228,7 +228,7 @@ class FormulaInstaller
       EOS
       if formula.outdated? && !formula.head?
         message += <<~EOS
-          To upgrade to #{formula.pkg_version}, run `brew upgrade #{formula.name}`.
+          To upgrade to #{formula.pkg_version}, run `brew upgrade #{formula.full_name}`.
         EOS
       elsif only_deps?
         message = nil
@@ -368,7 +368,7 @@ class FormulaInstaller
 
       raise if ARGV.homebrew_developer?
 
-      $stderr.puts "Please report this to the #{formula.tap} tap!"
+      $stderr.puts "Please report this issue to the #{formula.tap} tap (not Homebrew/brew or Homebrew/core)!"
       false
     else # rubocop:disable Layout/ElseAlignment
       f.linked_keg.exist? && f.opt_prefix.exist?
