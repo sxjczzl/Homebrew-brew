@@ -2,6 +2,7 @@
 
 require "locale"
 require "lazy_object"
+require "licensee"
 
 require "cask/artifact"
 
@@ -67,6 +68,8 @@ module Cask
                             :homepage,
                             :language,
                             :languages,
+                            :license,
+                            :licenses,
                             :name,
                             :sha256,
                             :staged_path,
@@ -90,6 +93,30 @@ module Cask
       return @name if args.empty?
 
       @name.concat(args.flatten)
+    end
+
+    def license(*args)
+      @licenses ||= []
+
+      return @licenses unless args
+
+      valid_licenses = Licensee.licenses.map(&:key)
+      valid_metadata = [:description]
+
+      license_name = args.first
+      invalid_metadata = args[1].keys.find { |k| !valid_metadata.include?(k) }
+
+      raise CaskInvalidError.new(cask, "Invalid license metadata.") if invalid_metadata
+
+      unless valid_licenses.include?(license_name)
+        raise CaskInvalidError.new(cask, "'#{license_name}' is an invalid license.")
+      end
+
+      @licenses << { license_name => args[1] }
+    end
+
+    def licenses
+      @licenses || []
     end
 
     def set_unique_stanza(stanza, should_return)

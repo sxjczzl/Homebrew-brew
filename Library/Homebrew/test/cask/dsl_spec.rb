@@ -107,6 +107,53 @@ describe Cask::DSL, :cask do
     end
   end
 
+  describe "license stanza" do
+    it "sets a valid license name" do
+      cask = Cask::Cask.new("valid-license-cask") do
+        license "apache-2.0", description: "https://example.com"
+      end
+
+      expect(cask.licenses).to eq([
+                                    { "apache-2.0"=>{ description: "https://example.com" } },
+                                  ])
+    end
+
+    it "raises an error for invalid licenses" do
+      expect do
+        Cask::Cask.new("valid-license-cask") do
+          license "invalid", description: "https://example.com"
+        end
+      end.to raise_error(Cask::CaskInvalidError, /'invalid' is an invalid license./)
+    end
+
+    it "raises an error for invalid license metadata" do
+      expect do
+        Cask::Cask.new("invalid-metadata-cask") do
+          license "apache-2.0", description: "https://example.com", invalid: "https://invalid.com"
+        end
+      end.to raise_error(Cask::CaskInvalidError, /Invalid license metadata./)
+    end
+
+    it "returns licenses if no arguments are passed in" do
+      cask = Cask::Cask.new("empty-license-cask") do
+      end
+
+      expect(cask.licenses).to be_empty
+    end
+
+    it "Accepts multiple licenses" do
+      cask = Cask::Cask.new("multi-license-cask") do
+        license "apache-2.0", description: "https://example.com"
+        license "mpl-2.0", description: "https://example2.com"
+      end
+
+      expect(cask.licenses).to eq([
+                                    { "apache-2.0"=>{ description: "https://example.com" } },
+                                    { "mpl-2.0"=>{ description: "https://example2.com" } },
+                                  ])
+    end
+  end
+
   describe "sha256 stanza" do
     it "lets you set checksum via sha256" do
       cask = Cask::Cask.new("checksum-cask") do
