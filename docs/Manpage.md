@@ -1018,29 +1018,29 @@ Install macOS applications distributed as binaries. See `brew-cask`(1).
 Bundler for non-Ruby dependencies from Homebrew, Homebrew Cask and the Mac App
 Store.
 
-`brew bundle` [`install`]
+  `brew bundle` [`install`]
 
-Install or upgrade all dependencies in a `Brewfile`.
+  Install or upgrade all dependencies in a `Brewfile`.
 
-`brew bundle dump`
+  `brew bundle dump`
 
-Write all installed casks/formulae/taps into a `Brewfile`.
+  Write all installed casks/formulae/taps into a `Brewfile`.
 
-`brew bundle cleanup`
+  `brew bundle cleanup`
 
-Uninstall all dependencies not listed in a `Brewfile`.
+  Uninstall all dependencies not listed in a `Brewfile`.
 
-`brew bundle check`
+  `brew bundle check`
 
-Check if all dependencies are installed in a `Brewfile`.
+  Check if all dependencies are installed in a `Brewfile`.
 
-`brew bundle exec` *`command`*
+  `brew bundle exec` *`command`*
 
-Run an external command in an isolated build environment.
+  Run an external command in an isolated build environment.
 
-`brew bundle list`
+  `brew bundle list`
 
-List all dependencies present in a Brewfile. By default, only Homebrew
+  List all dependencies present in a Brewfile. By default, only Homebrew
 dependencies are listed.
 
 * `--file`:
@@ -1079,26 +1079,27 @@ Manage background services with macOS' `launchctl`(1) daemon manager.
 If `sudo` is passed, operate on `/Library/LaunchDaemons` (started at boot).
 Otherwise, operate on `~/Library/LaunchAgents` (started at login).
 
-[`sudo`] `brew services` [`list`]
-  List all running services for the current user (or root).
+    [`sudo`] `brew services` [`list`]
+      List all running services for the current user (or root).
 
-[`sudo`] `brew services run` (*`formula`*|`--all`)
-  Run the service *`formula`* without registering to launch at login (or boot).
-
-[`sudo`] `brew services start` (*`formula`*|`--all`)
-  Start the service *`formula`* immediately and register it to launch at login (or
+    [`sudo`] `brew services run` (*`formula`*|`--all`)
+      Run the service *`formula`* without registering to launch at login (or
 boot).
 
-[`sudo`] `brew services stop` (*`formula`*|`--all`)
-  Stop the service *`formula`* immediately and unregister it from launching at
+    [`sudo`] `brew services start` (*`formula`*|`--all`)
+      Start the service *`formula`* immediately and register it to launch at login
+(or boot).
+
+    [`sudo`] `brew services stop` (*`formula`*|`--all`)
+      Stop the service *`formula`* immediately and unregister it from launching at
 login (or boot).
 
-[`sudo`] `brew services restart` (*`formula`*|`--all`)
-  Stop (if necessary) and start the service *`formula`* immediately and register
-it to launch at login (or boot).
+    [`sudo`] `brew services restart` (*`formula`*|`--all`)
+      Stop (if necessary) and start the service *`formula`* immediately and
+register it to launch at login (or boot).
 
-[`sudo`] `brew services cleanup`
-  Remove all unused services.
+    [`sudo`] `brew services cleanup`
+      Remove all unused services.
 
 * `--all`:
   Run *`subcommand`* on all services.
