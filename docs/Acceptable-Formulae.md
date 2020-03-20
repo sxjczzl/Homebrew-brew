@@ -15,6 +15,9 @@ We now accept versioned formulae as long as they [meet the requirements](Version
 Software that can upgrade itself does not integrate well with Homebrew's own
 upgrade functionality. The self-update functionality should be disabled (if possible without complicating the formula).
 
+### We don’t like formula that have outside dependencies
+Formula submitted to homebrew/core must only depend on formulae that are already available in homebrew/core.
+
 ### We don’t like install scripts that download unversioned things
 We don't like install scripts that are pulling from the `master` branch of Git repositories or unversioned, unchecksummed tarballs. These should use `resource` blocks with specific revisions or checksummed tarballs instead. Note that we now allow tools like `cargo`, `gem` and `pip` to download specifically versioned libraries during installation.
 
