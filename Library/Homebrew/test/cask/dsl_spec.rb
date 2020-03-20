@@ -108,7 +108,7 @@ describe Cask::DSL, :cask do
   end
 
   describe "license stanza" do
-    it "sets a valid license name" do
+    it "sets a license name" do
       cask = Cask::Cask.new("valid-license-cask") do
         license "apache-2.0", description: "https://example.com"
       end
@@ -116,14 +116,6 @@ describe Cask::DSL, :cask do
       expect(cask.licenses).to eq([
                                     { "apache-2.0"=>{ description: "https://example.com" } },
                                   ])
-    end
-
-    it "raises an error for invalid licenses" do
-      expect do
-        Cask::Cask.new("valid-license-cask") do
-          license "invalid", description: "https://example.com"
-        end
-      end.to raise_error(Cask::CaskInvalidError, /'invalid' is an invalid license./)
     end
 
     it "raises an error for invalid license metadata" do
