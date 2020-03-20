@@ -6,6 +6,7 @@ require "cask/download"
 require "digest"
 require "utils/curl"
 require "utils/git"
+require 'licensee'
 
 module Cask
   class Audit
@@ -48,6 +49,7 @@ module Cask
       check_latest_with_auto_updates
       check_stanza_requires_uninstall
       check_appcast_contains_version
+      check_license
       self
     rescue => e
       odebug "#{e.message}\n#{e.backtrace.join("\n")}"
@@ -64,6 +66,18 @@ module Cask
     end
 
     private
+
+    def check_license
+      odebug "Auditing license stanza"
+
+      valid_licenses = Licensee.licenses.map(&:key)
+
+      invalid_licenses = cask.licenses.select {|license| !license.include?(valid_licenses)}
+
+      return if invalid_licenses
+      
+      add_warning "Invalid licenses: #{invalid_licenses}"
+    end
 
     def check_untrusted_pkg
       odebug "Auditing pkg stanza: allow_untrusted"
