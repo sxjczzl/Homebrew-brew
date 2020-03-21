@@ -1,7 +1,11 @@
 # frozen_string_literal: true
 
-require "utils"
+require "net/http"
+require "net/https"
+
+require "checksum"
 require "formula_info"
+require "utils"
 
 class BottlePublisher
   def initialize(tap, changed_formulae_names, bintray_org, no_publish, warn_on_publish_failure)
