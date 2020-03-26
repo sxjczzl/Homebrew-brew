@@ -53,6 +53,8 @@ class Sandbox
   def allow_write_temp_and_cache
     allow_write_path "/private/tmp"
     allow_write_path "/private/var/tmp"
+    allow_write_path "/Users/#{ENV["USER"]}/Library/Caches"
+    allow_write_path "/Users/#{ENV["USER"]}/.cache"
     allow_write "^/private/var/folders/[^/]+/[^/]+/[C,T]/", type: :regex
     allow_write_path HOMEBREW_TEMP
     allow_write_path HOMEBREW_CACHE
