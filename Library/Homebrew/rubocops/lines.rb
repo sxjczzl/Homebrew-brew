@@ -439,6 +439,7 @@ module RuboCop
               open-mpi
               openssl@1.1
               pcre
+              perl
               protobuf
               wolfssl
               xz
