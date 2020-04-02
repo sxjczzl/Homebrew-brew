@@ -39,6 +39,14 @@ Lint/ParenthesesAsGroupedExpression:
 Lint/UnusedMethodArgument:
   AllowUnusedKeywordArguments: true
 
+# Required configuration of cop for style check
+Lint/RaiseException:
+  Enabled: false
+
+# Required configuration of cop for style check
+Lint/StructNewOverride:
+  Enabled: false
+
 # TODO: try to bring down all metrics maximums
 Metrics/AbcSize:
   Enabled: true
