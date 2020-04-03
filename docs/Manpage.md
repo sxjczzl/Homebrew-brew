@@ -276,6 +276,11 @@ the installed formulae or, every 30 days, for all formulae.
 
 List installed formulae that are not dependencies of another installed formula.
 
+* `--1`:
+  Only show dependencies one level down, instead of recursing.
+* `--tree`:
+  Show dependencies as a tree.
+
 ### `link`, `ln` [*`options`*] *`formula`*
 
 Symlink all of *`formula`*'s installed files into Homebrew's prefix. This is done
