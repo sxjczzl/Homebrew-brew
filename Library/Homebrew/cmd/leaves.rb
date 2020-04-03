@@ -4,6 +4,8 @@ require "formula"
 require "tab"
 require "cli/parser"
 
+require_relative "deps"
+
 module Homebrew
   module_function
 
@@ -14,6 +16,10 @@ module Homebrew
 
         List installed formulae that are not dependencies of another installed formula.
       EOS
+      switch "--1",
+             description: "Only show dependencies one level down, instead of recursing."
+      switch "--tree",
+             description: "Show dependencies as a tree."
       switch :debug
       max_named 0
     end
@@ -24,7 +30,12 @@ module Homebrew
 
     installed = Formula.installed.sort
     deps_of_installed = installed.flat_map(&:runtime_formula_dependencies)
-    leaves = installed.map(&:full_name) - deps_of_installed.map(&:full_name)
-    leaves.each(&method(:puts))
+    leaves = installed - deps_of_installed
+
+    if args.tree?
+      puts_deps_tree leaves, !args.send("1?")
+    else
+      leaves.each(&method(:puts))
+    end
   end
 end
