@@ -446,13 +446,13 @@ class Version
   end
   alias to_str to_s
 
-  protected
-
-  attr_reader :version
-
   def tokens
     @tokens ||= tokenize
   end
+
+  protected
+
+  attr_reader :version
 
   private
 
