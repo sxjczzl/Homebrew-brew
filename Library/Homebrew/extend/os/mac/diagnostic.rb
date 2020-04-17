@@ -44,6 +44,123 @@ module Homebrew
         nil
       end
 
+      def check_for_stray_dylibs
+        # Dylibs which are generally OK should be added to this list,
+        # with a short description of the software they come with.
+        white_list = [
+          "libfuse.2.dylib", # MacFuse
+          "libfuse_ino64.2.dylib", # MacFuse
+          "libmacfuse_i32.2.dylib", # OSXFuse MacFuse compatibility layer
+          "libmacfuse_i64.2.dylib", # OSXFuse MacFuse compatibility layer
+          "libosxfuse_i32.2.dylib", # OSXFuse
+          "libosxfuse_i64.2.dylib", # OSXFuse
+          "libosxfuse.2.dylib", # OSXFuse
+          "libTrAPI.dylib", # TrAPI/Endpoint Security VPN
+          "libntfs-3g.*.dylib", # NTFS-3G
+          "libntfs.*.dylib", # NTFS-3G
+          "libublio.*.dylib", # NTFS-3G
+          "libUFSDNTFS.dylib", # Paragon NTFS
+          "libUFSDExtFS.dylib", # Paragon ExtFS
+          "libecomlodr.dylib", # Symantec Endpoint Protection
+          "libsymsea*.dylib", # Symantec Endpoint Protection
+          "sentinel.dylib", # SentinelOne
+          "sentinel-*.dylib", # SentinelOne
+        ]
+
+        __check_stray_files "/usr/local/lib", "*.dylib", white_list, <<~EOS
+          Unbrewed dylibs were found in /usr/local/lib.
+          If you didn't put them there on purpose they could cause problems when
+          building Homebrew formulae, and may need to be deleted.
+
+          Unexpected dylibs:
+        EOS
+      end
+
+      def check_for_stray_static_libs
+        # Static libs which are generally OK should be added to this list,
+        # with a short description of the software they come with.
+        white_list = [
+          "libntfs-3g.a", # NTFS-3G
+          "libntfs.a", # NTFS-3G
+          "libublio.a", # NTFS-3G
+          "libappfirewall.a", # Symantec Endpoint Protection
+          "libautoblock.a", # Symantec Endpoint Protection
+          "libautosetup.a", # Symantec Endpoint Protection
+          "libconnectionsclient.a", # Symantec Endpoint Protection
+          "liblocationawareness.a", # Symantec Endpoint Protection
+          "libpersonalfirewall.a", # Symantec Endpoint Protection
+          "libtrustedcomponents.a", # Symantec Endpoint Protection
+        ]
+
+        __check_stray_files "/usr/local/lib", "*.a", white_list, <<~EOS
+          Unbrewed static libraries were found in /usr/local/lib.
+          If you didn't put them there on purpose they could cause problems when
+          building Homebrew formulae, and may need to be deleted.
+
+          Unexpected static libraries:
+        EOS
+      end
+
+      def check_for_stray_pcs
+        # Package-config files which are generally OK should be added to this list,
+        # with a short description of the software they come with.
+        white_list = [
+          "fuse.pc", # OSXFuse/MacFuse
+          "macfuse.pc", # OSXFuse MacFuse compatibility layer
+          "osxfuse.pc", # OSXFuse
+          "libntfs-3g.pc", # NTFS-3G
+          "libublio.pc", # NTFS-3G
+        ]
+
+        __check_stray_files "/usr/local/lib/pkgconfig", "*.pc", white_list, <<~EOS
+          Unbrewed .pc files were found in /usr/local/lib/pkgconfig.
+          If you didn't put them there on purpose they could cause problems when
+          building Homebrew formulae, and may need to be deleted.
+
+          Unexpected .pc files:
+        EOS
+      end
+
+      def check_for_stray_las
+        white_list = [
+          "libfuse.la", # MacFuse
+          "libfuse_ino64.la", # MacFuse
+          "libosxfuse_i32.la", # OSXFuse
+          "libosxfuse_i64.la", # OSXFuse
+          "libosxfuse.la", # OSXFuse
+          "libntfs-3g.la", # NTFS-3G
+          "libntfs.la", # NTFS-3G
+          "libublio.la", # NTFS-3G
+        ]
+
+        __check_stray_files "/usr/local/lib", "*.la", white_list, <<~EOS
+          Unbrewed .la files were found in /usr/local/lib.
+          If you didn't put them there on purpose they could cause problems when
+          building Homebrew formulae, and may need to be deleted.
+
+          Unexpected .la files:
+        EOS
+      end
+
+      def check_for_stray_headers
+        white_list = [
+          "fuse.h", # MacFuse
+          "fuse/**/*.h", # MacFuse
+          "macfuse/**/*.h", # OSXFuse MacFuse compatibility layer
+          "osxfuse/**/*.h", # OSXFuse
+          "ntfs/**/*.h", # NTFS-3G
+          "ntfs-3g/**/*.h", # NTFS-3G
+        ]
+
+        __check_stray_files "/usr/local/include", "**/*.h", white_list, <<~EOS
+          Unbrewed header files were found in /usr/local/include.
+          If you didn't put them there on purpose they could cause problems when
+          building Homebrew formulae, and may need to be deleted.
+
+          Unexpected header files:
+        EOS
+      end
+
       def check_for_unsupported_macos
         return if Homebrew::EnvConfig.developer?
 
