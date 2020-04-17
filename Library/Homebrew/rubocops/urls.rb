@@ -46,6 +46,8 @@ module RuboCop
         def audit_formula(_node, _class_node, _parent_class_node, body_node)
           urls = find_every_func_call_by_name(body_node, :url)
           mirrors = find_every_func_call_by_name(body_node, :mirror)
+          homepage = find_every_func_call_by_name(body_node, :homepage)
+          head = find_every_func_call_by_name(body_node, :head)
 
           # GNU urls; doesn't apply to mirrors
           gnu_pattern = %r{^(?:https?|ftp)://ftpmirror.gnu.org/(.*)}
@@ -100,6 +102,23 @@ module RuboCop
                                                  %r{^http://(?:[^/]*\.)?mirrorservice\.org/}])
           audit_urls(urls, http_to_https_patterns) do |_, url|
             problem "Please use https:// for #{url}"
+          end
+
+          # Check for any bitbucket hg URL's since this data will be deleted soon.
+          bitbucket_pattern = Regexp.union([%r{https?://bitbucket\.org/([^/]+)/([^/]+)/?.*}])
+          audit_urls([*urls, *homepage, *head], bitbucket_pattern) do |match, url|
+            user = match[1]
+            repo = match[2]
+            next if user.nil?
+
+            api_url = "https://api.bitbucket.org/2.0/repositories/#{user}/#{repo}"
+            out = %x{/usr/bin/curl --request GET #{api_url}}
+            next unless $?.exitstatus == 0
+
+            metadata = JSON.parse(out)
+            next if metadata.nil?
+
+            problem "#{url} from deprecated mercurial repository in Bitbucket" if metadata["scm"] == "hg"
           end
 
           apache_mirror_pattern = %r{^https?://(?:[^/]*\.)?apache\.org/dyn/closer\.(?:cgi|lua)\?path=/?(.*)}i
