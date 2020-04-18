@@ -247,6 +247,7 @@ EOS
 
   # ensure we don't munge line endings on checkout
   git config core.autocrlf false
+  git config rebase.abbreviateCommands false
 
   if [[ -z "$HOMEBREW_MERGE" ]]
   then
