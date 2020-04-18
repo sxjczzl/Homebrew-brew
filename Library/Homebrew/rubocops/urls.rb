@@ -112,7 +112,7 @@ module RuboCop
             next if user.nil?
 
             api_url = "https://api.bitbucket.org/2.0/repositories/#{user}/#{repo}"
-            out = %x{/usr/bin/curl --request GET #{api_url}}
+            out = %x{/usr/bin/curl --show-error --silent --request GET #{api_url}}
             next unless $?.exitstatus == 0
 
             metadata = JSON.parse(out)
