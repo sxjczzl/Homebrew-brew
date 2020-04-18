@@ -15,7 +15,8 @@ jobs:
         os: [ubuntu-latest, macOS-latest]
     steps:
     - name: Set up Git repository
-      uses: actions/checkout@v1
+      uses: actions/checkout@master
+      fetch-depth: 0
 
     - name: Set up Homebrew PATH
       run: |
@@ -27,29 +28,14 @@ jobs:
 
     - name: Set up Homebrew
       run: |
+        HOMEBREW_REPOSITORY="$(brew --repo)"
+        mv "$HOMEBREW_REPOSITORY/Library/Taps" "$PWD/Library"
+        sudo rm -rf "$HOMEBREW_REPOSITORY"
+        sudo ln -sf "$PWD" "$HOMEBREW_REPOSITORY"
         if [ "$RUNNER_OS" = "Linux" ]; then
-          HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew
-
-          sudo mkdir -p "$HOMEBREW_REPOSITORY/Library/Taps"
-          mv "$HOMEBREW_REPOSITORY/Library/Taps" "$PWD/Library"
-          sudo rm -rf "$HOMEBREW_REPOSITORY"
-          sudo ln -sf "$PWD" "$HOMEBREW_REPOSITORY"
-
-          cd /home/linuxbrew/.linuxbrew
-          sudo mkdir -p bin etc include lib opt sbin share var/homebrew/linked Cellar
-          sudo ln -sf ../Homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/
-          sudo chown -R "$USER" /home/linuxbrew
-
-          brew update-reset Homebrew/Library/Taps/homebrew/homebrew-core
-        else
-          HOMEBREW_REPOSITORY="$(brew --repo)"
-
-          mv "$HOMEBREW_REPOSITORY/Library/Taps" "$PWD/Library"
-          sudo rm -rf "$HOMEBREW_REPOSITORY"
-          sudo ln -sf "$PWD" "$HOMEBREW_REPOSITORY"
-
-          brew update-reset Library/Taps/homebrew/homebrew-core
+          sudo chown -R "$USER" "$(brew --prefix)" "Library/Taps"
         fi
+        brew update-reset Library/Taps/homebrew/homebrew-core
 
     - name: Set up Ruby
       if: matrix.os == 'ubuntu-latest'
@@ -87,7 +73,6 @@ jobs:
       run: |
         # Install taps needed for 'brew tests' and 'brew man'
         export HOMEBREW_NO_AUTO_UPDATE=1
-        sudo chown -R "$USER" Library/Taps
         brew tap homebrew/bundle
         brew tap homebrew/services
         if [ "$RUNNER_OS" = "macOS" ]; then
