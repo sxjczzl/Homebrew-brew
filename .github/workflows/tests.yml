@@ -24,14 +24,16 @@ jobs:
 
     - name: Set up Homebrew
       run: |
-        cd $(brew --repo)
-        rm -rf $GITHUB_WORKSPACE
-        ln -s $PWD $GITHUB_WORKSPACE
+        cd "$(brew --repo)"
+        rm -rf "$GITHUB_WORKSPACE"
+        ln -s "$PWD" "$GITHUB_WORKSPACE"
         git fetch --tags origin ${{github.sha}}
         git checkout --force -B master FETCH_HEAD
         brew update-reset Library/Taps/homebrew/homebrew-core
         if [ "$RUNNER_OS" = "Linux" ]; then
-          sudo chown -R "$USER" $(brew --prefix)
+          sudo chown -R "$USER" "$(brew --prefix)"
+        else
+          sudo chown "$USER" "$PWD"
         fi
 
     - name: Set up Ruby
