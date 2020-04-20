@@ -1070,40 +1070,46 @@ Install macOS applications distributed as binaries. See `brew-cask`(1).
 
 **Homebrew/homebrew-cask**: <https://github.com/Homebrew/homebrew-cask>
 
-### `bundle` [*`subcommand`*]
+### `bundle` *`subcommand`*
 
 Bundler for non-Ruby dependencies from Homebrew, Homebrew Cask, Mac App Store
 and Whalebrew.
 
-`brew bundle` [`install`]:
-    Install or upgrade all dependencies in a `Brewfile`.
+`brew bundle` [`install`]
 
-`brew bundle dump`:
-    Write all installed casks/formulae/images/taps into a `Brewfile`.
+Install or upgrade all dependencies in a `Brewfile`.
 
-`brew bundle cleanup`:
-    Uninstall all dependencies not listed in a `Brewfile`.
+`brew bundle dump`
 
-`brew bundle check`:
-    Check if all dependencies are installed in a `Brewfile`.
+Write all installed casks/formulae/images/taps into a `Brewfile`.
 
-`brew bundle exec` *`command`*:
-    Run an external command in an isolated build environment.
+`brew bundle cleanup`
 
-`brew bundle list`:
-    List all dependencies present in a `Brewfile`. By default, only Homebrew
+Uninstall all dependencies not listed in a `Brewfile`.
+
+`brew bundle check`
+
+Check if all dependencies are installed in a `Brewfile`.
+
+`brew bundle exec` *`command`*
+
+Run an external command in an isolated build environment.
+
+`brew bundle list`
+
+List all dependencies present in a Brewfile. By default, only Homebrew
 dependencies are listed.
 
 * `--file`:
-  Read the `Brewfile` from this location. Use `--file=-` to pipe to stdin/stdout.
+  Read the `Brewfile` from this file. Use `--file=-` to pipe to stdin/stdout.
 * `--global`:
   Read the `Brewfile` from `~/.Brewfile`.
 * `-v`, `--verbose`:
-  `install` prints output from commands as they are run. `check` lists all missing dependencies.
+  `install` output is printed from commands as they are run. `check` prints all missing dependencies.
 * `--no-upgrade`:
   `install` won't run `brew upgrade` on outdated dependencies. Note they may still be upgraded by `brew install` if needed.
 * `-f`, `--force`:
-  `dump` overwrites an existing `Brewfile`. `cleanup` actually performs its cleanup operations.
+  `dump` overwrites an existing `Brewfile`. `cleanup` actually perform the cleanup operations.
 * `--no-lock`:
   `install` won't output a `Brewfile.lock.json`.
 * `--all`:
@@ -1119,7 +1125,7 @@ dependencies are listed.
 * `--whalebrew`:
   `list` Whalebrew dependencies.
 * `--describe`:
-  `dump` adds a description comment above each line, unless the dependency does not have a description.
+  `dump` a description comment above each line, unless the dependency does not have a description.
 * `--no-restart`:
   `dump` does not add `restart_service` to formula lines.
 * `--zap`:
