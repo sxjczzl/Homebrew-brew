@@ -48,6 +48,7 @@ module Cask
       check_latest_with_auto_updates
       check_stanza_requires_uninstall
       check_appcast_contains_version
+      check_virustotal
       self
     rescue => e
       odebug "#{e.message}\n#{e.backtrace.join("\n")}"
@@ -320,6 +321,28 @@ module Cask
                   " the version number '#{adjusted_version_stanza}':\n#{appcast_contents}"
     rescue
       add_error "appcast at URL '#{appcast_stanza}' offline or looping"
+    end
+
+    def check_virustotal
+      return if ENV["HOMEBREW_VIRUSTOTAL_API_TOKEN"].blank?
+
+      odebug "Auditing against virustotal"
+
+      token = ENV["HOMEBREW_VIRUSTOTAL_API_TOKEN"]
+      api_url = "https://www.virustotal.com/vtapi/v2/url/report?apikey=#{token}&scan=1&resource=#{cask.url}"
+      out, _, status= curl_output("--request", "GET", api_url)
+      return unless status.success?
+
+      metadata = JSON.parse(out)
+      return if metadata.nil?
+
+      ohai "Scan in progress, result at #{metadata["permalink"]}" if metadata["response_code"] == -2
+
+      return if metadata["response_code"] != 1
+
+      return if metadata["positives"].zero?
+
+      add_warning "Url has #{metadata["positives"]} virustotal positives"
     end
 
     def check_blacklist
