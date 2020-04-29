@@ -6,7 +6,7 @@ module Language
       module_function
 
       def detected_perl_shebang(formula = self)
-        perl_path = if formula.uses_from_macos_elements&.include? "perl"
+        perl_path = if formula.uses_from_macos_elements&.include? "perl" && OS.mac?
           "/usr/bin/perl"
         elsif formula.deps.map(&:name).include? "perl"
           Formula["perl"].opt_bin/"perl"
