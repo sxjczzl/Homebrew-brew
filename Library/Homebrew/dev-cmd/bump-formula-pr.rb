@@ -195,8 +195,8 @@ module Homebrew
       resource.download_strategy = DownloadStrategyDetector.detect_from_url(new_url)
       resource.owner = Resource.new(formula.name)
       if forced_version
-        if forced_version == resource.version
-          forced_version = nil
+        if forced_version == resource.version.to_s
+          forced_version = "0"
         else
           resource.version = forced_version
         end
@@ -281,7 +281,7 @@ module Homebrew
 
     if forced_version && forced_version != "0"
       if requested_spec == :stable
-        replacement_pairs << if File.read(formula.path).include?("version \"#{old_formula_version}\"")
+        replacement_pairs << if formula_contents.include?("version \"#{old_formula_version}\"")
           [
             old_formula_version.to_s,
             forced_version,
@@ -303,7 +303,7 @@ module Homebrew
           "\\1#{forced_version}\\2",
         ]
       end
-    elsif forced_version && forced_version == "0"
+    elsif forced_version && forced_version == "0" && formula_contents.include?("version \"#{old_formula_version}\"")
       if requested_spec == :stable
         replacement_pairs << [
           /^  version \"[\w\.\-\+]+\"\n/m,
