@@ -544,6 +544,9 @@ module Homebrew
       end
     end
 
+    def audit_license
+    end
+
     def audit_bottle_spec
       # special case: new versioned formulae should be audited
       return unless @new_formula_inclusive

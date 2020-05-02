@@ -41,6 +41,7 @@ require "find"
 #   homepage "https://www.gnu.org/software/wget/"
 #   url "https://ftp.gnu.org/gnu/wget/wget-1.15.tar.gz"
 #   sha256 "52126be8cf1bddd7536886e74c053ad7d0ed2aa89b4b630f76785bac21695fcd"
+#   license mit: 'http://mit-license.com'
 #
 #   def install
 #     system "./configure", "--prefix=#{prefix}"
@@ -350,6 +351,11 @@ class Formula
   # @method homepage
   # @see .homepage=
   delegate homepage: :"self.class"
+
+  # The license of the software.
+  # @method lisence
+  # @see .license=
+  delegate license: :"self.class"
 
   # The version for the currently active {SoftwareSpec}.
   # The version is autodetected from the URL and/or tag so only needs to be
@@ -1635,6 +1641,7 @@ class Formula
       "versioned_formulae"       => versioned_formulae.map(&:name),
       "desc"                     => desc,
       "homepage"                 => homepage,
+      "license"                  => license,
       "versions"                 => {
         "stable" => stable&.version&.to_s,
         "devel"  => devel&.version&.to_s,
@@ -2149,6 +2156,14 @@ class Formula
     #
     # <pre>desc "Example formula"</pre>
     attr_rw :desc
+
+    # @!attribute [w]
+    # A one-line description of the software. Used by users to get an overview
+    # of the software and Homebrew maintainers.
+    # Shows when running `brew info`.
+    #
+    # <pre>desc "Example formula"</pre>
+    attr_rw :license
 
     # @!attribute [w] homepage
     # The homepage for the software. Used by users to get more information
