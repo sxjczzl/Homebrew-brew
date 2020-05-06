@@ -21,6 +21,7 @@ require "language/python"
 require "tab"
 require "mktemp"
 require "find"
+# require "shane"
 
 # A formula provides instructions and metadata for Homebrew to install a piece
 # of software. Every Homebrew formula is a {Formula}.
