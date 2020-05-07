@@ -43,9 +43,6 @@ jobs:
         brew update-reset Library/Taps/homebrew/homebrew-core
         cd -
 
-        GEMS_HASH=$(shasum -a 256 "$HOMEBREW_REPOSITORY/Library/Homebrew/Gemfile.lock" | cut -f1 -d' ')
-        echo "::set-output name=gems-hash::$GEMS_HASH"
-
         if [ "$RUNNER_OS" = "Linux" ]; then
           sudo chown -R "$USER" "$HOMEBREW_PREFIX"
         fi
@@ -72,19 +69,6 @@ jobs:
           brew link gettext
         fi
         brew doctor
-
-    - name: Cache Bundler RubyGems
-      id: cache
-      uses: actions/cache@v1
-      with:
-        path: Library/Homebrew/vendor/bundle/ruby/
-        key: ${{ runner.os }}-rubygems-${{ steps.set-up-homebrew.outputs.gems-hash }}
-        restore-keys: |
-          ${{ runner.os }}-rubygems-
-
-    - name: Install Bundler RubyGems
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: brew install-bundler-gems
 
     - name: Check for uncommitted RubyGems
       run: git diff --stat --exit-code Library/Homebrew/vendor/bundle/ruby
