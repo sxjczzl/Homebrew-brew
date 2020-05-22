@@ -172,7 +172,7 @@ module Utils
             end
           end
 
-          puts "#{category}: #{analytics.join(", ")}" unless full_analytics
+          return "#{category}: #{analytics.join(", ")}" unless full_analytics
         end
       end
 
@@ -180,14 +180,15 @@ module Utils
         json = formulae_brew_sh_json("#{formula_path}/#{f}.json")
         return if json.blank? || json["analytics"].blank?
 
-        get_analytics(json)
+        puts get_analytics(json)
       end
 
-      def cask_output(cask)
+      def get_cask_analytics(cask)
+        # this returns the analytics string
         json = formulae_brew_sh_json("#{cask_path}/#{cask}.json")
-        return if json.blank? || json["analytics"].blank?
+        return "" if json.blank? || json["analytics"].blank?
 
-        get_analytics(json)
+        return get_analytics(json)
       end
 
       def custom_prefix_label

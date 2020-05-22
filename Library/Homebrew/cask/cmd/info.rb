@@ -41,12 +41,12 @@ module Cask
         output << artifact_info(cask) + "\n"
         caveats = Installer.caveats(cask)
         output << caveats if caveats
+        output << ::Utils::Analytics.get_cask_analytics(cask)
         output
       end
 
       def self.info(cask)
         puts get_info(cask)
-        ::Utils::Analytics.cask_output(cask)
       end
 
       def self.title_info(cask)
