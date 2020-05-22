@@ -188,7 +188,7 @@ module Utils
         json = formulae_brew_sh_json("#{cask_path}/#{cask}.json")
         return "" if json.blank? || json["analytics"].blank?
 
-        return get_analytics(json)
+        get_analytics(json)
       end
 
       def custom_prefix_label
