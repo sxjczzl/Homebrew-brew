@@ -150,7 +150,7 @@ module Utils
       def get_analytics(json)
         full_analytics = Homebrew.args.analytics? || Homebrew.args.verbose?
 
-        ohai "Analytics"
+        analytics_categories = []
         json["analytics"].each do |category, value|
           category = category.tr("_", "-")
           analytics = []
@@ -172,8 +172,11 @@ module Utils
             end
           end
 
-          return "#{category}: #{analytics.join(", ")}" unless full_analytics
+          analytics_categories.append("#{category}: #{analytics.join(", ")}") unless full_analytics
         end
+        output = ohai_title("Analytics") + "\n"
+        output << analytics_categories.join("\n")
+        output
       end
 
       def formula_output(f)
