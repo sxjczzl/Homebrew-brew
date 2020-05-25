@@ -347,6 +347,14 @@ module GitHub
   end
 
   def check_fork_exists(repo)
+    json = fork_for_repo(repo)
+
+    return false if json["message"] == "Not Found"
+
+    true
+  end
+
+  def fork_for_repo(repo)
     _, reponame = repo.split("/")
 
     case api_credentials_type
@@ -355,11 +363,7 @@ module GitHub
     when :env_token
       username = open_api(url_to("user")) { |json| json["login"] }
     end
-    json = open_api(url_to("repos", username, reponame))
-
-    return false if json["message"] == "Not Found"
-
-    true
+    open_api(url_to("repos", username, reponame))
   end
 
   def create_pull_request(repo, title, head, base, body)

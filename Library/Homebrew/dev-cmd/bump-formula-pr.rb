@@ -411,13 +411,20 @@ module Homebrew
   end
 
   def forked_repo_info(formula, tap_full_name, backup_file)
-    response = GitHub.create_fork(tap_full_name)
-  rescue GitHub::AuthenticationFailedError, *GitHub.api_errors => e
-    formula.path.atomic_write(backup_file)
-    odie "Unable to fork: #{e.message}!"
-  else
-    # GitHub API responds immediately but fork takes a few seconds to be ready.
-    sleep 1 until GitHub.check_fork_exists(tap_full_name)
+    # Only create fork if necessary
+    if GitHub.check_fork_exists(tap_full_name)
+      response = GitHub.fork_for_repo(tap_full_name)
+    else
+      begin
+        response = GitHub.create_fork(tap_full_name)
+      rescue GitHub::AuthenticationFailedError, *GitHub.api_errors => e
+        formula.path.atomic_write(backup_file)
+        odie "Unable to fork: #{e.message}!"
+      else
+        # GitHub API responds immediately but fork takes a few seconds to be ready.
+        sleep 1 until GitHub.check_fork_exists(tap_full_name)
+      end
+    end
     remote_url = if system("git", "config", "--local", "--get-regexp", "remote\..*\.url", "git@github.com:.*")
       response.fetch("ssh_url")
     else
