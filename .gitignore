@@ -168,3 +168,6 @@
 
 # Unignore tests' bundle config
 !/Library/Homebrew/test/.bundle/config
+
+# Ignore droppings from editors
+.vscode
