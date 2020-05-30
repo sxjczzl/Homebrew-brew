@@ -47,3 +47,7 @@ RUN cd /home/linuxbrew/.linuxbrew \
   && rm -rf ~/.cache \
   && chown -R linuxbrew: /home/linuxbrew/.linuxbrew \
   && chmod -R g+w,o-w /home/linuxbrew/.linuxbrew
+
+RUN test "$version" = "16.04" \
+  && curl -L https://git.io/JfKpe -o /usr/share/ca-certificates/mozilla/AddTrust_External_Root.crt \
+  && update-ca-certificates --fresh
