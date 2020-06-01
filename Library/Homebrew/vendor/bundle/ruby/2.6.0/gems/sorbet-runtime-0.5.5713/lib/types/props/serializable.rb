@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: ignore
+# typed: vidushee
 
 module T::Props::Serializable
   include T::Props::Plugin

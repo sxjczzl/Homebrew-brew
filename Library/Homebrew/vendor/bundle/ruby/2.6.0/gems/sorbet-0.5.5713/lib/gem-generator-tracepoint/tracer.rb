@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: ignore
+# typed: vidushee
 
 require_relative '../real_stdlib'
 
