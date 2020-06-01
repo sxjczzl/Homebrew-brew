@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: true
+# typed: strict
 
 # This file is hand-crafted to encode the dependencies. They load the whole type
 # system since there is such a high chance of it being used, using an autoloader
