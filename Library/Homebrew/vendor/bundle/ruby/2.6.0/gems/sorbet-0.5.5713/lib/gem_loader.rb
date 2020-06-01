@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: vidushee
+# typed: ignore
 
 class Sorbet::Private::GemLoader
   NO_GEM = "_unknown"

@@ -1,5 +1,5 @@
 # frozen_string_literal: true
-# typed: vidushee
+# typed: ignore
 
 module T::Props
   module Private

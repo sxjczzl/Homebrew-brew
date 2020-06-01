@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # frozen_string_literal: true
-# typed: vidushee
+# typed: ignore
 
 class Sorbet; end
 module Sorbet::Private; end

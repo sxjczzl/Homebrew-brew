@@ -1,4 +1,4 @@
-# typed: vidushee
+# typed: ignore
 # frozen_string_literal: true
 
 describe Cask::Artifact::Manpage, :cask do
