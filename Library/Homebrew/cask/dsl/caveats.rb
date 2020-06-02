@@ -1,4 +1,4 @@
-# typed: ignore
+# typed: false
 # frozen_string_literal: true
 
 # Caveats DSL. Each method should handle output, following the
