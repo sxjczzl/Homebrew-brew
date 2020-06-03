@@ -5,7 +5,7 @@ require 'time'
 
 class Mechanize::HTTP
   ContentDisposition = Struct.new :type, :filename, :creation_date,
-                                  :modification_date, :read_date, :size, :parameters
+    :modification_date, :read_date, :size, :parameters
 end
 
 ##
@@ -188,3 +188,4 @@ class Mechanize::HTTP::ContentDispositionParser
   end
 
 end
+
