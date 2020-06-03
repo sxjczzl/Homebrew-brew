@@ -104,10 +104,10 @@ GEM
       json (>= 1.8, < 3)
       simplecov-html (~> 0.10.0)
     simplecov-html (0.10.2)
-    sorbet (0.5.5716)
-      sorbet-static (= 0.5.5716)
-    sorbet-runtime (0.5.5716)
-    sorbet-static (0.5.5716-universal-darwin-14)
+    sorbet (0.5.5725)
+      sorbet-static (= 0.5.5725)
+    sorbet-runtime (0.5.5725)
+    sorbet-static (0.5.5725-universal-darwin-14)
     sync (0.5.0)
     term-ansicolor (1.7.1)
       tins (~> 1.0)
@@ -149,4 +149,4 @@ DEPENDENCIES
   sorbet-runtime
 
 BUNDLED WITH
-   2.1.4
+   1.17.2
