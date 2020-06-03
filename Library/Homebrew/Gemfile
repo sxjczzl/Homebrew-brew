@@ -11,16 +11,16 @@ gem "rspec"
 gem "rspec-its", require: false
 gem "rspec-retry", require: false
 gem "rspec-wait", require: false
-# gem "rubocop"
+gem "rubocop"
 gem "simplecov", require: false
 gem "sorbet"
 gem "sorbet-runtime"
 
 # vendored gems
-# gem "activesupport"
+gem "activesupport"
 gem "concurrent-ruby"
 gem "mechanize"
 gem "plist"
-# gem "rubocop-performance"
-# gem "rubocop-rspec"
+gem "rubocop-performance"
+gem "rubocop-rspec"
 gem "ruby-macho"
