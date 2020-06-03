@@ -134,6 +134,9 @@
 **/vendor/bundle/ruby/*/gems/unicode-display_width-*/
 **/vendor/bundle/ruby/*/gems/webrobots-*/
 **/vendor/bundle/ruby/*/gems/byebug-*/
+**/vendor/bundle/ruby/*/gems/regexp_parser-*/
+**/vendor/bundle/ruby/*/gems/sorbet-*/
+**/vendor/bundle/ruby/*/gems/sorbet-runtime-*/
 
 # Ignore `bin` contents (again).
 /bin
