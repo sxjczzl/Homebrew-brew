@@ -13076,7 +13076,7 @@
 # wrong constant name <Class:NormalizeRGBTriple>
 # wrong constant name <Class:WeightedEuclideanDistance>
 # wrong constant name <static-init>
-# undefined method `weighted_euclidean_distance_to<defaultArg>1' for module `#<Module:0x00007fef14075728>'
+# undefined method `weighted_euclidean_distance_to<defaultArg>1' for module `#<Module:0x00007f95abeb5260>'
 # wrong constant name weighted_euclidean_distance_to<defaultArg>1
 # wrong constant name weighted_euclidean_distance_to
 # wrong constant name <static-init>
