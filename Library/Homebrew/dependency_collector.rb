@@ -127,6 +127,7 @@ class DependencyCollector
     when :macos         then MacOSRequirement.new(tags)
     when :maximum_macos then MacOSRequirement.new(tags, comparator: "<=")
     when :osxfuse       then OsxfuseRequirement.new(tags)
+    when :swift         then SwiftRequirement.new(tags)
     when :tuntap        then TuntapRequirement.new(tags)
     when :x11           then X11Requirement.new(tags)
     when :xcode         then XcodeRequirement.new(tags)
