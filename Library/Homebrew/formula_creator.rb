@@ -116,6 +116,8 @@ module Homebrew
           uses_from_macos "ruby"
         <% elsif mode == :rust %>
           depends_on "rust" => :build
+        <% elsif mode == :swift %>
+          depends_on :xcode => ["11.4", :build] # swift-tools-version:5.2
         <% elsif mode.nil? %>
           # depends_on "cmake" => :build
         <% end %>
@@ -176,6 +178,9 @@ module Homebrew
             bin.env_script_all_files(libexec/"bin", :GEM_HOME => ENV["GEM_HOME"])
         <% elsif mode == :rust %>
             system "cargo", "install", *std_cargo_args
+        <% elsif mode == :swift %>
+            system "swift", "build", *std_swift_args
+            bin.install ".build/release/#{name}"
         <% else %>
             # Remove unrecognized options if warned by configure
             system "./configure", "--disable-debug",

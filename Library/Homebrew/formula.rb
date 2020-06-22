@@ -1407,6 +1407,11 @@ class Formula
     ["--prefix=#{prefix}", "--libdir=#{lib}"]
   end
 
+  # Standard parameters for Swift builds
+  def std_swift_args
+    ["--disable-sandbox", "--configuration=release"]
+  end
+
   def shared_library(name, version = nil)
     "#{name}.#{version}#{"." unless version.nil?}dylib"
   end
@@ -1945,6 +1950,8 @@ class Formula
         pretty_args -= std_cmake_args
       when "go"
         pretty_args -= std_go_args
+      when "swift"
+        pretty_args -= std_swift_args
       end
     end
     pretty_args.each_index do |i|

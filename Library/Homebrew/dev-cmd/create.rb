@@ -35,6 +35,8 @@ module Homebrew
              description: "Create a basic template for a Ruby build."
       switch "--rust",
              description: "Create a basic template for a Rust build."
+      switch "--swift",
+             description: "Create a basic template for a Swift build."
       switch "--no-fetch",
              description: "Homebrew will not download <URL> to the cache and will thus not add its SHA-256 "\
                           "to the formula for you, nor will it check the GitHub API for GitHub projects "\
@@ -50,7 +52,7 @@ module Homebrew
       switch :force
       switch :verbose
       switch :debug
-      conflicts "--autotools", "--cmake", "--go", "--meson", "--perl", "--python", "--rust"
+      conflicts "--autotools", "--cmake", "--go", "--meson", "--perl", "--python", "--rust", "--swift"
       named 1
     end
   end
@@ -92,6 +94,8 @@ module Homebrew
       :ruby
     elsif args.rust?
       :rust
+    elsif args.swift?
+      :swift
     end
 
     if fc.name.nil? || fc.name.strip.empty?
