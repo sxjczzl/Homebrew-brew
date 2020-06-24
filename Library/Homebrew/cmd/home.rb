@@ -8,14 +8,14 @@ module Homebrew
   module_function
 
   def home_args
-    Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
+    Homebrew::CLI::Parser.new do |p|
+      p.usage_banner <<~EOS
         `home` [<formula>]
 
         Open <formula>'s homepage in a browser, or open Homebrew's own homepage
         if no formula is provided.
       EOS
-      switch :debug
+      p.switch :debug
     end
   end
 
