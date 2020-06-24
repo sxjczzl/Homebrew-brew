@@ -5,6 +5,8 @@ require "cask/cask_loader"
 require "cask/exceptions"
 
 module Homebrew
+  include Kernel
+
   module_function
 
   def home_args
@@ -22,10 +24,10 @@ module Homebrew
   def home
     home_args.parse
 
-    if args.no_named?
+    if Homebrew.args.no_named?
       exec_browser HOMEBREW_WWW
     else
-      homepages = args.named.map do |name|
+      homepages = Homebrew.args.named.map do |name|
         f = Formulary.factory(name)
         puts "Opening homepage for formula #{name}"
         f.homepage
