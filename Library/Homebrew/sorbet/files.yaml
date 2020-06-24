@@ -101,7 +101,6 @@ false:
   - ./cmd/fetch.rb
   - ./cmd/gist-logs.rb
   - ./cmd/help.rb
-  - ./cmd/home.rb
   - ./cmd/info.rb
   - ./cmd/install.rb
   - ./cmd/leaves.rb
@@ -860,6 +859,7 @@ true:
   - ./cask/macos.rb
   - ./cask/url.rb
   - ./checksum.rb
+  - ./cmd/home.rb
   - ./config.rb
   - ./extend/cachable.rb
   - ./extend/os/linux/development_tools.rb
