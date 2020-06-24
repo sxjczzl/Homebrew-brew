@@ -91,6 +91,11 @@ module Homebrew
                      "as in pull requests).",
         boolean:     true,
       },
+      HOMEBREW_DISABLE_LOAD_FORMULA_MESSAGE:      {
+        description: "If set, Homebrew won't display messages when loading formulae. This is useful when debugging " \
+                     "issues not related to loading formulae.",
+        boolean:     true,
+      },
       HOMEBREW_DISPLAY:                   {
         description:  "Use this X11 display when opening a page in a browser, for example with " \
                      "`brew home`. Primarily useful on Linux.",

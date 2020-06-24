@@ -132,7 +132,9 @@ module Formulary
     private
 
     def load_file
-      $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}" if Homebrew.args.debug?
+      if Homebrew.args.debug? && !Homebrew::EnvConfig.disable_load_formula_message?
+        $stderr.puts "#{$PROGRAM_NAME} (#{self.class.name}): loading #{path}"
+      end
       raise FormulaUnavailableError, name unless path.file?
 
       Formulary.load_formula_from_path(name, path)

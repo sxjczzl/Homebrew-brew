@@ -1342,6 +1342,9 @@ Note that environment variables must have a value set to be detected. For exampl
   * `HOMEBREW_DISABLE_LOAD_FORMULA`:
     If set, refuse to load formulae. This is useful when formulae are not trusted (such as in pull requests).
 
+  * `HOMEBREW_DISABLE_LOAD_FORMULA_MESSAGE`:
+    If set, Homebrew won't display messages when loading formulae. This is useful when debugging issues not related to loading formulae.
+
   * `HOMEBREW_DISPLAY`:
     Use this X11 display when opening a page in a browser, for example with `brew home`. Primarily useful on Linux.
 
