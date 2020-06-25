@@ -63,6 +63,8 @@ require "os"
 require "os/global"
 
 module Homebrew
+  include Kernel
+
   extend FileUtils
 
   DEFAULT_PREFIX ||= HOMEBREW_DEFAULT_PREFIX

@@ -5,8 +5,6 @@ require "cask/cask_loader"
 require "cask/exceptions"
 
 module Homebrew
-  include Kernel
-
   module_function
 
   def home_args
