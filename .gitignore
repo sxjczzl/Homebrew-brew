@@ -90,6 +90,7 @@
 **/vendor/bundle/ruby/*/gems/diff-lcs-*/
 **/vendor/bundle/ruby/*/gems/docile-*/
 **/vendor/bundle/ruby/*/gems/domain_name-*/
+**/vendor/bundle/ruby/*/gems/http-accept-*/
 **/vendor/bundle/ruby/*/gems/http-cookie-*/
 **/vendor/bundle/ruby/*/gems/hpricot-*/
 **/vendor/bundle/ruby/*/gems/jaro_winkler-*/
@@ -99,9 +100,11 @@
 **/vendor/bundle/ruby/*/gems/mime-types-*/
 **/vendor/bundle/ruby/*/gems/mini_portile2-*/
 **/vendor/bundle/ruby/*/gems/minitest-*/
+**/vendor/bundle/ruby/*/gems/multi_json-*/
 **/vendor/bundle/ruby/*/gems/mustache-*/
 **/vendor/bundle/ruby/*/gems/net-http-digest_auth-*/
 **/vendor/bundle/ruby/*/gems/net-http-persistent-*/
+**/vendor/bundle/ruby/*/gems/netrc-*/
 **/vendor/bundle/ruby/*/gems/nokogiri-*/
 **/vendor/bundle/ruby/*/gems/ntlm-http-*/
 **/vendor/bundle/ruby/*/gems/parallel-*/
@@ -113,6 +116,7 @@
 **/vendor/bundle/ruby/*/gems/rainbow-*/
 **/vendor/bundle/ruby/*/gems/rdiscount-*/
 **/vendor/bundle/ruby/*/gems/regexp_parser-*/
+**/vendor/bundle/ruby/*/gems/rest-client-*/
 **/vendor/bundle/ruby/*/gems/ronn-*/
 **/vendor/bundle/ruby/*/gems/rspec-*/
 **/vendor/bundle/ruby/*/gems/rspec-core-*/
