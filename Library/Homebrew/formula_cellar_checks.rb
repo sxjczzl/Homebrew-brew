@@ -207,12 +207,28 @@ module FormulaCellarChecks
     keg = Keg.new(prefix)
 
     matches = []
-    keg.each_unique_file_matching(HOMEBREW_SHIMS_PATH) do |f|
-      match = f.relative_path_from(keg.to_path)
+    keg.each_unique_file_matching(HOMEBREW_SHIMS_PATH) do |file|
+      relative_file = file.relative_path_from(keg.to_path)
 
-      next if match.to_s.match? %r{^share/doc/.+?/INFO_BIN$}
+      next if relative_file.to_s.match? %r{^share/doc/.+?/INFO_BIN$}
 
-      matches << match
+      result = if file.binary_executable? || file.dylib?
+        Utils.popen_read("strings", "-", file.to_s) do |io|
+          io.each_line.any? do |line|
+            line.chomp!
+            next false unless line.include? HOMEBREW_SHIMS_PATH
+
+            # Do not report matches to files that do not exist.
+            next false unless File.exist? line
+
+            true
+          end
+        end
+      else
+        true
+      end
+
+      matches << relative_file if result
     end
 
     return if matches.empty?
