@@ -1,3 +1,4 @@
+#!/bin/bash
 # Migrate analytics UUID to its new home in Homebrew repo's git config and
 # remove the legacy UUID file if detected.
 migrate-legacy-uuid-file() {

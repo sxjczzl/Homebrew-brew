@@ -1,3 +1,4 @@
+#!/bin/bash
 # create a lock using `flock(2)`. A name is required as first argument.
 # the lock will be automatically unlocked when the shell process quits.
 # Noted due to the fixed FD, a shell process can only create one lock.

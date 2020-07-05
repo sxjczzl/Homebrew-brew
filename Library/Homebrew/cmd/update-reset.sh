@@ -1,3 +1,4 @@
+#!/bin/bash
 #:  * `update-reset` [<repository>]
 #:
 #:  Fetch and reset Homebrew and all tap repositories (or any specified <repository>) using `git`(1) to their latest `origin/master`.

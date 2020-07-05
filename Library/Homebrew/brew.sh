@@ -1,3 +1,4 @@
+#!/bin/bash
 # Force UTF-8 to avoid encoding issues for users with broken locale settings.
 if [[ "$(locale charmap 2>/dev/null)" != "UTF-8" ]]
 then
@@ -5,7 +6,7 @@ then
 fi
 
 # USER isn't always set so provide a fall back for `brew` and subprocesses.
-export USER=${USER:-`id -un`}
+export USER=${USER:-$(id -un)}
 
 # Where we store built products; a Cellar in HOMEBREW_PREFIX (often /usr/local
 # for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY.

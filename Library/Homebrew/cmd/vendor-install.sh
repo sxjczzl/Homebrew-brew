@@ -1,3 +1,4 @@
+#!/bin/bash
 #:  @hide_from_man_page
 #:  * `vendor-install` [<target>]
 #:

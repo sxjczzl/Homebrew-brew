@@ -1,3 +1,4 @@
+#!/bin/bash
 #:  * `shellenv`
 #:
 #:  Print export statements. When run in a shell, this installation of Homebrew will be added to your `PATH`, `MANPATH`, and `INFOPATH`.

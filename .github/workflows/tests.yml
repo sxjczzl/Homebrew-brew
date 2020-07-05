@@ -167,6 +167,14 @@ jobs:
         brew install vale
         vale docs/
 
+    - name: Run ShellCheck
+      run: |
+        brew install shellcheck
+        shellcheck --color bin/brew
+        ven='./Library/Homebrew/vendor/*'
+        taps='./Library/Taps/*'
+        find . -type f -iname "*\.sh" -not -path "$ven" -not -path "$taps" -exec shellcheck --color {} \;
+
     - name: Lint Dockerfile
       if: matrix.os == 'ubuntu-latest'
       run: |
