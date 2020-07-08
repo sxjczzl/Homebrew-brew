@@ -598,6 +598,14 @@ EOS
     fi
   done
 
+  if [ -d "$HOMEBREW_CELLAR/python" ]; then
+    # We do not ship a "python" formula anymore and the migration
+    # to python@3.8 left the old python 3.7 folder around.
+    # Remove it because it confuses brew as this folder is not
+    # supposed to exist anymore
+    rm -rf "$HOMEBREW_CELLAR/python"
+  fi
+
   safe_cd "$HOMEBREW_REPOSITORY"
 
   if [[ -n "$HOMEBREW_UPDATED" ||
