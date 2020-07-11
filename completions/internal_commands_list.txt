@@ -22,6 +22,8 @@ commands
 config
 configure
 create
+dependencies
+dependents
 deps
 desc
 diy

@@ -13,7 +13,7 @@ module Homebrew
   def uses_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
-        `uses` [<options>] <formula>
+        `uses`, `dependents` [<options>] <formula>
 
         Show formulae that specify <formula> as a dependency. When given multiple
         formula arguments, show the intersection of formulae that use <formula>.

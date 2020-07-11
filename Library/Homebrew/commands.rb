@@ -6,22 +6,24 @@ module Commands
   HOMEBREW_CMD_PATH = (HOMEBREW_LIBRARY_PATH/"cmd").freeze
   HOMEBREW_DEV_CMD_PATH = (HOMEBREW_LIBRARY_PATH/"dev-cmd").freeze
   HOMEBREW_INTERNAL_COMMAND_ALIASES = {
-    "ls"          => "list",
-    "homepage"    => "home",
-    "-S"          => "search",
-    "up"          => "update",
-    "ln"          => "link",
-    "instal"      => "install", # gem does the same
-    "uninstal"    => "uninstall",
-    "rm"          => "uninstall",
-    "remove"      => "uninstall",
-    "configure"   => "diy",
-    "abv"         => "info",
-    "dr"          => "doctor",
-    "--repo"      => "--repository",
-    "environment" => "--env",
-    "--config"    => "config",
-    "-v"          => "--version",
+    "ls"           => "list",
+    "homepage"     => "home",
+    "-S"           => "search",
+    "up"           => "update",
+    "ln"           => "link",
+    "instal"       => "install", # gem does the same
+    "uninstal"     => "uninstall",
+    "rm"           => "uninstall",
+    "remove"       => "uninstall",
+    "configure"    => "diy",
+    "abv"          => "info",
+    "dr"           => "doctor",
+    "--repo"       => "--repository",
+    "environment"  => "--env",
+    "--config"     => "config",
+    "-v"           => "--version",
+    "dependencies" => "deps",
+    "dependents"   => "uses",
   }.freeze
 
   def valid_internal_cmd?(cmd)

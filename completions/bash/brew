@@ -845,7 +845,7 @@ _brew() {
     cleanup)                    _brew_cleanup ;;
     command)                    __brew_complete_commands ;;
     create)                     _brew_create ;;
-    deps)                       _brew_deps ;;
+    deps|dependencies)          _brew_deps ;;
     desc)                       _brew_desc ;;
     diy|configure)              _brew_diy ;;
     doctor|dr)                  _brew_doctor ;;
@@ -887,7 +887,7 @@ _brew() {
     untap)                      __brew_complete_tapped ;;
     update|up)                  _brew_update ;;
     upgrade)                    _brew_upgrade ;;
-    uses)                       _brew_uses ;;
+    uses|dependents)            _brew_uses ;;
     *)                          ;;
   esac
 }

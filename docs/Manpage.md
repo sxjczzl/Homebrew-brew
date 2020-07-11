@@ -86,7 +86,7 @@ Show lists of built-in and external commands.
 Show Homebrew and system configuration info useful for debugging. If you file a
 bug report, you will be required to provide this information.
 
-### `deps` [*`options`*] [*`formula`*]
+### `deps`, `dependencies` [*`options`*] [*`formula`*]
 
 Show dependencies for *`formula`*. Additional options specific to *`formula`* may be
 appended to the command. When given multiple formula arguments, show the
@@ -557,7 +557,7 @@ the upgraded formulae or, every 30 days, for all formulae.
 * `-n`, `--dry-run`:
   Show what would be upgraded, but do not actually upgrade anything.
 
-### `uses` [*`options`*] *`formula`*
+### `uses`, `dependents` [*`options`*] *`formula`*
 
 Show formulae that specify *`formula`* as a dependency. When given multiple
 formula arguments, show the intersection of formulae that use *`formula`*. By

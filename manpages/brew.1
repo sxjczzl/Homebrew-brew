@@ -86,7 +86,7 @@ Include aliases of internal commands\.
 .SS "\fBconfig\fR"
 Show Homebrew and system configuration info useful for debugging\. If you file a bug report, you will be required to provide this information\.
 .
-.SS "\fBdeps\fR [\fIoptions\fR] [\fIformula\fR]"
+.SS "\fBdeps\fR, \fBdependencies\fR [\fIoptions\fR] [\fIformula\fR]"
 Show dependencies for \fIformula\fR\. Additional options specific to \fIformula\fR may be appended to the command\. When given multiple formula arguments, show the intersection of dependencies for each formula\.
 .
 .TP
@@ -722,7 +722,7 @@ Print install times for each formula at the end of the run\.
 \fB\-n\fR, \fB\-\-dry\-run\fR
 Show what would be upgraded, but do not actually upgrade anything\.
 .
-.SS "\fBuses\fR [\fIoptions\fR] \fIformula\fR"
+.SS "\fBuses\fR, \fBdependents\fR [\fIoptions\fR] \fIformula\fR"
 Show formulae that specify \fIformula\fR as a dependency\. When given multiple formula arguments, show the intersection of formulae that use \fIformula\fR\. By default, \fBuses\fR shows all formulae that specify \fIformula\fR as a required or recommended dependency for their stable builds\.
 .
 .TP

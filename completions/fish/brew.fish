@@ -279,25 +279,25 @@ __fish_brew_complete_cmd 'config' "Show Homebrew and system configuration for de
 
 __fish_brew_complete_cmd 'deps' "Show dependencies for given formulae"
 # accepts formulae argument only without --all or --installed options:
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --all --installed' -a '(__fish_brew_suggest_formulae_all)'
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --all --installed' -a '(__fish_brew_suggest_formulae_all)'
 # options that work only without --tree:
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --tree' -s n         -d "Show in topological order"
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --tree' -l 1         -d "Show only 1 level down"
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --tree' -l union     -d "Show the union of dependencies for formulae, instead of the intersection"
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --tree' -l full-name -d "List dependencies by their full name"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --tree' -s n         -d "Show in topological order"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --tree' -l 1         -d "Show only 1 level down"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --tree' -l union     -d "Show the union of dependencies for formulae, instead of the intersection"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --tree' -l full-name -d "List dependencies by their full name"
 # --all and --installed are mutually exclusive:
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --installed --tree' -l all       -d "Show dependencies for all formulae"
-__fish_brew_complete_arg 'deps; and not __fish_brew_opt --all'              -l installed -d "Show dependencies for installed formulae"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --installed --tree' -l all       -d "Show dependencies for all formulae"
+__fish_brew_complete_arg 'deps dependencies; and not __fish_brew_opt --all'              -l installed -d "Show dependencies for installed formulae"
 # --tree works without options or with --installed
-__fish_brew_complete_arg 'deps;
+__fish_brew_complete_arg 'deps dependencies;
     and begin
         not __fish_brew_opts;
         or __fish_brew_opt --installed;
     end' -l tree -d "Show dependencies as tree"
 # filters can be passed with any other options
-__fish_brew_complete_arg 'deps' -l include-build    -d "Include the :build type dependencies"
-__fish_brew_complete_arg 'deps' -l include-optional -d "Include the :optional type dependencies"
-__fish_brew_complete_arg 'deps' -l skip-recommended -d "Skip :recommended  type  dependencies"
+__fish_brew_complete_arg 'deps dependencies' -l include-build    -d "Include the :build type dependencies"
+__fish_brew_complete_arg 'deps dependencies' -l include-optional -d "Include the :optional type dependencies"
+__fish_brew_complete_arg 'deps dependencies' -l skip-recommended -d "Skip :recommended  type  dependencies"
 
 
 __fish_brew_complete_cmd 'desc' "Show formulae description or search by name and/or description"
@@ -586,15 +586,15 @@ __fish_brew_complete_arg 'upgrade' -l fetch-HEAD -d "Fetch the upstream reposito
 
 
 __fish_brew_complete_cmd 'uses' "Show formulas that depend on specified formula"
-__fish_brew_complete_arg 'uses' -a '(__fish_brew_suggest_formulae_all)'
-__fish_brew_complete_arg 'uses' -l installed -d "List only installed formulae"
-__fish_brew_complete_arg 'uses' -l recursive -d "Resolve more than one level of dependencies"
-__fish_brew_complete_arg 'uses' -l include-build    -d "Include the :build type dependencies"
-__fish_brew_complete_arg 'uses' -l include-optional -d "Include the :optional type dependencies"
-__fish_brew_complete_arg 'uses' -l skip-recommended -d "Skip :recommended  type  dependencies"
+__fish_brew_complete_arg 'uses dependents' -a '(__fish_brew_suggest_formulae_all)'
+__fish_brew_complete_arg 'uses dependents' -l installed -d "List only installed formulae"
+__fish_brew_complete_arg 'uses dependents' -l recursive -d "Resolve more than one level of dependencies"
+__fish_brew_complete_arg 'uses dependents' -l include-build    -d "Include the :build type dependencies"
+__fish_brew_complete_arg 'uses dependents' -l include-optional -d "Include the :optional type dependencies"
+__fish_brew_complete_arg 'uses dependents' -l skip-recommended -d "Skip :recommended  type  dependencies"
 # --HEAD and --devel are mutually exclusive:
-__fish_brew_complete_arg 'uses; and not __fish_brew_opt --devel --HEAD' -l devel -d "Find cases development builds using formulae"
-__fish_brew_complete_arg 'uses; and not __fish_brew_opt --devel --HEAD' -l HEAD  -d "Find cases HEAD builds using formulae"
+__fish_brew_complete_arg 'uses dependents; and not __fish_brew_opt --devel --HEAD' -l devel -d "Find cases development builds using formulae"
+__fish_brew_complete_arg 'uses dependents; and not __fish_brew_opt --devel --HEAD' -l HEAD  -d "Find cases HEAD builds using formulae"
 
 
 __fish_brew_complete_cmd '--cache' "Display Homebrew/formula's cache location"

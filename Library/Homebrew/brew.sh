@@ -328,22 +328,24 @@ HOMEBREW_ARG_COUNT="$#"
 HOMEBREW_COMMAND="$1"
 shift
 case "$HOMEBREW_COMMAND" in
-  ls)          HOMEBREW_COMMAND="list" ;;
-  homepage)    HOMEBREW_COMMAND="home" ;;
-  -S)          HOMEBREW_COMMAND="search" ;;
-  up)          HOMEBREW_COMMAND="update" ;;
-  ln)          HOMEBREW_COMMAND="link" ;;
-  instal)      HOMEBREW_COMMAND="install" ;; # gem does the same
-  uninstal)    HOMEBREW_COMMAND="uninstall" ;;
-  rm)          HOMEBREW_COMMAND="uninstall" ;;
-  remove)      HOMEBREW_COMMAND="uninstall" ;;
-  configure)   HOMEBREW_COMMAND="diy" ;;
-  abv)         HOMEBREW_COMMAND="info" ;;
-  dr)          HOMEBREW_COMMAND="doctor" ;;
-  --repo)      HOMEBREW_COMMAND="--repository" ;;
-  environment) HOMEBREW_COMMAND="--env" ;;
-  --config)    HOMEBREW_COMMAND="config" ;;
-  -v)          HOMEBREW_COMMAND="--version" ;;
+  ls)           HOMEBREW_COMMAND="list" ;;
+  homepage)     HOMEBREW_COMMAND="home" ;;
+  -S)           HOMEBREW_COMMAND="search" ;;
+  up)           HOMEBREW_COMMAND="update" ;;
+  ln)           HOMEBREW_COMMAND="link" ;;
+  instal)       HOMEBREW_COMMAND="install" ;; # gem does the same
+  uninstal)     HOMEBREW_COMMAND="uninstall" ;;
+  rm)           HOMEBREW_COMMAND="uninstall" ;;
+  remove)       HOMEBREW_COMMAND="uninstall" ;;
+  configure)    HOMEBREW_COMMAND="diy" ;;
+  abv)          HOMEBREW_COMMAND="info" ;;
+  dr)           HOMEBREW_COMMAND="doctor" ;;
+  --repo)       HOMEBREW_COMMAND="--repository" ;;
+  environment)  HOMEBREW_COMMAND="--env" ;;
+  --config)     HOMEBREW_COMMAND="config" ;;
+  -v)           HOMEBREW_COMMAND="--version" ;;
+  dependencies) HOMEBREW_COMMAND="deps" ;;
+  dependents)   HOMEBREW_COMMAND="uses" ;;
 esac
 
 if [[ "$HOMEBREW_COMMAND" = "cask" ]]

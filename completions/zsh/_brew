@@ -28,6 +28,8 @@ __brew_list_aliases() {
     environment '--env'
     '--config' config
     '-v' '--version'
+    dependencies deps
+    dependents uses
   )
   echo "${aliases}"
 }
@@ -312,9 +314,9 @@ _brew_create() {
     ':url:_urls'
 }
 
-# brew deps [--1] [-n] [--union] [--full-name] [--installed] [--include-build] [--include-optional] [--skip-recommended] [--include-requirements] formulae
-# brew deps --tree [--1] [filters] (formulae|--installed)
-# brew deps [filters] (--installed|--all)
+# brew deps, dependencies [--1] [-n] [--union] [--full-name] [--installed] [--include-build] [--include-optional] [--skip-recommended] [--include-requirements] formulae
+# brew deps, dependencies --tree [--1] [filters] (formulae|--installed)
+# brew deps, dependencies [filters] (--installed|--all)
 # The filters placeholder is any combination of options --include-build, --include-optional, and --skip-recommended as documented above.
 _brew_deps() {
   _arguments \
@@ -822,7 +824,7 @@ _brew_upgrade() {
 
 }
 
-# brew uses [--installed] [--recursive] [--include-build] [--include-optional]
+# brew uses, dependents [--installed] [--recursive] [--include-build] [--include-optional]
 #   [--skip-recommended] [--devel|--HEAD] formulae:
 _brew_uses() {
   _arguments \
