@@ -26,35 +26,30 @@ Thank you for your understanding,<br>
 
 
 ## Description
-
 _A detailed description of the proposed feature._
 
 replace me
 
 
 ## Motivation
-
 _The motivation for the feature._
 
 replace me
 
 
 ## Relevance
-
 _How the proposed feature would be relevant to at least 90% of Homebrew users._
 
 replace me
 
 
 ## Alternatives
-
 _What alternatives to the feature have been considered._
 
 replace me
 
 
 ## Your Commitment
-
 _Please indicate if you're willing to implement this feature._
 
 replace me
