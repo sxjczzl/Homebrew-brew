@@ -26,24 +26,29 @@ Thank you for your understanding,<br>
 
 
 ## Description
-<!-- A detailed description of the proposed feature -->
+
+_A detailed description of the proposed feature_
 
 replace me
 
 
 ## Motivation
-<!-- The motivation for the feature -->
+
+_The motivation for the feature_
 
 replace me
 
 
 ## Relevance
-<!-- How the feature would be relevant to at least 90% of Homebrew users/maintainers -->
+
+_How the proposed feature would be relevant
+to at least 90% of Homebrew users/maintainers._
 
 replace me
 
 
 ## Alternatives
-<!--What alternatives to the feature have been considered-->
+
+_What alternatives to the feature have been considered._
 
 replace me
