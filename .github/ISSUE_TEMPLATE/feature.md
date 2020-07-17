@@ -18,7 +18,7 @@ We, therefore, reserve the right to close your issue without comment if you
 delete, do not read, or do not fill out the issue checklist below and provide
 _**all** information requested_. Note, that if you repeatedly fail to fill out
 the issue template, we will be forced to block you from ever submitting issues
-to Homebrew again.
+to Homebrew.
 
 Thank you for your understanding,<br>
 \- Homebrew maintainers
@@ -41,8 +41,7 @@ replace me
 
 ## Relevance
 
-_How the proposed feature would be relevant
-to at least 90% of Homebrew users/maintainers._
+_How the proposed feature would be relevant to at least 90% of Homebrew users._
 
 replace me
 
