@@ -8,17 +8,17 @@ about: Request our thoughts on your suggestion for a new feature for Homebrew.
 <summary><strong>Guidelines</strong></summary>
 Thank you for making a feature suggestion! :heart:
 
-Please fill the sections below with the relevant information.
+**Please fill out all the sections below with the relevant information.**
+
+We will review your suggestion and let you know our decision as soon as we can.
+Note, that we will close this issue if neither you nor we have the time to work on it.
 
 Homebrew is a non-profit project run entirely by unpaid volunteers.
 We, therefore, reserve the right to close your issue without comment if you
 delete, do not read, or do not fill out the issue checklist below and provide
-**all** the requested information. Note, that if you repeatedly fail to use
+_**all** information requested_. Note, that if you repeatedly fail to fill out
 the issue template, we will be forced to block you from ever submitting issues
 to Homebrew again.
-
-We will also likely close this issue or ask you to create a pull-request if
-it's something the maintainers are not actively planning to work on.
 
 Thank you for your understanding,<br>
 \- Homebrew maintainers
@@ -27,14 +27,14 @@ Thank you for your understanding,<br>
 
 ## Description
 
-_A detailed description of the proposed feature_
+_A detailed description of the proposed feature._
 
 replace me
 
 
 ## Motivation
 
-_The motivation for the feature_
+_The motivation for the feature._
 
 replace me
 
@@ -50,5 +50,12 @@ replace me
 ## Alternatives
 
 _What alternatives to the feature have been considered._
+
+replace me
+
+
+## Your Commitment
+
+_Please indicate if you're willing to implement this feature._
 
 replace me
