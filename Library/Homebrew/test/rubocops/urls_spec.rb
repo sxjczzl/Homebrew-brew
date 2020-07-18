@@ -251,7 +251,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
         class Foo < Formula
           desc "foo"
           url "https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz"
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
         end
       RUBY
     end

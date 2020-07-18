@@ -291,9 +291,9 @@ module RuboCop
           urls += mirrors
 
           # Check pypi urls
-          @pypi_pattern = %r{^https?://pypi.python.org/(.*)}
-          audit_urls(urls, @pypi_pattern) do |match, url|
-            problem "#{url} should be `https://files.pythonhosted.org/#{match[1]}`"
+          pypi_pattern = %r{^https?://pypi.python.org/(.*)}
+          audit_urls(urls, pypi_pattern) do |match, url|
+            problem "`#{url}` should be `https://files.pythonhosted.org/#{match[1]}`"
           end
 
           # Check for short files.pythonhosted.org urls
