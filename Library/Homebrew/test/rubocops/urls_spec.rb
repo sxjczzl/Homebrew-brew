@@ -246,7 +246,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
   subject(:cop) { described_class.new }
 
   context "when a pypi.python.org URL is used" do
-    it "reports an offense" do
+    it "reports an offense with a pypi url" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           desc "foo"
@@ -256,7 +256,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
       RUBY
     end
 
-    it "support auto-correction" do
+    it "support auto-correction for pypi urls" do
       corrected = autocorrect_source(<<~RUBY)
         class Foo < Formula
           desc "foo"
@@ -265,6 +265,41 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
       RUBY
 
       expect(corrected).to eq <<~RUBY
+        class Foo < Formula
+          desc "foo"
+          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
+        end
+      RUBY
+    end
+
+    it "reports an offense with a pythonhosted url" do
+      expect_offense(<<~RUBY)
+        class Foo < Formula
+          desc "foo"
+          url "https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz"
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
+        end
+      RUBY
+    end
+
+    it "support auto-correction for long pythonhosted urls" do
+      corrected = autocorrect_source(<<~RUBY)
+        class Foo < Formula
+          desc "foo"
+          url "https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz"
+        end
+      RUBY
+
+      expect(corrected).to eq <<~RUBY
+        class Foo < Formula
+          desc "foo"
+          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
+        end
+      RUBY
+    end
+
+    it "reports no offenses with a short pythonhosted url" do
+      expect_no_offenses(<<~RUBY)
         class Foo < Formula
           desc "foo"
           url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"

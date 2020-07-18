@@ -295,17 +295,30 @@ module RuboCop
           audit_urls(urls, @pypi_pattern) do |match, url|
             problem "#{url} should be `https://files.pythonhosted.org/#{match[1]}`"
           end
+
+          # Check for short files.pythonhosted.org urls
+          pythonhosted_pattern = %r{^https?://files.pythonhosted.org/packages/(.*)}
+          audit_urls(urls, pythonhosted_pattern) do |match, url|
+            next if match[1].match?(%r{^source/})
+
+            problem "`#{url}` should be `#{convert_to_pythonhosted_url(url)}`"
+          end
         end
 
         def autocorrect(node)
           lambda do |corrector|
             url_string_node = parameters(node).first
             url = string_content(url_string_node)
-            match = regex_match_group(url_string_node, @pypi_pattern)
-            correction = node.source.sub(url, "https://files.pythonhosted.org/#{match[1]}")
+            correction = node.source.sub(url, convert_to_pythonhosted_url(url))
             corrector.insert_before(node.source_range, correction)
             corrector.remove(node.source_range)
           end
+        end
+
+        def convert_to_pythonhosted_url(url)
+          package_file = File.basename(url)
+          package_name = package_file.match(/^(.*)-[0-9.]+\.tar\.gz/)[1]
+          "https://files.pythonhosted.org/packages/source/#{package_name}/#{package_file}"
         end
       end
     end
