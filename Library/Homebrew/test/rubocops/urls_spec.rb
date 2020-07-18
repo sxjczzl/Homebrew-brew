@@ -251,7 +251,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
         class Foo < Formula
           desc "foo"
           url "https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz"
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/f/foo/foo-0.1.tar.gz`
         end
       RUBY
     end
@@ -267,7 +267,23 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
       expect(corrected).to eq <<~RUBY
         class Foo < Formula
           desc "foo"
-          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
+          url "https://files.pythonhosted.org/packages/source/f/foo/foo-0.1.tar.gz"
+        end
+      RUBY
+    end
+
+    it "support auto-correction for packages with a capital first letter" do
+      corrected = autocorrect_source(<<~RUBY)
+        class Foo < Formula
+          desc "Foo"
+          url "https://pypi.python.org/packages/source/Foo/Foo-0.1.tar.gz"
+        end
+      RUBY
+
+      expect(corrected).to eq <<~RUBY
+        class Foo < Formula
+          desc "Foo"
+          url "https://files.pythonhosted.org/packages/source/F/Foo/Foo-0.1.tar.gz"
         end
       RUBY
     end
@@ -277,7 +293,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
         class Foo < Formula
           desc "foo"
           url "https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz"
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ `https://files.pythonhosted.org/packages/cb/a2/d59c18cd6a143bf860c29acb70552b7351fd7e0f56213be86b624601106b/foo-0.1.tar.gz` should be `https://files.pythonhosted.org/packages/source/f/foo/foo-0.1.tar.gz`
         end
       RUBY
     end
@@ -293,7 +309,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
       expect(corrected).to eq <<~RUBY
         class Foo < Formula
           desc "foo"
-          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
+          url "https://files.pythonhosted.org/packages/source/f/foo/foo-0.1.tar.gz"
         end
       RUBY
     end
@@ -302,7 +318,7 @@ describe RuboCop::Cop::FormulaAudit::PyPiUrls do
       expect_no_offenses(<<~RUBY)
         class Foo < Formula
           desc "foo"
-          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
+          url "https://files.pythonhosted.org/packages/source/f/foo/foo-0.1.tar.gz"
         end
       RUBY
     end

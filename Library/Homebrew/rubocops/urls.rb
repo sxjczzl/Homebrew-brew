@@ -293,7 +293,7 @@ module RuboCop
           # Check pypi urls
           pypi_pattern = %r{^https?://pypi.python.org/(.*)}
           audit_urls(urls, pypi_pattern) do |match, url|
-            problem "`#{url}` should be `https://files.pythonhosted.org/#{match[1]}`"
+            problem "`#{url}` should be `#{convert_to_pythonhosted_url(url)}`"
           end
 
           # Check for short files.pythonhosted.org urls
@@ -318,7 +318,7 @@ module RuboCop
         def convert_to_pythonhosted_url(url)
           package_file = File.basename(url)
           package_name = package_file.match(/^(.*)-[0-9.]+\.tar\.gz/)[1]
-          "https://files.pythonhosted.org/packages/source/#{package_name}/#{package_file}"
+          "https://files.pythonhosted.org/packages/source/#{package_name[0]}/#{package_name}/#{package_file}"
         end
       end
     end
