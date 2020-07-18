@@ -292,7 +292,7 @@ module RuboCop
 
           # Check pypi urls
           pypi_pattern = %r{^https?://pypi.python.org/(.*)}
-          audit_urls(urls, pypi_pattern) do |match, url|
+          audit_urls(urls, pypi_pattern) do |_match, url|
             problem "`#{url}` should be `#{convert_to_pythonhosted_url(url)}`"
           end
 
@@ -317,7 +317,7 @@ module RuboCop
 
         def convert_to_pythonhosted_url(url)
           package_file = File.basename(url)
-          package_name = package_file.match(/^(.*)-[0-9.]+\.tar\.gz/)[1]
+          package_name = package_file.match(/^(.+)-[a-z0-9.]+$/)[1]
           "https://files.pythonhosted.org/packages/source/#{package_name[0]}/#{package_name}/#{package_file}"
         end
       end
