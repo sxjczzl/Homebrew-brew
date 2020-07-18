@@ -291,16 +291,14 @@ module RuboCop
           urls += mirrors
 
           # Check pypi urls
-          pypi_pattern = %r{^https?://pypi.python.org/(.*)}
-          audit_urls(urls, pypi_pattern) do |_match, url|
+          pypi_pattern = %r{^https?://pypi.python.org/}
+          audit_urls(urls, pypi_pattern) do |_, url|
             problem "`#{url}` should be `#{convert_to_pythonhosted_url(url)}`"
           end
 
-          # Check for short files.pythonhosted.org urls
-          pythonhosted_pattern = %r{^https?://files.pythonhosted.org/packages/(.*)}
-          audit_urls(urls, pythonhosted_pattern) do |match, url|
-            next if match[1].match?(%r{^source/})
-
+          # Check long files.pythonhosted.org urls
+          pythonhosted_pattern = %r{^https?://files.pythonhosted.org/packages/(?!source/)}
+          audit_urls(urls, pythonhosted_pattern) do |_, url|
             problem "`#{url}` should be `#{convert_to_pythonhosted_url(url)}`"
           end
         end
