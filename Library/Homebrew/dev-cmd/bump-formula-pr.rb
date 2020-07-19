@@ -165,7 +165,6 @@ module Homebrew
     old_formula_version = formula_version(formula, requested_spec)
     old_version = old_formula_version.to_s
     forced_version = new_version.present?
-    new_url ||= update_pypi_url(old_url, new_version) if old_url.match?(%r{^https?://files.pythonhosted.org/})
     new_url_hash = if new_url && new_hash
       check_all_pull_requests(formula, tap_full_name, url: new_url) unless new_version
       true
@@ -189,7 +188,11 @@ module Homebrew
     elsif !new_url && !new_version
       odie "#{formula}: no --url= or --version= argument specified!"
     else
-      new_url ||= old_url.gsub(old_version, new_version)
+      new_url ||= if old_url.match?(%r{^https?://files.pythonhosted.org/})
+        update_pypi_url(old_url, new_version)
+      else
+        old_url.gsub(old_version, new_version)
+      end
       if new_url == old_url
         odie <<~EOS
           You probably need to bump this formula manually since the new URL
