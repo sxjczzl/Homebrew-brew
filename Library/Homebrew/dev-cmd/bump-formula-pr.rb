@@ -130,6 +130,17 @@ module Homebrew
     new_version = args.version
     check_all_pull_requests(formula, tap_full_name, version: new_version) if new_version
 
+    if formula.patchlist.present?
+      if args.force?
+        opoo "This formula has patches, submitting PR anyway."
+      else
+        odie <<~EOS
+          #{formula} is a formula with patches that may be resolved upstream.
+          If you have confirmed that the patches still are needed, use --force to override.
+        EOS
+      end
+    end
+
     requested_spec = :stable
     formula_spec = formula.stable
     odie "#{formula}: no #{requested_spec} specification found!" unless formula_spec
