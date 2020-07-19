@@ -2,6 +2,7 @@
 
 require "formula"
 require "cli/parser"
+require "utils/curl"
 
 module Homebrew
   module_function
@@ -164,6 +165,7 @@ module Homebrew
     old_formula_version = formula_version(formula, requested_spec)
     old_version = old_formula_version.to_s
     forced_version = new_version.present?
+    new_url ||= update_pypi_url(old_url, new_version) if old_url.match?(%r{^https?://files.pythonhosted.org/})
     new_url_hash = if new_url && new_hash
       check_all_pull_requests(formula, tap_full_name, url: new_url) unless new_version
       true
@@ -441,6 +443,24 @@ module Homebrew
     resource.version = new_version if forced_version
     odie "No --version= argument specified!" unless resource.version
     [resource.fetch, forced_version]
+  end
+
+  def update_pypi_url(old_url, version)
+    formula_name = File.basename(old_url).match(/^(.+)-[a-z0-9.]+$/)[1]
+    metadata_url = "https://pypi.org/pypi/#{formula_name}/json"
+    out, _, status = curl_output(metadata_url)
+    return unless status.success?
+
+    json = JSON.parse(out)
+
+    unless json["releases"].key? version
+      odie <<~EOS
+        You probably need to bump this formula manually since the url for
+        version #{version} was unable to be found.
+      EOS
+    end
+
+    json["releases"][version].find { |url| url["packagetype"] == "sdist" }["url"]
   end
 
   def forked_repo_info(formula, tap_full_name, old_contents)
