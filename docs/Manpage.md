@@ -638,6 +638,19 @@ Homebrew/homebrew-cask (if tapped) to standard output.
 
 ## DEVELOPER COMMANDS
 
+### `add-license` [*`options`*] *`formula`* *`license`*
+
+Create a commit to add *`license`* to *`formula`*.
+
+* `-n`, `--dry-run`:
+  Print what would be done rather than doing it.
+* `--no-audit`:
+  Don't run `brew audit` before committing.
+* `--strict`:
+  Run `brew audit --strict` before committing.
+* `--message`:
+  Append *`message`* to the default commit message.
+
 ### `audit` [*`options`*] [*`formula`*]
 
 Check *`formula`* for Homebrew coding style violations. This should be run before

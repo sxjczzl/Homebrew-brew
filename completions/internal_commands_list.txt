@@ -9,6 +9,7 @@
 -S
 -v
 abv
+add-license
 analytics
 audit
 bottle

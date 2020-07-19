@@ -816,6 +816,25 @@ Print the version numbers of Homebrew, Homebrew/homebrew\-core and Homebrew/home
 .
 .SH "DEVELOPER COMMANDS"
 .
+.SS "\fBadd\-license\fR [\fIoptions\fR] \fIformula\fR \fIlicense\fR"
+Create a commit to add \fIlicense\fR to \fIformula\fR\.
+.
+.TP
+\fB\-n\fR, \fB\-\-dry\-run\fR
+Print what would be done rather than doing it\.
+.
+.TP
+\fB\-\-no\-audit\fR
+Don\'t run \fBbrew audit\fR before committing\.
+.
+.TP
+\fB\-\-strict\fR
+Run \fBbrew audit \-\-strict\fR before committing\.
+.
+.TP
+\fB\-\-message\fR
+Append \fImessage\fR to the default commit message\.
+.
 .SS "\fBaudit\fR [\fIoptions\fR] [\fIformula\fR]"
 Check \fIformula\fR for Homebrew coding style violations\. This should be run before submitting a new formula\. If no \fIformula\fR are provided, check all locally available formulae and skip style checks\. Will exit with a non\-zero status if any errors are found\.
 .
