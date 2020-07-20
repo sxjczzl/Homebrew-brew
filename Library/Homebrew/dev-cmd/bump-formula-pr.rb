@@ -44,6 +44,8 @@ module Homebrew
              description: "Print the pull request URL instead of opening in a browser."
       switch "--no-fork",
              description: "Don't try to fork the repository."
+      switch "--delete-branch",
+             description: "Delete local branch after it is pushed."
       comma_array "--mirror",
                   description: "Use the specified <URL> as a mirror URL. If <URL> is a comma-separated list "\
                                "of URLs, multiple mirrors will be added."
@@ -363,6 +365,7 @@ module Homebrew
              "#{new_formula_version}#{devel_message}' -- #{changed_files.join(" ")}"
         ohai "git push --set-upstream $HUB_REMOTE #{branch}:#{branch}"
         ohai "git checkout --quiet #{previous_branch}"
+        ohai "git branch --delete --force #{branch}" if args.delete_branch?
         ohai "create pull request with GitHub API"
       else
 
@@ -381,6 +384,7 @@ module Homebrew
                     "--", *changed_files
         safe_system "git", "push", "--set-upstream", remote_url, "#{branch}:#{branch}"
         safe_system "git", "checkout", "--quiet", previous_branch
+        safe_system "git", "branch", "--delete", "--force", branch if args.delete_branch?
         pr_message = <<~EOS
           Created with `brew bump-formula-pr`.
         EOS
