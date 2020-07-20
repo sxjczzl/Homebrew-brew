@@ -147,6 +147,9 @@ class Formula
   # Used to change version schemes for packages
   attr_reader :version_scheme
 
+  # Used to limit how often a formula is updated
+  attr_reader :throttle_rate
+
   # The current working directory during builds.
   # Will only be non-`nil` inside {#install}.
   attr_reader :buildpath
@@ -188,6 +191,7 @@ class Formula
     @alias_name = (File.basename(alias_path) if alias_path)
     @revision = self.class.revision || 0
     @version_scheme = self.class.version_scheme || 0
+    @throttle_rate = self.class.throttle_rate
 
     @tap = if path == Formulary.core_path(name)
       CoreTap.instance
@@ -1699,6 +1703,7 @@ class Formula
       "urls"                     => {},
       "revision"                 => revision,
       "version_scheme"           => version_scheme,
+      "throttle_rate"            => throttle_rate,
       "bottle"                   => {},
       "keg_only"                 => keg_only?,
       "bottle_disabled"          => bottle_disabled?,
@@ -2267,6 +2272,13 @@ class Formula
     #
     # <pre>version_scheme 1</pre>
     attr_rw :version_scheme
+
+    # @!attribute [w] throttle_rate
+    # Used to limit the rate in which we update formulae for formaule that
+    # have frequent releases.
+    #
+    # <pre>throttle_rate 10</pre>
+    attr_rw :throttle_rate
 
     # A list of the {.stable}, {.devel} and {.head} {SoftwareSpec}s.
     # @private

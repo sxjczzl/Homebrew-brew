@@ -572,15 +572,6 @@ module Homebrew
       imagemagick@6
     ].freeze
 
-    THROTTLED_FORMULAE = {
-      "aws-sdk-cpp" => 10,
-      "awscli@1"    => 10,
-      "balena-cli"  => 10,
-      "gatsby-cli"  => 10,
-      "quicktype"   => 10,
-      "vim"         => 50,
-    }.freeze
-
     UNSTABLE_ALLOWLIST = {
       "aalib"           => "1.4rc",
       "automysqlbackup" => "3.0-rc",
@@ -679,9 +670,9 @@ module Homebrew
                                                        .map(&:to_i)
 
       formula_suffix = stable_version_string.split(".").last.to_i
-      throttled_rate = THROTTLED_FORMULAE[formula.name]
-      if throttled_rate && formula_suffix.modulo(throttled_rate).nonzero?
-        problem "should only be updated every #{throttled_rate} releases on multiples of #{throttled_rate}"
+      throttle_rate = formula.throttle_rate
+      if throttle_rate && formula_suffix.modulo(throttle_rate).nonzero?
+        problem "should only be updated every #{throttle_rate} releases on multiples of #{throttle_rate}"
       end
 
       case (url = stable.url)

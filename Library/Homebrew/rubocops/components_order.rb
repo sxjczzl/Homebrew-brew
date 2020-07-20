@@ -28,6 +28,7 @@ module RuboCop
             [{ name: :revision, type: :method_call }],
             [{ name: :version_scheme, type: :method_call }],
             [{ name: :head,      type: :method_call }],
+            [{ name: :throttle_rate, type: :method_call }],
             [{ name: :stable,    type: :block_call }],
             [{ name: :livecheck, type: :block_call }],
             [{ name: :bottle,    type: :block_call }],
