@@ -324,6 +324,7 @@ module Homebrew
       apr
       apr-util
       libressl
+      llvm
       openblas
       openssl@1.1
     ].freeze
