@@ -52,6 +52,6 @@ _What alternatives to the feature have been considered._
 
 
 ## Your Commitment
-_Please indicate if you're willing to implement this feature._
+_Please indicate if you're willing to implement the feature if this suggestion is accepted._
 
 <!-- replace me -->
