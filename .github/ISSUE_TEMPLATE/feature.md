@@ -13,9 +13,8 @@ Thank you for making a feature suggestion! :heart:
 We will review your suggestion and let you know our decision as soon as we can.
 Note, that:
 
-- proposed feature must be relevant to at least 90% of Homebrew users.
-- we will close this issue unless maintainers actively plan on working
-  on it or making it `help wanted`.
+- proposed features must be relevant to at least 90% of Homebrew users.
+- we will close this issue unless maintainers actively plan on working on it or making it `help wanted`.
 
 Homebrew is a non-profit project run entirely by unpaid volunteers.
 We, therefore, reserve the right to close your issue without comment if you
