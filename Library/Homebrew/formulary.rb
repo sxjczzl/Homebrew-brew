@@ -254,7 +254,8 @@ module Formulary
           name = new_name
           new_name = @tap.core_tap? ? name : "#{@tap}/#{name}"
         elsif (new_tap_name = @tap.tap_migrations[name])
-          new_tap_user, new_tap_repo, = new_tap_name.split("/")
+          new_tap_user, new_tap_repo, new_formula_name = new_tap_name.split("/")
+          name = new_formula_name if new_formula_name
           new_tap_name = "#{new_tap_user}/#{new_tap_repo}"
           new_tap = Tap.fetch new_tap_name
           new_tap.install unless new_tap.installed?
