@@ -162,6 +162,7 @@ module Formulary
     end
 
     def get_formula(spec, **)
+<<<<<<< HEAD
       contents = Utils::Bottles.formula_contents @bottle_filename, name: name
       formula = begin
         Formulary.from_contents name, @bottle_filename, contents, spec
@@ -172,6 +173,8 @@ module Formulary
         EOS
         super
       end
+=======
+>>>>>>> TestingBrew
       formula.local_bottle_path = @bottle_filename
       formula
     end
