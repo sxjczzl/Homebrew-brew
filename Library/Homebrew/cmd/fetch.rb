@@ -5,6 +5,8 @@ require "fetch"
 require "cli/parser"
 
 module Homebrew
+  extend Fetch
+
   module_function
 
   def fetch_args
@@ -19,7 +21,7 @@ module Homebrew
              description: "Fetch HEAD version instead of stable version."
       switch "--devel",
              description: "Fetch development version instead of stable version."
-      switch :force,
+      switch "-f", "--force",
              description: "Remove a previously cached version and re-fetch."
       switch :verbose,
              description: "Do a verbose VCS checkout, if the URL represents a VCS. This is useful for "\
@@ -62,13 +64,13 @@ module Homebrew
       f.print_tap_action verb: "Fetching"
 
       fetched_bottle = false
-      if Fetch.fetch_bottle?(f)
+      if fetch_bottle?(f)
         begin
           fetch_formula(f.bottle)
         rescue Interrupt
           raise
         rescue => e
-          raise if ARGV.homebrew_developer?
+          raise if Homebrew::EnvConfig.developer?
 
           fetched_bottle = false
           onoe e.message

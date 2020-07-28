@@ -17,6 +17,7 @@ module RuboCop
       include RangeHelp
 
       attr_accessor :file_path
+
       @registry = Cop.registry
 
       # This method is called by RuboCop and is the main entry point
@@ -34,16 +35,16 @@ module RuboCop
       # Checks for regex match of pattern in the node and
       # sets the appropriate instance variables to report the match
       def regex_match_group(node, pattern)
-        string_repr = string_content(node)
+        string_repr = string_content(node).encode("UTF-8", invalid: :replace)
         match_object = string_repr.match(pattern)
         return unless match_object
 
         node_begin_pos = start_column(node)
         line_begin_pos = line_start_column(node)
-        if node_begin_pos == line_begin_pos
-          @column = node_begin_pos + match_object.begin(0) - line_begin_pos
+        @column = if node_begin_pos == line_begin_pos
+          node_begin_pos + match_object.begin(0) - line_begin_pos
         else
-          @column = node_begin_pos + match_object.begin(0) - line_begin_pos + 1
+          node_begin_pos + match_object.begin(0) - line_begin_pos + 1
         end
         @length = match_object.to_s.length
         @line_no = line_number(node)
@@ -200,10 +201,10 @@ module RuboCop
       # Returns true if given dependency name and dependency type exist in given dependency method call node.
       # TODO: Add case where key of hash is an array
       def depends_on_name_type?(node, name = nil, type = :required)
-        if name
-          name_match = false
+        name_match = if name
+          false
         else
-          name_match = true # Match only by type when name is nil
+          true # Match only by type when name is nil
         end
 
         case type
@@ -494,7 +495,15 @@ module RuboCop
         when :str
           node.str_content
         when :dstr
-          node.each_child_node(:str).map(&:str_content).join
+          content = ""
+          node.each_child_node(:str, :begin) do |child|
+            content += if child.begin_type?
+              child.source
+            else
+              child.str_content
+            end
+          end
+          content
         when :const
           node.const_name
         when :sym

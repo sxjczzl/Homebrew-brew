@@ -34,7 +34,7 @@ class SystemCommand
   end
 
   def run!
-    puts redact_secrets(command.shelljoin.gsub('\=', "="), @secrets) if verbose? || ARGV.debug?
+    puts redact_secrets(command.shelljoin.gsub('\=', "="), @secrets) if verbose? || Homebrew.args.debug?
 
     @output = []
 
@@ -61,7 +61,7 @@ class SystemCommand
     @executable = executable
     @args = args
     @sudo = sudo
-    @input = [*input]
+    @input = Array(input)
     @print_stdout = print_stdout
     @print_stderr = print_stderr
     @verbose = verbose

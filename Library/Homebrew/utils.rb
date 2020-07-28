@@ -1,6 +1,5 @@
 # frozen_string_literal: true
 
-require "emoji"
 require "utils/analytics"
 require "utils/curl"
 require "utils/fork"
@@ -97,7 +96,7 @@ module Kernel
   end
 
   def odebug(title, *sput)
-    return unless ARGV.debug?
+    return unless Homebrew.args.debug?
 
     puts Formatter.headline(title, color: :magenta)
     puts sput unless sput.empty?
@@ -169,7 +168,7 @@ module Kernel
       tap = Tap.fetch(match[:user], match[:repo])
       tap_message = +"\nPlease report this issue to the #{tap} tap (not Homebrew/brew or Homebrew/core)"
       tap_message += ", or even better, submit a PR to fix it" if replacement
-      tap_message << ":\n  #{line.sub(/^(.*\:\d+)\:.*$/, '\1')}\n\n"
+      tap_message << ":\n  #{line.sub(/^(.*:\d+):.*$/, '\1')}\n\n"
       break
     end
 
@@ -177,7 +176,7 @@ module Kernel
     message << tap_message if tap_message
     message.freeze
 
-    if ARGV.homebrew_developer? || disable || Homebrew.raise_deprecation_exceptions?
+    if Homebrew::EnvConfig.developer? || disable || Homebrew.raise_deprecation_exceptions?
       exception = MethodDeprecatedError.new(message)
       exception.set_backtrace(backtrace)
       raise exception
@@ -194,20 +193,20 @@ module Kernel
   def pretty_installed(f)
     if !$stdout.tty?
       f.to_s
-    elsif Emoji.enabled?
-      "#{Tty.bold}#{f} #{Formatter.success("✔")}#{Tty.reset}"
-    else
+    elsif Homebrew::EnvConfig.no_emoji?
       Formatter.success("#{Tty.bold}#{f} (installed)#{Tty.reset}")
+    else
+      "#{Tty.bold}#{f} #{Formatter.success("✔")}#{Tty.reset}"
     end
   end
 
   def pretty_uninstalled(f)
     if !$stdout.tty?
       f.to_s
-    elsif Emoji.enabled?
-      "#{Tty.bold}#{f} #{Formatter.error("✘")}#{Tty.reset}"
-    else
+    elsif Homebrew::EnvConfig.no_emoji?
       Formatter.error("#{Tty.bold}#{f} (uninstalled)#{Tty.reset}")
+    else
+      "#{Tty.bold}#{f} #{Formatter.error("✘")}#{Tty.reset}"
     end
   end
 
@@ -304,10 +303,7 @@ module Kernel
   end
 
   def which_editor
-    editor = ENV.values_at("HOMEBREW_EDITOR", "HOMEBREW_VISUAL")
-                .compact
-                .reject(&:empty?)
-                .first
+    editor = Homebrew::EnvConfig.editor
     return editor if editor
 
     # Find Atom, Sublime Text, Textmate, BBEdit / TextWrangler, or vim
@@ -331,11 +327,11 @@ module Kernel
   end
 
   def exec_browser(*args)
-    browser = ENV["HOMEBREW_BROWSER"]
+    browser = Homebrew::EnvConfig.browser
     browser ||= OS::PATH_OPEN if defined?(OS::PATH_OPEN)
     return unless browser
 
-    ENV["DISPLAY"] = ENV["HOMEBREW_DISPLAY"]
+    ENV["DISPLAY"] = Homebrew::EnvConfig.display
 
     safe_system(browser, *args)
   end
@@ -441,13 +437,13 @@ module Kernel
     n_back_bytes = max_bytes_in - n_front_bytes
     if n_front_bytes.zero?
       front = bytes[1..0]
-      back = bytes[-max_bytes_in..-1]
+      back = bytes[-max_bytes_in..]
     elsif n_back_bytes.zero?
       front = bytes[0..(max_bytes_in - 1)]
       back = bytes[1..0]
     else
       front = bytes[0..(n_front_bytes - 1)]
-      back = bytes[-n_back_bytes..-1]
+      back = bytes[-n_back_bytes..]
     end
     out = front + glue_bytes + back
     out.force_encoding("UTF-8")
@@ -501,7 +497,7 @@ module Kernel
     path.read
         .lines
         .grep(/^#:/)
-        .map { |line| line.slice(2..-1) }
+        .map { |line| line.slice(2..-1).delete_prefix("  ") }
   end
 
   def redact_secrets(input, secrets)

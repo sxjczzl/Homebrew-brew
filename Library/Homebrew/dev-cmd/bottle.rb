@@ -306,10 +306,10 @@ module Homebrew
 
         ohai "Detecting if #{filename} is relocatable..." if bottle_path.size > 1 * 1024 * 1024
 
-        if Homebrew.default_prefix?(prefix)
-          prefix_check = File.join(prefix, "opt")
+        prefix_check = if Homebrew.default_prefix?(prefix)
+          File.join(prefix, "opt")
         else
-          prefix_check = prefix
+          prefix
         end
 
         # Ignore matches to source code, which is not required at run time.
@@ -321,7 +321,7 @@ module Homebrew
         if any_go_deps
           go_regex =
             Version.formula_optionally_versioned_regex(:go, full: false)
-          ignores << %r{#{Regexp.escape(HOMEBREW_CELLAR)}/#{go_regex}/[\d\.]+/libexec}
+          ignores << %r{#{Regexp.escape(HOMEBREW_CELLAR)}/#{go_regex}/[\d.]+/libexec}
         end
 
         relocatable = true
@@ -446,10 +446,10 @@ module Homebrew
             first
           elsif second.start_with?("/")
             second
-          elsif cellars.include?(:any)
-            :any
-          elsif cellars.include?(:any_skip_relocation)
-            :any_skip_relocation
+          elsif cellars.include?("any")
+            "any"
+          elsif cellars.include?("any_skip_relocation")
+            "any_skip_relocation"
           else
             second
           end
@@ -480,11 +480,11 @@ module Homebrew
         update_or_add = nil
 
         Utils::Inreplace.inreplace(path) do |s|
-          if s.include? "bottle do"
+          if s.inreplace_string.include? "bottle do"
             update_or_add = "update"
             if args.keep_old?
               mismatches = []
-              bottle_block_contents = s[/  bottle do(.+?)end\n/m, 1]
+              bottle_block_contents = s.inreplace_string[/  bottle do(.+?)end\n/m, 1]
               bottle_block_contents.lines.each do |line|
                 line = line.strip
                 next if line.empty?
@@ -531,25 +531,21 @@ module Homebrew
             odie "--keep-old was passed but there was no existing bottle block!" if args.keep_old?
             puts output
             update_or_add = "add"
-            if s.include? "stable do"
-              indent = s.slice(/^( +)stable do/, 1).length
-              string = s.sub!(/^ {#{indent}}stable do(.|\n)+?^ {#{indent}}end\n/m, '\0' + output + "\n")
-            else
-              pattern = /(
-                  (\ {2}\#[^\n]*\n)*                                             # comments
-                  \ {2}(                                                         # two spaces at the beginning
-                    (url|head)\ ['"][\S\ ]+['"]                                  # url or head with a string
-                    (
-                      ,[\S\ ]*$                                                  # url may have options
-                      (\n^\ {3}[\S\ ]+$)*                                        # options can be in multiple lines
-                    )?|
-                    (homepage|desc|sha1|sha256|version|mirror)\ ['"][\S\ ]+['"]| # specs with a string
-                    (revision|version_scheme)\ \d+                               # revision with a number
-                  )\n+                                                           # multiple empty lines
-                 )+
-               /mx
-              string = s.sub!(pattern, '\0' + output + "\n")
-            end
+            pattern = /(
+                (\ {2}\#[^\n]*\n)*                                                # comments
+                \ {2}(                                                            # two spaces at the beginning
+                  (url|head)\ ['"][\S\ ]+['"]                                     # url or head with a string
+                  (
+                    ,[\S\ ]*$                                                     # url may have options
+                    (\n^\ {3}[\S\ ]+$)*                                           # options can be in multiple lines
+                  )?|
+                  (homepage|desc|sha256|version|mirror|license)\ ['"][\S\ ]+['"]| # specs with a string
+                  (revision|version_scheme)\ \d+|                                 # revision with a number
+                  (stable|livecheck)\ do(\n+^\ {4}[\S\ ]+$)*\n+^\ {2}end          # components with blocks
+                )\n+                                                              # multiple empty lines
+               )+
+             /mx
+            string = s.sub!(pattern, '\0' + output + "\n")
             odie "Bottle block addition failed!" unless string
           end
         end

@@ -1,7 +1,6 @@
 # frozen_string_literal: true
 
 require "tab"
-require "extend/ARGV"
 
 module Utils
   class Bottles
@@ -50,10 +49,10 @@ module Utils
         name = receipt_file_path.split("/").first
         tap = Tab.from_file_content(receipt_file, "#{bottle_file}/#{receipt_file_path}").tap
 
-        if tap.nil? || tap.core_tap?
-          full_name = name
+        full_name = if tap.nil? || tap.core_tap?
+          name
         else
-          full_name = "#{tap}/#{name}"
+          "#{tap}/#{name}"
         end
 
         [name, full_name]

@@ -35,6 +35,13 @@ rescue MissingEnvironmentVariables => e
   exec ENV["HOMEBREW_BREW_FILE"], *ARGV
 end
 
+def output_unsupported_error
+  $stderr.puts <<~EOS
+    Please create pull requests instead of asking for help on Homebrew's GitHub,
+    Discourse, Twitter or IRC.
+  EOS
+end
+
 begin
   trap("INT", std_trap) # restore default CTRL-C handler
 
@@ -43,7 +50,7 @@ begin
   help_flag = !ENV["HOMEBREW_HELP"].nil?
   cmd = nil
 
-  ARGV.dup.each_with_index do |arg, i|
+  ARGV.each_with_index do |arg, i|
     break if help_flag && cmd
 
     if arg == "help" && !cmd
@@ -51,6 +58,7 @@ begin
       help_flag = true
     elsif !cmd && !help_flag_list.include?(arg)
       cmd = ARGV.delete_at(i)
+      cmd = Commands::HOMEBREW_INTERNAL_COMMAND_ALIASES.fetch(cmd, cmd)
     end
   end
 
@@ -69,7 +77,7 @@ begin
     internal_cmd = Commands.valid_internal_cmd?(cmd)
     internal_cmd ||= begin
       internal_dev_cmd = Commands.valid_internal_dev_cmd?(cmd)
-      if internal_dev_cmd && !ARGV.homebrew_developer?
+      if internal_dev_cmd && !Homebrew::EnvConfig.developer?
         if (HOMEBREW_REPOSITORY/".git/config").exist?
           system "git", "config", "--file=#{HOMEBREW_REPOSITORY}/.git/config",
                  "--replace-all", "homebrew.devcmdrun", "true"
@@ -119,7 +127,7 @@ begin
     ENV.delete("HOMEBREW_HELP") if help_flag
     tap_commands = []
     cgroup = Utils.popen_read("cat", "/proc/1/cgroup")
-    if !cgroup.include?("azpl_job") && !cgroup.include?("docker")
+    if %w[azpl_job actions_job docker garden kubepods].none? { |container| cgroup.include?(container) }
       brew_uid = HOMEBREW_BREW_FILE.stat.uid
       tap_commands += %W[/usr/bin/sudo -u ##{brew_uid}] if Process.uid.zero? && !brew_uid.zero?
     end
@@ -132,8 +140,8 @@ rescue UsageError => e
   require "help"
   Homebrew::Help.help cmd, usage_error: e.message
 rescue SystemExit => e
-  onoe "Kernel.exit" if ARGV.debug? && !e.success?
-  $stderr.puts e.backtrace if ARGV.debug?
+  onoe "Kernel.exit" if Homebrew.args.debug? && !e.success?
+  $stderr.puts e.backtrace if Homebrew.args.debug?
   raise
 rescue Interrupt
   $stderr.puts # seemingly a newline is typical
@@ -141,12 +149,18 @@ rescue Interrupt
 rescue BuildError => e
   Utils::Analytics.report_build_error(e)
   e.dump
+
+  output_unsupported_error if e.formula.head? || e.formula.deprecated? || e.formula.disabled?
+
   exit 1
 rescue RuntimeError, SystemCallError => e
   raise if e.message.empty?
 
   onoe e
-  $stderr.puts e.backtrace if ARGV.debug?
+  $stderr.puts e.backtrace if Homebrew.args.debug?
+
+  output_unsupported_error if Homebrew.args.HEAD?
+
   exit 1
 rescue MethodDeprecatedError => e
   onoe e
@@ -154,12 +168,12 @@ rescue MethodDeprecatedError => e
     $stderr.puts "If reporting this issue please do so at (not Homebrew/brew or Homebrew/core):"
     $stderr.puts "  #{Formatter.url(e.issues_url)}"
   end
-  $stderr.puts e.backtrace if ARGV.debug?
+  $stderr.puts e.backtrace if Homebrew.args.debug?
   exit 1
 rescue Exception => e # rubocop:disable Lint/RescueException
   onoe e
   if internal_cmd && defined?(OS::ISSUES_URL) &&
-     !ENV["HOMEBREW_NO_AUTO_UPDATE"]
+     !Homebrew::EnvConfig.no_auto_update?
     $stderr.puts "#{Tty.bold}Please report this issue:#{Tty.reset}"
     $stderr.puts "  #{Formatter.url(OS::ISSUES_URL)}"
   end

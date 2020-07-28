@@ -22,7 +22,10 @@ module Homebrew
   def tap_new
     tap_new_args.parse
 
+    tap_name = args.named.first
     tap = Tap.fetch(args.named.first)
+    raise "Invalid tap name '#{tap_name}'" unless tap.path.to_s.match?(HOMEBREW_TAP_PATH_REGEX)
+
     titleized_user = tap.user.dup
     titleized_repo = tap.repo.dup
     titleized_user[0] = titleized_user[0].upcase
@@ -37,12 +40,6 @@ module Homebrew
       `brew install #{tap}/<formula>`
 
       Or `brew tap #{tap}` and then `brew install <formula>`.
-
-      Or install via URL (which will not receive updates):
-
-      ```
-      brew install https://raw.githubusercontent.com/#{tap.user}/homebrew-#{tap.repo}/master/Formula/<formula>.rb
-      ```
 
       ## Documentation
       `brew help`, `man brew` or check [Homebrew's documentation](https://docs.brew.sh).

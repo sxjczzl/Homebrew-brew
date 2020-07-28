@@ -7,6 +7,7 @@ require "install"
 require "search"
 require "cleanup"
 require "cli/parser"
+require "upgrade"
 
 module Homebrew
   module_function
@@ -70,7 +71,7 @@ module Homebrew
              depends_on:  "--build-bottle",
              description: "Optimise bottles for the specified architecture rather than the oldest "\
                           "architecture supported by the version of macOS the bottles are built on."
-      switch :force,
+      switch "-f", "--force",
              description: "Install without checking for previously installed keg-only or "\
                           "non-migrated versions."
       switch :verbose,
@@ -93,7 +94,7 @@ module Homebrew
   end
 
   def install
-    install_args.parse
+    args = install_args.parse
 
     args.named.each do |name|
       next if File.exist?(name)
@@ -114,13 +115,13 @@ module Homebrew
 
     formulae = []
 
-    unless ARGV.casks.empty?
+    unless Homebrew.args.casks.empty?
       cask_args = []
       cask_args << "--force" if args.force?
       cask_args << "--debug" if args.debug?
       cask_args << "--verbose" if args.verbose?
 
-      ARGV.casks.each do |c|
+      Homebrew.args.casks.each do |c|
         ohai "brew cask install #{c} #{cask_args.join " "}"
         system("#{HOMEBREW_PREFIX}/bin/brew", "cask", "install", c, *cask_args)
       end
@@ -152,7 +153,7 @@ module Homebrew
       end
 
       # --HEAD, fail with no head defined
-      raise "No head is defined for #{f.full_name}" if args.head? && f.head.nil?
+      raise "No head is defined for #{f.full_name}" if args.HEAD? && f.head.nil?
 
       # --devel, fail with no devel defined
       raise "No devel block is defined for #{f.full_name}" if args.devel? && f.devel.nil?
@@ -261,12 +262,16 @@ module Homebrew
       install_formula(f)
       Cleanup.install_formula_clean!(f)
     end
+
+    check_installed_dependents(args: args)
+
     Homebrew.messages.display_messages
   rescue FormulaUnreadableError, FormulaClassUnavailableError,
          TapFormulaUnreadableError, TapFormulaClassUnavailableError => e
     # Need to rescue before `FormulaUnavailableError` (superclass of this)
     # is handled, as searching for a formula doesn't make sense here (the
     # formula was found, but there's a problem with its implementation).
+    $stderr.puts e.backtrace if Homebrew::EnvConfig.developer?
     ofail e.message
   rescue FormulaUnavailableError => e
     if e.name == "updog"
@@ -318,14 +323,21 @@ module Homebrew
     f.print_tap_action
     build_options = f.build
 
-    fi = FormulaInstaller.new(f)
+    fi = FormulaInstaller.new(f, force_bottle: args.force_bottle?, include_test: args.include_test?,
+                              build_from_source: args.build_from_source?)
     fi.options              = build_options.used_options
+    fi.env                  = args.env
+    fi.force                = args.force?
+    fi.keep_tmp             = args.keep_tmp?
     fi.ignore_deps          = args.ignore_dependencies?
     fi.only_deps            = args.only_dependencies?
     fi.build_bottle         = args.build_bottle?
+    fi.bottle_arch          = args.bottle_arch
     fi.interactive          = args.interactive?
     fi.git                  = args.git?
+    fi.cc                   = args.cc
     fi.prelude
+    fi.fetch
     fi.install
     fi.finish
   rescue FormulaInstallationAlreadyAttemptedError

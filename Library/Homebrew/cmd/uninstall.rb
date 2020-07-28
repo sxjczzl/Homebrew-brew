@@ -5,6 +5,9 @@ require "formula"
 require "diagnostic"
 require "migrator"
 require "cli/parser"
+require "cask/all"
+require "cask/cmd"
+require "cask/cask_loader"
 
 module Homebrew
   module_function
@@ -16,7 +19,7 @@ module Homebrew
 
         Uninstall <formula>.
       EOS
-      switch :force,
+      switch "-f", "--force",
              description: "Delete all installed versions of <formula>."
       switch "--ignore-dependencies",
              description: "Don't fail uninstall, even if <formula> is a dependency of any installed "\
@@ -29,15 +32,26 @@ module Homebrew
   def uninstall
     uninstall_args.parse
 
-    kegs_by_rack = if args.force?
-      Hash[args.named.map do |name|
-        rack = Formulary.to_rack(name)
-        next unless rack.directory?
+    if args.force?
+      casks = []
+      kegs_by_rack = {}
 
-        [rack, rack.subdirs.map { |d| Keg.new(d) }]
-      end]
+      args.named.each do |name|
+        rack = Formulary.to_rack(name)
+
+        if rack.directory?
+          kegs_by_rack[rack] = rack.subdirs.map { |d| Keg.new(d) }
+        else
+          begin
+            casks << Cask::CaskLoader.load(name)
+          rescue Cask::CaskUnavailableError
+            # Since the uninstall was forced, ignore any unavailable casks
+          end
+        end
+      end
     else
-      args.kegs.group_by(&:rack)
+      all_kegs, casks = args.kegs_casks
+      kegs_by_rack = all_kegs.group_by(&:rack)
     end
 
     handle_unsatisfied_dependents(kegs_by_rack)
@@ -80,10 +94,41 @@ module Homebrew
               puts "#{keg.name} #{versions.to_sentence} #{"is".pluralize(versions.count)} still installed."
               puts "Run `brew uninstall --force #{keg.name}` to remove all versions."
             end
+
+            next unless f
+
+            paths = f.pkgetc.find.map(&:to_s) if f.pkgetc.exist?
+            if paths.present?
+              puts
+              opoo <<~EOS
+                The following #{f.name} configuration files have not been removed!
+                If desired, remove them manually with `rm -rf`:
+                  #{paths.sort.uniq.join("\n  ")}
+              EOS
+            end
+
+            unversioned_name = f.name.gsub(/@.+$/, "")
+            maybe_paths = Dir.glob("#{f.etc}/*#{unversioned_name}*")
+            maybe_paths -= paths if paths.present?
+            if maybe_paths.present?
+              puts
+              opoo <<~EOS
+                The following may be #{f.name} configuration files and have not been removed!
+                If desired, remove them manually with `rm -rf`:
+                  #{maybe_paths.sort.uniq.join("\n  ")}
+              EOS
+            end
           end
         end
       end
     end
+
+    return if casks.blank?
+
+    cask_uninstall = Cask::Cmd::Uninstall.new(casks)
+    cask_uninstall.force = args.force?
+    cask_uninstall.verbose = args.verbose?
+    cask_uninstall.run
   rescue MultipleVersionsInstalledError => e
     ofail e
     puts "Run `brew uninstall --force #{e.name}` to remove all versions."
@@ -110,7 +155,7 @@ module Homebrew
   def check_for_dependents(kegs)
     return false unless result = Keg.find_some_installed_dependents(kegs)
 
-    if ARGV.homebrew_developer?
+    if Homebrew::EnvConfig.developer?
       DeveloperDependentsMessage.new(*result).output
     else
       NondeveloperDependentsMessage.new(*result).output

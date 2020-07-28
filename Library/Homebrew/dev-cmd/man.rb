@@ -35,10 +35,11 @@ module Homebrew
 
     odie "`brew man --link` is now done automatically by `brew update`." if args.link?
 
+    Commands.rebuild_internal_commands_completion_list
     regenerate_man_pages
 
-    if system "git", "-C", HOMEBREW_REPOSITORY, "diff", "--quiet", "docs/Manpage.md", "manpages"
-      puts "No changes to manpage output detected."
+    if system "git", "-C", HOMEBREW_REPOSITORY, "diff", "--quiet", "docs/Manpage.md", "manpages", "completions"
+      puts "No changes to manpage or completions output detected."
     elsif args.fail_if_changed?
       Homebrew.failed = true
     end
@@ -63,6 +64,7 @@ module Homebrew
     variables[:developer_commands] = generate_cmd_manpages(Commands.internal_developer_commands_paths)
     variables[:official_external_commands] = generate_cmd_manpages(Commands.official_external_commands_paths)
     variables[:global_options] = global_options_manpage
+    variables[:environment_variables] = env_vars_manpage
 
     readme = HOMEBREW_REPOSITORY/"README.md"
     variables[:lead] =
@@ -122,10 +124,11 @@ module Homebrew
       ronn.close_write
       ronn_output = ronn.read
       odie "Got no output from ronn!" if ronn_output.blank?
-      if format_flag == "--markdown"
+      case format_flag
+      when "--markdown"
         ronn_output = ronn_output.gsub(%r{<var>(.*?)</var>}, "*`\\1`*")
                                  .gsub(/\n\n\n+/, "\n\n")
-      elsif format_flag == "--roff"
+      when "--roff"
         ronn_output = ronn_output.gsub(%r{<code>(.*?)</code>}, "\\fB\\1\\fR")
                                  .gsub(%r{<var>(.*?)</var>}, "\\fI\\1\\fR")
                                  .gsub(/(^\[?\\fB.+): /, "\\1\n    ")
@@ -207,9 +210,24 @@ module Homebrew
     lines.join("\n")
   end
 
+  def env_vars_manpage
+    lines = Homebrew::EnvConfig::ENVS.flat_map do |env, hash|
+      entry = "  * `#{env}`:\n    #{hash[:description]}\n"
+      default = hash[:default_text]
+      default ||= "`#{hash[:default]}`." if hash[:default]
+      entry += "\n\n    *Default:* #{default}\n" if default
+
+      entry
+    end
+    lines.join("\n")
+  end
+
   def generate_option_doc(short, long, desc)
     comma = (short && long) ? ", " : ""
-    "* #{format_short_opt(short)}" + comma + "#{format_long_opt(long)}:" + "\n  " + desc + "\n"
+    <<~EOS
+      * #{format_short_opt(short)}#{comma}#{format_long_opt(long)}:
+        #{desc}
+    EOS
   end
 
   def format_short_opt(opt)

@@ -18,25 +18,21 @@ module Homebrew
              description: "Print what would be done rather than doing it."
       flag   "--message=",
              description: "Append <message> to the default commit message."
-      switch :force
       switch :quiet
       switch :verbose
       switch :debug
-      max_named 1
+      named :formula
     end
   end
 
   def bump_revision
-    bump_revision_args.parse
+    args = bump_revision_args.parse
 
-    # As this command is simplifying user run commands then let's just use a
+    # As this command is simplifying user-run commands then let's just use a
     # user path, too.
     ENV["PATH"] = ENV["HOMEBREW_PATH"]
 
-    formulae = args.formulae
-    raise FormulaUnspecifiedError if formulae.empty?
-
-    formula = formulae.first
+    formula = args.formulae.first
     current_revision = formula.revision
 
     if current_revision.zero?
@@ -45,14 +41,24 @@ module Homebrew
         [checksum.hash_type, checksum.hexdigest]
       end
 
-      if hash_type
+      old = if formula.license
+        # insert replacement revision after license
+        <<~EOS
+          license "#{formula.license}"
+        EOS
+      elsif formula.path.read.include?("stable do\n")
+        # insert replacement revision after homepage
+        <<~EOS
+          homepage "#{formula.homepage}"
+        EOS
+      elsif hash_type
         # insert replacement revision after hash
-        old = <<~EOS
+        <<~EOS
           #{hash_type} "#{old_hash}"
         EOS
       else
         # insert replacement revision after :revision
-        old = <<~EOS
+        <<~EOS
           :revision => "#{formula_spec.specs[:revision]}"
         EOS
       end

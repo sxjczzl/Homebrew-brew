@@ -53,16 +53,15 @@ class Requirement
 
   # Overriding {#satisfied?} is unsupported.
   # Pass a block or boolean to the satisfy DSL method instead.
-  def satisfied?
+  def satisfied?(args: nil)
     satisfy = self.class.satisfy
     return true unless satisfy
 
-    @satisfied_result = satisfy.yielder { |p| instance_eval(&p) }
+    @satisfied_result = satisfy.yielder(args: args) { |p| instance_eval(&p) }
     return false unless @satisfied_result
 
     true
   end
-  alias installed? satisfied?
 
   # Overriding {#fatal?} is unsupported.
   # Pass a boolean to the fatal DSL method instead.
@@ -82,8 +81,8 @@ class Requirement
 
   # Overriding {#modify_build_environment} is unsupported.
   # Pass a block to the env DSL method instead.
-  def modify_build_environment
-    satisfied?
+  def modify_build_environment(args:)
+    satisfied?(args: args)
     instance_eval(&env_proc) if env_proc
 
     # XXX If the satisfy block returns a Pathname, then make sure that it
@@ -151,6 +150,7 @@ class Requirement
     include BuildEnvironment::DSL
 
     attr_reader :env_proc, :build
+
     attr_rw :fatal, :cask, :download
 
     def satisfy(options = nil, &block)
@@ -181,12 +181,16 @@ class Requirement
       @proc = block
     end
 
-    def yielder
+    def yielder(args:)
       if instance_variable_defined?(:@satisfied)
         @satisfied
       elsif @options[:build_env]
         require "extend/ENV"
-        ENV.with_build_environment { yield @proc }
+        ENV.with_build_environment(
+          env: args.env, cc: args.cc, build_bottle: args.build_bottle?, bottle_arch: args.bottle_arch,
+        ) do
+          yield @proc
+        end
       else
         yield @proc
       end

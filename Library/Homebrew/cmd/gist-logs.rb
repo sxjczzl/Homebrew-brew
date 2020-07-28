@@ -28,7 +28,7 @@ module Homebrew
                           "be accessible with its link."
       switch :verbose
       switch :debug
-      max_named 1
+      named :formula
     end
   end
 
@@ -63,10 +63,10 @@ module Homebrew
     end
 
     # Description formatted to work well as page title when viewing gist
-    if f.core_formula?
-      descr = "#{f.name} on #{OS_VERSION} - Homebrew build logs"
+    descr = if f.core_formula?
+      "#{f.name} on #{OS_VERSION} - Homebrew build logs"
     else
-      descr = "#{f.name} (#{f.full_name}) on #{OS_VERSION} - Homebrew build logs"
+      "#{f.name} (#{f.full_name}) on #{OS_VERSION} - Homebrew build logs"
     end
     url = create_gist(files, descr)
 
@@ -141,8 +141,6 @@ module Homebrew
 
   def gist_logs
     gist_logs_args.parse
-
-    raise FormulaUnspecifiedError if args.resolved_formulae.length != 1
 
     Install.perform_preinstall_checks(all_fatal: true)
     Install.perform_build_from_source_checks(all_fatal: true)

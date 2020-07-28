@@ -6,6 +6,10 @@ require "messages"
 require "reinstall"
 require "cli/parser"
 require "cleanup"
+require "cask/cmd"
+require "cask/utils"
+require "cask/macos"
+require "upgrade"
 
 module Homebrew
   module_function
@@ -35,7 +39,7 @@ module Homebrew
                           "macOS, even if it would not normally be used for installation."
       switch "--keep-tmp",
              description: "Retain the temporary files created during installation."
-      switch :force,
+      switch "-f", "--force",
              description: "Install without checking for previously installed keg-only or "\
                           "non-migrated versions."
       switch :verbose,
@@ -50,21 +54,32 @@ module Homebrew
   end
 
   def reinstall
-    reinstall_args.parse
+    args = reinstall_args.parse
 
     FormulaInstaller.prevent_build_flags unless DevelopmentTools.installed?
 
     Install.perform_preinstall_checks
 
-    args.resolved_formulae.each do |f|
+    resolved_formulae, casks = args.resolved_formulae_casks
+    resolved_formulae.each do |f|
       if f.pinned?
         onoe "#{f.full_name} is pinned. You must unpin it to reinstall."
         next
       end
       Migrator.migrate_if_needed(f)
-      reinstall_formula(f)
+      reinstall_formula(f, args: args)
       Cleanup.install_formula_clean!(f)
     end
+
+    check_installed_dependents(args: args)
+
     Homebrew.messages.display_messages
+
+    return if casks.blank?
+
+    reinstall_cmd = Cask::Cmd::Reinstall.new(casks)
+    reinstall_cmd.verbose = args.verbose?
+    reinstall_cmd.force = args.force?
+    reinstall_cmd.run
   end
 end

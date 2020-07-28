@@ -24,10 +24,10 @@ module Homebrew
       args = %w[
         --force-exclusion
       ]
-      if fix
-        args << "--auto-correct"
+      args << if fix
+        "--auto-correct"
       else
-        args << "--parallel"
+        "--parallel"
       end
 
       args += ["--extra-details", "--display-cop-names"] if Homebrew.args.verbose?
@@ -56,16 +56,16 @@ module Homebrew
         File.expand_path(file).start_with? HOMEBREW_LIBRARY_PATH
       end
 
-      if files && !has_non_formula
+      if files.present? && !has_non_formula
         config = if files.first && File.exist?("#{files.first}/spec")
           HOMEBREW_LIBRARY/".rubocop_rspec.yml"
         else
-          HOMEBREW_LIBRARY/".rubocop_audit.yml"
+          HOMEBREW_LIBRARY/".rubocop.yml"
         end
         args << "--config" << config
       end
 
-      if files.nil?
+      if files.blank?
         args << HOMEBREW_LIBRARY_PATH
       else
         args += files
@@ -77,9 +77,9 @@ module Homebrew
 
       case output_type
       when :print
-        args << "--debug" if ARGV.debug?
-        args << "--display-cop-names" if ARGV.include? "--display-cop-names"
-        args << "--format" << "simple" if files
+        args << "--debug" if Homebrew.args.debug?
+        args << "--display-cop-names" if Homebrew.args.display_cop_names?
+        args << "--format" << "simple" if files.present?
         system(cache_env, "rubocop", *args)
         rubocop_success = $CHILD_STATUS.success?
       when :json
@@ -100,7 +100,7 @@ module Homebrew
         raise "Invalid output_type for check_style_impl: #{output_type}"
       end
 
-      return rubocop_success if files.present? || !has_non_formula
+      return rubocop_success if files.present?
 
       shellcheck   = which("shellcheck")
       shellcheck ||= which("shellcheck", ENV["HOMEBREW_PATH"])

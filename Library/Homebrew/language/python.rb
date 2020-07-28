@@ -33,7 +33,7 @@ module Language
         next if build.without? python_formula.to_s
 
         version = major_minor_version python
-        ENV["PYTHONPATH"] = if python_formula.installed?
+        ENV["PYTHONPATH"] = if python_formula.latest_version_installed?
           nil
         else
           homebrew_site_packages(python)
@@ -87,14 +87,26 @@ module Language
       ]
     end
 
-    def self.rewrite_python_shebang(python_path)
-      regex = %r{^#! ?/usr/bin/(env )?python([23](\.\d{1,2})?)?$}
-      maximum_regex_length = 28 # the length of "#! /usr/bin/env pythonx.yyy$"
-      Pathname(".").find do |f|
-        next unless f.file?
-        next unless regex.match?(f.read(maximum_regex_length))
+    # Mixin module for {Formula} adding shebang rewrite features.
+    module Shebang
+      module_function
 
-        Utils::Inreplace.inreplace f.to_s, regex, "#!#{python_path}"
+      # @private
+      def python_shebang_rewrite_info(python_path)
+        Utils::Shebang::RewriteInfo.new(
+          %r{^#! ?/usr/bin/(env )?python([23](\.\d{1,2})?)?$},
+          28, # the length of "#! /usr/bin/env pythonx.yyy$"
+          python_path,
+        )
+      end
+
+      def detected_python_shebang(formula = self)
+        python_deps = formula.deps.map(&:name).grep(/^python(@.*)?$/)
+
+        raise "Cannot detect Python shebang: formula does not depend on Python." if python_deps.empty?
+        raise "Cannot detect Python shebang: formula has multiple Python dependencies." if python_deps.length > 1
+
+        python_shebang_rewrite_info(Formula[python_deps.first].opt_bin/"python3")
       end
     end
 
@@ -155,7 +167,7 @@ module Language
       def needs_python?(python)
         return true if build.with?(python)
 
-        (requirements.to_a | deps).any? { |r| r.name == python && r.required? }
+        (requirements.to_a | deps).any? { |r| r.name.split("/").last == python && r.required? }
       end
 
       # Helper method for the common case of installing a Python application.
@@ -168,8 +180,9 @@ module Language
       def virtualenv_install_with_resources(options = {})
         python = options[:using]
         if python.nil?
-          pythons = %w[python python3 python@3 python@3.8 pypy pypy3]
+          pythons = %w[python python3 python@3 python@3.7 python@3.8 pypy pypy3]
           wanted = pythons.select { |py| needs_python?(py) }
+          raise FormulaUnknownPythonError, self if wanted.empty?
           raise FormulaAmbiguousPythonError, self if wanted.size > 1
 
           python = wanted.first
@@ -249,14 +262,14 @@ module Language
         #   the contents of a `requirements.txt`.
         # @return [void]
         def pip_install(targets)
-          targets = [targets] unless targets.is_a? Array
+          targets = Array(targets)
           targets.each do |t|
             if t.respond_to? :stage
               next if t.name == "homebrew-virtualenv"
 
               t.stage { do_install Pathname.pwd }
             else
-              t = t.lines.map(&:strip) if t.respond_to?(:lines) && t =~ /\n/
+              t = t.lines.map(&:strip) if t.respond_to?(:lines) && t.include?("\n")
               do_install t
             end
           end
@@ -279,7 +292,7 @@ module Language
         private
 
         def do_install(targets)
-          targets = [targets] unless targets.is_a? Array
+          targets = Array(targets)
           @formula.system @venv_root/"bin/pip", "install",
                           "-v", "--no-deps", "--no-binary", ":all:",
                           "--ignore-installed", *targets

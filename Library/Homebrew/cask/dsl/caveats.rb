@@ -49,10 +49,25 @@ module Cask
         next if MacOS.version < :high_sierra
 
         <<~EOS
-          To install and/or use #{@cask} you may need to enable its kernel extension in:
+          #{@cask} requires a kernel extension to work.
+          If the installation fails, retry after you enable it in:
             System Preferences → Security & Privacy → General
-          For more information refer to vendor documentation or this Apple Technical Note:
+
+          For more information, refer to vendor documentation or this Apple Technical Note:
             #{Formatter.url("https://developer.apple.com/library/content/technotes/tn2459/_index.html")}
+        EOS
+      end
+
+      caveat :unsigned_accessibility do |access = "Accessibility"|
+        # access: the category in System Preferences -> Security & Privacy -> Privacy the app requires.
+
+        <<~EOS
+          #{@cask} is not signed and requires Accessibility access,
+          so you will need to re-grant Accessibility access every time the app is updated.
+
+          Enable or re-enable it in:
+            System Preferences → Security & Privacy → Privacy -> #{access}
+          To re-enable untick and retick #{@cask}.app.
         EOS
       end
 

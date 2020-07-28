@@ -3,6 +3,7 @@
 require "cli/args"
 require "optparse"
 require "set"
+require "formula"
 
 COMMAND_DESC_WIDTH = 80
 OPTION_DESC_WIDTH = 43
@@ -12,8 +13,8 @@ module Homebrew
     class Parser
       attr_reader :processed_options, :hide_from_man_page
 
-      def self.parse(args = ARGV, allow_no_named_args: false, &block)
-        new(args, &block).parse(args, allow_no_named_args: allow_no_named_args)
+      def self.parse(argv = ARGV.freeze, allow_no_named_args: false, &block)
+        new(argv, &block).parse(allow_no_named_args: allow_no_named_args)
       end
 
       def self.from_cmd_path(cmd_path)
@@ -33,15 +34,14 @@ module Homebrew
           quiet:   [["-q", "--quiet"], :quiet, "Suppress any warnings."],
           verbose: [["-v", "--verbose"], :verbose, "Make some output more verbose."],
           debug:   [["-d", "--debug"], :debug, "Display any debugging information."],
-          force:   [["-f", "--force"], :force, "Override warnings and enable potentially unsafe operations."],
         }
       end
 
-      def initialize(args = ARGV, &block)
+      def initialize(argv = ARGV.freeze, &block)
         @parser = OptionParser.new
-        @args = Homebrew::CLI::Args.new(argv: ARGV_WITHOUT_MONKEY_PATCHING)
-        @args[:remaining] = []
-        @args[:cmdline_args] = args.dup
+        @argv = argv
+        @args = Homebrew::CLI::Args.new(@argv)
+
         @constraints = []
         @conflicts = []
         @switch_sources = {}
@@ -83,7 +83,11 @@ module Homebrew
       alias switch_option switch
 
       def env?(env)
-        env.present? && ENV["HOMEBREW_#{env.to_s.upcase}"].present?
+        return false if env.blank?
+
+        Homebrew::EnvConfig.send("#{env}?")
+      rescue NoMethodError
+        false
       end
 
       def usage_banner(text)
@@ -95,6 +99,7 @@ module Homebrew
       end
 
       def comma_array(name, description: nil)
+        name = name.chomp "="
         description = option_to_description(name) if description.nil?
         process_option(name, description)
         @parser.on(name, OptionParser::REQUIRED_ARGUMENT, Array, *wrap_option_desc(description)) do |list|
@@ -103,10 +108,10 @@ module Homebrew
       end
 
       def flag(*names, description: nil, required_for: nil, depends_on: nil)
-        if names.any? { |name| name.end_with? "=" }
-          required = OptionParser::REQUIRED_ARGUMENT
+        required = if names.any? { |name| name.end_with? "=" }
+          OptionParser::REQUIRED_ARGUMENT
         else
-          required = OptionParser::OPTIONAL_ARGUMENT
+          OptionParser::OPTIONAL_ARGUMENT
         end
         names.map! { |name| name.chomp "=" }
         description = option_to_description(*names) if description.nil?
@@ -148,23 +153,24 @@ module Homebrew
         @parser.to_s
       end
 
-      def parse(cmdline_args = ARGV, allow_no_named_args: false)
+      def parse(argv = @argv, allow_no_named_args: false)
         raise "Arguments were already parsed!" if @args_parsed
 
         begin
-          named_args = @parser.parse(cmdline_args)
+          named_args = @parser.parse(argv)
         rescue OptionParser::InvalidOption => e
           $stderr.puts generate_help_text
           raise e
         end
+
         check_constraint_violations
         check_named_args(named_args, allow_no_named_args: allow_no_named_args)
-        @args[:remaining] = named_args
+        @args.freeze_named_args!(named_args)
         @args.freeze_processed_options!(@processed_options)
         Homebrew.args = @args
-        cmdline_args.freeze
+
         @args_parsed = true
-        @parser
+        @args
       end
 
       def global_option?(name, desc)
@@ -182,7 +188,7 @@ module Homebrew
       end
 
       def formula_options
-        @args.formulae.each do |f|
+        formulae.each do |f|
           next if f.options.empty?
 
           f.options.each do |o|
@@ -206,10 +212,11 @@ module Homebrew
       end
 
       def min_named(count_or_type)
-        if count_or_type.is_a?(Integer)
+        case count_or_type
+        when Integer
           @min_named_args = count_or_type
           @min_named_type = nil
-        elsif count_or_type.is_a?(Symbol)
+        when Symbol
           @min_named_args = 1
           @min_named_type = count_or_type
         else
@@ -218,10 +225,11 @@ module Homebrew
       end
 
       def named(count_or_type)
-        if count_or_type.is_a?(Integer)
+        case count_or_type
+        when Integer
           @max_named_args = @min_named_args = count_or_type
           @min_named_type = nil
-        elsif count_or_type.is_a?(Symbol)
+        when Symbol
           @max_named_args = @min_named_args = 1
           @min_named_type = count_or_type
         else
@@ -254,7 +262,7 @@ module Homebrew
       end
 
       def option_passed?(name)
-        @args.respond_to?(name) || @args.respond_to?("#{name}?")
+        @args[name.to_sym] || @args["#{name}?".to_sym]
       end
 
       def wrap_option_desc(desc)
@@ -336,6 +344,24 @@ module Homebrew
       def process_option(*args)
         option, = @parser.make_switch(args)
         @processed_options << [option.short.first, option.long.first, option.arg, option.desc.first]
+      end
+
+      def formulae
+        named_args = @argv.reject { |arg| arg.start_with?("-") }
+        spec = if @argv.include?("--HEAD")
+          :head
+        elsif @argv.include?("--devel")
+          :devel
+        else
+          :stable
+        end
+
+        # Only lowercase names, not paths, bottle filenames or URLs
+        named_args.map do |arg|
+          next if arg.match?(HOMEBREW_CASK_TAP_CASK_REGEX)
+
+          Formulary.factory(arg, spec)
+        end.compact.uniq(&:name)
       end
     end
 

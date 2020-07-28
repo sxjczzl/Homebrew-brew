@@ -83,7 +83,7 @@ module Homebrew
       output ||= comment_help(path)
 
       output ||= if output.blank?
-        opoo "No help text in: #{path}" if ARGV.homebrew_developer?
+        opoo "No help text in: #{path}" if Homebrew::EnvConfig.developer?
         HOMEBREW_HELP
       end
 
@@ -103,7 +103,7 @@ module Homebrew
       help_lines = command_help_lines(path)
       return if help_lines.blank?
 
-      Formatter.wrap(help_lines.join.gsub(/^  /, ""), COMMAND_DESC_WIDTH)
+      Formatter.wrap(help_lines.join, COMMAND_DESC_WIDTH)
                .sub("@hide_from_man_page ", "")
                .sub(/^\* /, "#{Tty.bold}Usage: brew#{Tty.reset} ")
                .gsub(/`(.*?)`/m, "#{Tty.bold}\\1#{Tty.reset}")

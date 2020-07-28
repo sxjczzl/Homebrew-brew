@@ -36,6 +36,7 @@ module Homebrew
     test_args.parse
 
     require "formula_assertions"
+    require "formula_free_port"
 
     args.resolved_formulae.each do |f|
       # Cannot test uninstalled formulae
@@ -90,7 +91,7 @@ module Homebrew
         end
 
         Utils.safe_fork do
-          if Sandbox.test?
+          if Sandbox.available?
             sandbox = Sandbox.new
             f.logs.mkpath
             sandbox.record_log(f.logs/"test.sandbox.log")
