@@ -331,7 +331,12 @@ module Homebrew
 
     ohai "brew update-python-resources #{formula.name}"
     if !args.dry_run? || (args.dry_run? && args.write?)
-      PyPI.update_python_resources! formula, new_formula_version, silent: true, ignore_non_pypi_packages: true
+      begin
+        PyPI.update_python_resources! formula, new_formula_version, silent: true, ignore_non_pypi_packages: true
+      rescue Exception # rubocop:disable Lint/RescueException
+        formula.path.atomic_write(old_contents)
+        raise
+      end
     end
 
     run_audit(formula, alias_rename, old_contents, args: args)
