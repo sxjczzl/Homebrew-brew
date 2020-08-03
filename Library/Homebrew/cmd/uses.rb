@@ -40,6 +40,8 @@ module Homebrew
              description: "Show usage of <formula> by development builds."
       switch "--HEAD",
              description: "Show usage of <formula> by HEAD builds."
+      switch "--tree",
+             description: "Show dependents as a tree."
 
       conflicts "--devel", "--HEAD"
       min_named :formula
@@ -71,6 +73,11 @@ module Homebrew
                              !args.include_optional? &&
                              !args.skip_recommended?
 
+    if args.tree?
+      puts_dependents_tree(use_runtime_dependents, used_formulae, args: args)
+      return
+    end
+
     uses = intersection_of_dependents(use_runtime_dependents, used_formulae, args: args)
 
     return if uses.empty?
@@ -79,8 +86,7 @@ module Homebrew
     odie "Missing formulae should not have dependents!" if used_formulae_missing
   end
 
-  def intersection_of_dependents(use_runtime_dependents, used_formulae, args:)
-    recursive = args.recursive?
+  def intersection_of_dependents(use_runtime_dependents, used_formulae, args:, recursive: args.recursive?)
     includes, ignores = args_includes_ignores(args)
 
     if use_runtime_dependents
@@ -89,13 +95,13 @@ module Homebrew
                    .select(&:any_version_installed?) +
         select_used_dependents(dependents(Cask::Caskroom.casks), used_formulae, recursive, includes, ignores)
     else
-      deps = if args.installed?
-        dependents(Formula.installed + Cask::Caskroom.casks)
-      else
-        dependents(Formula.to_a + Cask::Cask.to_a)
-      end
+      @deps ||= (if args.installed?
+                   dependents(Formula.installed + Cask::Caskroom.casks)
+                 else
+                   dependents(Formula.to_a + Cask::Cask.to_a)
+      end).sort_by(&:full_name)
 
-      select_used_dependents(deps, used_formulae, recursive, includes, ignores)
+      select_used_dependents(@deps, used_formulae, recursive, includes, ignores)
     end
   end
 
@@ -124,5 +130,45 @@ module Homebrew
         next
       end
     end
+  end
+
+  def puts_dependents_tree(use_runtime_dependents, used_formulae, args:)
+    used_formulae.sort_by(&:full_name).each do |f|
+      puts f.full_name
+    end
+    @dependents_stack = []
+    recursive_dependents_tree(use_runtime_dependents, used_formulae, "", args: args)
+  end
+
+  def recursive_dependents_tree(use_runtime_dependents, formulae, prefix, args:)
+    recursive = args.recursive?
+    dependents = intersection_of_dependents(use_runtime_dependents, formulae, args: args, recursive: false)
+
+    max = dependents.length - 1
+    @dependents_stack.push formulae.map(&:name)
+    dependents.each_with_index do |dependent, i|
+      tree_lines = if i == max
+        "└──"
+      else
+        "├──"
+      end
+
+      display_s = "#{tree_lines} #{dependent.full_name}"
+      is_circular = @dependents_stack.any? { |n| n.include?(dependent.name) }
+      display_s = "#{display_s} (CIRCULAR DEPENDENT)" if is_circular
+      puts "#{prefix}#{display_s}"
+
+      next if !recursive || is_circular
+
+      prefix_addition = if i == max
+        "    "
+      else
+        "│   "
+      end
+
+      recursive_dependents_tree(use_runtime_dependents, [dependent], prefix + prefix_addition, args: args)
+    end
+
+    @dependents_stack.pop
   end
 end
