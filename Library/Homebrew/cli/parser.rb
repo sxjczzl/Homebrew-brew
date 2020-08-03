@@ -36,7 +36,7 @@ module Homebrew
       def initialize(&block)
         @parser = OptionParser.new
 
-        @args = Homebrew::CLI::Args.new
+        @args = Homebrew::CLI::Args.new(global: false)
 
         @constraints = []
         @conflicts = []
@@ -228,6 +228,7 @@ module Homebrew
         @args.freeze_named_args!(named_args)
         @args.freeze_remaining_args!(non_options.empty? ? remaining : [*remaining, "--", non_options])
         @args.freeze_processed_options!(@processed_options)
+        Homebrew.args = @args
 
         @args_parsed = true
         @args

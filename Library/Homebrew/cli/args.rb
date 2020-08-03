@@ -5,14 +5,15 @@ require "ostruct"
 module Homebrew
   module CLI
     class Args < OpenStruct
-      attr_reader :options_only, :flags_only
+      attr_reader :options_only, :flags_only, :global
 
       # undefine tap to allow --tap argument
       undef tap
 
-      def initialize
+      def initialize(global: false)
         super()
 
+        @global = global
         @processed_options = []
         @options_only = []
         @flags_only = []

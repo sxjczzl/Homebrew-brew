@@ -82,7 +82,9 @@ module Homebrew
     end
 
     def args
-      @args ||= CLI::Args.new
+      @args ||= CLI::Args.new(global: true)
+      odeprecated "Homebrew.args", "args = <command>_args.parse" unless @args.global
+      @args
     end
 
     def messages
