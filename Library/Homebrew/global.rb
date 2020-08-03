@@ -72,6 +72,8 @@ module Homebrew
   class << self
     attr_writer :failed, :raise_deprecation_exceptions, :auditing, :args
 
+    @printed_args_warning = false
+
     def Homebrew.default_prefix?(prefix = HOMEBREW_PREFIX)
       prefix.to_s == DEFAULT_PREFIX
     end
@@ -83,7 +85,10 @@ module Homebrew
 
     def args
       @args ||= CLI::Args.new(global: true)
-      odeprecated "Homebrew.args", "args = <command>_args.parse" unless @args.global
+      unless @args.global || @printed_args_warning
+        odeprecated "Homebrew.args", "args = <command>_args.parse"
+        @printed_args_warning = true
+      end
       @args
     end
 
