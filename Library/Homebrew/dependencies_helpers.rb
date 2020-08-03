@@ -3,11 +3,6 @@
 require "cask_dependent"
 
 module DependenciesHelpers
-  def argv_includes_ignores(argv)
-    odeprecated "Homebrew.argv_includes_ignores", "Homebrew.args_includes_ignores"
-    args_includes_ignores(Homebrew::CLI::Parser.new.parse(argv, ignore_invalid_options: true))
-  end
-
   def args_includes_ignores(args)
     includes = []
     ignores = []

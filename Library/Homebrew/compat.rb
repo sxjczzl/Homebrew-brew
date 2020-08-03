@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require "compat/dependencies_helpers"
 require "compat/extend/nil"
 require "compat/extend/string"
 require "compat/formula"
