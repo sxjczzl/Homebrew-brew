@@ -594,6 +594,8 @@ formulae that use *`formula`*. By default, `uses` shows all formulae that specif
   Show usage of *`formula`* by development builds.
 * `--HEAD`:
   Show usage of *`formula`* by HEAD builds.
+* `--tree`:
+  Show dependents as a tree.
 
 ### `--cache` [*`options`*] [*`formula`*]
 
