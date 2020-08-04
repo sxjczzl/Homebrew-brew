@@ -126,7 +126,8 @@ module Kernel
     exit 1
   end
 
-  def odeprecated(method, replacement = nil, disable: false, disable_on: nil, caller: send(:caller))
+  def odeprecated(method, replacement = nil, disable: false, disable_on: nil, caller: send(:caller),
+                  raise_exception: Homebrew.raise_deprecation_exceptions?)
     replacement_message = if replacement
       "Use #{replacement} instead."
     else
@@ -176,7 +177,7 @@ module Kernel
     message << tap_message if tap_message
     message.freeze
 
-    if Homebrew::EnvConfig.developer? || disable || Homebrew.raise_deprecation_exceptions?
+    if Homebrew::EnvConfig.developer? || disable || raise_exception
       exception = MethodDeprecatedError.new(message)
       exception.set_backtrace(backtrace)
       raise exception

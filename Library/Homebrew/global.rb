@@ -86,7 +86,8 @@ module Homebrew
     def args
       @args ||= CLI::Args.new(global: true)
       return @args if @args.global || @printed_args_warning
-      odeprecated "Homebrew.args", "args = <command>_args.parse"
+
+      odeprecated "Homebrew.args", "args = <command>_args.parse", raise_exception: false
       @printed_args_warning = true
       @args
     end

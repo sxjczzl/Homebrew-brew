@@ -6,7 +6,7 @@ module DependenciesHelpers
 
     def argv_includes_ignores(argv)
       unless @printed_includes_ignores_warning
-        odeprecated "Homebrew.argv_includes_ignores", "Homebrew.args_includes_ignores"
+        odeprecated "Homebrew.argv_includes_ignores", "Homebrew.args_includes_ignores", raise_exception: false
         @printed_includes_ignores_warning = true
       end
       args_includes_ignores(Homebrew::CLI::Parser.new.parse(argv, ignore_invalid_options: true))
