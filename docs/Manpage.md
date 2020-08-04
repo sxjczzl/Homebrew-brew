@@ -258,11 +258,14 @@ the installed formulae or, every 30 days, for all formulae.
 * `-g`, `--git`:
   Create a Git repository, useful for creating patches to the software.
 
-### `keep` *`formula`*
+### `keep` [*`formula`*]
 
 Keep the specified *`formula`*, preventing them from being uninstalled when
-issuing the `brew uninstall` *`formula`* command without `--force`. See also
-`unkeep`.
+issuing the `brew uninstall` *`formula`* command without `--force`.
+
+If no arguments are provided, list all formula being kept.
+
+See also `unkeep`.
 
 ### `leaves`
 

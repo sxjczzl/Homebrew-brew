@@ -22,4 +22,8 @@ module FormulaKeeper
   def self.keepable?(f)
     !f.installed_prefixes.empty?
   end
+
+  def self.kept_formula_names
+    Dir[HOMEBREW_KEEP_FORMULAE/"*"].map { |f| File.basename(f) }.sort
+  end
 end

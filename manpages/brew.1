@@ -348,8 +348,14 @@ Download and patch \fIformula\fR, then open a shell\. This allows the user to ru
 \fB\-g\fR, \fB\-\-git\fR
 Create a Git repository, useful for creating patches to the software\.
 .
-.SS "\fBkeep\fR \fIformula\fR"
-Keep the specified \fIformula\fR, preventing them from being uninstalled when issuing the \fBbrew uninstall\fR \fIformula\fR command without \fB\-\-force\fR\. See also \fBunkeep\fR\.
+.SS "\fBkeep\fR [\fIformula\fR]"
+Keep the specified \fIformula\fR, preventing them from being uninstalled when issuing the \fBbrew uninstall\fR \fIformula\fR command without \fB\-\-force\fR\.
+.
+.P
+If no arguments are provided, list all formula being kept\.
+.
+.P
+See also \fBunkeep\fR\.
 .
 .SS "\fBleaves\fR"
 List installed formulae that are not dependencies of another installed formula\.
