@@ -41,6 +41,7 @@ instal
 install
 install-bundler-gems
 irb
+keep
 leaves
 link
 linkage
@@ -81,6 +82,7 @@ test
 tests
 uninstal
 uninstall
+unkeep
 unlink
 unpack
 unpin

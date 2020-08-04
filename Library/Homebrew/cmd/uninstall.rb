@@ -2,6 +2,7 @@
 
 require "keg"
 require "formula"
+require "formula_keeper"
 require "diagnostic"
 require "migrator"
 require "cli/parser"
@@ -71,15 +72,17 @@ module Homebrew
           end
         end
 
+        rm_keep rack
         rm_pin rack
       else
         kegs.each do |keg|
           begin
             f = Formulary.from_rack(rack)
-            if f.pinned?
-              onoe "#{f.full_name} is pinned. You must unpin it to uninstall."
-              next
-            end
+            keeping = FormulaKeeper.keeping?(f)
+            pinned = f.pinned?
+            onoe "#{f.full_name} is being kept. You must unkeep it to uninstall." if keeping
+            onoe "#{f.full_name} is pinned. You must unpin it to uninstall." if pinned
+            next if keeping || pinned
           rescue
             nil
           end
@@ -89,6 +92,7 @@ module Homebrew
             keg.unlink
             keg.uninstall
             rack = keg.rack
+            rm_keep rack
             rm_pin rack
 
             if rack.directory?
@@ -210,6 +214,12 @@ module Homebrew
 
   def rm_pin(rack)
     Formulary.from_rack(rack).unpin
+  rescue
+    nil
+  end
+
+  def rm_keep(rack)
+    FormulaKeeper.unkeep(Formulary.from_rack(rack))
   rescue
     nil
   end

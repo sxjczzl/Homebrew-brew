@@ -258,6 +258,12 @@ the installed formulae or, every 30 days, for all formulae.
 * `-g`, `--git`:
   Create a Git repository, useful for creating patches to the software.
 
+### `keep` *`formula`*
+
+Keep the specified *`formula`*, preventing them from being uninstalled when
+issuing the `brew uninstall` *`formula`* command without `--force`. See also
+`unkeep`.
+
 ### `leaves`
 
 List installed formulae that are not dependencies of another installed formula.
@@ -500,6 +506,11 @@ Uninstall *`formula`*.
   Delete all installed versions of *`formula`*.
 * `--ignore-dependencies`:
   Don't fail uninstall, even if *`formula`* is a dependency of any installed formulae.
+
+### `unkeep` *`formula`*
+
+Unkeep *`formula`*, allowing them to be uninstalled by `brew uninstall` *`formula`*
+without `--force`. See also `keep`.
 
 ### `unlink` [*`options`*] *`formula`*
 

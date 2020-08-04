@@ -29,6 +29,7 @@ HOMEBREW_CACHE         = (HOMEBREW_PREFIX.parent/"cache").freeze
 HOMEBREW_CACHE_FORMULA = (HOMEBREW_PREFIX.parent/"formula_cache").freeze
 HOMEBREW_LINKED_KEGS   = (HOMEBREW_PREFIX.parent/"linked").freeze
 HOMEBREW_PINNED_KEGS   = (HOMEBREW_PREFIX.parent/"pinned").freeze
+HOMEBREW_KEEP_FORMULAE = (HOMEBREW_PREFIX.parent/"keep").freeze
 HOMEBREW_LOCKS         = (HOMEBREW_PREFIX.parent/"locks").freeze
 HOMEBREW_CELLAR        = (HOMEBREW_PREFIX.parent/"cellar").freeze
 HOMEBREW_LOGS          = (HOMEBREW_PREFIX.parent/"logs").freeze

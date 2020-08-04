@@ -217,6 +217,7 @@ RSpec.configure do |config|
         *Keg::MUST_EXIST_SUBDIRECTORIES,
         HOMEBREW_LINKED_KEGS,
         HOMEBREW_PINNED_KEGS,
+        HOMEBREW_KEEP_FORMULAE,
         HOMEBREW_PREFIX/"var",
         HOMEBREW_PREFIX/"Caskroom",
         HOMEBREW_PREFIX/"Frameworks",
