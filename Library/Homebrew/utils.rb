@@ -275,7 +275,7 @@ module Kernel
     end
   end
 
-  def which(cmd, path = ENV["PATH"])
+  def which(cmd, path = ENV["PATH"], require_executable: true)
     PATH.new(path).each do |p|
       begin
         pcmd = File.expand_path(cmd, p)
@@ -284,7 +284,7 @@ module Kernel
         # See https://github.com/Homebrew/legacy-homebrew/issues/32789
         next
       end
-      return Pathname.new(pcmd) if File.file?(pcmd) && File.executable?(pcmd)
+      return Pathname.new(pcmd) if File.file?(pcmd) && (File.executable?(pcmd) || !require_executable)
     end
     nil
   end

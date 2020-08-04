@@ -63,13 +63,13 @@ module Commands
 
   # Ruby commands which can be `require`d without being run.
   def external_ruby_v2_cmd_path(cmd)
-    path = which("#{cmd}.rb", Tap.cmd_directories)
+    path = which("#{cmd}.rb", Tap.cmd_directories, require_executable: false)
     path if require?(path)
   end
 
   # Ruby commands which are run by being `require`d.
   def external_ruby_cmd_path(cmd)
-    which("brew-#{cmd}.rb", PATH.new(ENV["PATH"]).append(Tap.cmd_directories))
+    which("brew-#{cmd}.rb", PATH.new(ENV["PATH"]).append(Tap.cmd_directories), require_executable: false)
   end
 
   def external_cmd_path(cmd)
