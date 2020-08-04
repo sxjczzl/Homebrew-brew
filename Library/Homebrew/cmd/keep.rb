@@ -14,7 +14,7 @@ module Homebrew
         Keep the specified <formula>, preventing them from being uninstalled
         when issuing the `brew uninstall` <formula> command without `--force`.
 
-        If no arguments are provided, list all formula being kept.
+        If no arguments are provided, list all formulae being kept.
 
         See also `unkeep`.
       EOS
