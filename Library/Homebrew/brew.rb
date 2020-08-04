@@ -59,7 +59,7 @@ begin
 
   ARGV.delete_at(help_cmd_index) if help_cmd_index
 
-  Homebrew.args = Homebrew::CLI::Parser.new.parse(ARGV.dup.freeze, ignore_invalid_options: true)
+  Homebrew.args = Homebrew::CLI::Parser.new(global: true).parse(ARGV.dup.freeze, ignore_invalid_options: true)
 
   path = PATH.new(ENV["PATH"])
   homebrew_path = PATH.new(ENV["HOMEBREW_PATH"])

@@ -33,10 +33,10 @@ module Homebrew
         ]
       end
 
-      def initialize(&block)
+      def initialize(global: false, &block)
         @parser = OptionParser.new
 
-        @args = Homebrew::CLI::Args.new(global: false)
+        @args = Homebrew::CLI::Args.new(global: global)
 
         @constraints = []
         @conflicts = []
