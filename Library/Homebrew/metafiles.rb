@@ -13,6 +13,14 @@ module Metafiles
 
   module_function
 
+  def license?(file)
+    file = file.upcase
+    ext = File.extname(file)
+    file = File.basename(file, ext)
+    file.gsub!("LICENCE", "LICENSE")
+    file == "LICENSE" || file.start_with?("LICENSE-")
+  end
+
   def list?(file)
     return false if %w[.DS_Store INSTALL_RECEIPT.json].include?(file)
 
@@ -20,6 +28,8 @@ module Metafiles
   end
 
   def copy?(file)
+    return true if license?(file)
+
     file = file.downcase
     ext  = File.extname(file)
     file = File.basename(file, ext) if EXTENSIONS.include?(ext)
