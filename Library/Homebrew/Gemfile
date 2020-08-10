@@ -14,7 +14,7 @@ gem "rspec-wait", require: false
 gem "rubocop"
 gem "simplecov", require: false
 gem "sorbet", "0.5.5823"
-gem "sorbet-runtime", "0.5.5823"
+gem "sorbet-runtime", "0.5.5866"
 gem "tapioca"
 
 # vendored gems
