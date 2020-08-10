@@ -4,6 +4,8 @@
 # Explicitly ignore OS X Finder thumbnail files.
 .DS_Store
 
+!.ruby-version
+
 # Unignore the contents of `Library` as that's where our code lives.
 !/Library/
 
