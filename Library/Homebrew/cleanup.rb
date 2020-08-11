@@ -181,7 +181,7 @@ module Homebrew
         cleanup_cache
         cleanup_logs
         cleanup_lockfiles
-        cleanup_git_gc
+        cleanup_git_gc if git_gc?
         prune_prefix_symlinks_and_directories
 
         unless dry_run?
