@@ -130,13 +130,14 @@ module Homebrew
 
     PERIODIC_CLEAN_FILE = (HOMEBREW_CACHE/".cleaned").freeze
 
-    attr_predicate :dry_run?, :scrub?
+    attr_predicate :dry_run?, :git_gc?, :scrub?
     attr_reader :args, :days, :cache, :disk_cleanup_size
 
-    def initialize(*args, dry_run: false, scrub: false, days: nil, cache: HOMEBREW_CACHE)
+    def initialize(*args, dry_run: false, git_gc: false, scrub: false, days: nil, cache: HOMEBREW_CACHE)
       @disk_cleanup_size = 0
       @args = args
       @dry_run = dry_run
+      @git_gc = git_gc
       @scrub = scrub
       @days = days || Homebrew::EnvConfig.cleanup_max_age_days.to_i
       @cache = cache
@@ -180,6 +181,7 @@ module Homebrew
         cleanup_cache
         cleanup_logs
         cleanup_lockfiles
+        cleanup_git_gc
         prune_prefix_symlinks_and_directories
 
         unless dry_run?
@@ -339,6 +341,18 @@ module Homebrew
         ensure
           file.open(File::RDWR).flock(File::LOCK_UN) if file.exist?
         end
+      end
+    end
+
+    def cleanup_git_gc(*git_directories)
+      return if dry_run?
+
+      git_directories = Tap.map(&:path).push(HOMEBREW_REPOSITORY).select(&:git?) if git_directories.empty?
+
+      git_directories.each do |git_dir|
+        puts "Running `git gc` in #{git_dir}"
+        system "git", "-C", git_dir, "gc"
+        puts
       end
     end
 

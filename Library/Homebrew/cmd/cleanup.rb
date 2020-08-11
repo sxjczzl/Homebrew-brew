@@ -21,6 +21,8 @@ module Homebrew
              description: "Remove all cache files older than specified <days>."
       switch "-n", "--dry-run",
              description: "Show what would be removed, but do not actually remove anything."
+      switch "--git-gc",
+             description: "Run `git gc` in all repositories."
       switch "-s",
              description: "Scrub the cache, including downloads for even the latest versions. "\
                           "Note downloads for any installed formulae or casks will still not be deleted. "\
@@ -33,7 +35,8 @@ module Homebrew
   def cleanup
     args = cleanup_args.parse
 
-    cleanup = Cleanup.new(*args.named, dry_run: args.dry_run?, scrub: args.s?, days: args.prune&.to_i)
+    cleanup = Cleanup.new(*args.named, dry_run: args.dry_run?, git_gc: args.git_gc?, scrub: args.s?,
+                          days: args.prune&.to_i)
     if args.prune_prefix?
       cleanup.prune_prefix_symlinks_and_directories
       return
