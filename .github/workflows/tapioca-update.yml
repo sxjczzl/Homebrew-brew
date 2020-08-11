@@ -1,10 +1,10 @@
 name: Tapioca Update
 on:
-  pull_request:
+  push:
     paths:
       - .github/workflows/tapioca-update.yml
   schedule:
-    - cron: '0 0 */3 * *' # Every three days
+	- cron: '*/30 * * * *' # Every 30 minutes
 env:
   HOMEBREW_SORBET: 1
 jobs:
@@ -12,9 +12,6 @@ jobs:
     if: github.repository == 'Homebrew/brew'
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
-        uses: actions/checkout@v2
-
       - name: Set up Homebrew
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@master
@@ -38,7 +35,7 @@ jobs:
           bundle install
           bundle exec tapioca sync --exclude json
           bundle exec srb rbi hidden-definitions
-          if ! git diff --exit-code Library/Homebrew/sorbet; then
+          if ! git diff --exit-code -- sorbet; then
             BRANCH="tapioca-update-$(date "+%Y-%m-%d")"
             if ! git ls-remote --exit-code --heads origin "$BRANCH"; then
               git checkout -b "$BRANCH"
