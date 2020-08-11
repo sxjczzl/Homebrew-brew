@@ -4,7 +4,7 @@ on:
     paths:
       - .github/workflows/tapioca-update.yml
   schedule:
-	- cron: '*/30 * * * *' # Every 30 minutes
+      - cron: '*/30 * * * *' # Every 30 minutes
 env:
   HOMEBREW_SORBET: 1
 jobs:
