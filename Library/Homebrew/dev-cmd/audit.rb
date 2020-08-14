@@ -224,11 +224,17 @@ module Homebrew
       @style_offenses = options[:style_offenses]
       # Allow the formula tap to be set as homebrew/core, for testing purposes
       @core_tap = formula.tap&.core_tap? || options[:core_tap]
+      audit_config = formula.tap&.audit_config || {}
+      @enabled_core_audits = audit_config["enabled_core_audits"] || []
       @problems = []
       @new_formula_problems = []
       @text = FormulaText.new(formula.path)
       @specs = %w[stable devel head].map { |s| formula.send(s) }.compact
       @spdx_data = options[:spdx_data]
+    end
+
+    def core_audit_enabled?(name)
+      @core_tap || @enabled_core_audits.include?(name)
     end
 
     def audit_style
@@ -312,7 +318,7 @@ module Homebrew
 
     def audit_formula_name
       return unless @strict
-      return unless @core_tap
+      return unless core_audit_enabled?("formula_name")
 
       name = formula.name
 
@@ -389,12 +395,13 @@ module Homebrew
 
         problem "Formula license #{formula.license} does not match GitHub license #{Array(github_license)}."
 
-      elsif @new_formula && @core_tap
+      elsif @new_formula && core_audit_enabled?("license")
         problem "Formulae in homebrew/core must specify a license."
       end
     end
 
     def audit_deps
+      core_audit_enabled = core_audit_enabled?("deps")
       @specs.each do |spec|
         # Check for things we don't like to depend on.
         # We allow non-Homebrew installs whenever possible.
@@ -425,7 +432,7 @@ module Homebrew
             "use the canonical name '#{dep.to_formula.full_name}'."
           end
 
-          if @core_tap &&
+          if core_audit_enabled &&
              @new_formula &&
              dep_f.keg_only? &&
              dep_f.keg_only_reason.provided_by_macos? &&
@@ -438,7 +445,7 @@ module Homebrew
           end
 
           dep.options.each do |opt|
-            next if @core_tap
+            next if core_audit_enabled
             next if dep_f.option_defined?(opt)
             next if dep_f.requirements.find do |r|
               if r.recommended?
@@ -455,14 +462,14 @@ module Homebrew
 
           problem "Dependency '#{dep.name}' is marked as :run. Remove :run; it is a no-op." if dep.tags.include?(:run)
 
-          next unless @core_tap
+          next unless core_audit_enabled
 
           if dep.tags.include?(:recommended) || dep.tags.include?(:optional)
             problem "Formulae in homebrew/core should not have optional or recommended dependencies"
           end
         end
 
-        next unless @core_tap
+        next unless core_audit_enabled
 
         if spec.requirements.map(&:recommended?).any? || spec.requirements.map(&:optional?).any?
           problem "Formulae in homebrew/core should not have optional or recommended requirements"
@@ -485,7 +492,7 @@ module Homebrew
 
     def audit_postgresql
       return unless formula.name == "postgresql"
-      return unless @core_tap
+      return unless core_audit_enabled?("postgresql")
 
       major_version = formula.version.major.to_i
       previous_major_version = major_version - 1
@@ -512,7 +519,7 @@ module Homebrew
 
     def audit_versioned_keg_only
       return unless @versioned_formula
-      return unless @core_tap
+      return unless core_audit_enabled?("versioned_keg_only")
 
       if formula.keg_only?
         return if formula.keg_only_reason.versioned_formula?
@@ -549,7 +556,7 @@ module Homebrew
     def audit_bottle_spec
       # special case: new versioned formulae should be audited
       return unless @new_formula_inclusive
-      return unless @core_tap
+      return unless core_audit_enabled?("bottle_spec")
 
       return if formula.bottle_disabled?
 
@@ -564,7 +571,7 @@ module Homebrew
 
       problem "Unrecognized bottle modifier" unless formula.bottle_disable_reason.valid?
 
-      return unless @core_tap
+      return unless core_audit_enabled?("bottle_disabled")
 
       problem "Formulae in homebrew/core should not use `bottle :disabled`"
     end
@@ -625,7 +632,7 @@ module Homebrew
     end
 
     def get_repo_data(regex)
-      return unless @core_tap
+      return unless core_audit_enabled?("repo_data")
       return unless @online
 
       _, user, repo = *regex.match(formula.stable.url) if formula.stable
@@ -738,7 +745,7 @@ module Homebrew
         end
       end
 
-      return unless @core_tap
+      return unless core_audit_enabled?("specs")
 
       problem "Formulae in homebrew/core should not have a `devel` spec" if formula.devel
 
@@ -904,7 +911,7 @@ module Homebrew
     def audit_reverse_migration
       # Only enforce for new formula being re-added to core
       return unless @strict
-      return unless @core_tap
+      return unless core_audit_enabled?("reverse_migration")
       return unless formula.tap.tap_migrations.key?(formula.name)
 
       problem <<~EOS

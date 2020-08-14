@@ -102,6 +102,7 @@ class Tap
     @command_files = nil
     @formula_renames = nil
     @tap_migrations = nil
+    @audit_config = nil
     @config = nil
     remove_instance_variable(:@private) if instance_variable_defined?(:@private)
   end
@@ -547,6 +548,17 @@ class Tap
     end
   end
 
+  # Hash with audit config
+  def audit_config
+    require "json"
+
+    @audit_config ||= if (config_file = path/"audit_config.json").file?
+      JSON.parse(config_file.read)
+    else
+      {}
+    end
+  end
+
   def ==(other)
     other = Tap.fetch(other) if other.is_a?(String)
     self.class == other.class && name == other.name
@@ -681,6 +693,14 @@ class CoreTap < Tap
   # @private
   def tap_migrations
     @tap_migrations ||= begin
+      self.class.ensure_installed!
+      super
+    end
+  end
+
+  # @private
+  def audit_config
+    @audit_config ||= begin
       self.class.ensure_installed!
       super
     end
