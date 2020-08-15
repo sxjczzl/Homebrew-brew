@@ -40,13 +40,13 @@ jobs:
             fi
           fi
 
-        - name: Push commits
-          uses: Homebrew/actions/try-push@master
-          with:
-            token: ${{ secrets.GITHUB_TOKEN }}
-            branch: tapioca-update
+      - name: Push commits
+        uses: Homebrew/actions/try-push@master
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: tapioca-update
 
-        - name: Open a PR
-          run: |
-            cd "$GITHUB_WORKSPACE/Library/Homebrew"
-            hub pull-request -m "$(git log -1 --format='%s')"
+      - name: Open a PR
+        run: |
+          cd "$GITHUB_WORKSPACE/Library/Homebrew"
+          hub pull-request -m "$(git log -1 --format='%s')"
