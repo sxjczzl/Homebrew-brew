@@ -41,7 +41,7 @@ jobs:
           fi
 
       - name: Push commits
-        uses: Homebrew/actions/try-push@master
+        uses: Homebrew/actions/git-try-push@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: tapioca-update
