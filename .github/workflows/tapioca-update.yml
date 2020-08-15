@@ -39,6 +39,7 @@ jobs:
             BRANCH="tapioca-update-$(date "+%Y-%m-%d")"
             if ! git ls-remote --exit-code --heads origin "$BRANCH"; then
               git checkout -b "$BRANCH"
+              git commit -m "sorbet: Update gem RBI files using Tapioca"
               git push origin "$BRANCH"
               hub pull-request -m "$(git log -1 --format='%s')"
             fi
