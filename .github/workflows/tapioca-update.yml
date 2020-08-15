@@ -27,18 +27,26 @@ jobs:
           ruby-version: 2.6.3
 
       - name: Update Tapioca Definitions
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd "$GITHUB_WORKSPACE/Library/Homebrew"
           bundle install
           bundle exec tapioca sync --exclude json
           bundle exec srb rbi hidden-definitions
           if ! git diff --exit-code -- sorbet; then
-            BRANCH="tapioca-update-$(date "+%Y-%m-%d")"
+            BRANCH="tapioca-update"
             if ! git ls-remote --exit-code --heads origin "$BRANCH"; then
               git checkout -b "$BRANCH"
               git commit -am "sorbet: Update gem RBI files using Tapioca"
             fi
           fi
+
+        - name: Push commits
+          uses: Homebrew/actions/try-push@master
+          with:
+            token: ${{ secrets.GITHUB_TOKEN }}
+            branch: tapioca-update
+
+        - name: Open a PR
+          run: |
+            cd "$GITHUB_WORKSPACE/Library/Homebrew"
+            hub pull-request -m "$(git log -1 --format='%s')"
