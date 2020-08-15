@@ -47,6 +47,8 @@ jobs:
           branch: tapioca-update
 
       - name: Open a PR
+        env:
+          - GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           cd "$GITHUB_WORKSPACE/Library/Homebrew"
           hub pull-request -m "$(git log -1 --format='%s')"
