@@ -77,6 +77,8 @@ module GitHub
     end
   end
 
+  API_ERRORS = [AuthenticationFailedError, HTTPNotFoundError, RateLimitExceededError, Error, JSON::ParserError].freeze
+
   def env_username_password
     return unless Homebrew::EnvConfig.github_api_username
     return unless Homebrew::EnvConfig.github_api_password
@@ -140,7 +142,7 @@ module GitHub
         needed_human_scopes = "none" if needed_human_scopes.blank?
         credentials_scopes = "none" if credentials_scopes.blank?
 
-        case GitHub.api_credentials_type
+        case api_credentials_type
         when :keychain_username_password
           onoe <<~EOS
             Your macOS keychain GitHub credentials do not have sufficient scope!
@@ -262,7 +264,7 @@ module GitHub
       raise RateLimitExceededError.new(reset, message)
     end
 
-    GitHub.api_credentials_error_message(meta, scopes)
+    api_credentials_error_message(meta, scopes)
 
     case http_code
     when "401", "403"
@@ -560,25 +562,25 @@ module GitHub
   end
 
   def get_repo_license(user, repo)
-    response = GitHub.open_api("#{GitHub::API_URL}/repos/#{user}/#{repo}/license")
+    response = open_api("#{API_URL}/repos/#{user}/#{repo}/license")
     return unless response.key?("license")
 
     response["license"]["spdx_id"]
-  rescue GitHub::HTTPNotFoundError
+  rescue HTTPNotFoundError
     nil
   end
 
   def api_errors
-    [GitHub::AuthenticationFailedError, GitHub::HTTPNotFoundError,
-     GitHub::RateLimitExceededError, GitHub::Error, JSON::ParserError].freeze
+    odeprecated "GitHub.api_errors", "GitHub::API_ERRORS"
+    API_ERRORS
   end
 
   def fetch_pull_requests(query, tap_full_name, state: nil)
-    GitHub.issues_for_formula(query, tap_full_name: tap_full_name, state: state).select do |pr|
+    issues_for_formula(query, tap_full_name: tap_full_name, state: state).select do |pr|
       pr["html_url"].include?("/pull/") &&
         /(^|\s)#{Regexp.quote(query)}(:|\s|$)/i =~ pr["title"]
     end
-  rescue GitHub::RateLimitExceededError => e
+  rescue RateLimitExceededError => e
     opoo e.message
     []
   end

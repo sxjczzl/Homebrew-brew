@@ -391,7 +391,7 @@ module Homebrew
           else
             exec_browser url
           end
-        rescue *GitHub.api_errors => e
+        rescue *GitHub::API_ERRORS => e
           odie "Unable to open pull request: #{e.message}!"
         end
       end
