@@ -9,6 +9,7 @@ module PyPI
     ansible
     ansible@2.8
     cdk8s
+    cfn-lint
     cloudformation-cli
     diffoscope
     dxpy
