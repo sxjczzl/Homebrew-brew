@@ -148,12 +148,16 @@ module RuboCop
 
             valid_node ||= child.method_name.to_s == "patch"
             valid_node ||= child.method_name.to_s == "resource"
+            valid_node ||= child.method_name.to_s == "fails_with"
+            valid_node ||= child.method_name.to_s == "keg_only"
 
             @offensive_node = on_os_block
             @offense_source_range = on_os_block.source_range
-            unless valid_node
-              problem "`#{on_os_block.method_name}` can only include `depends_on`, `patch` and `resource` nodes."
-            end
+            next if valid_node
+
+            problem "`#{on_os_block.method_name}` can only include " \
+                    "`depends_on`, `patch`, `resource`, `fails_with` and `keg_only` " \
+                    "nodes."
           end
         end
 
