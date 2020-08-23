@@ -5,6 +5,7 @@ require "cli/parser"
 require "utils/github"
 require "tmpdir"
 require "bintray"
+require "formula"
 
 module Homebrew
   module_function
@@ -28,6 +29,9 @@ module Homebrew
              description: "Print what would be done rather than doing it."
       switch "--clean",
              description: "Do not amend the commits from pull requests."
+      switch "--keep-old",
+             description: "If the formula specifies a rebuild version, " \
+                          "attempt to preserve its value in the generated DSL."
       switch "--branch-okay",
              description: "Do not warn if pulling to a branch besides master (useful for testing)."
       switch "--resolve",
@@ -49,8 +53,7 @@ module Homebrew
       flag   "--bintray-mirror=",
              description: "Use the specified Bintray repository to automatically mirror stable URLs "\
                           "defined in the formulae (default: `mirror`)."
-      switch :verbose
-      switch :debug
+
       min_named 1
     end
   end
@@ -117,7 +120,7 @@ module Homebrew
       # git cherry-pick unfortunately has no quiet option
       ohai "Cherry-picking #{commit_count} commit#{"s" unless commit_count == 1} from ##{pr}"
       cherry_pick_args = "git", "-C", path, "cherry-pick", "--ff", "--allow-empty", "#{merge_base}..FETCH_HEAD"
-      result = Homebrew.args.verbose? ? system(*cherry_pick_args) : quiet_system(*cherry_pick_args)
+      result = args.verbose? ? system(*cherry_pick_args) : quiet_system(*cherry_pick_args)
 
       unless result
         if args.resolve?
@@ -130,7 +133,7 @@ module Homebrew
     end
   end
 
-  def check_branch(path, ref)
+  def check_branch(path, ref, args:)
     branch = Utils.popen_read("git", "-C", path, "symbolic-ref", "--short", "HEAD").strip
 
     return if branch == ref || args.clean? || args.branch_okay?
@@ -155,8 +158,8 @@ module Homebrew
         else
           odebug "Mirroring #{mirror_url}"
           mirror_args = ["mirror", f.full_name]
-          mirror_args << "--debug" if Homebrew.args.debug?
-          mirror_args << "--verbose" if Homebrew.args.verbose?
+          mirror_args << "--debug" if args.debug?
+          mirror_args << "--verbose" if args.verbose?
           mirror_args << "--bintray-org=#{org}" if org
           mirror_args << "--bintray-repo=#{repo}" if repo
           mirror_args << "--no-publish" unless publish
@@ -233,7 +236,7 @@ module Homebrew
       _, user, repo, pr = *url_match
       odie "Not a GitHub pull request: #{arg}" unless pr
 
-      check_branch tap.path, "master"
+      check_branch tap.path, "master", args: args
 
       ohai "Fetching #{tap} pull request ##{pr}"
       Dir.mktmpdir pr do |dir|
@@ -259,12 +262,13 @@ module Homebrew
           next if args.no_upload?
 
           upload_args = ["pr-upload"]
-          upload_args << "--debug" if Homebrew.args.debug?
-          upload_args << "--verbose" if Homebrew.args.verbose?
+          upload_args << "--debug" if args.debug?
+          upload_args << "--verbose" if args.verbose?
           upload_args << "--no-publish" if args.no_publish?
           upload_args << "--dry-run" if args.dry_run?
+          upload_args << "--keep-old" if args.keep_old?
           upload_args << "--warn-on-upload-failure" if args.warn_on_upload_failure?
-          upload_args << "--root_url=#{args.root_url}" if args.root_url
+          upload_args << "--root-url=#{args.root_url}" if args.root_url
           upload_args << "--bintray-org=#{bintray_org}"
           safe_system HOMEBREW_BREW_FILE, *upload_args
         end

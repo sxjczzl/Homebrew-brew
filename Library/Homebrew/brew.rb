@@ -1,5 +1,12 @@
 # frozen_string_literal: true
 
+if ENV["HOMEBREW_STACKPROF"]
+  require_relative "utils/gems"
+  Homebrew.setup_gem_environment!
+  require "stackprof"
+  StackProf.start(mode: :wall, raw: true)
+end
+
 raise "HOMEBREW_BREW_FILE was not exported! Please call bin/brew directly!" unless ENV["HOMEBREW_BREW_FILE"]
 
 std_trap = trap("INT") { exit! 130 } # no backtrace thanks
@@ -35,19 +42,13 @@ rescue MissingEnvironmentVariables => e
   exec ENV["HOMEBREW_BREW_FILE"], *ARGV
 end
 
-def output_unsupported_error
-  $stderr.puts <<~EOS
-    Please create pull requests instead of asking for help on Homebrew's GitHub,
-    Discourse, Twitter or IRC.
-  EOS
-end
-
 begin
   trap("INT", std_trap) # restore default CTRL-C handler
 
   empty_argv = ARGV.empty?
   help_flag_list = %w[-h --help --usage -?]
   help_flag = !ENV["HOMEBREW_HELP"].nil?
+  help_cmd_index = nil
   cmd = nil
 
   ARGV.each_with_index do |arg, i|
@@ -56,11 +57,18 @@ begin
     if arg == "help" && !cmd
       # Command-style help: `help <cmd>` is fine, but `<cmd> help` is not.
       help_flag = true
+      help_cmd_index = i
     elsif !cmd && !help_flag_list.include?(arg)
       cmd = ARGV.delete_at(i)
       cmd = Commands::HOMEBREW_INTERNAL_COMMAND_ALIASES.fetch(cmd, cmd)
     end
   end
+
+  ARGV.delete_at(help_cmd_index) if help_cmd_index
+
+  args = Homebrew::CLI::Parser.new.parse(ARGV.dup.freeze, ignore_invalid_options: true)
+  Homebrew.args = args
+  Context.current = args.context
 
   path = PATH.new(ENV["PATH"])
   homebrew_path = PATH.new(ENV["HOMEBREW_PATH"])
@@ -103,8 +111,8 @@ begin
   # - if cmd is Cask, let Cask handle the help command instead
   if (empty_argv || help_flag) && cmd != "cask"
     require "help"
-    Homebrew::Help.help cmd, empty_argv: empty_argv
-    # `Homebrew.help` never returns, except for unknown commands.
+    Homebrew::Help.help cmd, remaining_args: args.remaining, empty_argv: empty_argv
+    # `Homebrew::Help.help` never returns, except for unknown commands.
   end
 
   if internal_cmd || Commands.external_ruby_v2_cmd_path(cmd)
@@ -124,42 +132,46 @@ begin
     odie "Unknown command: #{cmd}" if !possible_tap || possible_tap.installed?
 
     # Unset HOMEBREW_HELP to avoid confusing the tap
-    ENV.delete("HOMEBREW_HELP") if help_flag
-    tap_commands = []
-    cgroup = Utils.popen_read("cat", "/proc/1/cgroup")
-    if %w[azpl_job actions_job docker garden kubepods].none? { |container| cgroup.include?(container) }
-      brew_uid = HOMEBREW_BREW_FILE.stat.uid
-      tap_commands += %W[/usr/bin/sudo -u ##{brew_uid}] if Process.uid.zero? && !brew_uid.zero?
+    with_env HOMEBREW_HELP: nil do
+      tap_commands = []
+      cgroup = Utils.popen_read("cat", "/proc/1/cgroup")
+      if %w[azpl_job actions_job docker garden kubepods].none? { |container| cgroup.include?(container) }
+        brew_uid = HOMEBREW_BREW_FILE.stat.uid
+        tap_commands += %W[/usr/bin/sudo -u ##{brew_uid}] if Process.uid.zero? && !brew_uid.zero?
+      end
+      tap_commands += %W[#{HOMEBREW_BREW_FILE} tap #{possible_tap.name}]
+      safe_system(*tap_commands)
     end
-    tap_commands += %W[#{HOMEBREW_BREW_FILE} tap #{possible_tap.name}]
-    safe_system(*tap_commands)
-    ENV["HOMEBREW_HELP"] = "1" if help_flag
+
     exec HOMEBREW_BREW_FILE, cmd, *ARGV
   end
 rescue UsageError => e
   require "help"
-  Homebrew::Help.help cmd, usage_error: e.message
+  Homebrew::Help.help cmd, remaining_args: args.remaining, usage_error: e.message
 rescue SystemExit => e
-  onoe "Kernel.exit" if Homebrew.args.debug? && !e.success?
-  $stderr.puts e.backtrace if Homebrew.args.debug?
+  onoe "Kernel.exit" if args.debug? && !e.success?
+  $stderr.puts e.backtrace if args.debug?
   raise
 rescue Interrupt
   $stderr.puts # seemingly a newline is typical
   exit 130
 rescue BuildError => e
   Utils::Analytics.report_build_error(e)
-  e.dump
+  e.dump(verbose: args.verbose?)
 
-  output_unsupported_error if e.formula.head? || e.formula.deprecated? || e.formula.disabled?
+  if e.formula.head? || e.formula.deprecated? || e.formula.disabled?
+    $stderr.puts <<~EOS
+      Please create pull requests instead of asking for help on Homebrew's GitHub,
+      Discourse, Twitter or IRC.
+    EOS
+  end
 
   exit 1
 rescue RuntimeError, SystemCallError => e
   raise if e.message.empty?
 
   onoe e
-  $stderr.puts e.backtrace if Homebrew.args.debug?
-
-  output_unsupported_error if Homebrew.args.HEAD?
+  $stderr.puts e.backtrace if args.debug?
 
   exit 1
 rescue MethodDeprecatedError => e
@@ -168,7 +180,7 @@ rescue MethodDeprecatedError => e
     $stderr.puts "If reporting this issue please do so at (not Homebrew/brew or Homebrew/core):"
     $stderr.puts "  #{Formatter.url(e.issues_url)}"
   end
-  $stderr.puts e.backtrace if Homebrew.args.debug?
+  $stderr.puts e.backtrace if args.debug?
   exit 1
 rescue Exception => e # rubocop:disable Lint/RescueException
   onoe e
@@ -181,4 +193,9 @@ rescue Exception => e # rubocop:disable Lint/RescueException
   exit 1
 else
   exit 1 if Homebrew.failed?
+ensure
+  if ENV["HOMEBREW_STACKPROF"]
+    StackProf.stop
+    StackProf.results("prof/stackprof.dump")
+  end
 end

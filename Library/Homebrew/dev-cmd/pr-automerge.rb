@@ -25,22 +25,21 @@ module Homebrew
              description: "Run `brew pr-publish` on matching pull requests."
       switch "--ignore-failures",
              description: "Include pull requests that have failing status checks."
-      switch :verbose
-      switch :debug
+
       max_named 0
     end
   end
 
   def pr_automerge
-    pr_automerge_args.parse
+    args = pr_automerge_args.parse
 
-    without_labels = Homebrew.args.without_labels || ["do not merge", "new formula"]
-    tap = Tap.fetch(Homebrew.args.tap || CoreTap.instance.name)
+    without_labels = args.without_labels || ["do not merge", "new formula"]
+    tap = Tap.fetch(args.tap || CoreTap.instance.name)
 
     query = "is:pr is:open repo:#{tap.full_name}"
-    query += Homebrew.args.ignore_failures? ? " -status:pending" : " status:success"
-    query += " review:approved" unless Homebrew.args.without_approval?
-    query += " label:\"#{args.with_label}\"" if Homebrew.args.with_label
+    query += args.ignore_failures? ? " -status:pending" : " status:success"
+    query += " review:approved" unless args.without_approval?
+    query += " label:\"#{args.with_label}\"" if args.with_label
     without_labels&.each { |label| query += " -label:\"#{label}\"" }
     odebug "Searching: #{query}"
 
@@ -50,7 +49,7 @@ module Homebrew
       return
     end
 
-    ohai "#{prs.size} matching pull requests:"
+    ohai "#{prs.count} matching pull #{"request".pluralize(prs.count)}:"
     pr_urls = []
     prs.each do |pr|
       puts "#{tap.full_name unless tap.core_tap?}##{pr["number"]}: #{pr["title"]}"

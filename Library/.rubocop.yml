@@ -68,6 +68,10 @@ Style/HashTransformKeys:
 Style/HashTransformValues:
   Enabled: true
 
+# Allow for license expressions
+Style/HashAsLastArrayItem:
+  Enabled: false
+
 # Enabled now LineLength is lowish.
 Style/IfUnlessModifier:
   Enabled: true
@@ -161,7 +165,6 @@ Lint/AmbiguousRegexpLiteral:
 Lint/ParenthesesAsGroupedExpression:
   Enabled: false
 
-
 # most metrics don't make sense to apply for formulae/taps
 Metrics/AbcSize:
   Enabled: false
@@ -181,7 +184,9 @@ Layout/LineLength:
   Max: 118
   # ignore manpage comments and long single-line strings
   IgnoredPatterns: ['#: ', ' url "', ' mirror "', ' plist_options ',
-                    ' appcast "', ' executable: "', '#{version.',
+                    ' appcast "', ' executable: "', ' font "', ' homepage "', ' name "',
+                    ' pkg "', ' pkgutil: "', '#{language}', '#{version.',
+                    ' "/Library/Application Support/', '"/Library/Caches/', '"/Library/PreferencePanes/',
                     ' "~/Library/Application Support/', '"~/Library/Caches/', '"~/Application Support',
                     ' was verified as official when first introduced to the cask']
 
@@ -210,6 +215,10 @@ Style/GuardClause:
 # avoid hash rockets where possible
 Style/HashSyntax:
   EnforcedStyle: ruby19
+
+# so many of these in formulae and can't be autocorrected
+Style/StringConcatenation:
+  Enabled: false
 
 # ruby style guide favorite
 Style/StringLiterals:

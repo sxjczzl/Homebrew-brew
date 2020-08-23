@@ -23,19 +23,19 @@ module Homebrew
                           "`brew link --overwrite` without actually linking or deleting any files."
       switch "-f", "--force",
              description: "Allow keg-only formulae to be linked."
-      switch :verbose
-      switch :debug
+
       min_named :keg
     end
   end
 
   def link
-    link_args.parse
+    args = link_args.parse
 
-    mode = OpenStruct.new
-
-    mode.overwrite = true if args.overwrite?
-    mode.dry_run = true if args.dry_run?
+    options = {
+      overwrite: args.overwrite?,
+      dry_run:   args.dry_run?,
+      verbose:   args.verbose?,
+    }
 
     args.kegs.each do |keg|
       keg_only = Formulary.keg_only?(keg.rack)
@@ -54,13 +54,13 @@ module Homebrew
         next
       end
 
-      if mode.dry_run
-        if mode.overwrite
+      if args.dry_run?
+        if args.overwrite?
           puts "Would remove:"
         else
           puts "Would link:"
         end
-        keg.link(mode)
+        keg.link(**options)
         puts_keg_only_path_message(keg) if keg_only
         next
       end
@@ -90,7 +90,7 @@ module Homebrew
         puts if args.verbose?
 
         begin
-          n = keg.link(mode)
+          n = keg.link(**options)
         rescue Keg::LinkError
           puts
           raise

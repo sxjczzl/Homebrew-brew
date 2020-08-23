@@ -12,6 +12,30 @@ class Version
   class Token
     include Comparable
 
+    def self.create(val)
+      raise TypeError, "Token value must be a string; got a #{val.class} (#{val})" unless val.respond_to?(:to_str)
+
+      case val
+      when /\A#{AlphaToken::PATTERN}\z/o   then AlphaToken
+      when /\A#{BetaToken::PATTERN}\z/o    then BetaToken
+      when /\A#{RCToken::PATTERN}\z/o      then RCToken
+      when /\A#{PreToken::PATTERN}\z/o     then PreToken
+      when /\A#{PatchToken::PATTERN}\z/o   then PatchToken
+      when /\A#{NumericToken::PATTERN}\z/o then NumericToken
+      when /\A#{StringToken::PATTERN}\z/o  then StringToken
+      end.new(val)
+    end
+
+    def self.from(val)
+      case val
+      when Token   then val
+      when String  then Token.create(val)
+      when Integer then Token.create(val.to_s)
+      when nil     then NULL_TOKEN
+      else NULL_TOKEN if val.respond_to?(:null?) && val.null?
+      end
+    end
+
     attr_reader :value
 
     def initialize(value)
@@ -20,6 +44,18 @@ class Version
 
     def inspect
       "#<#{self.class.name} #{value.inspect}>"
+    end
+
+    def hash
+      value.hash
+    end
+
+    def to_f
+      value.to_f
+    end
+
+    def to_i
+      value.to_i
     end
 
     def to_s
@@ -37,6 +73,8 @@ class Version
     end
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when NullToken
         0
@@ -49,6 +87,10 @@ class Version
       end
     end
 
+    def null?
+      true
+    end
+
     def inspect
       "#<#{self.class.name}>"
     end
@@ -57,13 +99,17 @@ class Version
   NULL_TOKEN = NullToken.new.freeze
 
   class StringToken < Token
-    PATTERN = /[a-z]+[0-9]*/i.freeze
+    PATTERN = /[a-z]+/i.freeze
 
     def initialize(value)
+      super
+
       @value = value.to_s
     end
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when StringToken
         value <=> other.value
@@ -77,10 +123,14 @@ class Version
     PATTERN = /[0-9]+/i.freeze
 
     def initialize(value)
+      super
+
       @value = value.to_i
     end
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when NumericToken
         value <=> other.value
@@ -106,6 +156,8 @@ class Version
     PATTERN = /alpha[0-9]*|a[0-9]+/i.freeze
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when AlphaToken
         rev <=> other.rev
@@ -121,6 +173,8 @@ class Version
     PATTERN = /beta[0-9]*|b[0-9]+/i.freeze
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when BetaToken
         rev <=> other.rev
@@ -138,6 +192,8 @@ class Version
     PATTERN = /pre[0-9]*/i.freeze
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when PreToken
         rev <=> other.rev
@@ -155,6 +211,8 @@ class Version
     PATTERN = /rc[0-9]*/i.freeze
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when RCToken
         rev <=> other.rev
@@ -172,6 +230,8 @@ class Version
     PATTERN = /p[0-9]*/i.freeze
 
     def <=>(other)
+      return unless other = Token.from(other)
+
       case other
       when PatchToken
         rev <=> other.rev
@@ -261,7 +321,7 @@ class Version
     # e.g. foobar-4.5.1-1
     # e.g. unrtf_0.20.4-1
     # e.g. ruby-1.9.1-p243
-    m = /[-_]((?:\d+\.)*\d+\.\d+-(?:p|rc|RC)?\d+)(?:[-._](?:bin|dist|stable|src|sources))?$/.match(stem)
+    m = /[-_]((?:\d+\.)*\d+\.\d+-(?:p|rc|RC)?\d+)(?:[-._](?i:bin|dist|stable|src|sources?|final|full))?$/.match(stem)
     return m.captures.first unless m.nil?
 
     # URL with no extension
@@ -319,7 +379,7 @@ class Version
     return m.captures.first unless m.nil?
 
     # e.g. foobar-4.5.0-bin
-    m = /-((?:\d+\.)+\d+[abc]?)[-._](?:bin|dist|stable|src|sources?)$/.match(stem)
+    m = /[-vV]((?:\d+\.)+\d+[abc]?)[-._](?i:bin|dist|stable|src|sources?|final|full)$/.match(stem)
     return m.captures.first unless m.nil?
 
     # dash version style
@@ -389,8 +449,9 @@ class Version
     # Used by the *_build_version comparisons, which formerly returned Fixnum
     other = Version.new(other.to_s) if other.is_a? Integer
     return 1 if other.nil?
-
     return 1 if other.respond_to?(:null?) && other.null?
+
+    other = Version.new(other.to_s) if other.is_a? Token
     return unless other.is_a?(Version)
     return 0 if version == other.version
     return 1 if head? && !other.head?
@@ -429,6 +490,26 @@ class Version
   end
   alias eql? ==
 
+  def major
+    tokens.first
+  end
+
+  def minor
+    tokens.second
+  end
+
+  def patch
+    tokens.third
+  end
+
+  def major_minor
+    Version.new([major, minor].compact.join("."))
+  end
+
+  def major_minor_patch
+    Version.new([major, minor, patch].compact.join("."))
+  end
+
   def empty?
     version.empty?
   end
@@ -465,17 +546,7 @@ class Version
   end
 
   def tokenize
-    version.scan(SCAN_PATTERN).map! do |token|
-      case token
-      when /\A#{AlphaToken::PATTERN}\z/o   then AlphaToken
-      when /\A#{BetaToken::PATTERN}\z/o    then BetaToken
-      when /\A#{RCToken::PATTERN}\z/o      then RCToken
-      when /\A#{PreToken::PATTERN}\z/o     then PreToken
-      when /\A#{PatchToken::PATTERN}\z/o   then PatchToken
-      when /\A#{NumericToken::PATTERN}\z/o then NumericToken
-      when /\A#{StringToken::PATTERN}\z/o  then StringToken
-      end.new(token)
-    end
+    version.scan(SCAN_PATTERN).map { |token| Token.create(token) }
   end
 end
 

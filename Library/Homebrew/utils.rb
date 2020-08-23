@@ -9,13 +9,17 @@ require "utils/git"
 require "utils/github"
 require "utils/inreplace"
 require "utils/link"
+require "utils/livecheck_formula"
 require "utils/popen"
+require "utils/repology"
 require "utils/svn"
 require "utils/tty"
 require "tap_constants"
 require "time"
 
 module Homebrew
+  extend Context
+
   module_function
 
   def _system(cmd, *args, **options)
@@ -34,7 +38,7 @@ module Homebrew
   end
 
   def system(cmd, *args, **options)
-    if Homebrew.args.verbose?
+    if verbose?
       puts "#{cmd} #{args * " "}".gsub(RUBY_PATH, "ruby")
                                  .gsub($LOAD_PATH.join(File::PATH_SEPARATOR).to_s, "$LOAD_PATH")
     end
@@ -86,7 +90,13 @@ module Kernel
   end
 
   def ohai_title(title)
-    title = Tty.truncate(title) if $stdout.tty? && !Homebrew.args.verbose?
+    verbose = if respond_to?(:verbose?)
+      verbose?
+    else
+      Context.current.verbose?
+    end
+
+    title = Tty.truncate(title) if $stdout.tty? && !verbose
     Formatter.headline(title, color: :blue)
   end
 
@@ -95,15 +105,27 @@ module Kernel
     puts sput
   end
 
-  def odebug(title, *sput)
-    return unless Homebrew.args.debug?
+  def odebug(title, *sput, always_display: false)
+    debug = if respond_to?(:debug)
+      debug?
+    else
+      Context.current.debug?
+    end
+
+    return unless debug || always_display
 
     puts Formatter.headline(title, color: :magenta)
     puts sput unless sput.empty?
   end
 
-  def oh1(title, options = {})
-    title = Tty.truncate(title) if $stdout.tty? && !Homebrew.args.verbose? && options.fetch(:truncate, :auto) == :auto
+  def oh1(title, truncate: :auto)
+    verbose = if respond_to?(:verbose?)
+      verbose?
+    else
+      Context.current.verbose?
+    end
+
+    title = Tty.truncate(title) if $stdout.tty? && !verbose && truncate == :auto
     puts Formatter.headline(title, color: :green)
   end
 
@@ -246,16 +268,12 @@ module Kernel
     raise $CHILD_STATUS.inspect
   end
 
-  def with_homebrew_path
-    with_env(PATH: PATH.new(ENV["HOMEBREW_PATH"])) do
-      yield
-    end
+  def with_homebrew_path(&block)
+    with_env(PATH: PATH.new(ENV["HOMEBREW_PATH"]), &block)
   end
 
-  def with_custom_locale(locale)
-    with_env(LC_ALL: locale) do
-      yield
-    end
+  def with_custom_locale(locale, &block)
+    with_env(LC_ALL: locale, &block)
   end
 
   # Kernel.system but with exceptions
@@ -369,12 +387,12 @@ module Kernel
   end
 
   def nostdout
-    if Homebrew.args.verbose?
+    if verbose?
       yield
     else
       begin
         out = $stdout.dup
-        $stdout.reopen("/dev/null")
+        $stdout.reopen(File::NULL)
         yield
       ensure
         $stdout.reopen(out)

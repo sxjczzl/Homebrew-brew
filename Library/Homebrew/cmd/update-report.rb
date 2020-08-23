@@ -11,7 +11,7 @@ require "cli/parser"
 module Homebrew
   module_function
 
-  def update_preinstall_header
+  def update_preinstall_header(args:)
     @update_preinstall_header ||= begin
       ohai "Auto-updated Homebrew!" if args.preinstall?
       true
@@ -30,15 +30,13 @@ module Homebrew
       switch "-f", "--force",
              description: "Treat installed and updated formulae as if they are from "\
                           "the same taps and migrate them anyway."
-      switch :quiet
-      switch :verbose
-      switch :debug
+
       hide_from_man_page!
     end
   end
 
   def update_report
-    update_report_args.parse
+    args = update_report_args.parse
 
     if !Utils::Analytics.messages_displayed? &&
        !Utils::Analytics.disabled? &&
@@ -82,7 +80,7 @@ module Homebrew
     odie "update-report should not be called directly!" if initial_revision.empty? || current_revision.empty?
 
     if initial_revision != current_revision
-      update_preinstall_header
+      update_preinstall_header args: args
       puts "Updated Homebrew from #{shorten_revision(initial_revision)} to #{shorten_revision(current_revision)}."
       updated = true
     end
@@ -104,12 +102,12 @@ module Homebrew
       end
       if reporter.updated?
         updated_taps << tap.name
-        hub.add(reporter)
+        hub.add(reporter, preinstall: args.preinstall?)
       end
     end
 
     unless updated_taps.empty?
-      update_preinstall_header
+      update_preinstall_header args: args
       puts "Updated #{updated_taps.count} #{"tap".pluralize(updated_taps.count)} (#{updated_taps.to_sentence})."
       updated = true
     end
@@ -122,7 +120,7 @@ module Homebrew
       else
         hub.dump(updated_formula_report: !args.preinstall?)
         hub.reporters.each(&:migrate_tap_migration)
-        hub.reporters.each(&:migrate_formula_rename)
+        hub.reporters.each { |r| r.migrate_formula_rename(force: args.force?, verbose: args.verbose?) }
         CacheStoreDatabase.use(:descriptions) do |db|
           DescriptionCacheStore.new(db)
                                .update_from_report!(hub)
@@ -186,7 +184,7 @@ class Reporter
     raise ReporterRevisionUnsetError, current_revision_var if @current_revision.empty?
   end
 
-  def report
+  def report(preinstall: false)
     return @report if @report
 
     @report = Hash.new { |h, k| h[k] = [] }
@@ -200,8 +198,10 @@ class Reporter
       next unless dst.extname == ".rb"
 
       if paths.any? { |p| tap.cask_file?(p) }
-        # Currently only need to handle Cask deletion/migration.
         case status
+        when "A"
+          # Have a dedicated report array for new casks.
+          @report[:AC] << tap.formula_file_to_name(src)
         when "D"
           # Have a dedicated report array for deleted casks.
           @report[:DC] << tap.formula_file_to_name(src)
@@ -223,7 +223,7 @@ class Reporter
         name = tap.formula_file_to_name(src)
 
         # Skip reporting updated formulae to speed up automatic updates.
-        if Homebrew.args.preinstall?
+        if preinstall
           @report[:M] << name
           next
         end
@@ -373,7 +373,7 @@ class Reporter
     end
   end
 
-  def migrate_formula_rename
+  def migrate_formula_rename(force:, verbose:)
     Formula.installed.each do |formula|
       next unless Migrator.needs_migration?(formula)
 
@@ -397,7 +397,7 @@ class Reporter
         next
       end
 
-      Migrator.migrate_if_needed(f)
+      Migrator.migrate_if_needed(f, force: force)
     end
   end
 
@@ -425,9 +425,9 @@ class ReporterHub
     @hash.fetch(key, [])
   end
 
-  def add(reporter)
+  def add(reporter, preinstall: false)
     @reporters << reporter
-    report = reporter.report.delete_if { |_k, v| v.empty? }
+    report = reporter.report(preinstall: preinstall).delete_if { |_k, v| v.empty? }
     @hash.update(report) { |_key, oldval, newval| oldval.concat(newval) }
   end
 
@@ -448,6 +448,7 @@ class ReporterHub
     end
     dump_formula_report :R, "Renamed Formulae"
     dump_formula_report :D, "Deleted Formulae"
+    dump_formula_report :AC, "New Casks"
     dump_formula_report :MC, "Updated Casks"
     dump_formula_report :DC, "Deleted Casks"
   end
@@ -464,6 +465,8 @@ class ReporterHub
         "#{name} -> #{new_name}"
       when :A
         name unless installed?(name)
+      when :AC
+        name.split("/").last unless cask_installed?(name)
       when :MC, :DC
         name = name.split("/").last
         cask_installed?(name) ? pretty_installed(name) : name

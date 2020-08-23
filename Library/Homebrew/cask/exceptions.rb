@@ -5,6 +5,8 @@ module Cask
 
   class MultipleCaskErrors < CaskError
     def initialize(errors)
+      super()
+
       @errors = errors
     end
 
@@ -20,6 +22,8 @@ module Cask
     attr_reader :token, :reason
 
     def initialize(token, reason = nil)
+      super()
+
       @token = token
       @reason = reason.to_s
     end
@@ -129,7 +133,7 @@ module Cask
     def to_s
       <<~EOS
         Cask '#{token}' requires a checksum:
-          #{Formatter.identifier("sha256 '#{actual}'")}
+          #{Formatter.identifier('sha256 "#{actual}"')}
       EOS
     end
   end
@@ -168,6 +172,8 @@ module Cask
     attr_reader :path, :reason
 
     def initialize(path, reason)
+      super()
+
       @path = path
       @reason = reason
     end

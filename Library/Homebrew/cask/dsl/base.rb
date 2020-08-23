@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "cask/utils"
+
 module Cask
   class DSL
     class Base
@@ -16,6 +18,10 @@ module Cask
         @command.run!(executable, **options)
       end
 
+      def respond_to_missing?(*)
+        super
+      end
+
       def method_missing(method, *)
         if method
           underscored_class = self.class.name.gsub(/([[:lower:]])([[:upper:]][[:lower:]])/, '\1_\2').downcase
@@ -25,10 +31,6 @@ module Cask
         else
           super
         end
-      end
-
-      def respond_to_missing?(*)
-        true
       end
     end
   end
