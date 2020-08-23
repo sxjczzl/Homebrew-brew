@@ -6,15 +6,19 @@ require "json/add/exception"
 require "pathname"
 require "ostruct"
 require "pp"
+require "forwardable"
 
 require_relative "load_path"
 
 require "rubygems"
+# Only require "core_ext" here to ensure we're only requiring the minimum of
+# what we need.
 require "active_support/core_ext/object/blank"
 require "active_support/core_ext/numeric/time"
+require "active_support/core_ext/object/try"
 require "active_support/core_ext/array/access"
-require "active_support/i18n"
-require "active_support/inflector/inflections"
+require "active_support/core_ext/string/inflections"
+require "active_support/core_ext/array/conversions"
 
 I18n.backend.available_locales # Initialize locales so they can be overwritten.
 I18n.backend.store_translations :en, support: { array: { last_word_connector: " and " } }
@@ -35,9 +39,12 @@ require "env_config"
 
 require "config"
 require "os"
+require "context"
+require "extend/pathname"
+require "extend/predicable"
+require "extend/module"
 require "cli/args"
 require "messages"
-require "system_command"
 
 HOMEBREW_PRODUCT = ENV["HOMEBREW_PRODUCT"]
 HOMEBREW_VERSION = ENV["HOMEBREW_VERSION"]
@@ -82,7 +89,7 @@ module Homebrew
     end
 
     def args
-      @args ||= CLI::Args.new(set_default_args: true)
+      @args ||= CLI::Args.new
     end
 
     def messages
@@ -104,7 +111,6 @@ HOMEBREW_PULL_API_REGEX =
 HOMEBREW_PULL_OR_COMMIT_URL_REGEX =
   %r[https://github\.com/([\w-]+)/([\w-]+)?/(?:pull/(\d+)|commit/[0-9a-fA-F]{4,40})].freeze
 
-require "forwardable"
 require "PATH"
 
 ENV["HOMEBREW_PATH"] ||= ENV["PATH"]
@@ -116,15 +122,12 @@ end.compact.freeze
 
 require "set"
 
-require "extend/pathname"
-
-require "extend/module"
-require "extend/predicable"
 require "extend/string"
 require "active_support/core_ext/object/blank"
 require "active_support/core_ext/hash/deep_merge"
 require "active_support/core_ext/file/atomic"
 
+require "system_command"
 require "exceptions"
 require "utils"
 

@@ -27,13 +27,15 @@ module Homebrew
                           "If you want to delete those too: `rm -rf \"$(brew --cache)\"`"
       switch "--prune-prefix",
              description: "Only prune the symlinks and directories from the prefix and remove no other files."
-      switch :verbose
-      switch :debug
     end
   end
 
   def cleanup
-    cleanup_args.parse
+    args = cleanup_args.parse
+
+    if args.prune.present? && !Integer(args.prune, exception: false) && args.prune != "all"
+      raise UsageError, "--prune= expects an integer or 'all'."
+    end
 
     cleanup = Cleanup.new(*args.named, dry_run: args.dry_run?, scrub: args.s?, days: args.prune&.to_i)
     if args.prune_prefix?

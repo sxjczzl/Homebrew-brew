@@ -1,4 +1,5 @@
 --cache
+--caskroom
 --cellar
 --config
 --env
@@ -12,6 +13,7 @@ abv
 analytics
 audit
 bottle
+bump
 bump-formula-pr
 bump-revision
 cask
@@ -88,6 +90,7 @@ untap
 up
 update
 update-license-data
+update-python-resources
 update-report
 update-reset
 update-test

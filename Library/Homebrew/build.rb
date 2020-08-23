@@ -97,7 +97,11 @@ class Build
         bottle_arch:  args.bottle_arch,
       )
       post_superenv_hacks
-      reqs.each { |req| req.modify_build_environment(args: args) }
+      reqs.each do |req|
+        req.modify_build_environment(
+          env: args.env, cc: args.cc, build_bottle: args.build_bottle?, bottle_arch: args.bottle_arch,
+        )
+      end
       deps.each(&:modify_build_environment)
     else
       ENV.setup_build_environment(
@@ -106,7 +110,11 @@ class Build
         build_bottle: args.build_bottle?,
         bottle_arch:  args.bottle_arch,
       )
-      reqs.each { |req| req.modify_build_environment(args: args) }
+      reqs.each do |req|
+        req.modify_build_environment(
+          env: args.env, cc: args.cc, build_bottle: args.build_bottle?, bottle_arch: args.bottle_arch,
+        )
+      end
       deps.each(&:modify_build_environment)
 
       keg_only_deps.each do |dep|
@@ -127,11 +135,15 @@ class Build
     }
 
     with_env(new_env) do
-      formula.extend(Debrew::Formula) if Homebrew.args.debug?
+      formula.extend(Debrew::Formula) if args.debug?
 
       formula.update_head_version
 
-      formula.brew(fetch: false, keep_tmp: args.keep_tmp?, interactive: args.interactive?) do |_formula, _staging|
+      formula.brew(
+        fetch:       false,
+        keep_tmp:    args.keep_tmp?,
+        interactive: args.interactive?,
+      ) do
         # For head builds, HOMEBREW_FORMULA_PREFIX should include the commit,
         # which is not known until after the formula has been staged.
         ENV["HOMEBREW_FORMULA_PREFIX"] = formula.prefix
@@ -193,7 +205,7 @@ class Build
     else
       raise
     end
-    Keg.new(path).optlink
+    Keg.new(path).optlink(verbose: args.verbose?)
   rescue
     raise "#{f.opt_prefix} not present or broken\nPlease reinstall #{f.full_name}. Sorry :("
   end
@@ -201,6 +213,8 @@ end
 
 begin
   args = Homebrew.install_args.parse
+  Context.current = args.context
+
   error_pipe = UNIXSocket.open(ENV["HOMEBREW_ERROR_PIPE"], &:recv_io)
   error_pipe.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
 

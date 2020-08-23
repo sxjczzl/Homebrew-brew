@@ -3,6 +3,7 @@
 require "cli/parser"
 require "utils/git"
 require "formulary"
+require "software_spec"
 require "tap"
 
 def with_monkey_patch
@@ -91,13 +92,13 @@ module Homebrew
              description: "Extract the specified <version> of <formula> instead of the most recent."
       switch "-f", "--force",
              description: "Overwrite the destination formula if it already exists."
-      switch :debug
+
       named 2
     end
   end
 
   def extract
-    extract_args.parse
+    args = extract_args.parse
 
     if args.named.first !~ HOMEBREW_TAP_FORMULA_REGEX
       name = args.named.first.downcase

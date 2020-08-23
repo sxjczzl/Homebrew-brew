@@ -6,12 +6,18 @@ case "$HOMEBREW_SYSTEM" in
 esac
 
 # Force UTF-8 to avoid encoding issues for users with broken locale settings.
-if [[ "$(locale charmap 2>/dev/null)" != "UTF-8" ]]
+if [[ -n "$HOMEBREW_MACOS" ]]
 then
-  if [[ -n "$HOMEBREW_MACOS" ]]
+  if [[ "$(locale charmap)" != "UTF-8" ]]
   then
     export LC_ALL="en_US.UTF-8"
-  else
+  fi
+else
+  if ! command -v locale >/dev/null
+  then
+    export LC_ALL=C
+  elif [[ "$(locale charmap)" != "UTF-8" ]]
+  then
     locales=$(locale -a)
     c_utf_regex='\bC\.(utf8|UTF-8)\b'
     en_us_regex='\ben_US\.(utf8|UTF-8)\b'
@@ -49,6 +55,7 @@ case "$*" in
   --prefix)            echo "$HOMEBREW_PREFIX"; exit 0 ;;
   --cellar)            echo "$HOMEBREW_CELLAR"; exit 0 ;;
   --repository|--repo) echo "$HOMEBREW_REPOSITORY"; exit 0 ;;
+  --caskroom)          echo "$HOMEBREW_PREFIX/Caskroom"; exit 0 ;;
 esac
 
 # A depth of 1 means this command was directly invoked by a user.
@@ -291,11 +298,6 @@ export HOMEBREW_USER_AGENT
 export HOMEBREW_USER_AGENT_CURL
 export HOMEBREW_BOTTLE_DEFAULT_DOMAIN
 
-if [[ -n "$HOMEBREW_DEVELOPER" ]] && [[ -z "$HOMEBREW_NO_PATCHELF_RB" ]]
-then
-  export HOMEBREW_PATCHELF_RB="1"
-fi
-
 if [[ -n "$HOMEBREW_MACOS" && -x "/usr/bin/xcode-select" ]]
 then
   XCODE_SELECT_PATH=$('/usr/bin/xcode-select' --print-path 2>/dev/null)
@@ -344,6 +346,8 @@ fi
 
 for arg in "$@"
 do
+  [[ $arg = "--" ]] && break
+
   if [[ $arg = "--help" || $arg = "-h" || $arg = "--usage" || $arg = "-?" ]]
   then
     export HOMEBREW_HELP="1"

@@ -2,6 +2,44 @@
 
 module Homebrew
   module Diagnostic
+    class Volumes
+      def initialize
+        @volumes = get_mounts
+      end
+
+      def which(path)
+        vols = get_mounts path
+
+        # no volume found
+        return -1 if vols.empty?
+
+        vol_index = @volumes.index(vols[0])
+        # volume not found in volume list
+        return -1 if vol_index.nil?
+
+        vol_index
+      end
+
+      def get_mounts(path = nil)
+        vols = []
+        # get the volume of path, if path is nil returns all volumes
+
+        args = %w[/bin/df -P]
+        args << path if path
+
+        Utils.popen_read(*args) do |io|
+          io.each_line do |line|
+            case line.chomp
+              # regex matches: /dev/disk0s2   489562928 440803616  48247312    91%    /
+            when /^.+\s+[0-9]+\s+[0-9]+\s+[0-9]+\s+[0-9]{1,3}%\s+(.+)/
+              vols << Regexp.last_match(1)
+            end
+          end
+        end
+        vols
+      end
+    end
+
     class Checks
       undef fatal_build_from_source_checks, supported_configuration_checks,
             build_from_source_checks
@@ -73,7 +111,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["HOMEBREW_GITHUB_ACTIONS"]
+        return if ENV["GITHUB_ACTIONS"]
 
         message = <<~EOS
           Your Xcode (#{MacOS::Xcode.version}) is outdated.
@@ -100,7 +138,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["HOMEBREW_GITHUB_ACTIONS"]
+        return if ENV["GITHUB_ACTIONS"]
 
         <<~EOS
           A newer Command Line Tools release is available.
@@ -372,19 +410,10 @@ module Homebrew
           "Xcode"
         end
 
-        all_sdks = locator.all_sdks
-        sdks_found_msg = unless all_sdks.empty?
-          <<~EOS
-            Homebrew found the following SDKs in the #{source} install:
-              #{locator.all_sdks.map(&:version).join("\n  ")}
-          EOS
-        end
-
         <<~EOS
-          Could not find an SDK that supports macOS #{MacOS.version}.
-          You may have have an outdated or incompatible #{source}.
-          #{sdks_found_msg}
-          Please update #{source} or uninstall it if no updates are available.
+          Your #{source} does not support macOS #{MacOS.version}.
+          It is either outdated or was modified.
+          Please update your #{source} or delete it if no updates are available.
         EOS
       end
     end

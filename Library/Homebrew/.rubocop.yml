@@ -37,30 +37,35 @@ Lint/ParenthesesAsGroupedExpression:
 # TODO: try to bring down all metrics maximums
 Metrics/AbcSize:
   Enabled: true
-  Max: 275
+  Max: 250
 Metrics/BlockLength:
   Enabled: true
-  Max: 1100
+  Max: 100
   Exclude:
-    - 'test/formula_spec.rb'
+    - 'test/**/*'
 Metrics/BlockNesting:
   Enabled: true
   Max: 5
 Metrics/ClassLength:
   Enabled: true
-  Max: 1400
+  Max: 800
+  Exclude:
+    - 'formula.rb'
+    - 'formula_installer.rb'
 Metrics/CyclomaticComplexity:
   Enabled: true
-  Max: 85
+  Max: 80
 Metrics/MethodLength:
   Enabled: true
-  Max: 300
+  Max: 260
 Metrics/ModuleLength:
   Enabled: true
-  Max: 550
+  Max: 600
+  Exclude:
+    - 'test/**/*'
 Metrics/PerceivedComplexity:
   Enabled: true
-  Max: 100
+  Max: 90
 
 # we won't change backward compatible predicate names
 Naming/PredicateName:
@@ -136,3 +141,13 @@ Style/FrozenStringLiteralComment:
 # so many of these in formulae but none in here
 Style/GuardClause:
   Enabled: true
+
+# so many of these in formulae but none in here
+Style/StringConcatenation:
+  Enabled: true
+
+# don't want this for formulae but re-enabled for Library/Homebrew
+Style/HashAsLastArrayItem:
+  Enabled: true
+  Exclude:
+    - 'test/utils/spdx_spec.rb'

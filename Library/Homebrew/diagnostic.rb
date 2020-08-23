@@ -12,6 +12,9 @@ require "cask/caskroom"
 require "cask/quarantine"
 
 module Homebrew
+  # Module containing diagnostic checks.
+  #
+  # @api private
   module Diagnostic
     def self.missing_deps(ff, hide = nil)
       missing = {}
@@ -25,46 +28,9 @@ module Homebrew
       missing
     end
 
-    class Volumes
-      def initialize
-        @volumes = get_mounts
-      end
-
-      def which(path)
-        vols = get_mounts path
-
-        # no volume found
-        return -1 if vols.empty?
-
-        vol_index = @volumes.index(vols[0])
-        # volume not found in volume list
-        return -1 if vol_index.nil?
-
-        vol_index
-      end
-
-      def get_mounts(path = nil)
-        vols = []
-        # get the volume of path, if path is nil returns all volumes
-
-        args = %w[/bin/df -P]
-        args << path if path
-
-        Utils.popen_read(*args) do |io|
-          io.each_line do |line|
-            case line.chomp
-              # regex matches: /dev/disk0s2   489562928 440803616  48247312    91%    /
-            when /^.+\s+[0-9]+\s+[0-9]+\s+[0-9]+\s+[0-9]{1,3}%\s+(.+)/
-              vols << Regexp.last_match(1)
-            end
-          end
-        end
-        vols
-      end
-    end
-
+    # Diagnostic checks.
     class Checks
-      def initialize(verbose = true)
+      def initialize(verbose: true)
         @verbose = verbose
       end
 
@@ -691,7 +657,7 @@ module Homebrew
 
           # these will result in uncommitted gems.
           if path == HOMEBREW_REPOSITORY
-            next if ENV["HOMEBREW_SORBET"] || ENV["HOMEBREW_PATCHELF_RB"]
+            next if ENV["HOMEBREW_SORBET"]
           end
 
           message ||= ""
@@ -907,7 +873,7 @@ module Homebrew
 
       def check_cask_staging_location
         # Skip this check when running CI since the staging path is not writable for security reasons
-        return if ENV["HOMEBREW_GITHUB_ACTIONS"]
+        return if ENV["GITHUB_ACTIONS"]
 
         path = Cask::Caskroom.path
 

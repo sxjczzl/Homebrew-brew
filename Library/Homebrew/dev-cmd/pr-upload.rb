@@ -27,8 +27,6 @@ module Homebrew
              description: "Upload to the specified Bintray organisation (default: `homebrew`)."
       flag   "--root-url=",
              description: "Use the specified <URL> as the root of the bottle's URL instead of Homebrew's default."
-      switch :verbose
-      switch :debug
     end
   end
 
@@ -39,8 +37,8 @@ module Homebrew
 
     hashes.each do |name, hash|
       formula_path = HOMEBREW_REPOSITORY/hash["formula"]["path"]
-      formula_version = Formulary.factory(formula_path).version
-      bottle_version = Version.new hash["formula"]["pkg_version"]
+      formula_version = Formulary.factory(formula_path).pkg_version
+      bottle_version = PkgVersion.parse hash["formula"]["pkg_version"]
       next if formula_version == bottle_version
 
       odie "Bottles are for #{name} #{bottle_version} but formula is version #{formula_version}!"

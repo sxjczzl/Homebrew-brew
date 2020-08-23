@@ -13,7 +13,7 @@ module Cask
 
     attr_reader :cask, :commit_range, :download
 
-    attr_predicate :appcast?
+    attr_predicate :appcast?, :new_cask?, :strict?, :online?
 
     def initialize(cask, appcast: false, download: false, quarantine: nil,
                    token_conflicts: false, online: false, strict: false,
@@ -34,6 +34,7 @@ module Cask
       check_required_stanzas
       check_version
       check_sha256
+      check_desc
       check_url
       check_generic_artifacts
       check_token_valid
@@ -279,6 +280,14 @@ module Cask
       end
     end
 
+    def check_desc
+      return unless new_cask?
+
+      return if cask.desc.present?
+
+      add_warning "Cask should have a description. Please add a `desc` stanza."
+    end
+
     def check_url
       return unless cask.url
 
@@ -321,14 +330,11 @@ module Cask
     end
 
     def check_languages
-      invalid = []
       @cask.languages.each do |language|
-        invalid << language.to_s unless language.match?(/^[a-z]{2}$/) || language.match?(/^[a-z]{2}-[A-Z]{2}$/)
+        Locale.parse(language)
+      rescue Locale::ParserError
+        add_error "Locale '#{language}' is invalid."
       end
-
-      return if invalid.empty?
-
-      add_error "locale #{invalid.join(", ")} are invalid"
     end
 
     def check_token_conflicts
@@ -339,7 +345,7 @@ module Cask
     end
 
     def check_token_valid
-      return unless @strict
+      return unless strict?
 
       add_warning "cask token is not lowercase" if cask.token.downcase!
 
@@ -365,14 +371,16 @@ module Cask
     end
 
     def check_token_bad_words
-      return unless @strict
+      return unless strict?
 
       token = cask.token
 
       add_warning "cask token contains .app" if token.end_with? ".app"
 
-      if cask.token.end_with? "alpha", "beta", "release candidate"
-        add_warning "cask token contains version designation"
+      if /-(?<designation>alpha|beta|rc|release-candidate)$/ =~ cask.token
+        if cask.tap.official? && cask.tap != "homebrew/cask-versions"
+          add_warning "cask token contains version designation '#{designation}'"
+        end
       end
 
       add_warning "cask token mentions launcher" if token.end_with? "launcher"
@@ -467,8 +475,8 @@ module Cask
     end
 
     def get_repo_data(regex)
-      return unless @online
-      return unless @new_cask
+      return unless online?
+      return unless new_cask?
 
       _, user, repo = *regex.match(cask.url.to_s)
       _, user, repo = *regex.match(cask.homepage) unless user

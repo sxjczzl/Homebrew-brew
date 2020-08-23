@@ -26,7 +26,7 @@ module Homebrew
     end
 
     formulae_to_install.each do |f|
-      Migrator.migrate_if_needed(f)
+      Migrator.migrate_if_needed(f, force: args.force?)
       begin
         upgrade_formula(f, args: args)
         Cleanup.install_formula_clean!(f)
@@ -63,8 +63,9 @@ module Homebrew
     options |= f.build.used_options
     options &= f.options
 
-    fi = FormulaInstaller.new(f, force_bottle: args.force_bottle?, include_test: args.include_test?,
-                              build_from_source: args.build_from_source?)
+    fi = FormulaInstaller.new(f, force_bottle: args.force_bottle?,
+                                 build_from_source_formulae: args.build_from_source_formulae,
+                                 debug: args.debug?, quiet: args.quiet?, verbose: args.verbose?)
     fi.options = options
     fi.force = args.force?
     fi.keep_tmp = args.keep_tmp?
@@ -101,7 +102,7 @@ module Homebrew
   rescue CannotInstallFormulaError => e
     ofail e
   rescue BuildError => e
-    e.dump
+    e.dump(verbose: args.verbose?)
     puts
     Homebrew.failed = true
   rescue DownloadError => e
@@ -224,7 +225,7 @@ module Homebrew
     rescue CannotInstallFormulaError => e
       ofail e
     rescue BuildError => e
-      e.dump
+      e.dump(verbose: args.verbose?)
       puts
       Homebrew.failed = true
     rescue DownloadError => e

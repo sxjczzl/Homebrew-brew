@@ -254,6 +254,38 @@ module RuboCop
         end
       end
 
+      class LicenseArrays < FormulaCop
+        def audit_formula(_node, _class_node, _parent_class_node, body_node)
+          license_node = find_node_method_by_name(body_node, :license)
+          return unless license_node
+
+          license = parameters(license_node).first
+          return unless license.array_type?
+
+          problem "Use `license any_of: #{license.source}` instead of `license #{license.source}`"
+        end
+
+        def autocorrect(node)
+          lambda do |corrector|
+            corrector.replace(node.source_range, "license any_of: #{parameters(node).first.source}")
+          end
+        end
+      end
+
+      class Licenses < FormulaCop
+        def audit_formula(_node, _class_node, _parent_class_node, body_node)
+          license_node = find_node_method_by_name(body_node, :license)
+          return unless license_node
+
+          license = parameters(license_node).first
+          return unless license.hash_type?
+          return unless license.each_descendant(:hash).count.positive?
+          return if license.source.include?("\n")
+
+          problem "Split nested license declarations onto multiple lines"
+        end
+      end
+
       class Miscellaneous < FormulaCop
         def audit_formula(_node, _class_node, _parent_class_node, body_node)
           # FileUtils is included in Formula
@@ -284,9 +316,7 @@ module RuboCop
             end
           end
 
-          find_instance_call(body_node, "ARGV") do |method_node|
-            next if [:debug?, :verbose?, :value].index(method_node.method_name)
-
+          find_instance_call(body_node, "ARGV") do |_method_node|
             problem "Use build instead of ARGV to check options"
           end
 
@@ -469,7 +499,7 @@ module RuboCop
 
           fileutils_methods = Regexp.new(
             FileUtils.singleton_methods(false)
-                     .map { |m| "(?-mix:^" + Regexp.escape(m) + "$)" }
+                     .map { |m| "(?-mix:^#{Regexp.escape(m)}$)" }
                      .join("|"),
           )
           find_every_method_call_by_name(body_node, :system).each do |method|

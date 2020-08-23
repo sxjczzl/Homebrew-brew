@@ -2,6 +2,7 @@
 
 require "formula"
 require "cli/parser"
+require "utils/pypi"
 
 module Homebrew
   module_function
@@ -64,16 +65,14 @@ module Homebrew
              description: "Specify the new git commit <revision> corresponding to the specified <tag>."
       switch "-f", "--force",
              description: "Ignore duplicate open PRs. Remove all mirrors if --mirror= was not specified."
-      switch :quiet
-      switch :verbose
-      switch :debug
+
       conflicts "--no-audit", "--strict"
       conflicts "--url", "--tag"
       max_named 1
     end
   end
 
-  def use_correct_linux_tap(formula)
+  def use_correct_linux_tap(formula, args:)
     if OS.linux? && formula.tap.core_tap?
       tap_full_name = formula.tap.full_name.gsub("linuxbrew", "homebrew")
       homebrew_core_url = "https://github.com/#{tap_full_name}"
@@ -106,11 +105,16 @@ module Homebrew
         end
       end
     end
-    [formula.tap&.full_name, "origin/master", "-"]
+    if formula.tap
+      origin_branch = Utils.popen_read("git", "-C", formula.tap.path.to_s, "symbolic-ref", "-q", "--short",
+                                       "refs/remotes/origin/HEAD").chomp.presence
+    end
+    origin_branch ||= "origin/master"
+    [formula.tap&.full_name, origin_branch, "-"]
   end
 
   def bump_formula_pr
-    bump_formula_pr_args.parse
+    args = bump_formula_pr_args.parse
 
     # As this command is simplifying user-run commands then let's just use a
     # user path, too.
@@ -125,11 +129,14 @@ module Homebrew
     formula ||= determine_formula_from_url(new_url) if new_url
     raise FormulaUnspecifiedError unless formula
 
-    tap_full_name, origin_branch, previous_branch = use_correct_linux_tap(formula)
-    check_open_pull_requests(formula, tap_full_name)
+    tap_full_name, origin_branch, previous_branch = use_correct_linux_tap(formula, args: args)
+    check_open_pull_requests(formula, tap_full_name, args: args)
 
     new_version = args.version
-    check_all_pull_requests(formula, tap_full_name, version: new_version) if new_version
+    check_closed_pull_requests(formula, tap_full_name, version: new_version, args: args) if new_version
+
+    opoo "This formula has patches that may be resolved upstream." if formula.patchlist.present?
+    opoo "This formula has resources that may need to be updated." if formula.resources.present?
 
     requested_spec = :stable
     formula_spec = formula.stable
@@ -143,16 +150,7 @@ module Homebrew
     new_tag = args.tag
     new_revision = args.revision
     new_mirrors ||= args.mirror
-    new_mirror ||= case new_url
-    when %r{.*ftp.gnu.org/gnu.*}
-      new_url.sub "ftp.gnu.org/gnu", "ftpmirror.gnu.org"
-    when %r{.*download.savannah.gnu.org/*}
-      new_url.sub "download.savannah.gnu.org", "download-mirror.savannah.gnu.org"
-    when %r{.*www.apache.org/dyn/closer.lua\?path=.*}
-      new_url.sub "www.apache.org/dyn/closer.lua?path=", "archive.apache.org/dist/"
-    when %r{.*mirrors.ocf.berkeley.edu/debian.*}
-      new_url.sub "mirrors.ocf.berkeley.edu/debian", "mirrorservice.org/sites/ftp.debian.org/debian"
-    end
+    new_mirror ||= determine_mirror(new_url)
     new_mirrors ||= [new_mirror] unless new_mirror.nil?
     old_url = formula_spec.url
     old_tag = formula_spec.specs[:tag]
@@ -160,10 +158,10 @@ module Homebrew
     old_version = old_formula_version.to_s
     forced_version = new_version.present?
     new_url_hash = if new_url && new_hash
-      check_all_pull_requests(formula, tap_full_name, url: new_url) unless new_version
+      check_closed_pull_requests(formula, tap_full_name, url: new_url, args: args) unless new_version
       true
     elsif new_tag && new_revision
-      check_all_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag) unless new_version
+      check_closed_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag, args: args) unless new_version
       false
     elsif !hash_type
       odie "#{formula}: no --tag= or --version= argument specified!" if !new_tag && !new_version
@@ -174,7 +172,7 @@ module Homebrew
           and old tag are both #{new_tag}.
         EOS
       end
-      check_all_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag) unless new_version
+      check_closed_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag, args: args) unless new_version
       resource_path, forced_version = fetch_resource(formula, new_version, old_url, tag: new_tag)
       new_revision = Utils.popen_read("git -C \"#{resource_path}\" rev-parse -q --verify HEAD")
       new_revision = new_revision.strip
@@ -182,6 +180,7 @@ module Homebrew
     elsif !new_url && !new_version
       odie "#{formula}: no --url= or --version= argument specified!"
     else
+      new_url ||= PyPI.update_pypi_url(old_url, new_version)
       new_url ||= old_url.gsub(old_version, new_version)
       if new_url == old_url
         odie <<~EOS
@@ -190,7 +189,7 @@ module Homebrew
             #{new_url}
         EOS
       end
-      check_all_pull_requests(formula, tap_full_name, url: new_url) unless new_version
+      check_closed_pull_requests(formula, tap_full_name, url: new_url, args: args) unless new_version
       resource_path, forced_version = fetch_resource(formula, new_version, new_url)
       tar_file_extensions = %w[.tar .tb2 .tbz .tbz2 .tgz .tlz .txz .tZ]
       if tar_file_extensions.any? { |extension| new_url.include? extension }
@@ -246,7 +245,8 @@ module Homebrew
       ]
     end
 
-    old_contents = File.read(formula.path) unless args.dry_run?
+    read_only_run = args.dry_run? && !args.write?
+    old_contents = File.read(formula.path) unless read_only_run
 
     if new_mirrors
       replacement_pairs << [
@@ -294,7 +294,10 @@ module Homebrew
         "",
       ]
     end
-    new_contents = inreplace_pairs(formula.path, replacement_pairs.uniq.compact)
+    new_contents = Utils::Inreplace.inreplace_pairs(formula.path,
+                                                    replacement_pairs.uniq.compact,
+                                                    read_only_run: read_only_run,
+                                                    silent:        args.quiet?)
 
     new_formula_version = formula_version(formula, requested_spec, new_contents)
 
@@ -310,13 +313,13 @@ module Homebrew
     end
 
     if new_formula_version < old_formula_version
-      formula.path.atomic_write(old_contents) unless args.dry_run?
+      formula.path.atomic_write(old_contents) unless read_only_run
       odie <<~EOS
         You need to bump this formula manually since changing the
         version from #{old_formula_version} to #{new_formula_version} would be a downgrade.
       EOS
     elsif new_formula_version == old_formula_version
-      formula.path.atomic_write(old_contents) unless args.dry_run?
+      formula.path.atomic_write(old_contents) unless read_only_run
       odie <<~EOS
         You need to bump this formula manually since the new version
         and old version are both #{new_formula_version}.
@@ -329,10 +332,15 @@ module Homebrew
       alias_rename.map! { |a| formula.tap.alias_dir/a }
     end
 
-    run_audit(formula, alias_rename, old_contents)
+    unless read_only_run
+      PyPI.update_python_resources! formula, new_formula_version, silent: args.quiet?, ignore_non_pypi_packages: true
+    end
+
+    run_audit(formula, alias_rename, old_contents, args: args)
 
     formula.path.parent.cd do
-      branch = "#{formula.name}-#{new_formula_version}"
+      _, base_branch = origin_branch.split("/")
+      branch = "bump-#{formula.name}-#{new_formula_version}"
       git_dir = Utils.popen_read("git rev-parse --git-dir").chomp
       shallow = !git_dir.empty? && File.exist?("#{git_dir}/shallow")
       changed_files = [formula.path]
@@ -347,14 +355,19 @@ module Homebrew
              "#{new_formula_version}' -- #{changed_files.join(" ")}"
         ohai "git push --set-upstream $HUB_REMOTE #{branch}:#{branch}"
         ohai "git checkout --quiet #{previous_branch}"
-        ohai "create pull request with GitHub API"
+        ohai "create pull request with GitHub API (base branch: #{base_branch})"
       else
 
         if args.no_fork?
           remote_url = Utils.popen_read("git remote get-url --push origin").chomp
           username = formula.tap.user
         else
-          remote_url, username = forked_repo_info(formula, tap_full_name, old_contents)
+          begin
+            remote_url, username = GitHub.forked_repo_info!(tap_full_name)
+          rescue *GitHub.api_errors => e
+            formula.path.atomic_write(old_contents)
+            odie "Unable to fork: #{e.message}!"
+          end
         end
 
         safe_system "git", "fetch", "--unshallow", "origin" if shallow
@@ -370,7 +383,8 @@ module Homebrew
         EOS
         user_message = args.message
         if user_message
-          pr_message += "\n" + <<~EOS
+          pr_message += <<~EOS
+
             ---
 
             #{user_message}
@@ -380,7 +394,7 @@ module Homebrew
 
         begin
           url = GitHub.create_pull_request(tap_full_name, pr_title,
-                                           "#{username}:#{branch}", "master", pr_message)["html_url"]
+                                           "#{username}:#{branch}", base_branch, pr_message)["html_url"]
           if args.no_browse?
             puts url
           else
@@ -413,6 +427,19 @@ module Homebrew
     odie "Couldn't guess formula for sure; could be one of these:\n#{guesses.map(&:name).join(", ")}"
   end
 
+  def determine_mirror(url)
+    case url
+    when %r{.*ftp.gnu.org/gnu.*}
+      url.sub "ftp.gnu.org/gnu", "ftpmirror.gnu.org"
+    when %r{.*download.savannah.gnu.org/*}
+      url.sub "download.savannah.gnu.org", "download-mirror.savannah.gnu.org"
+    when %r{.*www.apache.org/dyn/closer.lua\?path=.*}
+      url.sub "www.apache.org/dyn/closer.lua?path=", "archive.apache.org/dist/"
+    when %r{.*mirrors.ocf.berkeley.edu/debian.*}
+      url.sub "mirrors.ocf.berkeley.edu/debian", "mirrorservice.org/sites/ftp.debian.org/debian"
+    end
+  end
+
   def fetch_resource(formula, new_version, url, **specs)
     resource = Resource.new
     resource.url(url, specs)
@@ -421,54 +448,6 @@ module Homebrew
     resource.version = new_version if forced_version
     odie "No --version= argument specified!" unless resource.version
     [resource.fetch, forced_version]
-  end
-
-  def forked_repo_info(formula, tap_full_name, old_contents)
-    response = GitHub.create_fork(tap_full_name)
-  rescue GitHub::AuthenticationFailedError, *GitHub.api_errors => e
-    formula.path.atomic_write(old_contents)
-    odie "Unable to fork: #{e.message}!"
-  else
-    # GitHub API responds immediately but fork takes a few seconds to be ready.
-    sleep 1 until GitHub.check_fork_exists(tap_full_name)
-    remote_url = if system("git", "config", "--local", "--get-regexp", "remote\..*\.url", "git@github.com:.*")
-      response.fetch("ssh_url")
-    else
-      url = response.fetch("clone_url")
-      if (api_token = Homebrew::EnvConfig.github_api_token)
-        url.gsub!(%r{^https://github\.com/}, "https://#{api_token}@github.com/")
-      end
-      url
-    end
-    username = response.fetch("owner").fetch("login")
-    [remote_url, username]
-  end
-
-  def inreplace_pairs(path, replacement_pairs)
-    if args.dry_run?
-      str = path.open("r") { |f| Formulary.ensure_utf8_encoding(f).read }
-      contents = StringInreplaceExtension.new(str)
-      replacement_pairs.each do |old, new|
-        ohai "replace #{old.inspect} with #{new.inspect}" unless args.quiet?
-        raise "No old value for new value #{new}! Did you pass the wrong arguments?" unless old
-
-        contents.gsub!(old, new)
-      end
-      raise Utils::InreplaceError, path => contents.errors unless contents.errors.empty?
-
-      path.atomic_write(contents.inreplace_string) if args.write?
-      contents.inreplace_string
-    else
-      Utils::Inreplace.inreplace(path) do |s|
-        replacement_pairs.each do |old, new|
-          ohai "replace #{old.inspect} with #{new.inspect}" unless args.quiet?
-          raise "No old value for new value #{new}! Did you pass the wrong arguments?" unless old
-
-          s.gsub!(old, new)
-        end
-      end
-      path.open("r") { |f| Formulary.ensure_utf8_encoding(f).read }
-    end
   end
 
   def formula_version(formula, spec, contents = nil)
@@ -481,51 +460,18 @@ module Homebrew
     end
   end
 
-  def fetch_pull_requests(query, tap_full_name, state: nil)
-    GitHub.issues_for_formula(query, tap_full_name: tap_full_name, state: state).select do |pr|
-      pr["html_url"].include?("/pull/") &&
-        /(^|\s)#{Regexp.quote(query)}(:|\s|$)/i =~ pr["title"]
-    end
-  rescue GitHub::RateLimitExceededError => e
-    opoo e.message
-    []
+  def check_open_pull_requests(formula, tap_full_name, args:)
+    GitHub.check_for_duplicate_pull_requests(formula.name, tap_full_name, state: "open", args: args)
   end
 
-  def check_open_pull_requests(formula, tap_full_name)
-    # check for open requests
-    pull_requests = fetch_pull_requests(formula.name, tap_full_name, state: "open")
-    check_for_duplicate_pull_requests(pull_requests)
-  end
-
-  def check_all_pull_requests(formula, tap_full_name, version: nil, url: nil, tag: nil)
+  def check_closed_pull_requests(formula, tap_full_name, version: nil, url: nil, tag: nil, args:)
     unless version
       specs = {}
       specs[:tag] = tag if tag
       version = Version.detect(url, specs)
     end
-    # if we haven't already found open requests, try for an exact match across all requests
-    pull_requests = fetch_pull_requests("#{formula.name} #{version}", tap_full_name) if pull_requests.blank?
-    check_for_duplicate_pull_requests(pull_requests)
-  end
-
-  def check_for_duplicate_pull_requests(pull_requests)
-    return if pull_requests.blank?
-
-    duplicates_message = <<~EOS
-      These pull requests may be duplicates:
-      #{pull_requests.map { |pr| "#{pr["title"]} #{pr["html_url"]}" }.join("\n")}
-    EOS
-    error_message = "Duplicate PRs should not be opened. Use --force to override this error."
-    if args.force? && !args.quiet?
-      opoo duplicates_message
-    elsif !args.force? && args.quiet?
-      odie error_message
-    elsif !args.force?
-      odie <<~EOS
-        #{duplicates_message.chomp}
-        #{error_message}
-      EOS
-    end
+    # if we haven't already found open requests, try for an exact match across closed requests
+    GitHub.check_for_duplicate_pull_requests("#{formula.name} #{version}", tap_full_name, state: "closed", args: args)
   end
 
   def alias_update_pair(formula, new_formula_version)
@@ -540,7 +486,7 @@ module Homebrew
     [versioned_alias, "#{name}@#{new_alias_version}"]
   end
 
-  def run_audit(formula, alias_rename, old_contents)
+  def run_audit(formula, alias_rename, old_contents, args:)
     if args.dry_run?
       if args.no_audit?
         ohai "Skipping `brew audit`"

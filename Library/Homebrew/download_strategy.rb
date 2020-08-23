@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require "json"
-require "rexml/document"
 require "time"
 require "unpack_strategy"
 require "lazy_object"
 require "cgi"
+require "lock_file"
 
 require "mechanize/version"
 require "mechanize/http/content_disposition_parser"
@@ -13,6 +13,7 @@ require "mechanize/http/content_disposition_parser"
 class AbstractDownloadStrategy
   extend Forwardable
   include FileUtils
+  include Context
 
   module Pourable
     def stage
@@ -21,9 +22,9 @@ class AbstractDownloadStrategy
     end
   end
 
-  attr_reader :cache, :cached_location, :url, :meta, :name, :version, :shutup
+  attr_reader :cache, :cached_location, :url, :meta, :name, :version
 
-  private :meta, :name, :version, :shutup
+  private :meta, :name, :version
 
   def initialize(url, name, version, **meta)
     @url = url
@@ -31,24 +32,23 @@ class AbstractDownloadStrategy
     @version = version
     @cache = meta.fetch(:cache, HOMEBREW_CACHE)
     @meta = meta
-    @shutup = false
     extend Pourable if meta[:bottle]
   end
 
   # Download and cache the resource as {#cached_location}.
   def fetch; end
 
-  # Suppress output
+  # TODO: Deprecate once we have an explicitly documented alternative.
   def shutup!
-    @shutup = true
+    @quiet = true
   end
 
   def puts(*args)
-    super(*args) unless shutup
+    super(*args) unless quiet?
   end
 
   def ohai(*args)
-    super(*args) unless shutup
+    super(*args) unless quiet?
   end
 
   # Unpack {#cached_location} into the current working directory, and possibly
@@ -60,7 +60,7 @@ class AbstractDownloadStrategy
                           ref_type: @ref_type, ref: @ref)
                   .extract_nestedly(basename:             basename,
                                     prioritise_extension: true,
-                                    verbose:              Homebrew.args.verbose? && !shutup)
+                                    verbose:              verbose? && !quiet?)
     chdir
   end
 
@@ -102,9 +102,9 @@ class AbstractDownloadStrategy
   def system_command!(*args, **options)
     super(
       *args,
-      print_stdout: !shutup,
-      print_stderr: !shutup,
-      verbose:      Homebrew.args.verbose? && !shutup,
+      print_stdout: !quiet?,
+      print_stderr: !quiet?,
+      verbose:      verbose? && !quiet?,
       env:          env,
       **options,
     )
@@ -346,7 +346,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
     return @resolved_info_cache[url] if @resolved_info_cache.include?(url)
 
     if (domain = Homebrew::EnvConfig.artifact_domain)
-      url = url.sub(%r{^((ht|f)tps?://)?}, domain.chomp("/") + "/")
+      url = url.sub(%r{^((ht|f)tps?://)?}, "#{domain.chomp("/")}/")
     end
 
     out, _, status= curl_output("--location", "--silent", "--head", "--request", "GET", url.to_s)
@@ -498,13 +498,13 @@ class NoUnzipCurlDownloadStrategy < CurlDownloadStrategy
   def stage
     UnpackStrategy::Uncompressed.new(cached_location)
                                 .extract(basename: basename,
-                                         verbose:  Homebrew.args.verbose? && !shutup)
+                                         verbose:  verbose? && !quiet?)
   end
 end
 
 # This strategy extracts local binary packages.
 class LocalBottleDownloadStrategy < AbstractFileDownloadStrategy
-  def initialize(path)
+  def initialize(path) # rubocop:disable Lint/MissingSuper
     @cached_location = path
   end
 end
@@ -523,9 +523,14 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
   end
 
   def source_modified_time
-    out, = system_command("svn", args: ["info", "--xml"], chdir: cached_location)
-    xml = REXML::Document.new(out)
-    Time.parse REXML::XPath.first(xml, "//date/text()").to_s
+    time = if Version.create(Utils.svn_version) >= Version.create("1.9")
+      out, = system_command("svn", args: ["info", "--show-item", "last-changed-date"], chdir: cached_location)
+      out
+    else
+      out, = system_command("svn", args: ["info"], chdir: cached_location)
+      out[/^Last Changed Date: (.+)$/, 1]
+    end
+    Time.parse time
   end
 
   def last_commit
@@ -548,12 +553,12 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     end
   end
 
-  def fetch_repo(target, url, revision = nil, ignore_externals = false)
+  def fetch_repo(target, url, revision = nil, ignore_externals: false)
     # Use "svn update" when the repository already exists locally.
     # This saves on bandwidth and will have a similar effect to verifying the
     # cache as it will make any changes to get the right revision.
     args = []
-    args << "--quiet" unless Homebrew.args.verbose?
+    args << "--quiet" unless verbose?
 
     if revision
       ohai "Checking out #{@ref}"
@@ -589,10 +594,10 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     when :revisions
       # nil is OK for main_revision, as fetch_repo will then get latest
       main_revision = @ref[:trunk]
-      fetch_repo cached_location, @url, main_revision, true
+      fetch_repo cached_location, @url, main_revision, ignore_externals: true
 
       externals do |external_name, external_url|
-        fetch_repo cached_location/external_name, external_url, @ref[external_name], true
+        fetch_repo cached_location/external_name, external_url, @ref[external_name], ignore_externals: true
       end
     else
       fetch_repo cached_location, @url
@@ -897,7 +902,7 @@ class CVSDownloadStrategy < VCSDownloadStrategy
   end
 
   def quiet_flag
-    "-Q" unless Homebrew.args.verbose?
+    "-Q" unless verbose?
   end
 
   def clone_repo

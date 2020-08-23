@@ -11,9 +11,9 @@ module Homebrew
   def list_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
-        `list`, `ls` [<options>] [<formula>]
+        `list`, `ls` [<options>] [<formula|cask>]
 
-        List all installed formulae.
+        List all installed formulae or casks
 
         If <formula> is provided, summarise the paths within its current keg.
       EOS
@@ -32,8 +32,10 @@ module Homebrew
       switch "--pinned",
              description: "Show the versions of pinned formulae, or only the specified (pinned) "\
                           "formulae if <formula> are provided. See also `pin`, `unpin`."
-      switch "--cask",
-             description: "List casks"
+      switch "--formula", "--formulae",
+             description: "List only formulae."
+      switch "--cask", "--casks",
+             description: "List only casks."
       # passed through to ls
       switch "-1",
              description: "Force output to be one entry per line. " \
@@ -45,16 +47,17 @@ module Homebrew
              description: "Reverse the order of the sort to list the oldest entries first."
       switch "-t",
              description: "Sort by time modified, listing most recently modified first."
-      switch :verbose
-      switch :debug
-      ["--unbrewed", "--multiple", "--pinned", "-l", "-r", "-t"].each { |flag| conflicts "--cask", flag }
+
+      ["--formula", "--unbrewed", "--multiple", "--pinned", "-l", "-r", "-t"].each do |flag|
+        conflicts "--cask", flag
+      end
     end
   end
 
   def list
-    list_args.parse
+    args = list_args.parse
 
-    return list_casks if args.cask?
+    return list_casks(args: args) if args.cask?
 
     return list_unbrewed if args.unbrewed?
 
@@ -67,7 +70,7 @@ module Homebrew
     end
 
     if args.pinned? || args.versions?
-      filtered_list
+      filtered_list args: args
     elsif args.no_named?
       if args.full_name?
         full_names = Formula.installed.map(&:full_name).sort(&tap_and_name_comparison)
@@ -76,7 +79,14 @@ module Homebrew
         puts Formatter.columns(full_names)
       else
         ENV["CLICOLOR"] = nil
-        safe_system "ls", *args.passthrough << HOMEBREW_CELLAR
+
+        ls_args = []
+        ls_args << "-1" if args.public_send(:'1?')
+        ls_args << "-l" if args.l?
+        ls_args << "-r" if args.r?
+        ls_args << "-t" if args.t?
+
+        safe_system "ls", *ls_args, HOMEBREW_CELLAR
       end
     elsif args.verbose? || !$stdout.tty?
       system_command! "find", args: args.kegs.map(&:to_s) + %w[-not -type d -print], print_stdout: true
@@ -101,7 +111,6 @@ module Homebrew
     lib/ruby/site_ruby/[12].*
     lib/ruby/vendor_ruby/[12].*
     manpages/brew.1
-    manpages/brew-cask.1
     share/pypy/*
     share/pypy3/*
     share/info/dir
@@ -128,7 +137,7 @@ module Homebrew
     safe_system "find", *arguments
   end
 
-  def filtered_list
+  def filtered_list(args:)
     names = if args.no_named?
       Formula.racks
     else
@@ -157,12 +166,13 @@ module Homebrew
     end
   end
 
-  def list_casks
-    cask_list = Cask::Cmd::List.new args.named
-    cask_list.one = ARGV.include? "-1"
-    cask_list.versions = args.versions?
-    cask_list.full_name = args.full_name?
-    cask_list.run
+  def list_casks(args:)
+    Cask::Cmd::List.list_casks(
+      *args.loaded_casks,
+      one:       args.public_send(:'1?'),
+      full_name: args.full_name?,
+      versions:  args.versions?,
+    )
   end
 end
 

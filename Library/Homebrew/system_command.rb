@@ -8,7 +8,6 @@ require "shellwords"
 require "extend/io"
 require "extend/hash_validator"
 using HashValidator
-require "extend/predicable"
 
 module Kernel
   def system_command(*args)
@@ -21,6 +20,7 @@ module Kernel
 end
 
 class SystemCommand
+  include Context
   extend Predicable
 
   attr_reader :pid
@@ -34,7 +34,7 @@ class SystemCommand
   end
 
   def run!
-    puts redact_secrets(command.shelljoin.gsub('\=', "="), @secrets) if verbose? || Homebrew.args.debug?
+    puts redact_secrets(command.shelljoin.gsub('\=', "="), @secrets) if verbose? || debug?
 
     @output = []
 
@@ -71,7 +71,9 @@ class SystemCommand
     @options = options
     @env = env
 
-    @env.keys.grep_v(/^[\w&&\D]\w*$/) do |name|
+    @env.each_key do |name|
+      next if /^[\w&&\D]\w*$/.match?(name)
+
       raise ArgumentError, "Invalid variable name: '#{name}'"
     end
   end
@@ -84,7 +86,13 @@ class SystemCommand
 
   attr_reader :executable, :args, :input, :options, :env
 
-  attr_predicate :sudo?, :print_stdout?, :print_stderr?, :verbose?, :must_succeed?
+  attr_predicate :sudo?, :print_stdout?, :print_stderr?, :must_succeed?
+
+  def verbose?
+    return super if @verbose.nil?
+
+    @verbose
+  end
 
   def env_args
     set_variables = env.reject { |_, value| value.nil? }
@@ -160,6 +168,8 @@ class SystemCommand
   end
 
   class Result
+    include Context
+
     attr_accessor :command, :status, :exit_status
 
     def initialize(command, output, status, secrets:)
@@ -222,7 +232,7 @@ class SystemCommand
     end
 
     def warn_plist_garbage(garbage)
-      return unless Homebrew.args.verbose?
+      return unless verbose?
       return unless garbage.match?(/\S/)
 
       opoo "Received non-XML output from #{Formatter.identifier(command.first)}:"

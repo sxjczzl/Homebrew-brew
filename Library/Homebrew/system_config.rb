@@ -2,7 +2,6 @@
 
 require "hardware"
 require "software_spec"
-require "rexml/document"
 require "development_tools"
 require "extend/ENV"
 
@@ -42,6 +41,10 @@ class SystemConfig
 
     def core_tap_last_commit
       CoreTap.instance.git_last_commit || "never"
+    end
+
+    def core_tap_branch
+      CoreTap.instance.git_branch || "(none)"
     end
 
     def core_tap_origin
@@ -116,6 +119,7 @@ class SystemConfig
         f.puts "Core tap ORIGIN: #{core_tap_origin}"
         f.puts "Core tap HEAD: #{core_tap_head}"
         f.puts "Core tap last commit: #{core_tap_last_commit}"
+        f.puts "Core tap branch: #{core_tap_branch}"
       else
         f.puts "Core tap: N/A"
       end

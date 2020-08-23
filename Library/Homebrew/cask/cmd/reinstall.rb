@@ -3,19 +3,47 @@
 module Cask
   class Cmd
     class Reinstall < Install
-      def run
-        casks.each do |cask|
-          Installer.new(cask, binaries:       binaries?,
-                              verbose:        verbose?,
-                              force:          force?,
-                              skip_cask_deps: skip_cask_deps?,
-                              require_sha:    require_sha?,
-                              quarantine:     quarantine?).reinstall
-        end
+      def self.description
+        "Reinstalls the given <cask>."
       end
 
-      def self.help
-        "reinstalls the given Cask"
+      def run
+        self.class.reinstall_casks(
+          *casks,
+          binaries:       args.binaries?,
+          verbose:        args.verbose?,
+          force:          args.force?,
+          skip_cask_deps: args.skip_cask_deps?,
+          require_sha:    args.require_sha?,
+          quarantine:     args.quarantine?,
+        )
+      end
+
+      def self.reinstall_casks(
+        *casks,
+        verbose: false,
+        force: false,
+        skip_cask_deps: false,
+        binaries: nil,
+        require_sha: nil,
+        quarantine: nil
+      )
+        require "cask/installer"
+
+        options = {
+          binaries:       binaries,
+          verbose:        verbose,
+          force:          force,
+          skip_cask_deps: skip_cask_deps,
+          require_sha:    require_sha,
+          quarantine:     quarantine,
+        }.compact
+
+        options[:quarantine] = true if options[:quarantine].nil?
+
+        casks.each do |cask|
+          Installer.new(cask, **options).reinstall
+        end
       end
     end
   end
