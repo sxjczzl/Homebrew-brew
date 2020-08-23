@@ -131,6 +131,12 @@ module ELFShim
   end
 
   def patchelf_patcher
+<<<<<<< HEAD
+    return unless HOMEBREW_PATCHELF_RB
+
+    Homebrew.install_bundler_gems!
+=======
+>>>>>>> upstream/master
     require "patchelf"
     @patchelf_patcher ||= PatchELF::Patcher.new to_s, on_error: :silent
   end

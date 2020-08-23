@@ -171,7 +171,12 @@ module Formulary
       super name, Formulary.path(full_name)
     end
 
+<<<<<<< HEAD
+    def get_formula(spec, **)
+<<<<<<< HEAD
+=======
     def get_formula(spec, force_bottle: false, flags: [], **)
+>>>>>>> upstream/master
       contents = Utils::Bottles.formula_contents @bottle_filename, name: name
       formula = begin
         Formulary.from_contents(name, @bottle_filename, contents, spec, force_bottle: force_bottle, flags: flags)
@@ -182,6 +187,8 @@ module Formulary
         EOS
         super
       end
+=======
+>>>>>>> TestingBrew
       formula.local_bottle_path = @bottle_filename
       formula
     end
