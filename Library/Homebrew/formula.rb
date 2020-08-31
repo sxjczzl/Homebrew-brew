@@ -1626,6 +1626,8 @@ class Formula
     end
   end
 
+  alias any_installed_prefix opt_or_installed_prefix_keg
+
   # Returns a list of Dependency objects that are required at runtime.
   # @private
   def runtime_dependencies(read_from_tab: true, undeclared: true)
