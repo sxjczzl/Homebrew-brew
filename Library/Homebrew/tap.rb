@@ -266,12 +266,19 @@ class Tap
     clear_cache
 
     ohai "Tapping #{name}" unless quiet
-    args =  %W[clone #{requested_remote} #{path}]
-    args << "--depth=1" unless full_clone
-    args << "-q" if quiet
+    clone_args =  %W[clone --depth=1 #{requested_remote} #{path}]
+    clone_args << "-q" if quiet
 
     begin
-      safe_system "git", *args
+      # Shallow clone then unshallow to prevent errors on slow networks
+      safe_system "git", *clone_args
+
+      if full_clone && shallow?
+        ohai "Unshallowing #{name}" unless quiet
+        fetch_args = %w[fetch --unshallow]
+        fetch_args << "-q" if quiet
+        path.cd { safe_system "git", *fetch_args }
+      end
       unless Readall.valid_tap?(self, aliases: true)
         raise "Cannot tap #{name}: invalid syntax in tap!" unless Homebrew::EnvConfig.developer?
       end
