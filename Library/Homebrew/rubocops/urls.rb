@@ -266,6 +266,17 @@ module RuboCop
             EOS
           end
 
+          # https://golang.org/dl/gox.x.x.src.tar.gz is more officialy documented
+          golang_url_pattern = %r{https://dl.google.com/.*\.tar\.gz$}
+          audit_urls(urls, golang_url_pattern) do |match, url|
+            problem <<~EOS
+              Use offical golang url
+              https://golang.org/dl/#{match[1]}.tar.gz
+              Rather than codeload:
+                #{url}
+            EOS
+          end
+
           # Check for Maven Central urls, prefer HTTPS redirector over specific host
           maven_pattern = %r{https?://(?:central|repo\d+)\.maven\.org/maven2/(.+)$}
           audit_urls(urls, maven_pattern) do |match, url|
