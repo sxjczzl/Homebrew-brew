@@ -487,6 +487,8 @@ module Homebrew
   end
 
   def run_audit(formula, alias_rename, old_contents, args:)
+    read_only_run = args.dry_run? && !args.write?
+    FileUtils.mv alias_rename.first, alias_rename.last if !read_only_run && alias_rename.present?
     if args.dry_run?
       if args.no_audit?
         ohai "Skipping `brew audit`"
@@ -497,7 +499,6 @@ module Homebrew
       end
       return
     end
-    FileUtils.mv alias_rename.first, alias_rename.last if alias_rename.present?
     failed_audit = false
     if args.no_audit?
       ohai "Skipping `brew audit`"
