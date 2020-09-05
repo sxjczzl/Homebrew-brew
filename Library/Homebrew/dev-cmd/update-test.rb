@@ -43,15 +43,15 @@ module Homebrew
       start_commit = if commit = args.commit
         commit
       elsif date = args.before
-        Utils.popen_read("git", "rev-list", "-n1", "--before=#{date}", "origin/master").chomp
+        Utils.safe_popen_read("git", "rev-list", "-n1", "--before=#{date}", "origin/master").chomp
       elsif args.to_tag?
-        tags = Utils.popen_read("git", "tag", "--list", "--sort=-version:refname")
+        tags = Utils.safe_popen_read("git", "tag", "--list", "--sort=-version:refname")
         if tags.blank?
           tags = if (HOMEBREW_REPOSITORY/".git/shallow").exist?
             safe_system "git", "fetch", "--tags", "--depth=1"
-            Utils.popen_read("git", "tag", "--list", "--sort=-version:refname")
+            Utils.safe_popen_read("git", "tag", "--list", "--sort=-version:refname")
           elsif OS.linux?
-            Utils.popen_read("git tag --list | sort -rV")
+            Utils.safe_popen_read("git tag --list | sort -rV")
           end
         end
         current_tag, previous_tag, = tags.lines
@@ -65,18 +65,18 @@ module Homebrew
         # ^0 ensures this points to the commit rather than the tag object.
         "#{previous_tag}^0"
       else
-        Utils.popen_read("git", "rev-parse", "origin/master").chomp
+        Utils.safe_popen_read("git", "rev-parse", "origin/master").chomp
       end
       odie "Could not find start commit!" if start_commit.empty?
 
-      start_commit = Utils.popen_read("git", "rev-parse", start_commit).chomp
+      start_commit = Utils.safe_popen_read("git", "rev-parse", start_commit).chomp
       odie "Could not find start commit!" if start_commit.empty?
 
       end_commit ||= "HEAD"
-      end_commit = Utils.popen_read("git", "rev-parse", end_commit).chomp
+      end_commit = Utils.safe_popen_read("git", "rev-parse", end_commit).chomp
       odie "Could not find end commit!" if end_commit.empty?
 
-      if Utils.popen_read("git", "branch", "--list", "master").blank?
+      if Utils.safe_popen_read("git", "branch", "--list", "master").blank?
         safe_system "git", "branch", "master", "origin/master"
       end
     end
@@ -111,7 +111,7 @@ module Homebrew
       # run brew update
       oh1 "Running brew update..."
       safe_system "brew", "update", "--verbose"
-      actual_end_commit = Utils.popen_read("git", "rev-parse", branch).chomp
+      actual_end_commit = Utils.safe_popen_read("git", "rev-parse", branch).chomp
       if actual_end_commit != end_commit
         raise <<~EOS
           brew update didn't update #{branch}!
