@@ -11,6 +11,7 @@ jobs:
     if: github.repository == 'Homebrew/brew'
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macOS-latest]
         include:
@@ -54,41 +55,46 @@ jobs:
           brew update-reset Library/Taps/homebrew/homebrew-services
         fi
 
-    - name: Run brew style on Homebrew/brew
-      run: brew style --display-cop-names
+    # - name: Run brew style on Homebrew/brew
+    #   run: brew style --display-cop-names
+    #
+    # - name: Run brew man
+    #   run: brew man --fail-if-changed
+    #
+    # - name: Run brew tests
+    #   run: |
+    #     # brew tests doesn't like world writable directories
+    #     if [[ "$RUNNER_OS" = "Linux" ]]; then
+    #         sudo chmod -R g-w,o-w /home/linuxbrew/.linuxbrew/Homebrew
+    #     fi
+    #
+    #     # don't bother running all tests on both platforms (for speed)
+    #     if [ "$RUNNER_OS" = "Linux" ]; then
+    #       brew tests --no-compat --online
+    #       brew tests --generic --online
+    #       brew tests --online
+    #     else
+    #       brew tests --online --coverage
+    #     fi
+    #   env:
+    #     HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    #
+    #     # set variables for coverage reporting
+    #     HOMEBREW_CODECOV_TOKEN: 3ea0364c-80ce-47a3-9fba-93a940d4b5d7
+    #
+    #     # These cannot be queried at the macOS level on GitHub Actions.
+    #     HOMEBREW_LANGUAGES: en-GB
 
-    - name: Run brew man
-      run: brew man --fail-if-changed
-
-    - name: Run brew tests
+    - name: Run brew update-test
       run: |
-        # brew tests doesn't like world writable directories
-        if [[ "$RUNNER_OS" = "Linux" ]]; then
-            sudo chmod -R g-w,o-w /home/linuxbrew/.linuxbrew/Homebrew
-        fi
+        set -x
 
-        # don't bother running all tests on both platforms (for speed)
-        if [ "$RUNNER_OS" = "Linux" ]; then
-          brew tests --no-compat --online
-          brew tests --generic --online
-          brew tests --online
-        else
-          brew tests --online --coverage
-        fi
-      env:
-        HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-        # set variables for coverage reporting
-        HOMEBREW_CODECOV_TOKEN: 3ea0364c-80ce-47a3-9fba-93a940d4b5d7
-
-        # These cannot be queried at the macOS level on GitHub Actions.
-        HOMEBREW_LANGUAGES: en-GB
-
-    - name: Run brew update-tests
-      run: |
         brew update-test
         brew update-test --to-tag
         brew update-test --commit=HEAD
+      env:
+        HOMEBREW_VERBOSE: 1
+        HOMEBREW_DEBUG: 1
       if: github.event_name == 'pull_request'
 
     - name: Run brew readall on all taps
