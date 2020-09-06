@@ -1,0 +1,3 @@
+# Diff drivers for textconv
+
+*.drawio.svg    text diff=drawio-mxfile-svg eol=lf

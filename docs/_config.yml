@@ -6,6 +6,7 @@ remote_theme: Homebrew/brew.sh
 exclude:
   - bin
   - CNAME
+  - contrib
   - Gemfile*
   - vale-styles
   - vendor
