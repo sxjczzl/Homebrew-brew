@@ -174,6 +174,18 @@ install() {
   tar "$tar_args" "$CACHED_LOCATION"
   safe_cd "$VENDOR_DIR/portable-$VENDOR_NAME"
 
+  if [[ -n $HOMEBREW_LINUX ]]; then
+    if [[ -x "$HOMEBREW_PREFIX"/opt/patchelf/bin/patchelf ]]; then
+      for file in ./"$VENDOR_VERSION"/bin/*; do
+        if grep --quiet --ignore-case elf <(file "$file"); then
+          chmod u+w "$file"
+          "$HOMEBREW_PREFIX"/opt/patchelf/bin/patchelf --set-interpreter "$HOMEBREW_DYNAMIC_LINKER" "$file"
+          chmod u-w "$file"
+        fi
+      done
+    fi
+  fi
+
   if quiet_stderr "./$VENDOR_VERSION/bin/$VENDOR_NAME" --version >/dev/null
   then
     ln -sfn "$VENDOR_VERSION" current
