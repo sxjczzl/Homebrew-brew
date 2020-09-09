@@ -20,6 +20,8 @@ module Homebrew
              description: "Also print diffstat from commit."
       switch "--oneline",
              description: "Print only one line per commit."
+      flag   "--repo=",
+             description: "Show log for the specified Homebrew repository."
       switch "-1",
              description: "Print only one commit."
       flag   "-n", "--max-count=",
@@ -37,7 +39,14 @@ module Homebrew
     ENV["PATH"] = ENV["HOMEBREW_PATH"]
 
     if args.no_named?
-      git_log HOMEBREW_REPOSITORY, args: args
+      if args.repo.present?
+        tap = Tap.fetch(args.repo)
+        raise TapUnavailableError, tap.name unless tap.installed?
+
+        git_log tap.path, args: args
+      else
+        git_log HOMEBREW_REPOSITORY, args: args
+      end
     else
       path = Formulary.path(args.named.first)
       tap = Tap.from_path(path)

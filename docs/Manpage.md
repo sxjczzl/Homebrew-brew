@@ -405,6 +405,8 @@ if no formula is provided.
   Also print diffstat from commit.
 * `--oneline`:
   Print only one line per commit.
+* `--repo`:
+  Show log for the specified Homebrew repository.
 * `-1`:
   Print only one commit.
 * `-n`, `--max-count`:
