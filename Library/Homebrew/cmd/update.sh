@@ -603,6 +603,8 @@ EOS
     fi
   done
 
+  brew search > "$HOMEBREW_CACHE"/all_formulae_list.txt
+
   safe_cd "$HOMEBREW_REPOSITORY"
 
   if [[ -n "$HOMEBREW_UPDATED" ||
@@ -610,6 +612,7 @@ EOS
         -n "$HOMEBREW_UPDATE_FORCE" ||
         -d "$HOMEBREW_LIBRARY/LinkedKegs" ||
         ! -f "$HOMEBREW_CACHE/all_commands_list.txt" ||
+        ! -f "$HOMEBREW_CACHE/all_formulae_list.txt" ||
         (-n "$HOMEBREW_DEVELOPER" && -z "$HOMEBREW_UPDATE_PREINSTALL") ]]
   then
     brew update-report "$@"
