@@ -74,9 +74,7 @@ module Homebrew
       end
 
       def to_formulae_paths
-        @to_formulae_paths ||= (downcased_unique_named - homebrew_tap_cask_names).map do |name|
-          Formulary.path(name)
-        end.uniq.freeze
+        @to_formulae_paths ||= to_formulae.map(&:path).uniq.freeze
       end
 
       def to_casks
