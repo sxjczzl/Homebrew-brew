@@ -20,7 +20,7 @@ module Homebrew
   def edit
     args = edit_args.parse
 
-    unless (HOMEBREW_REPOSITORY/".git").directory?
+    unless HOMEBREW_REPOSITORY.git?
       raise <<~EOS
         Changes will be lost!
         The first time you `brew update`, all local changes will be lost; you should
@@ -30,7 +30,7 @@ module Homebrew
 
     paths = args.named.to_formulae_paths.presence
 
-    # If no brews are listed, open the project root in an editor.
+    # If no formulae are listed, open the project root in an editor.
     paths ||= [HOMEBREW_REPOSITORY]
 
     exec_editor(*paths)
