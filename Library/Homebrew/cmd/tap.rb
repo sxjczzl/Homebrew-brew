@@ -53,10 +53,10 @@ module Homebrew
     else
       full_clone = if args.full?
         true
-      elsif !args.shallow?
-        ENV["CI"].blank?
+      elsif args.shallow?
+        false
       else
-        !args.shallow?
+        ENV["HOMEBREW_TAP_SHALLOW"].blank? and ENV["CI"].blank?
       end
       odebug "Tapping as #{full_clone ? "full" : "shallow"} clone"
       tap = Tap.fetch(args.named.first)
