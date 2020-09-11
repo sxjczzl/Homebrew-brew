@@ -45,11 +45,17 @@ module Homebrew
                           "a total sum for all the file sizes is printed before the long listing."
       switch "-r",
              description: "Reverse the order of the sort to list the oldest entries first."
+      switch "-s", "--size",
+             description: "Sort by the size, listing largest formulae last."
       switch "-t",
              description: "Sort by time modified, listing most recently modified first."
 
-      ["--formula", "--unbrewed", "--multiple", "--pinned", "-l", "-r", "-t"].each do |flag|
+      %w[--formula --unbrewed --multiple --pinned -l -r -s -t].each do |flag|
         conflicts "--cask", flag
+      end
+
+      %w[-1 -l -t --full-name --unbrewed --versions --multiple --pinned --cask].each do |flag|
+        conflicts "--size", flag
       end
     end
   end
@@ -80,13 +86,17 @@ module Homebrew
       else
         ENV["CLICOLOR"] = nil
 
-        ls_args = []
-        ls_args << "-1" if args.public_send(:'1?')
-        ls_args << "-l" if args.l?
-        ls_args << "-r" if args.r?
-        ls_args << "-t" if args.t?
+        if args.size?
+          HOMEBREW_CELLAR.cd { safe_system "du -h -s * | sort -h #{"-r" if args.r?}" }
+        else
+          ls_args = []
+          ls_args << "-1" if args.public_send(:'1?')
+          ls_args << "-l" if args.l?
+          ls_args << "-r" if args.r?
+          ls_args << "-t" if args.t?
 
-        safe_system "ls", *ls_args, HOMEBREW_CELLAR
+          safe_system "ls", *ls_args, HOMEBREW_CELLAR
+        end
       end
     elsif args.verbose? || !$stdout.tty?
       system_command! "find", args: args.named.to_kegs.map(&:to_s) + %w[-not -type d -print], print_stdout: true

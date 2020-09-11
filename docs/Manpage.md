@@ -391,6 +391,8 @@ If *`formula`* is provided, summarise the paths within its current keg.
   List in long format. If the output is to a terminal, a total sum for all the file sizes is printed before the long listing.
 * `-r`:
   Reverse the order of the sort to list the oldest entries first.
+* `-s`, `--size`:
+  Sort by the size, listing largest formulae last.
 * `-t`:
   Sort by time modified, listing most recently modified first.
 
