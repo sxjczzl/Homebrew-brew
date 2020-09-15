@@ -174,6 +174,7 @@ install() {
   tar "$tar_args" "$CACHED_LOCATION"
   safe_cd "$VENDOR_DIR/portable-$VENDOR_NAME"
 
+  # On Linux, set the dynamic linker/loader of vendored executables to $HOMEBREW_DYNAMIC_LINKER 
   if [[ -n $HOMEBREW_LINUX ]]; then
     if [[ -x "$HOMEBREW_PREFIX"/opt/patchelf/bin/patchelf ]]; then
       for file in ./"$VENDOR_VERSION"/bin/*; do
