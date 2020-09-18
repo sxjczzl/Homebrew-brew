@@ -56,15 +56,19 @@ module PyPI
     [json["info"]["name"], sdist["url"], sdist["digests"]["sha256"]]
   end
 
-  def update_python_resources!(formula, version = nil, print_only: false, silent: false,
+  def update_python_resources!(formula, version = nil, package_name: nil, print_only: false, silent: false,
                                ignore_non_pypi_packages: false)
 
-    if !print_only && AUTOMATIC_RESOURCE_UPDATE_BLOCKLIST.include?(formula.full_name)
+    if !package_name && !print_only && AUTOMATIC_RESOURCE_UPDATE_BLOCKLIST.include?(formula.full_name)
       odie "The resources for \"#{formula.name}\" need special attention. Please update them manually."
       return
     end
 
-    pypi_name = url_to_pypi_package_name formula.stable.url
+    pypi_name = if package_name
+      package_name.match(/^(.+?)(?:\[.+?\])?$/).captures.first
+    else
+      url_to_pypi_package_name formula.stable.url
+    end
 
     if pypi_name.nil?
       return if ignore_non_pypi_packages
@@ -93,13 +97,13 @@ module PyPI
     @pipgrip_installed ||= Formula["pipgrip"].any_version_installed?
     odie '"pipgrip" must be installed (`brew install pipgrip`)' unless @pipgrip_installed
 
-    ohai "Retrieving PyPI dependencies for \"#{pypi_name}==#{version}\"..." if !print_only && !silent
+    ohai "Retrieving PyPI dependencies for \"#{package_name}==#{version}\"..." if !print_only && !silent
     pipgrip_output = Utils.popen_read Formula["pipgrip"].bin/"pipgrip", "--json", "--no-cache-dir",
-                                      "#{pypi_name}==#{version}"
+                                      "#{package_name}==#{version}"
     unless $CHILD_STATUS.success?
       odie <<~EOS
-        Unable to determine dependencies for \"#{pypi_name}\" because of a failure when running
-        `pipgrip --json --no-cache-dir #{pypi_name}==#{version}`.
+        Unable to determine dependencies for \"#{package_name}\" because of a failure when running
+        `pipgrip --json --no-cache-dir #{package_name}==#{version}`.
         Please update the resources for \"#{formula.name}\" manually.
       EOS
     end
