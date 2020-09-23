@@ -15,7 +15,7 @@ class Keg
     end
   end
 
-  undef relocate_dynamic_linkage, detect_cxx_stdlibs
+  undef relocate_dynamic_linkage, detect_cxx_stdlibs, codesign_mach_o_files
 
   def relocate_dynamic_linkage(relocation)
     mach_o_files.each do |file|
@@ -34,6 +34,23 @@ class Keg
 
           change_install_name(old_name, new_name, file) if new_name
         end
+      end
+    end
+  end
+
+  # Ensures that an ad-hoc signature is present on all binaries,
+  # using the OS's builtin codesign tool.
+  # This is required on Apple Silicon on 11.0 or later, but not on Intel.
+  # While the build tools can generate valid ad-hoc signatures,
+  # Homebrew's mach_o tooling modifies the files without resigning.
+  # Consequently, we need to make sure we've applied a valid ad-hoc
+  # signature before running.
+  def codesign_mach_o_files
+    return if !Hardware::CPU.arm? || MacOS.version != :big_sur
+
+    mach_o_files.each do |file|
+      file.ensure_writable do
+        system("codesign", "-s", "-", "--preserve-metadata=identifier,entitlements,flags,runtime", "-f", file)
       end
     end
   end

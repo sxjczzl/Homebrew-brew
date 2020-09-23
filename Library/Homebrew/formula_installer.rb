@@ -716,6 +716,8 @@ class FormulaInstaller
 
     fix_dynamic_linkage(keg) unless @poured_bottle && formula.bottle_specification.skip_relocation?
 
+    codesign_mach_o_files(keg)
+
     if build_bottle?
       ohai "Not running post_install as we're building a bottle"
       puts "You can run it manually using `brew postinstall #{formula.full_name}`"
@@ -958,6 +960,16 @@ class FormulaInstaller
     onoe "Failed to fix install linkage"
     puts "The formula built, but you may encounter issues using it or linking other"
     puts "formulae against it."
+    odebug e, e.backtrace
+    Homebrew.failed = true
+    @show_summary_heading = true
+  end
+
+  def codesign_mach_o_files(keg)
+    keg.codesign_mach_o_files
+  rescue Exception => e # rubocop:disable Lint/RescueException
+    onoe "Failed to apply an ad-hoc signature"
+    puts "The formula built, but it may not run."
     odebug e, e.backtrace
     Homebrew.failed = true
     @show_summary_heading = true

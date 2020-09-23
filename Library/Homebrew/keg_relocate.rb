@@ -34,6 +34,8 @@ class Keg
     []
   end
 
+  def codesign_mach_o_files; end
+
   def replace_locations_with_placeholders
     relocation = Relocation.new(
       old_prefix:     HOMEBREW_PREFIX.to_s,
