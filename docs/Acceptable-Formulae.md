@@ -1,11 +1,9 @@
 # Acceptable Formulae
 
-Some formulae should not go in
-[homebrew/core](https://github.com/Homebrew/homebrew-core). But there are
-additional [Interesting Taps and Forks](Interesting-Taps-and-Forks.md) and anyone can start their
-own!
+Some formulae should not go in [homebrew/core](https://github.com/Homebrew/homebrew-core). But there are additional [Interesting Taps and Forks](Interesting-Taps-and-Forks.md) and anyone can start their own!
 
 ### Dupes in `homebrew/core`
+
 We now accept stuff that comes with macOS as long as it uses `keg_only :provided_by_macos` to be keg-only by default.
 
 ### Versioned formulae in `homebrew/core`
