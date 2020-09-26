@@ -19,7 +19,7 @@ chmod +a 'user:<YOUR_NAME_HERE> allow add_subdirectory,add_file,delete_child,dir
 will let you add packages to Python 3.y as yourself, which
 is probably safer than changing the group ownership of the directory.
 
-### So why was I using sudo
+### So why was I using sudo?
 
 Habit maybe?
 
