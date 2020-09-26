@@ -19,7 +19,8 @@ chmod +a 'user:<YOUR_NAME_HERE> allow add_subdirectory,add_file,delete_child,dir
 will let you add packages to Python 3.y as yourself, which
 is probably safer than changing the group ownership of the directory.
 
-### So why was I using sudo?
+### So why was I using sudo
+
 Habit maybe?
 
 One reason is executables go in `/usr/local/bin`. Usually this isn’t a
@@ -28,6 +29,7 @@ writable location. But if you installed Homebrew as we recommend,
 install the development tools you need without risking the use of sudo.
 
 ### Python packages (eggs) without sudo using system’s Python
+
 _This is only recommended if you **don't** use a brewed Python._
 
 On macOS, any [Python version X.Y also searches in

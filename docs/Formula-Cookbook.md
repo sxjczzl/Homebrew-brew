@@ -8,7 +8,7 @@ A *formula* is a package definition written in Ruby. It can be created with `bre
 |----------------|------------------------------------------------------------|-----------------------------------------------------------------|
 | **Formula**    | The package definition                                     | `/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core/Formula/foo.rb` |
 | **Keg**        | The installation prefix of a **Formula**                   | `/usr/local/Cellar/foo/0.1`                                     |
-| **opt prefix** | A symlink to the active version of a **Keg**               | `/usr/local/opt/foo `                                           |
+| **opt prefix** | A symlink to the active version of a **Keg**               | `/usr/local/opt/foo`                                           |
 | **Cellar**     | All **Kegs** are installed here                            | `/usr/local/Cellar`                                             |
 | **Tap**        | A Git repository of **Formulae** and/or commands | `/usr/local/Homebrew/Library/Taps/homebrew/homebrew-core`   |
 | **Bottle**     | Pre-built **Keg** used instead of building from source     | `qt-4.8.4.catalina.bottle.tar.gz`                              |
@@ -169,10 +169,12 @@ This means that, given `depends_on "foo" => :optional`, the user must pass `--wi
 the dependency is enabled by default and the user must pass
 `--without-foo` to disable this dependency. The default
 description can be overridden using the normal option syntax (in this case, the option declaration must precede the dependency):
+
     ```ruby
     option "with-foo", "Compile with foo bindings" # This overrides the generated description if you want to
     depends_on "foo" => :optional # Generated description would otherwise be "Build with foo support"
     ```
+
 * Some [`Requirement`](https://rubydoc.brew.sh/Requirement)s can also take a string specifying their minimum version that the formula depends on.
 
 **Note:** [`option`](https://rubydoc.brew.sh/Formula#option-class_method)s are not allowed in Homebrew/homebrew-core as they are not tested by CI.
@@ -287,6 +289,7 @@ assert_predicate testpath/"output.txt", :exist?
 ```
 
 Some advice for specific cases:
+
 * If the formula is a library, compile and run some simple code that links against it. It could be taken from upstream's documentation / source examples.
 A good example is [`tinyxml2`](https://github.com/Homebrew/homebrew-core/blob/HEAD/Formula/tinyxml2.rb), which writes a small C++ source file into the test directory, compiles and links it against the tinyxml2 library and finally checks that the resulting program runs successfully.
 * If the formula is for a GUI program, try to find some function that runs as command-line only, like a format conversion, reading or displaying a config file, etc.
@@ -716,7 +719,7 @@ end
 
 [`option`](https://rubydoc.brew.sh/Formula#option-class_method) names should be prefixed with the words `with` or `without`. For example, an option to run a test suite should be named `--with-test` or `--with-check` rather than `--test`, and an option to enable a shared library `--with-shared` rather than `--shared` or `--enable-shared`.
 
-[`option`](https://rubydoc.brew.sh/Formula#option-class_method)s that aren’t `build.with? ` or `build.without?` should be deprecated with [`deprecated_option`](https://rubydoc.brew.sh/Formula#deprecated_option-class_method). See [`wget`](https://github.com/Homebrew/homebrew-core/blob/3f762b63c6fbbd49191ffdf58574d7e18937d93f/Formula/wget.rb#L27-L31) for an example.
+[`option`](https://rubydoc.brew.sh/Formula#option-class_method)s that aren’t `build.with?` or `build.without?` should be deprecated with [`deprecated_option`](https://rubydoc.brew.sh/Formula#deprecated_option-class_method). See [`wget`](https://github.com/Homebrew/homebrew-core/blob/3f762b63c6fbbd49191ffdf58574d7e18937d93f/Formula/wget.rb#L27-L31) for an example.
 
 ### File level operations
 

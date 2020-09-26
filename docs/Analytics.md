@@ -3,6 +3,7 @@
 Homebrew gathers anonymous aggregate user behaviour analytics using Google Analytics. You will be notified the first time you run `brew update` or install Homebrew. Analytics are not enabled until after this notice is shown, to ensure that you can [opt out](Analytics.md#opting-out) without ever sending analytics data.
 
 ## Why?
+
 Homebrew is provided free of charge and run entirely by volunteers in their spare time. As a result, we do not have the resources to do detailed user studies of Homebrew users to decide on how best to design future features and prioritise current work. Anonymous aggregate user analytics allow us to prioritise fixes and features based on how, where and when people use Homebrew. For example:
 
 - If a formula is widely used and is failing often it will enable us to prioritise fixing that formula over others.
@@ -48,6 +49,7 @@ Summaries of installation and error analytics are publicly available [here](http
 The code is viewable in [`analytics.rb`](https://github.com/Homebrew/brew/blob/HEAD/Library/Homebrew/utils/analytics.rb) and [`analytics.sh`](https://github.com/Homebrew/brew/blob/HEAD/Library/Homebrew/utils/analytics.sh). They are done in a separate background process and fail fast to avoid delaying any execution. They will fail immediately and silently if you have no network connection.
 
 ## Opting out
+
 Homebrew analytics helps us maintainers and leaving it on is appreciated. However, if you want to opt out of Homebrew's analytics, you can set this variable in your environment:
 
 ```sh
