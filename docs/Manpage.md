@@ -1787,13 +1787,13 @@ Former maintainers with significant contributions include Jan Viljanen, JCount, 
 
 See our issues on GitHub:
 
-  * **Homebrew/brew**:
+* **Homebrew/brew**:
     <https://github.com/Homebrew/brew/issues>
 
-  * **Homebrew/homebrew-core**:
+* **Homebrew/homebrew-core**:
     <https://github.com/Homebrew/homebrew-core/issues>
 
-  * **Homebrew/homebrew-cask**:
+* **Homebrew/homebrew-cask**:
     <https://github.com/Homebrew/homebrew-cask/issues>
 
 [SYNOPSIS]: #SYNOPSIS "SYNOPSIS"

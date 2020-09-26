@@ -38,18 +38,22 @@ Check for:
 - bottle block is not removed
 
   Suggested reply:
+
   ```
   Please keep bottle block in place, [@BrewTestBot](https://github.com/BrewTestBot) takes care of it.
   ```
+
 - is there a test block for other than checking version or printing help? Consider asking to add one
 - if CI failed
   - due to test block - paste relevant lines and add `test failure` label
   - due to build errors - paste relevant lines and add `build failure` label
   - due to other formulae needing revision bumps - suggest to use the following command:
+
     ```
     # in this example PR is for `libuv` formula and `urbit` needs revision bump
     brew bump-revision --message 'for libuv' urbit
     ```
+
     - make sure it is one commit per revision bump
 - if CI is green and...
   - formula `bottle :unneeded`, you can merge it through GitHub UI

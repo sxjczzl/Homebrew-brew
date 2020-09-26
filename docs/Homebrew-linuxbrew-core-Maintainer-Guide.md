@@ -163,7 +163,6 @@ until `else` with the contents of the bottom part of the conflict
 modifications that have to be made to the `else` part of the code that
 deals with non-macOS-related code.
 
-
 #### Finishing the merge
 
 Once all the conflicts have been resolved, a text editor will open
@@ -230,6 +229,7 @@ parsed from the merge commit body. It also performs some checks
 against the formulae:
 
 And it skips formulae if any of the following are true:
+
 - it doesn't need a bottle
 - it already has a bottle
 - the formula's tap is Homebrew/homebrew-core (the upstream macOS repository)
@@ -323,6 +323,7 @@ In this case deleting `cellar :any` line from the `bottle do` block is enough.
 
 There are some formulae that would fail with an error message like the one provided above, but they are crucial for users of old systems and we should restore the `cellar :any` line after pulling the bottles.
 Those formulae are:
+
 - `patchelf`
 - `binutils`
 - `gcc`
@@ -349,6 +350,7 @@ correct repository:
 ### Linux-only formulae
 
 If the formula is a Linux-only formula, it either:
+
 - will contain the line `depends_on :linux`
 - won't have macOS bottles
 
