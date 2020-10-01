@@ -30,8 +30,7 @@ describe Cask::Cmd::Style, :cask do
     subject { cli.cask_paths }
 
     before do
-      args = instance_double(Homebrew::CLI::Args, named: Homebrew::CLI::NamedArgs.new(*tokens))
-      allow(cli).to receive(:args).and_return(args)
+      allow(cli).to receive(:args).and_return(instance_double(Homebrew::CLI::Args, named: tokens))
     end
 
     context "when no cask tokens are given" do

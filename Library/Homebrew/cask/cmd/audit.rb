@@ -62,8 +62,8 @@ module Cask
           else
             name
           end
-        end
-        casks = casks.map { |c| CaskLoader.load(c, config: Config.from_args(args)) }
+        end.map(&CaskLoader.public_method(:load))
+
         casks = Cask.to_a if casks.empty?
 
         failed_casks = casks.reject do |cask|

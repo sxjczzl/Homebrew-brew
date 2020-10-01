@@ -78,13 +78,10 @@ module Homebrew
       used_formulae.map(&:runtime_installed_formula_dependents)
                    .reduce(&:&)
                    .select(&:any_version_installed?) +
-        select_used_dependents(
-          dependents(Cask::Caskroom.casks(config: Cask::Config.from_args(args))),
-          used_formulae, recursive, includes, ignores
-        )
+        select_used_dependents(dependents(Cask::Caskroom.casks), used_formulae, recursive, includes, ignores)
     else
       deps = if args.installed?
-        dependents(Formula.installed + Cask::Caskroom.casks(config: Cask::Config.from_args(args)))
+        dependents(Formula.installed + Cask::Caskroom.casks)
       else
         dependents(Formula.to_a + Cask::Cask.to_a)
       end

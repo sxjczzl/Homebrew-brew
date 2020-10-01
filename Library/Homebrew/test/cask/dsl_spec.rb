@@ -503,15 +503,16 @@ describe Cask::DSL, :cask do
     end
 
     it "does not include a trailing slash" do
-      config = Cask::Config.new(explicit: {
-                                  appdir: "/Applications/",
-                                })
+      original_appdir = Cask::Config.global.appdir
+      Cask::Config.global.appdir = "#{original_appdir}/"
 
-      cask = Cask::Cask.new("appdir-trailing-slash", config: config) do
+      cask = Cask::Cask.new("appdir-trailing-slash") do
         binary "#{appdir}/some/path"
       end
 
-      expect(cask.artifacts.first.source).to eq(Pathname("/Applications/some/path"))
+      expect(cask.artifacts.first.source).to eq(original_appdir/"some/path")
+    ensure
+      Cask::Config.global.appdir = original_appdir
     end
   end
 
