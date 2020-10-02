@@ -146,15 +146,10 @@ module Homebrew
   def install
     args = install_args.parse
 
-    only = :formula if args.formula?
-    only = :cask if args.cask?
+    only = :formula if args.formula? && !args.cask?
+    only = :cask if args.cask? && !args.formula?
 
-    objects = args.named.to_objects(only: only)
-
-    taps, formulae_or_casks = objects.partition { |o| o.is_a?(Tap) }
-    taps = (taps + formulae_or_casks.map(&:tap).compact).uniq.sort_by(&:name)
-
-    taps.reject(&:installed?).each(&:install)
+    formulae_or_casks = args.named.to_formulae_and_casks(only: only)
 
     if args.ignore_dependencies?
       opoo <<~EOS

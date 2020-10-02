@@ -251,7 +251,7 @@ module Formulary
 
     def formula_name_path(tapped_name, warn: true)
       user, repo, name = tapped_name.split("/", 3).map(&:downcase)
-      @tap = Tap.fetch user, repo
+      @tap = Tap.fetch(user, repo)
       formula_dir = @tap.formula_dir || @tap.path
       path = formula_dir/"#{name}.rb"
 
@@ -283,6 +283,8 @@ module Formulary
     end
 
     def get_formula(spec, alias_path: nil, force_bottle: false, flags: [])
+      tap.install unless tap.installed?
+
       super
     rescue FormulaUnreadableError => e
       raise TapFormulaUnreadableError.new(tap, name, e.formula_error), "", e.backtrace

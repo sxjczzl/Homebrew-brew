@@ -228,6 +228,11 @@ describe Formulary do
     end
 
     it "raises an error if the Formula is not available" do
+      tap = Tap.fetch("a", "b")
+
+      expect(Tap).to receive(:fetch).with("a", "b").and_return(tap)
+      expect(tap).to receive(:install)
+
       expect {
         described_class.to_rack("a/b/#{formula_name}")
       }.to raise_error(TapFormulaUnavailableError)
