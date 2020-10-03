@@ -221,7 +221,7 @@ module Homebrew
     # for doing so, else it returns false.
     # @return [Hash, nil, Boolean]
     def skip_conditions(formula, args:)
-      if formula.deprecated? && !formula.livecheckable?
+      if formula.deprecated?
         return status_hash(formula, "deprecated", args: args) if args.json?
 
         puts "#{Tty.red}#{formula_name(formula, args: args)}#{Tty.reset} : deprecated" unless args.quiet?
