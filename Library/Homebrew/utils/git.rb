@@ -126,8 +126,14 @@ module Utils
     end
 
     def origin_branch(repo)
-      Utils.popen_read(git, "-C", repo, "symbolic-ref", "-q", "--short",
-                       "refs/remotes/origin/HEAD").chomp.presence
+      origin_branch = Utils.popen_read(git, "-C", repo, "symbolic-ref", "-q", "--short",
+                                       "refs/remotes/origin/HEAD").chomp.presence
+      unless origin_branch
+        quiet_system git, "-C", repo, "remote", "set-head", "origin", "--auto"
+        origin_branch = Utils.popen_read(git, "-C", repo, "symbolic-ref", "-q", "--short",
+                                         "refs/remotes/origin/HEAD").chomp.presence
+      end
+      origin_branch
     end
 
     def current_branch(repo)
