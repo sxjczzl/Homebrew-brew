@@ -15,8 +15,8 @@ module Cask
     #
     # @api private
     class Caveats < Base
-      def initialize(*args)
-        super(*args)
+      def initialize(dsl)
+        super(dsl)
         @built_in_caveats = {}
         @custom_caveats = []
       end
@@ -54,7 +54,7 @@ module Cask
         next if MacOS.version < :high_sierra
 
         <<~EOS
-          #{@cask} requires a kernel extension to work.
+          #{cask} requires a kernel extension to work.
           If the installation fails, retry after you enable it in:
             System Preferences → Security & Privacy → General
 
@@ -67,18 +67,18 @@ module Cask
         # access: the category in System Preferences -> Security & Privacy -> Privacy the app requires.
 
         <<~EOS
-          #{@cask} is not signed and requires Accessibility access,
+          #{cask} is not signed and requires Accessibility access,
           so you will need to re-grant Accessibility access every time the app is updated.
 
           Enable or re-enable it in:
             System Preferences → Security & Privacy → Privacy -> #{access}
-          To re-enable untick and retick #{@cask}.app.
+          To re-enable untick and retick #{cask}.app.
         EOS
       end
 
       caveat :path_environment_variable do |path|
         <<~EOS
-          To use #{@cask}, you may need to add the #{path} directory
+          To use #{cask}, you may need to add the #{path} directory
           to your PATH environment variable, e.g. (for bash shell):
             export PATH=#{path}:"$PATH"
         EOS
@@ -86,7 +86,7 @@ module Cask
 
       caveat :zsh_path_helper do |path|
         <<~EOS
-          To use #{@cask}, zsh users may need to add the following line to their
+          To use #{cask}, zsh users may need to add the following line to their
           ~/.zprofile.  (Among other effects, #{path} will be added to the
           PATH environment variable):
             eval `/usr/libexec/path_helper -s`
@@ -97,7 +97,7 @@ module Cask
         next unless HOMEBREW_PREFIX.to_s.downcase.start_with?("/usr/local")
 
         <<~EOS
-          Cask #{@cask} installs files under /usr/local. The presence of such
+          Cask #{cask} installs files under /usr/local. The presence of such
           files can cause warnings when running `brew doctor`, which is considered
           to be a bug in Homebrew Cask.
         EOS
@@ -106,17 +106,17 @@ module Cask
       caveat :depends_on_java do |java_version = :any|
         if java_version == :any
           <<~EOS
-            #{@cask} requires Java. You can install the latest version with:
+            #{cask} requires Java. You can install the latest version with:
               brew cask install adoptopenjdk
           EOS
         elsif java_version.include?("11") || java_version.include?("+")
           <<~EOS
-            #{@cask} requires Java #{java_version}. You can install the latest version with:
+            #{cask} requires Java #{java_version}. You can install the latest version with:
               brew cask install adoptopenjdk
           EOS
         else
           <<~EOS
-            #{@cask} requires Java #{java_version}. You can install it with:
+            #{cask} requires Java #{java_version}. You can install it with:
               brew cask install homebrew/cask-versions/adoptopenjdk#{java_version}
           EOS
         end
@@ -124,33 +124,33 @@ module Cask
 
       caveat :logout do
         <<~EOS
-          You must log out and log back in for the installation of #{@cask} to take effect.
+          You must log out and log back in for the installation of #{cask} to take effect.
         EOS
       end
 
       caveat :reboot do
         <<~EOS
-          You must reboot for the installation of #{@cask} to take effect.
+          You must reboot for the installation of #{cask} to take effect.
         EOS
       end
 
       caveat :discontinued do
         <<~EOS
-          #{@cask} has been officially discontinued upstream.
+          #{cask} has been officially discontinued upstream.
           It may stop working correctly (or at all) in recent versions of macOS.
         EOS
       end
 
       caveat :license do |web_page|
         <<~EOS
-          Installing #{@cask} means you have AGREED to the license at:
+          Installing #{cask} means you have AGREED to the license at:
             #{Formatter.url(web_page.to_s)}
         EOS
       end
 
       caveat :free_license do |web_page|
         <<~EOS
-          The vendor offers a free license for #{@cask} at:
+          The vendor offers a free license for #{cask} at:
             #{Formatter.url(web_page.to_s)}
         EOS
       end

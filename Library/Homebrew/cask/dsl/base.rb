@@ -11,30 +11,32 @@ module Cask
     class Base
       extend Forwardable
 
-      def initialize(cask, command = SystemCommand)
-        @cask = cask
+      def initialize(dsl, command = SystemCommand)
+        @dsl = dsl
         @command = command
       end
 
-      def_delegators :@cask, :token, :version, :caskroom_path, :staged_path, :appdir, :language
+      def_delegators :@dsl, :cask, :method_missing_errors
+      def_delegators :cask, :token, :version, :caskroom_path, :staged_path, :appdir, :language
 
       def system_command(executable, **options)
         @command.run!(executable, **options)
       end
 
-      # No need to define it as its the default/superclass implementation.
-      # rubocop:disable Style/MissingRespondToMissing
+      def respond_to_missing?(*)
+        super || false
+      end
+
       def method_missing(method, *)
-        if method
+        if respond_to_missing?(method, false)
+          super
+        else
           underscored_class = self.class.name.gsub(/([[:lower:]])([[:upper:]][[:lower:]])/, '\1_\2').downcase
           section = underscored_class.split("::").last
-          Utils.method_missing_message(method, @cask.to_s, section)
+          method_missing_errors << Utils.method_missing_message(method, cask.to_s, section)
           nil
-        else
-          super
         end
       end
-      # rubocop:enable Style/MissingRespondToMissing
     end
   end
 end

@@ -895,5 +895,26 @@ describe Cask::Audit, :cask do
         expect(subject).to pass
       end
     end
+
+    describe "when a method is called which doesn't exist" do
+      let(:cask_token) { "without-description" }
+      let(:cask) do
+        tmp_cask cask_token.to_s, <<~RUBY
+          cask '#{cask_token}' do
+            version '1.0'
+            sha256 '8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a'
+            url "https://brew.sh/"
+            apcast "https://brew.sh/appcast"
+            name 'Audit'
+            homepage 'https://brew.sh/'
+            app 'Audit.app'
+          end
+        RUBY
+      end
+
+      it "fails" do
+        expect(subject).to fail_with(/method 'apcast'/)
+      end
+    end
   end
 end

@@ -89,6 +89,8 @@ module Cask
       message << "on Cask #{token}."
 
       opoo "#{message}\n#{error_message_with_suggestions}"
+
+      message
     end
   end
 end

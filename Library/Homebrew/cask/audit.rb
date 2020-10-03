@@ -54,6 +54,7 @@ module Cask
       check_token_valid
       check_token_bad_words
       check_token_conflicts
+      check_missing_methods
       check_languages
       check_download
       check_https_availability
@@ -347,6 +348,12 @@ module Cask
         unless artifact.target.absolute?
           add_error "target must be absolute path for #{artifact.class.english_name} #{artifact.source}"
         end
+      end
+    end
+
+    def check_missing_methods
+      @cask.method_missing_errors.each do |error|
+        add_error error
       end
     end
 

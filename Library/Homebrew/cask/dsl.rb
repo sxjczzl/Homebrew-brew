@@ -85,11 +85,12 @@ module Cask
                             *ARTIFACT_BLOCK_CLASSES.flat_map { |klass| [klass.dsl_key, klass.uninstall_dsl_key] },
                           ]).freeze
 
-    attr_reader :cask, :token
+    attr_reader :cask, :token, :method_missing_errors
 
     def initialize(cask)
       @cask = cask
       @token = cask.token
+      @method_missing_errors = []
     end
 
     def name(*args)
@@ -246,7 +247,7 @@ module Cask
     end
 
     def caveats(*strings, &block)
-      @caveats ||= DSL::Caveats.new(cask)
+      @caveats ||= DSL::Caveats.new(self)
       if block_given?
         @caveats.eval_caveats(&block)
       elsif strings.any?
@@ -281,22 +282,23 @@ module Cask
     ARTIFACT_BLOCK_CLASSES.each do |klass|
       [klass.dsl_key, klass.uninstall_dsl_key].each do |dsl_key|
         define_method(dsl_key) do |&block|
-          artifacts.add(klass.new(cask, dsl_key => block))
+          artifacts.add(klass.new(self, dsl_key => block))
         end
       end
     end
 
-    # No need to define it as its the default/superclass implementation.
-    # rubocop:disable Style/MissingRespondToMissing
+    def respond_to_missing?(*)
+      super || false
+    end
+
     def method_missing(method, *)
-      if method
-        Utils.method_missing_message(method, token)
-        nil
-      else
+      if respond_to_missing?(method, false)
         super
+      else
+        method_missing_errors << Utils.method_missing_message(method, token)
+        nil
       end
     end
-    # rubocop:enable Style/MissingRespondToMissing
 
     def appdir
       cask.config.appdir
