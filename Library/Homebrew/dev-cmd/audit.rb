@@ -566,6 +566,7 @@ module Homebrew
     end
 
     CERT_ERROR_ALLOWLIST = {
+      "carrot2"     => "https://project.carrot2.org",
       "hashcat"     => "https://hashcat.net/hashcat/",
       "jinx"        => "https://www.jinx-lang.org/",
       "lmod"        => "https://www.tacc.utexas.edu/research-development/tacc-projects/lmod",
