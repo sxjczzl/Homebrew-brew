@@ -1,5 +1,6 @@
 # Homebrew
 [![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/Homebrew/brew/releases)
+[![Build status](https://img.shields.io/github/workflow/status/Homebrew/brew/GitHub%20Actions%20CI)](https://github.com/Homebrew/brew/actions)
 
 Features, usage and installation instructions are [summarised on the homepage](https://brew.sh). Terminology (e.g. the difference between a Cellar, Tap, Cask and so forth) is [explained here](https://docs.brew.sh/Formula-Cookbook#homebrew-terminology).
 
