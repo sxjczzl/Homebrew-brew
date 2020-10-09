@@ -16,7 +16,7 @@ module Cask
         @command = command
       end
 
-      def_delegators :@dsl, :cask, :method_missing_errors
+      def_delegators :@dsl, :cask
       def_delegators :cask, :token, :version, :caskroom_path, :staged_path, :appdir, :language
 
       def system_command(executable, **options)
@@ -33,7 +33,8 @@ module Cask
         else
           underscored_class = self.class.name.gsub(/([[:lower:]])([[:upper:]][[:lower:]])/, '\1_\2').downcase
           section = underscored_class.split("::").last
-          method_missing_errors << Utils.method_missing_message(method, cask.to_s, section)
+          raise_or_warn CaskInvalidError.new(cask), Utils.method_missing_message(method, token, section),
+                        caller_locations: caller_locations
           nil
         end
       end

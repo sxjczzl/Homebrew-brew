@@ -153,7 +153,89 @@ module Kernel
     exit 1
   end
 
-  def odeprecated(method, replacement = nil, disable: false, disable_on: nil, caller: send(:caller))
+  def metadata_location(caller_locations = send(:caller_locations))
+    installed_cask_regex = %r{^#{Regexp.escape(Cask::Caskroom.path)}/(?<cask>[^/]+)/\.metadata/}
+    installed_formula_regex = %r{^#{Regexp.escape(HOMEBREW_CELLAR)}/(?<formula>[^/]+)/[^/]+/\.brew/}
+
+    regexes = {
+      cached:    %r{^#{Regexp.escape(HOMEBREW_CACHE)}/(?:(?<formula>[^/]+)|Cask/(?<cask>[^/]+))\.rb$},
+      installed: Regexp.union(installed_cask_regex, installed_formula_regex),
+      tapped:    HOMEBREW_TAP_PATH_REGEX,
+    }
+
+    caller_locations.each do |l|
+      next unless (path = l.absolute_path)
+
+      regexes.each do |type, regex|
+        next unless match = regex.match(path)
+
+        captures = match.named_captures
+
+        tap = if (user = captures["user"]) && (repo = captures["repo"])
+          Tap.fetch(user, repo)
+        end
+
+        return {
+          location: l,
+          type:     type,
+          cask:     match[:cask],
+          formula:  match[:formula],
+          tap:      tap,
+        }.compact
+      end
+    end
+
+    nil
+  end
+  private :metadata_location
+
+  # Conditionally raise an exception or shows a warning depending
+  # on context and where the exception originated.
+  #
+  # @api private
+  def raise_or_warn(exception_class, message, caller_locations: send(:caller_locations), always_raise: false)
+    if (backtrace_metadata = metadata_location(caller_locations))
+
+      p backtrace_metadata
+
+      # Don't raise/warn at all for cached/installed cask/formula files.
+      return if [:cached, :installed].include?(backtrace_metadata.fetch(:type))
+
+      if (tap = backtrace_metadata[:tap])
+        location = backtrace_metadata.fetch(:location)
+
+        tap_message = <<~EOS
+          Please report this issue to the #{tap} tap (not Homebrew/brew or Homebrew/core), or even better, submit a PR to fix it:
+            #{location.absolute_path}:#{location.lineno}
+        EOS
+
+        if backtrace_metadata[:cask]
+          tap_message += <<~EOS
+            Follow the instructions here:
+              #{Formatter.url("https://github.com/Homebrew/homebrew-cask#reporting-bugs")}
+          EOS
+        end
+      end
+    end
+
+    exception = exception_class.new("#{message}\n#{tap_message}")
+
+    # Try to show the most relevant location in message, i.e. (if applicable):
+    #   - Location in a cask or formula.
+    #   - Location outside of `compat/`.
+    #   - Location of method caller (if all else fails).
+    exception.set_backtrace(caller_locations.map(&:to_s))
+
+    raise exception if (Homebrew::EnvConfig.developer? && !tap_message) || always_raise
+
+    opoo exception.message unless Homebrew.auditing?
+  end
+  private :raise_or_warn
+
+  def odeprecated(
+    method, replacement = nil,
+    disable: false, disable_on: nil, caller_locations: send(:caller_locations)
+  )
     replacement_message = if replacement
       "Use #{replacement} instead."
     else
@@ -174,46 +256,14 @@ module Kernel
       "deprecated#{will_be_disabled_message}"
     end
 
-    # Try to show the most relevant location in message, i.e. (if applicable):
-    # - Location in a formula.
-    # - Location outside of 'compat/'.
-    # - Location of caller of deprecated method (if all else fails).
-    backtrace = caller
-
-    # Don't throw deprecations at all for cached, .brew or .metadata files.
-    return if backtrace.any? do |line|
-      line.include?(HOMEBREW_CACHE) ||
-      line.include?("/.brew/") ||
-      line.include?("/.metadata/")
-    end
-
-    tap_message = nil
-
-    backtrace.each do |line|
-      next unless match = line.match(HOMEBREW_TAP_PATH_REGEX)
-
-      tap = Tap.fetch(match[:user], match[:repo])
-      tap_message = +"\nPlease report this issue to the #{tap} tap (not Homebrew/brew or Homebrew/core)"
-      tap_message += ", or even better, submit a PR to fix it" if replacement
-      tap_message << ":\n  #{line.sub(/^(.*:\d+):.*$/, '\1')}\n\n"
-      break
-    end
-
-    message = +"Calling #{method} is #{verb}! #{replacement_message}"
-    message << tap_message if tap_message
-    message.freeze
-
-    if Homebrew::EnvConfig.developer? || disable || Homebrew.raise_deprecation_exceptions?
-      exception = MethodDeprecatedError.new(message)
-      exception.set_backtrace(backtrace)
-      raise exception
-    elsif !Homebrew.auditing?
-      opoo message
-    end
+    message = "Calling #{method} is #{verb}! #{replacement_message}"
+    raise_or_warn MethodDeprecatedError, message,
+                  caller_locations: caller_locations,
+                  always_raise:     disable || Homebrew.raise_deprecation_exceptions?
   end
 
   def odisabled(method, replacement = nil, options = {})
-    options = { disable: true, caller: caller }.merge(options)
+    options = { disable: true, caller_locations: caller_locations }.merge(options)
     odeprecated(method, replacement, options)
   end
 

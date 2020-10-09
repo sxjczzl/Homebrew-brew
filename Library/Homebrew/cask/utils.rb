@@ -6,8 +6,6 @@ require "yaml"
 require "open3"
 require "stringio"
 
-BUG_REPORTS_URL = "https://github.com/Homebrew/homebrew-cask#reporting-bugs"
-
 module Cask
   # Helper functions for various cask operations.
   #
@@ -76,20 +74,10 @@ module Cask
       File.exist?(path) || File.symlink?(path)
     end
 
-    def self.error_message_with_suggestions
-      <<~EOS
-        Follow the instructions here:
-          #{Formatter.url(BUG_REPORTS_URL)}
-      EOS
-    end
-
     def self.method_missing_message(method, token, section = nil)
       message = +"Unexpected method '#{method}' called "
       message << "during #{section} " if section
       message << "on Cask #{token}."
-
-      opoo "#{message}\n#{error_message_with_suggestions}"
-
       message
     end
   end

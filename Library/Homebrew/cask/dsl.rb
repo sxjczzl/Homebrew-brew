@@ -85,12 +85,11 @@ module Cask
                             *ARTIFACT_BLOCK_CLASSES.flat_map { |klass| [klass.dsl_key, klass.uninstall_dsl_key] },
                           ]).freeze
 
-    attr_reader :cask, :token, :method_missing_errors
+    attr_reader :cask, :token
 
     def initialize(cask)
       @cask = cask
       @token = cask.token
-      @method_missing_errors = []
     end
 
     def name(*args)
@@ -295,7 +294,8 @@ module Cask
       if respond_to_missing?(method, false)
         super
       else
-        method_missing_errors << Utils.method_missing_message(method, token)
+        raise_or_warn CaskInvalidError.new(cask), Utils.method_missing_message(method, token),
+                      caller_locations: caller_locations
         nil
       end
     end

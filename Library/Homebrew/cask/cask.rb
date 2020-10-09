@@ -64,10 +64,6 @@ module Cask
       define_method(method_name) { |&block| @dsl.send(method_name, &block) }
     end
 
-    def method_missing_errors
-      @dsl.method_missing_errors
-    end
-
     def timestamped_versions
       Pathname.glob(metadata_timestamped_path(version: "*", timestamp: "*"))
               .map { |p| p.relative_path_from(p.parent.parent) }

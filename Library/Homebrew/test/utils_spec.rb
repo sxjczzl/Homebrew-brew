@@ -249,8 +249,10 @@ describe "globally-scoped helper methods" do
       expect {
         odeprecated(
           "method", "replacement",
-          caller:  ["#{HOMEBREW_LIBRARY}/Taps/homebrew/homebrew-core/"],
-          disable: true
+          caller_locations: [instance_double(
+            Thread::Backtrace::Location, absolute_path: "#{HOMEBREW_LIBRARY}/Taps/homebrew/homebrew-core/"
+          )],
+          disable:          true
         )
       }.to raise_error(
         MethodDeprecatedError,

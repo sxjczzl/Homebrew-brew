@@ -37,6 +37,13 @@ module Cask
       @token = token
       @reason = reason.to_s
     end
+
+    # Re-create the error with the same cask but a different message.
+    def new(message)
+      exception = self.class.new(token, message)
+      exception.set_backtrace(backtrace)
+      exception
+    end
   end
 
   # Error when a cask is not installed.
