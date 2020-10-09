@@ -59,6 +59,11 @@ git_init_if_necessary() {
     fi
     git config remote.origin.url "$HOMEBREW_CORE_GIT_REMOTE"
     git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    if [[ -n "$HOMEBREW_GIT_FILTER_TREE_ZERO" ]]
+    then
+      git config extensions.partialClone "true"
+      git config remote.origin.partialclonefilter "tree:0"
+    fi
     git fetch --force origin refs/heads/master:refs/remotes/origin/master
     git remote set-head origin --auto >/dev/null
     git reset --hard origin/master
@@ -437,6 +442,11 @@ EOS
     echo "HOMEBREW_CORE_GIT_REMOTE set: using $HOMEBREW_CORE_GIT_REMOTE for Homebrew/brew Git remote."
     git remote set-url origin "$HOMEBREW_CORE_GIT_REMOTE"
     git config remote.origin.fetch "+refs/heads/*:refs/remotes/origin/*"
+    if [[ -n "$HOMEBREW_GIT_FILTER_TREE_ZERO" ]]
+    then
+      git config extensions.partialClone "true"
+      git config remote.origin.partialclonefilter "tree:0"
+    fi
     git fetch --force origin refs/heads/master:refs/remotes/origin/master
   fi
 
@@ -476,6 +486,10 @@ EOS
     if [[ "$DIR" = "$HOMEBREW_REPOSITORY" && -z "$(git tag --list)" ]]
     then
       HOMEBREW_UPDATE_FORCE=1
+    elif [[ "$DIR" = "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" && -n "$HOMEBREW_GIT_FILTER_TREE_ZERO" ]]
+    then
+      git config extensions.partialClone "true"
+      git config remote.origin.partialclonefilter "tree:0"
     fi
 
     if [[ -z "$HOMEBREW_UPDATE_FORCE" ]]

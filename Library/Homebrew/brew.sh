@@ -209,9 +209,9 @@ else
       odie <<EOS
 The version of cURL that you provided to Homebrew using HOMEBREW_CURL_PATH is too old.
 Minimum required version: ${HOMEBREW_MINIMUM_CURL_VERSION}.
-Your cURL version: ${curl_name_and_version##* }.
+Your cURL version: ${curl_name_and_version##* }
 Please point Homebrew to cURL ${HOMEBREW_MINIMUM_CURL_VERSION} or newer
-or unset HOMEBREW_CURL_PATH variable.
+or unset the HOMEBREW_CURL_PATH variable.
 EOS
     fi
   fi
@@ -220,10 +220,10 @@ EOS
   # Git 2.7.4 is the version of git on Ubuntu 16.04 LTS (Xenial Xerus).
   HOMEBREW_MINIMUM_GIT_VERSION="2.7.0"
   git_version_output="$($HOMEBREW_GIT --version 2>/dev/null)"
-  # $extra is intentionally discarded.
+  # $build and $extra are intentionally discarded.
   # shellcheck disable=SC2034
   IFS=. read -r major minor micro build extra <<< "${git_version_output##* }"
-  if [[ $(numeric "$major.$minor.$micro.$build") -lt $(numeric "$HOMEBREW_MINIMUM_GIT_VERSION") ]]
+  if [[ $(numeric "$major.$minor.$micro") -lt $(numeric "$HOMEBREW_MINIMUM_GIT_VERSION") ]]
   then
     if [[ -z $HOMEBREW_GIT_PATH ]]; then
       HOMEBREW_FORCE_BREWED_GIT="1"
@@ -231,9 +231,9 @@ EOS
       odie <<EOS
 The version of Git that you provided to Homebrew using HOMEBREW_GIT_PATH is too old.
 Minimum required version: ${HOMEBREW_MINIMUM_GIT_VERSION}.
-Your Git version: $major.$minor.$micro.$build.
-Please point Homebrew to Git ${HOMEBREW_MINIMUM_CURL_VERSION} or newer
-or unset HOMEBREW_GIT_PATH variable.
+Your Git version: $major.$minor.$micro
+Please point Homebrew to Git ${HOMEBREW_MINIMUM_GIT_VERSION} or newer
+or unset the HOMEBREW_GIT_PATH variable.
 EOS
     fi
   fi
@@ -244,6 +244,30 @@ EOS
   HOMEBREW_DEFAULT_TEMP="/tmp"
 
   unset HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH
+fi
+
+if [[ -n "$HOMEBREW_GIT_FILTER_TREE_ZERO" ]]
+then
+  if [[ -n "$HOMEBREW_MACOS" ]]
+  then
+    git_version_output="$($HOMEBREW_GIT --version 2>/dev/null | sed -e 's/ (Apple Git-.*)//')"
+  fi
+
+  # Ensure Git is at or newer than the minimum required version.
+  HOMEBREW_GIT_FILTER_TREE_ZERO_VERSION="2.20.0"
+  # $build and $extra are intentionally discarded.
+  # shellcheck disable=SC2034
+  IFS=. read -r major minor micro build extra <<< "${git_version_output##* }"
+  if [[ $(numeric "$major.$minor.$micro") -lt $(numeric "$HOMEBREW_GIT_FILTER_TREE_ZERO_VERSION") ]]
+  then
+    odie <<EOS
+The version of Git that you provided to Homebrew is too old for --filter=tree:0.
+Minimum required version: ${HOMEBREW_GIT_FILTER_TREE_ZERO_VERSION}
+Your Git version: $major.$minor.$micro
+Please point Homebrew to Git ${HOMEBREW_GIT_FILTER_TREE_ZERO_VERSION} or newer
+or unset the HOMEBREW_GIT_FILTER_TREE_ZERO variable.
+EOS
+  fi
 fi
 
 if [[ -n "$HOMEBREW_MACOS" || -n "$HOMEBREW_FORCE_HOMEBREW_ON_LINUX" ]]
