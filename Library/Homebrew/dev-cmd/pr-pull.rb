@@ -377,6 +377,8 @@ module Homebrew
 
     setup_git_environment!
 
+    pwd = Dir.pwd
+
     args.named.uniq.each do |arg|
       arg = "#{tap.default_remote}/pull/#{arg}" if arg.to_i.positive?
       url_match = arg.match HOMEBREW_PULL_OR_COMMIT_URL_REGEX
@@ -414,6 +416,9 @@ module Homebrew
 
           url = GitHub.get_artifact_url(user, repo, pr, workflow_id: workflow, artifact_name: artifact)
           download_artifact(url, dir, pr)
+          if (bottles = Dir.glob("*.bottle.tar.gz").presence)
+            FileUtils.cp bottles, pwd
+          end
 
           next if args.no_upload?
 
