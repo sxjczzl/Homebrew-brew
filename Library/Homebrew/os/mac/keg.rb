@@ -8,6 +8,12 @@ class Keg
     @require_relocation = true
     odebug "Changing dylib ID of #{file}\n  from #{file.dylib_id}\n    to #{id}"
     MachO::Tools.change_dylib_id(file, id, strict: false)
+  # Warn, but don't consider this fatal
+  rescue MachO::CodeSigningError
+    opoo <<~EOS
+      Failed to write a new code signature while changing
+      dylib ID of #{file}
+    EOS
   rescue MachO::MachOError
     onoe <<~EOS
       Failed changing dylib ID of #{file}
@@ -23,6 +29,12 @@ class Keg
     @require_relocation = true
     odebug "Changing install name in #{file}\n  from #{old}\n    to #{new}"
     MachO::Tools.change_install_name(file, old, new, strict: false)
+  # Warn, but don't consider this fatal
+  rescue MachO::CodeSigningError
+    opoo <<~EOS
+      Failed to write a new code signature while changing
+      install name in #{file}
+    EOS
   rescue MachO::MachOError
     onoe <<~EOS
       Failed changing install name in #{file}
