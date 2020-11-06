@@ -2980,10 +2980,6 @@ end
 
 BasicObject::BasicObject = BasicObject
 
-class BasicSocket
-  def read_nonblock(len, str=T.unsafe(nil), exception: T.unsafe(nil)); end
-end
-
 class Benchmark::Job
   def initialize(width); end
 end
@@ -5582,6 +5578,10 @@ class Cask::Cask
   def zap(&block); end
 end
 
+class Cask::Cmd::AbstractCommand
+  include ::Homebrew::Search::Extension
+end
+
 class Cask::Config
   def appdir(); end
 
@@ -6721,6 +6721,10 @@ module DependenciesHelpers
   include ::DependenciesHelpers::Compat
 end
 
+class Descriptions
+  extend ::Homebrew::Search::Extension
+end
+
 class Dir
   def children(); end
 
@@ -6975,37 +6979,81 @@ class Enumerator::Generator
   def initialize(*_); end
 end
 
-Errno::EAUTH = Errno::NOERROR
+class Errno::EAUTH
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EBADARCH = Errno::NOERROR
+class Errno::EAUTH
+end
 
-Errno::EBADEXEC = Errno::NOERROR
+class Errno::EBADARCH
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EBADMACHO = Errno::NOERROR
+class Errno::EBADARCH
+end
 
-Errno::EBADRPC = Errno::NOERROR
+class Errno::EBADEXEC
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::ECAPMODE = Errno::NOERROR
+class Errno::EBADEXEC
+end
 
-Errno::EDEADLOCK = Errno::EDEADLK
+class Errno::EBADMACHO
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EDEVERR = Errno::NOERROR
+class Errno::EBADMACHO
+end
+
+class Errno::EBADRPC
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::EBADRPC
+end
+
+Errno::EDEADLOCK = Errno::NOERROR
+
+class Errno::EDEVERR
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::EDEVERR
+end
 
 Errno::EDOOFUS = Errno::NOERROR
 
-Errno::EFTYPE = Errno::NOERROR
+class Errno::EFTYPE
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::EFTYPE
+end
 
 Errno::EIPSEC = Errno::NOERROR
 
-Errno::ELAST = Errno::NOERROR
+class Errno::ENEEDAUTH
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::ENEEDAUTH = Errno::NOERROR
+class Errno::ENEEDAUTH
+end
 
-Errno::ENOATTR = Errno::NOERROR
+class Errno::ENOATTR
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::ENOPOLICY = Errno::NOERROR
+class Errno::ENOATTR
+end
 
-Errno::ENOTCAPABLE = Errno::NOERROR
+class Errno::ENOPOLICY
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::ENOPOLICY
+end
 
 class Errno::ENOTSUP
   Errno = ::T.let(nil, ::T.untyped)
@@ -7014,21 +7062,61 @@ end
 class Errno::ENOTSUP
 end
 
-Errno::EPROCLIM = Errno::NOERROR
+class Errno::EPROCLIM
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EPROCUNAVAIL = Errno::NOERROR
+class Errno::EPROCLIM
+end
 
-Errno::EPROGMISMATCH = Errno::NOERROR
+class Errno::EPROCUNAVAIL
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EPROGUNAVAIL = Errno::NOERROR
+class Errno::EPROCUNAVAIL
+end
 
-Errno::EPWROFF = Errno::NOERROR
+class Errno::EPROGMISMATCH
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::EQFULL = Errno::NOERROR
+class Errno::EPROGMISMATCH
+end
 
-Errno::ERPCMISMATCH = Errno::NOERROR
+class Errno::EPROGUNAVAIL
+  Errno = ::T.let(nil, ::T.untyped)
+end
 
-Errno::ESHLIBVERS = Errno::NOERROR
+class Errno::EPROGUNAVAIL
+end
+
+class Errno::EPWROFF
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::EPWROFF
+end
+
+class Errno::EQFULL
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::EQFULL
+end
+
+class Errno::ERPCMISMATCH
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::ERPCMISMATCH
+end
+
+class Errno::ESHLIBVERS
+  Errno = ::T.let(nil, ::T.untyped)
+end
+
+class Errno::ESHLIBVERS
+end
 
 class Etc::Group
   def gid(); end
@@ -7058,7 +7146,15 @@ class Etc::Group
 end
 
 class Etc::Passwd
+  def change(); end
+
+  def change=(_); end
+
   def dir=(_); end
+
+  def expire(); end
+
+  def expire=(_); end
 
   def gecos(); end
 
@@ -7071,6 +7167,10 @@ class Etc::Passwd
   def passwd=(_); end
 
   def shell=(_); end
+
+  def uclass(); end
+
+  def uclass=(_); end
 
   def uid=(_); end
 end
@@ -7165,10 +7265,6 @@ module Fiddle
   RTLD_LAZY = ::T.let(nil, ::T.untyped)
   RTLD_NOW = ::T.let(nil, ::T.untyped)
   WINDOWS = ::T.let(nil, ::T.untyped)
-end
-
-class Fiddle::Function
-  STDCALL = ::T.let(nil, ::T.untyped)
 end
 
 class File
@@ -8199,8 +8295,13 @@ module Homebrew::MissingFormula
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
+module Homebrew::Search
+  include ::Homebrew::Search::Extension
+end
+
 module Homebrew
   extend ::FileUtils::StreamUtils_
+  extend ::Homebrew::Search::Extension
   extend ::DependenciesHelpers::Compat
   def self.default_prefix?(prefix=T.unsafe(nil)); end
 end
@@ -10423,6 +10524,12 @@ end
 class MachO::CPUTypeError
 end
 
+class MachO::CodeSigningError
+end
+
+class MachO::CodeSigningError
+end
+
 class MachO::DylibIdMissingError
   def initialize(); end
 end
@@ -11542,7 +11649,7 @@ class MachO::MachOView
 end
 
 class MachO::MagicError
-  def initialize(num); end
+  def initialize(magic); end
 end
 
 class MachO::MagicError
@@ -11555,7 +11662,6 @@ class MachO::ModificationError
 end
 
 class MachO::NotAMachOError
-  def initialize(error); end
 end
 
 class MachO::NotAMachOError
@@ -11719,6 +11825,8 @@ module MachO::Utils
 end
 
 module MachO
+  def self.codesign!(filename); end
+
   def self.open(filename); end
 end
 
@@ -13371,6 +13479,7 @@ class Object
   def to_query(key); end
 
   def to_yaml(options=T.unsafe(nil)); end
+  APPLE_GEM_HOME = ::T.let(nil, ::T.untyped)
   APPLY_A = ::T.let(nil, ::T.untyped)
   APPLY_B = ::T.let(nil, ::T.untyped)
   APPLY_C = ::T.let(nil, ::T.untyped)
@@ -13443,6 +13552,8 @@ class Object
   RUBY_DESCRIPTION = ::T.let(nil, ::T.untyped)
   RUBY_ENGINE = ::T.let(nil, ::T.untyped)
   RUBY_ENGINE_VERSION = ::T.let(nil, ::T.untyped)
+  RUBY_FRAMEWORK = ::T.let(nil, ::T.untyped)
+  RUBY_FRAMEWORK_VERSION = ::T.let(nil, ::T.untyped)
   RUBY_PATCHLEVEL = ::T.let(nil, ::T.untyped)
   RUBY_PATH = ::T.let(nil, ::T.untyped)
   RUBY_PLATFORM = ::T.let(nil, ::T.untyped)
@@ -13503,11 +13614,7 @@ class OpenSSL::KDF::KDFError
 end
 
 module OpenSSL::KDF
-  def self.hkdf(*_); end
-
   def self.pbkdf2_hmac(*_); end
-
-  def self.scrypt(*_); end
 end
 
 class OpenSSL::OCSP::Request
@@ -13516,29 +13623,20 @@ end
 
 OpenSSL::PKCS7::Signer = OpenSSL::PKCS7::SignerInfo
 
-class OpenSSL::PKey::EC
-  EXPLICIT_CURVE = ::T.let(nil, ::T.untyped)
-end
-
 class OpenSSL::PKey::EC::Point
   def to_octet_string(_); end
 end
 
 module OpenSSL::SSL
-  OP_ALLOW_NO_DHE_KEX = ::T.let(nil, ::T.untyped)
   OP_ALLOW_UNSAFE_LEGACY_RENEGOTIATION = ::T.let(nil, ::T.untyped)
   OP_CRYPTOPRO_TLSEXT_BUG = ::T.let(nil, ::T.untyped)
   OP_LEGACY_SERVER_CONNECT = ::T.let(nil, ::T.untyped)
-  OP_NO_ENCRYPT_THEN_MAC = ::T.let(nil, ::T.untyped)
-  OP_NO_RENEGOTIATION = ::T.let(nil, ::T.untyped)
-  OP_NO_TLSv1_3 = ::T.let(nil, ::T.untyped)
   OP_SAFARI_ECDHE_ECDSA_BUG = ::T.let(nil, ::T.untyped)
   OP_TLSEXT_PADDING = ::T.let(nil, ::T.untyped)
   SSL2_VERSION = ::T.let(nil, ::T.untyped)
   SSL3_VERSION = ::T.let(nil, ::T.untyped)
   TLS1_1_VERSION = ::T.let(nil, ::T.untyped)
   TLS1_2_VERSION = ::T.let(nil, ::T.untyped)
-  TLS1_3_VERSION = ::T.let(nil, ::T.untyped)
   TLS1_VERSION = ::T.let(nil, ::T.untyped)
 end
 
@@ -13552,8 +13650,6 @@ class OpenSSL::SSL::SSLContext
   def alpn_select_cb(); end
 
   def alpn_select_cb=(alpn_select_cb); end
-
-  def enable_fallback_scsv(); end
 
   def max_version=(version); end
 
@@ -15135,8 +15231,8 @@ class Parser::Ruby26
 end
 
 class Pathname
-  include ::ELFShim
   include ::MachOShim
+  include ::ELFShim
   def fnmatch?(*_); end
 
   def glob(*_); end
@@ -28272,6 +28368,188 @@ end
 
 module Singleton
   def self.__init__(klass); end
+end
+
+class Socket
+  AF_CCITT = ::T.let(nil, ::T.untyped)
+  AF_CHAOS = ::T.let(nil, ::T.untyped)
+  AF_CNT = ::T.let(nil, ::T.untyped)
+  AF_COIP = ::T.let(nil, ::T.untyped)
+  AF_DATAKIT = ::T.let(nil, ::T.untyped)
+  AF_DLI = ::T.let(nil, ::T.untyped)
+  AF_E164 = ::T.let(nil, ::T.untyped)
+  AF_ECMA = ::T.let(nil, ::T.untyped)
+  AF_HYLINK = ::T.let(nil, ::T.untyped)
+  AF_IMPLINK = ::T.let(nil, ::T.untyped)
+  AF_ISO = ::T.let(nil, ::T.untyped)
+  AF_LAT = ::T.let(nil, ::T.untyped)
+  AF_LINK = ::T.let(nil, ::T.untyped)
+  AF_NATM = ::T.let(nil, ::T.untyped)
+  AF_NDRV = ::T.let(nil, ::T.untyped)
+  AF_NETBIOS = ::T.let(nil, ::T.untyped)
+  AF_NS = ::T.let(nil, ::T.untyped)
+  AF_OSI = ::T.let(nil, ::T.untyped)
+  AF_PPP = ::T.let(nil, ::T.untyped)
+  AF_PUP = ::T.let(nil, ::T.untyped)
+  AF_SIP = ::T.let(nil, ::T.untyped)
+  AF_SYSTEM = ::T.let(nil, ::T.untyped)
+  AI_DEFAULT = ::T.let(nil, ::T.untyped)
+  AI_MASK = ::T.let(nil, ::T.untyped)
+  AI_V4MAPPED_CFG = ::T.let(nil, ::T.untyped)
+  EAI_BADHINTS = ::T.let(nil, ::T.untyped)
+  EAI_MAX = ::T.let(nil, ::T.untyped)
+  EAI_PROTOCOL = ::T.let(nil, ::T.untyped)
+  IFF_ALTPHYS = ::T.let(nil, ::T.untyped)
+  IFF_LINK0 = ::T.let(nil, ::T.untyped)
+  IFF_LINK1 = ::T.let(nil, ::T.untyped)
+  IFF_LINK2 = ::T.let(nil, ::T.untyped)
+  IFF_OACTIVE = ::T.let(nil, ::T.untyped)
+  IFF_SIMPLEX = ::T.let(nil, ::T.untyped)
+  IPPROTO_EON = ::T.let(nil, ::T.untyped)
+  IPPROTO_GGP = ::T.let(nil, ::T.untyped)
+  IPPROTO_HELLO = ::T.let(nil, ::T.untyped)
+  IPPROTO_MAX = ::T.let(nil, ::T.untyped)
+  IPPROTO_ND = ::T.let(nil, ::T.untyped)
+  IPPROTO_XTP = ::T.let(nil, ::T.untyped)
+  IPV6_DONTFRAG = ::T.let(nil, ::T.untyped)
+  IPV6_PATHMTU = ::T.let(nil, ::T.untyped)
+  IPV6_RECVPATHMTU = ::T.let(nil, ::T.untyped)
+  IPV6_USE_MIN_MTU = ::T.let(nil, ::T.untyped)
+  IP_PORTRANGE = ::T.let(nil, ::T.untyped)
+  IP_RECVDSTADDR = ::T.let(nil, ::T.untyped)
+  IP_RECVIF = ::T.let(nil, ::T.untyped)
+  LOCAL_PEERCRED = ::T.let(nil, ::T.untyped)
+  MSG_EOF = ::T.let(nil, ::T.untyped)
+  MSG_FLUSH = ::T.let(nil, ::T.untyped)
+  MSG_HAVEMORE = ::T.let(nil, ::T.untyped)
+  MSG_HOLD = ::T.let(nil, ::T.untyped)
+  MSG_RCVMORE = ::T.let(nil, ::T.untyped)
+  MSG_SEND = ::T.let(nil, ::T.untyped)
+  PF_CCITT = ::T.let(nil, ::T.untyped)
+  PF_CHAOS = ::T.let(nil, ::T.untyped)
+  PF_CNT = ::T.let(nil, ::T.untyped)
+  PF_COIP = ::T.let(nil, ::T.untyped)
+  PF_DATAKIT = ::T.let(nil, ::T.untyped)
+  PF_DLI = ::T.let(nil, ::T.untyped)
+  PF_ECMA = ::T.let(nil, ::T.untyped)
+  PF_HYLINK = ::T.let(nil, ::T.untyped)
+  PF_IMPLINK = ::T.let(nil, ::T.untyped)
+  PF_ISO = ::T.let(nil, ::T.untyped)
+  PF_LAT = ::T.let(nil, ::T.untyped)
+  PF_LINK = ::T.let(nil, ::T.untyped)
+  PF_NATM = ::T.let(nil, ::T.untyped)
+  PF_NDRV = ::T.let(nil, ::T.untyped)
+  PF_NETBIOS = ::T.let(nil, ::T.untyped)
+  PF_NS = ::T.let(nil, ::T.untyped)
+  PF_OSI = ::T.let(nil, ::T.untyped)
+  PF_PIP = ::T.let(nil, ::T.untyped)
+  PF_PPP = ::T.let(nil, ::T.untyped)
+  PF_PUP = ::T.let(nil, ::T.untyped)
+  PF_RTIP = ::T.let(nil, ::T.untyped)
+  PF_SIP = ::T.let(nil, ::T.untyped)
+  PF_SYSTEM = ::T.let(nil, ::T.untyped)
+  PF_XTP = ::T.let(nil, ::T.untyped)
+  SCM_CREDS = ::T.let(nil, ::T.untyped)
+  SO_DONTTRUNC = ::T.let(nil, ::T.untyped)
+  SO_NKE = ::T.let(nil, ::T.untyped)
+  SO_NOSIGPIPE = ::T.let(nil, ::T.untyped)
+  SO_NREAD = ::T.let(nil, ::T.untyped)
+  SO_USELOOPBACK = ::T.let(nil, ::T.untyped)
+  SO_WANTMORE = ::T.let(nil, ::T.untyped)
+  SO_WANTOOBFLAG = ::T.let(nil, ::T.untyped)
+  TCP_NOOPT = ::T.let(nil, ::T.untyped)
+  TCP_NOPUSH = ::T.let(nil, ::T.untyped)
+end
+
+module Socket::Constants
+  AF_CCITT = ::T.let(nil, ::T.untyped)
+  AF_CHAOS = ::T.let(nil, ::T.untyped)
+  AF_CNT = ::T.let(nil, ::T.untyped)
+  AF_COIP = ::T.let(nil, ::T.untyped)
+  AF_DATAKIT = ::T.let(nil, ::T.untyped)
+  AF_DLI = ::T.let(nil, ::T.untyped)
+  AF_E164 = ::T.let(nil, ::T.untyped)
+  AF_ECMA = ::T.let(nil, ::T.untyped)
+  AF_HYLINK = ::T.let(nil, ::T.untyped)
+  AF_IMPLINK = ::T.let(nil, ::T.untyped)
+  AF_ISO = ::T.let(nil, ::T.untyped)
+  AF_LAT = ::T.let(nil, ::T.untyped)
+  AF_LINK = ::T.let(nil, ::T.untyped)
+  AF_NATM = ::T.let(nil, ::T.untyped)
+  AF_NDRV = ::T.let(nil, ::T.untyped)
+  AF_NETBIOS = ::T.let(nil, ::T.untyped)
+  AF_NS = ::T.let(nil, ::T.untyped)
+  AF_OSI = ::T.let(nil, ::T.untyped)
+  AF_PPP = ::T.let(nil, ::T.untyped)
+  AF_PUP = ::T.let(nil, ::T.untyped)
+  AF_SIP = ::T.let(nil, ::T.untyped)
+  AF_SYSTEM = ::T.let(nil, ::T.untyped)
+  AI_DEFAULT = ::T.let(nil, ::T.untyped)
+  AI_MASK = ::T.let(nil, ::T.untyped)
+  AI_V4MAPPED_CFG = ::T.let(nil, ::T.untyped)
+  EAI_BADHINTS = ::T.let(nil, ::T.untyped)
+  EAI_MAX = ::T.let(nil, ::T.untyped)
+  EAI_PROTOCOL = ::T.let(nil, ::T.untyped)
+  IFF_ALTPHYS = ::T.let(nil, ::T.untyped)
+  IFF_LINK0 = ::T.let(nil, ::T.untyped)
+  IFF_LINK1 = ::T.let(nil, ::T.untyped)
+  IFF_LINK2 = ::T.let(nil, ::T.untyped)
+  IFF_OACTIVE = ::T.let(nil, ::T.untyped)
+  IFF_SIMPLEX = ::T.let(nil, ::T.untyped)
+  IPPROTO_EON = ::T.let(nil, ::T.untyped)
+  IPPROTO_GGP = ::T.let(nil, ::T.untyped)
+  IPPROTO_HELLO = ::T.let(nil, ::T.untyped)
+  IPPROTO_MAX = ::T.let(nil, ::T.untyped)
+  IPPROTO_ND = ::T.let(nil, ::T.untyped)
+  IPPROTO_XTP = ::T.let(nil, ::T.untyped)
+  IPV6_DONTFRAG = ::T.let(nil, ::T.untyped)
+  IPV6_PATHMTU = ::T.let(nil, ::T.untyped)
+  IPV6_RECVPATHMTU = ::T.let(nil, ::T.untyped)
+  IPV6_USE_MIN_MTU = ::T.let(nil, ::T.untyped)
+  IP_PORTRANGE = ::T.let(nil, ::T.untyped)
+  IP_RECVDSTADDR = ::T.let(nil, ::T.untyped)
+  IP_RECVIF = ::T.let(nil, ::T.untyped)
+  LOCAL_PEERCRED = ::T.let(nil, ::T.untyped)
+  MSG_EOF = ::T.let(nil, ::T.untyped)
+  MSG_FLUSH = ::T.let(nil, ::T.untyped)
+  MSG_HAVEMORE = ::T.let(nil, ::T.untyped)
+  MSG_HOLD = ::T.let(nil, ::T.untyped)
+  MSG_RCVMORE = ::T.let(nil, ::T.untyped)
+  MSG_SEND = ::T.let(nil, ::T.untyped)
+  PF_CCITT = ::T.let(nil, ::T.untyped)
+  PF_CHAOS = ::T.let(nil, ::T.untyped)
+  PF_CNT = ::T.let(nil, ::T.untyped)
+  PF_COIP = ::T.let(nil, ::T.untyped)
+  PF_DATAKIT = ::T.let(nil, ::T.untyped)
+  PF_DLI = ::T.let(nil, ::T.untyped)
+  PF_ECMA = ::T.let(nil, ::T.untyped)
+  PF_HYLINK = ::T.let(nil, ::T.untyped)
+  PF_IMPLINK = ::T.let(nil, ::T.untyped)
+  PF_ISO = ::T.let(nil, ::T.untyped)
+  PF_LAT = ::T.let(nil, ::T.untyped)
+  PF_LINK = ::T.let(nil, ::T.untyped)
+  PF_NATM = ::T.let(nil, ::T.untyped)
+  PF_NDRV = ::T.let(nil, ::T.untyped)
+  PF_NETBIOS = ::T.let(nil, ::T.untyped)
+  PF_NS = ::T.let(nil, ::T.untyped)
+  PF_OSI = ::T.let(nil, ::T.untyped)
+  PF_PIP = ::T.let(nil, ::T.untyped)
+  PF_PPP = ::T.let(nil, ::T.untyped)
+  PF_PUP = ::T.let(nil, ::T.untyped)
+  PF_RTIP = ::T.let(nil, ::T.untyped)
+  PF_SIP = ::T.let(nil, ::T.untyped)
+  PF_SYSTEM = ::T.let(nil, ::T.untyped)
+  PF_XTP = ::T.let(nil, ::T.untyped)
+  SCM_CREDS = ::T.let(nil, ::T.untyped)
+  SO_DONTTRUNC = ::T.let(nil, ::T.untyped)
+  SO_NKE = ::T.let(nil, ::T.untyped)
+  SO_NOSIGPIPE = ::T.let(nil, ::T.untyped)
+  SO_NREAD = ::T.let(nil, ::T.untyped)
+  SO_USELOOPBACK = ::T.let(nil, ::T.untyped)
+  SO_WANTMORE = ::T.let(nil, ::T.untyped)
+  SO_WANTOOBFLAG = ::T.let(nil, ::T.untyped)
+  TCP_NOOPT = ::T.let(nil, ::T.untyped)
+  TCP_NOPUSH = ::T.let(nil, ::T.untyped)
 end
 
 class SoftwareSpec
