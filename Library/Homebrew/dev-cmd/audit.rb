@@ -477,6 +477,7 @@ module Homebrew
 
           if @core_tap &&
              @new_formula &&
+             spec.requirements.none? { |req| req.is_a? LinuxRequirement } &&
              dep_f.keg_only? &&
              dep_f.keg_only_reason.provided_by_macos? &&
              dep_f.keg_only_reason.applicable? &&
