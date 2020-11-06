@@ -8,7 +8,6 @@ module PyPI
   module_function
 
   PYTHONHOSTED_URL_PREFIX = "https://files.pythonhosted.org/packages/"
-  private_constant :PYTHONHOSTED_URL_PREFIX
 
   AUTOMATIC_RESOURCE_UPDATE_BLOCKLIST = %w[
     ansible

@@ -5,6 +5,7 @@ require "formula"
 require "formula_versions"
 require "utils/curl"
 require "utils/github/actions"
+require "utils/pypi"
 require "utils/shared_audits"
 require "utils/spdx"
 require "extend/ENV"
@@ -918,11 +919,10 @@ module Homebrew
         break if previous_version && current_version != previous_version
       end
 
-      pypi_prefix = "https://files.pythonhosted.org/packages/"
-
       if current_version == previous_version &&
          current_checksum != newest_committed_checksum &&
-         (newest_committed_url.start_with?(pypi_prefix) == current_url.start_with?(pypi_prefix))
+         (newest_committed_url.start_with?(PyPI::PYTHONHOSTED_URL_PREFIX) ==
+          current_url.start_with?(PyPI::PYTHONHOSTED_URL_PREFIX))
         problem(
           "stable sha256 changed without the version also changing; " \
           "please create an issue upstream to rule out malicious " \
