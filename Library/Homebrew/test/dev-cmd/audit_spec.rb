@@ -685,6 +685,18 @@ module Homebrew
           it { is_expected.to match("stable sha256 changed without the version also changing") }
         end
 
+        context "can change if switching to/from a PyPI url" do
+          before do
+            formula_gsub(
+              'sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"',
+              'sha256 "3622d2a53236ed9ca62de0616a7e80fd477a9a3f862ba09d503da188f53ca523"',
+            )
+            formula_gsub "https://brew.sh/foo-1.0.tar.gz", "https://files.pythonhosted.org/packages/foo-1.0.tar.gz"
+          end
+
+          it { is_expected.to be_nil }
+        end
+
         context "can change with the different version" do
           before do
             formula_gsub_origin_commit(

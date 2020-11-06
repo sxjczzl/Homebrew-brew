@@ -888,6 +888,7 @@ module Homebrew
       current_checksum = formula.stable.checksum
       current_version_scheme = formula.version_scheme
       current_revision = formula.revision
+      current_url = formula.stable.url
 
       previous_version = nil
       previous_version_scheme = nil
@@ -896,6 +897,7 @@ module Homebrew
       newest_committed_version = nil
       newest_committed_checksum = nil
       newest_committed_revision = nil
+      newest_committed_url = nil
 
       fv.rev_list("origin/master") do |rev|
         fv.formula_at_revision(rev) do |f|
@@ -910,13 +912,17 @@ module Homebrew
           newest_committed_version ||= previous_version
           newest_committed_checksum ||= previous_checksum
           newest_committed_revision ||= previous_revision
+          newest_committed_url ||= stable.url
         end
 
         break if previous_version && current_version != previous_version
       end
 
+      pypi_prefix = "https://files.pythonhosted.org/packages/"
+
       if current_version == previous_version &&
-         current_checksum != newest_committed_checksum
+         current_checksum != newest_committed_checksum &&
+         (newest_committed_url.start_with?(pypi_prefix) == current_url.start_with?(pypi_prefix))
         problem(
           "stable sha256 changed without the version also changing; " \
           "please create an issue upstream to rule out malicious " \
