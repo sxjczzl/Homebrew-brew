@@ -637,6 +637,7 @@ module RuboCop
           nettle
           open-mpi
           openssl@1.1
+          openssl@3.0
           pcre
           protobuf
           wolfssl
