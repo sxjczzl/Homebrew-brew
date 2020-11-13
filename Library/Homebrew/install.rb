@@ -14,7 +14,7 @@ module Homebrew
     module_function
 
     def perform_preinstall_checks(all_fatal: false, cc: nil)
-      check_prefix
+      check_flavour_matches_architecture
       check_cpu
       attempt_directory_creation
       check_cc_argv(cc)
@@ -29,19 +29,44 @@ module Homebrew
       Diagnostic.checks(:build_from_source_checks, fatal: all_fatal)
     end
 
-    def check_prefix
-      if Hardware::CPU.intel? && HOMEBREW_PREFIX.to_s == HOMEBREW_MACOS_ARM_DEFAULT_PREFIX
-        odie "Cannot install in Homebrew on Intel processor in ARM default prefix (#{HOMEBREW_PREFIX})!"
-      elsif Hardware::CPU.arm? && HOMEBREW_PREFIX.to_s == HOMEBREW_DEFAULT_PREFIX
-        odie <<~EOS
-          Cannot install in Homebrew on ARM processor in Intel default prefix (#{HOMEBREW_PREFIX})!
-          Please create a new installation in #{HOMEBREW_MACOS_ARM_DEFAULT_PREFIX} using one of the
-          "Alternative Installs" from:
-            #{Formatter.url("https://docs.brew.sh/Installation")}
-          You can migrate your previously installed formula list with:
-            brew bundle dump
-        EOS
+    def check_flavour_matches_architecture
+      homebrew_flavour = HOMEBREW_REPOSITORY.cd do
+        Utils.popen_read("git", "config", "--get", "homebrew.flavour").chomp.presence
       end
+
+      if !homebrew_flavour ||
+         (Hardware::CPU.intel? && homebrew_flavour == "x86_64") ||
+         (Hardware::CPU.arm? && homebrew_flavour == "arm64")
+        return
+      end
+
+      error_title = "This Homebrew installation in #{HOMEBREW_PREFIX} only works on #{homebrew_flavour} processors."
+      odie error_title unless Hardware::CPU.arm?
+
+      ohai "Checking whether Rosetta is installed"
+      rosetta_installed = quiet_system(
+        "/usr/bin/swift",
+        "#{HOMEBREW_REPOSITORY}/Library/Homebrew/utils/rosetta_installed.swift",
+      )
+      rosetta_instructions = if rosetta_installed
+        <<~EOS
+          To use it, you can:
+          - run your Terminal from Rosetta 2 or
+          - run 'arch -x86_64 brew' instead of 'brew'.
+        EOS
+      else
+        "To use it, you need to install Rosetta 2 first."
+      end
+
+      odie <<~EOS
+        #{error_title}
+        #{rosetta_instructions}
+        Or create a new installation in #{HOMEBREW_MACOS_ARM_DEFAULT_PREFIX} using one of the
+        "Alternative Installs" from:
+          #{Formatter.url("https://docs.brew.sh/Installation")}
+        You can migrate your previously installed formula list with:
+          brew bundle dump
+      EOS
     end
 
     def check_cpu
