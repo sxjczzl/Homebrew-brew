@@ -22,7 +22,7 @@ module Homebrew
       switch "-s", "--silent",
              description: "Suppress any output."
       comma_array "--extras",
-             description: "Include these comma-separated setuptools 'extras' in installation"
+                  description: "Include these comma-separated setuptools 'extras' in installation"
       switch "--ignore-non-pypi-packages",
              description: "Don't fail if <formula> is not a PyPI package."
       flag "--version=",

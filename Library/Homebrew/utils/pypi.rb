@@ -96,7 +96,7 @@ module PyPI
     @pipgrip_installed ||= Formula["pipgrip"].any_version_installed?
     odie '"pipgrip" must be installed (`brew install pipgrip`)' unless @pipgrip_installed
 
-    extras_str = "[#{extras.join(',')}]" unless extras.nil?
+    extras_str = "[#{extras.join(",")}]" unless extras.nil?
     pypi_coordinates = "#{pypi_name}#{extras_str}==#{version}"
     ohai "Retrieving PyPI dependencies for \"#{pypi_coordinates}\"..." if !print_only && !silent
     pipgrip_command = [
@@ -104,7 +104,7 @@ module PyPI
       "--no-cache-dir",
       pypi_coordinates
     ]
-    pipgrip_output = Utils.popen_read *pipgrip_command
+    pipgrip_output = Utils.popen_read(*pipgrip_command)
     unless $CHILD_STATUS.success?
       odie <<~EOS
         Unable to determine dependencies for \"#{pypi_name}\" because of a failure when running
