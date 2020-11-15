@@ -1323,6 +1323,8 @@ Update versions for PyPI resource blocks in *`formula`*.
   Print the updated resource blocks instead of changing *`formula`*.
 * `-s`, `--silent`:
   Suppress any output.
+* `--extras`:
+  Include these comma-separated setuptools 'extras' in installation
 * `--ignore-non-pypi-packages`:
   Don't fail if *`formula`* is not a PyPI package.
 * `--version`:
