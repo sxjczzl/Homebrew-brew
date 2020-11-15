@@ -21,6 +21,8 @@ module Homebrew
              description: "Print the updated resource blocks instead of changing <formula>."
       switch "-s", "--silent",
              description: "Suppress any output."
+      comma_array "--extras",
+             description: "Include these comma-separated setuptools 'extras' in installation"
       switch "--ignore-non-pypi-packages",
              description: "Don't fail if <formula> is not a PyPI package."
       flag "--version=",
@@ -35,7 +37,8 @@ module Homebrew
 
     args.named.to_formulae.each do |formula|
       PyPI.update_python_resources! formula, args.version, print_only: args.print_only?, silent: args.silent?,
-                                    ignore_non_pypi_packages: args.ignore_non_pypi_packages?
+                                    ignore_non_pypi_packages: args.ignore_non_pypi_packages?,
+                                    extras: args.extras
     end
   end
 end

@@ -59,7 +59,8 @@ module PyPI
 
   # Return true if resources were checked (even if no change).
   def update_python_resources!(formula, version = nil, print_only: false, silent: false,
-                               ignore_non_pypi_packages: false)
+                               ignore_non_pypi_packages: false,
+                               extras: [])
 
     if !print_only && AUTOMATIC_RESOURCE_UPDATE_BLOCKLIST.include?(formula.full_name)
       odie "The resources for \"#{formula.name}\" need special attention. Please update them manually."
@@ -95,13 +96,19 @@ module PyPI
     @pipgrip_installed ||= Formula["pipgrip"].any_version_installed?
     odie '"pipgrip" must be installed (`brew install pipgrip`)' unless @pipgrip_installed
 
-    ohai "Retrieving PyPI dependencies for \"#{pypi_name}==#{version}\"..." if !print_only && !silent
-    pipgrip_output = Utils.popen_read Formula["pipgrip"].bin/"pipgrip", "--json", "--no-cache-dir",
-                                      "#{pypi_name}==#{version}"
+    extras_str = "[#{extras.join(',')}]" unless extras.nil?
+    pypi_coordinates = "#{pypi_name}#{extras_str}==#{version}"
+    ohai "Retrieving PyPI dependencies for \"#{pypi_coordinates}\"..." if !print_only && !silent
+    pipgrip_command = [
+      Formula["pipgrip"].bin/"pipgrip", "--json",
+      "--no-cache-dir",
+      pypi_coordinates
+    ]
+    pipgrip_output = Utils.popen_read *pipgrip_command
     unless $CHILD_STATUS.success?
       odie <<~EOS
         Unable to determine dependencies for \"#{pypi_name}\" because of a failure when running
-        `pipgrip --json --no-cache-dir #{pypi_name}==#{version}`.
+        `#{pipgrip_command}`.
         Please update the resources for \"#{formula.name}\" manually.
       EOS
     end
