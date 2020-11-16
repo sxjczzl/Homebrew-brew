@@ -10458,6 +10458,12 @@ end
 class MachO::CPUTypeError
 end
 
+class MachO::CodeSigningError
+end
+
+class MachO::CodeSigningError
+end
+
 class MachO::DylibIdMissingError
   def initialize(); end
 end
@@ -11577,7 +11583,7 @@ class MachO::MachOView
 end
 
 class MachO::MagicError
-  def initialize(num); end
+  def initialize(magic); end
 end
 
 class MachO::MagicError
@@ -11590,7 +11596,6 @@ class MachO::ModificationError
 end
 
 class MachO::NotAMachOError
-  def initialize(error); end
 end
 
 class MachO::NotAMachOError
@@ -11754,6 +11759,8 @@ module MachO::Utils
 end
 
 module MachO
+  def self.codesign!(filename); end
+
   def self.open(filename); end
 end
 
