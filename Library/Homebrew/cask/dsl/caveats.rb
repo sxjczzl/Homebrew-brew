@@ -99,7 +99,7 @@ module Cask
       end
 
       caveat :files_in_usr_local do
-        next unless HOMEBREW_PREFIX.to_s.downcase.start_with?("/usr/local")
+        next unless HOMEBREW_PREFIX.to_s.downcase.start_with?(HOMEBREW_DEFAULT_PREFIX)
 
         <<~EOS
           Cask #{@cask} installs files under /usr/local. The presence of such

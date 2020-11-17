@@ -59,7 +59,7 @@ module Homebrew
       # Specify paths relative to a prefix, e.g. "include/foo.h".
       # Sets @found for your convenience.
       def find_relative_paths(*relative_paths)
-        @found = [HOMEBREW_PREFIX, "/usr/local"].uniq.reduce([]) do |found, prefix|
+        @found = [HOMEBREW_PREFIX, HOMEBREW_DEFAULT_PREFIX].uniq.reduce([]) do |found, prefix|
           found + relative_paths.map { |f| File.join(prefix, f) }.select { |f| File.exist? f }
         end
       end
