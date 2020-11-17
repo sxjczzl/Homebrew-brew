@@ -1512,46 +1512,46 @@ Otherwise, operate on `~/Library/LaunchAgents` (started at login).
 * `--all`:
   Run *`subcommand`* on all services.
 
-### `test-bot` [*`options`*] [*`formula`*]
+### `test-bot` [*`options`*] [*`formula`*]:
 
-Tests the full lifecycle of a Homebrew change to a tap (Git repository). For example, for a GitHub Actions pull request that changes a formula `brew test-bot` will ensure the system is cleaned and set up to test the formula, install the formula, run various tests and checks on it, bottle (package) the binaries and test formulae that depend on it to ensure they aren't broken by these changes.
+Tests the full lifecycle of a Homebrew change to a tap (Git repository). For example, for a GitHub Actions pull request that changes a formula `brew test-bot` will ensure the system is cleaned and setup to test the formula, install the formula, run various tests and checks on it, bottle (package) the binaries and test formulae that depend on it to ensure they aren't broken by these changes.
 
 Only supports GitHub Actions as a CI provider. This is because Homebrew uses GitHub Actions and it's freely available for public and private use with macOS and Linux workers.
 
 * `--dry-run`:
-  Print what would be done rather than doing it.
+  print what would be done rather than doing it.
 * `--cleanup`:
-  Clean all state from the Homebrew directory. Use with care!
+  clean all state from the Homebrew directory. Use with care!
 * `--skip-setup`:
-  Don't check if the local system is set up correctly.
+  don't check if the local system is set up correctly.
 * `--keep-old`:
-  Run `brew bottle --keep-old` to build new bottles for a single platform.
+  run `brew bottle --keep-old` to build new bottles for a single platform.
 * `--skip-relocation`:
-  Run `brew bottle --skip-relocation` to build new bottles that don't require relocation.
+  run `brew bottle --skip-relocation` to build new bottles that don't require relocation.
 * `--local`:
-  Ask Homebrew to write verbose logs under `./logs/` and set `$HOME` to `./home/`
+  ask Homebrew to write verbose logs under `./logs/` and set `$HOME` to `./home/`
 * `--tap`:
-  Use the Git repository of the given tap. Defaults to the core tap for syntax checking.
+  use the `git` repository of the given tap. Defaults to the core tap for syntax checking.
 * `--fail-fast`:
-  Immediately exit on a failing step.
+  immediately exit on a failing step.
 * `-v`, `--verbose`:
-  Print test step output in real time. Has the side effect of passing output as raw bytes instead of re-encoding in UTF-8.
+  print test step output in real time. Has the side effect of passing output as raw bytes instead of re-encoding in UTF-8.
 * `--test-default-formula`:
-  Use a default testing formula when not building a tap and no other formulae are specified.
+  use a default testing formula when not building a tap and no other formulae are specified.
 * `--bintray-org`:
-  Upload bottles to the given Bintray organisation.
+  upload to the given Bintray organisation.
 * `--root-url`:
-  Use the specified *`URL`* as the root of the bottle's URL instead of Homebrew's default.
+  use the specified *`URL`* as the root of the bottle's URL instead of Homebrew's default.
 * `--git-name`:
-  Set the Git author/committer names to the given name.
+  set the Git author/committer names to the given name.
 * `--git-email`:
-  Set the Git author/committer email to the given email.
+  set the Git author/committer email to the given email.
 * `--ci-upload`:
-  Use the Homebrew CI bottle upload options.
+  use the Homebrew CI bottle upload options.
 * `--publish`:
-  Publish the uploaded bottles.
+  publish the uploaded bottles.
 * `--skip-recursive-dependents`:
-  Only test the direct dependents.
+  only test the direct dependents.
 * `--only-cleanup-before`:
   Only run the pre-cleanup step. Needs `--cleanup`.
 * `--only-setup`:
