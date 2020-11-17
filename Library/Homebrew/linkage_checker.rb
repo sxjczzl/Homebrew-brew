@@ -78,12 +78,18 @@ class LinkageChecker
     end
 
     puts "Unexpected non-missing linkage detected" if unexpected_present_dylibs.present?
+
+    puts "Undeclared dependencies detected" if undeclared_dependencies?
   end
 
   sig { returns(T::Boolean) }
   def broken_library_linkage?
     issues = [@broken_deps, @unwanted_system_dylibs, @version_conflict_deps]
     [issues, unexpected_broken_dylibs, unexpected_present_dylibs].flatten.any?(&:present?)
+  end
+
+  def undeclared_dependencies?
+    !undeclared_deps.empty?
   end
 
   def unexpected_broken_dylibs

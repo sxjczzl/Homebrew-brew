@@ -47,7 +47,7 @@ module Homebrew
 
         if args.test?
           result.display_test_output
-          Homebrew.failed = true if result.broken_library_linkage?
+          Homebrew.failed = true if result.broken_library_linkage? || result.undeclared_dependencies?
         elsif args.reverse?
           result.display_reverse_output
         else
