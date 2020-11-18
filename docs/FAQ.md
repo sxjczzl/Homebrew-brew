@@ -123,6 +123,10 @@ not. So is it that important to `chown root wget`?
 If you need to run Homebrew in a multi-user environment, consider
 creating a separate user account especially for use of Homebrew.
 
+## How can I set the correct permissions for Homebrew?
+
+Run `sudo chown -R $(whoami):admin /usr/local/*`.
+
 ## Why isn’t a particular command documented?
 
 If it’s not in `man brew`, it’s probably an external command. These are documented [here](External-Commands.md).
