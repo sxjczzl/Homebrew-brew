@@ -18,7 +18,7 @@ natively. RBI files for all gems are auto-generated using
 file to help Sorbet understand dynamic definitions.
 For example: Sorbet assumes that `Kernel` is not necessarily included in our modules
 and classes, hence we use RBI files to explicitly include the Kernel Module. Here is an
-[example](https://github.com/Homebrew/brew/blob/72419630b4658da31556a0f6ef1dfa633cf4fe4f/Library/Homebrew/sorbet/rbi/homebrew.rbi#L3-L5)
+[example](https://github.com/Homebrew/brew/blob/72419630b4658da31556a0f6ef1dfa633cf4fe4f/Library/Homebrew/sorbet/rbi/homebrew.rbi#L1-L5)
 in our codebase.
 
 - The `config` file. It is actually a newline-separated list of arguments to pass to
