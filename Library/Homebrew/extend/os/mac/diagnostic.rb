@@ -424,7 +424,7 @@ module Homebrew
         locator = MacOS.sdk_locator
 
         source = if locator.source == :clt
-          "CLT"
+          "Command Line Tools (CLT) install"
         else
           "Xcode"
         end
