@@ -1335,7 +1335,7 @@ If no options are passed, use `origin/master` as the start commit.
 * `--before`:
   Use the commit at the specified *`date`* as the start commit.
 
-### `vendor-gems`
+### `vendor-gems` [*`options`*]
 
 Install and commit Homebrew's vendored gems.
 
