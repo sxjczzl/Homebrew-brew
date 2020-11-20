@@ -43,6 +43,7 @@ class LockFile
     return unless @lockfile.nil? || @lockfile.closed?
 
     @lockfile = @path.open(File::RDWR | File::CREAT)
+    @lockfile.chmod(0664) if Homebrew::EnvConfig.multi_user?
     @lockfile.fcntl(Fcntl::F_SETFD, Fcntl::FD_CLOEXEC)
   end
 end
