@@ -1,7 +1,7 @@
 name: Triage
 
 on:
-  pull_request_target:
+  pull_request:
     types:
       - opened
       - synchronize
@@ -17,11 +17,6 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.repository, 'Homebrew/')
     steps:
-      - name: Pull Request Info
-        run: |
-           cat <<"EOF"
-             ${{ toJSON(github) }}
-           EOF
       - name: Re-run this workflow
         if: github.event_name == 'schedule' || github.event.action == 'closed'
         uses: reitermarkus/rerun-workflow@cf91bee6964dfde64eccbf5600c3ea206af11359
@@ -40,118 +35,139 @@ jobs:
           script: |
             core.info(JSON.stringify(context, null, 2))
 
-            const { data: pullRequest } = await github.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.issue.number,
-            })
-
-            core.info(JSON.stringify(pullRequest, null, 2))
-
-            if (pullRequest.author_association != 'MEMBER') {
-              core.warning('Pull request author is not a member.')
-              return
+            async function approvePullRequest(pullRequestNumber, message) {
+              await github.pulls.createReview({
+                ...context.repo,
+                pull_number: pullRequestNumber,
+                event: 'APPROVE',
+                body: message,
+              })
             }
 
-            const reviewLabel = 'waiting for feedback'
-            const criticalLabel = 'critical'
+            async function createOrUpdateComment(pullRequestNumber, id, message) {
+              const { data: comments } = await github.issues.listComments({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: pullRequestNumber,
+              })
 
-            const labels = pullRequest.labels.map(label => label.name)
-            const hasReviewLabel = labels.includes(reviewLabel)
-            const hasCriticalLabel = labels.includes(criticalLabel)
+              core.info(JSON.stringify(comments, null, 2))
 
-            if (hasCriticalLabel) {
-              if (hasReviewLabel) {
-                await github.issues.removeLabel({
+              const regex = new RegExp(`<!--\\s*#${id}\\s*-->`)
+              const beginComment = comments.filter(comment => comment.body.match(regex))[0]
+
+              const body = `<!-- #${id} -->\n\n${message}`
+              if (beginComment) {
+                await github.issues.updateComment({
                   ...context.repo,
-                  issue_number: context.issue.number,
-                  name: reviewLabel,
-                })
-
-                const message = `Review period cancelled due to \`${criticalLabel}\` label.`
-                core.info(message)
-
-                await github.pulls.createReview({
-                  ...context.repo,
-                  pull_number: context.issue.number,
-                  event: 'APPROVE',
-                  body: message,
+                  issue_number: pullRequestNumber,
+                  comment_id: beginComment.id,
+                  body,
                 })
               } else {
-                const message = `Review period skipped due to \`${criticalLabel}\` label.`
-                core.info(message)
-
-                await github.pulls.createReview({
+                await github.issues.createComment({
                   ...context.repo,
-                  pull_number: context.issue.number,
-                  event: 'APPROVE',
-                  body: message,
+                  issue_number: pullRequestNumber,
+                  body,
                 })
               }
 
-              return
+              core.info(`Begin Comment:\n${beginComment.body}`)
             }
 
-            const reviewStartDate = new Date(pullRequest.created_at)
-            const reviewEndDate = new Date(reviewStartDate)
-            switch (reviewStartDate.getDay()) {
-              // Skip from Friday to Monday and from Saturday to Tuesday.
-              case 5:
-              case 6:
-                reviewEndDate.setDate(reviewStartDate.getDate() + 3)
-                break
-              // Skip from Sunday to Tuesday.
-              case 0:
-                reviewEndDate.setDate(reviewStartDate.getDate() + 2)
-                break
-              default:
-                reviewEndDate.setDate(reviewStartDate.getDate() + 1)
-                break
-            }
+            async function reviewPullRequest(pullRequestNumber) {
+              const { data: pullRequest } = await github.pulls.get({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: pullRequestNumber,
+              })
 
-            const currentDate = new Date()
-            const reviewEnded = currentDate > reviewEndDate
+              core.info(JSON.stringify(pullRequest, null, 2))
 
-            function formatDate(date) {
-              return date.toISOString().replace(/\.\d+Z$/, ' UTC').replace('T', ' at ')
-            }
-
-            if (reviewEnded) {
-              const message = 'Review period ended.'
-              core.warning(message)
-
-              if (hasReviewLabel) {
-                await github.issues.removeLabel({
-                  ...context.repo,
-                  issue_number: context.issue.number,
-                  name: reviewLabel,
-                })
-
-                await github.pulls.createReview({
-                  ...context.repo,
-                  pull_number: context.issue.number,
-                  event: 'APPROVE',
-                  body: message,
-                })
+              if (pullRequest.author_association != 'MEMBER') {
+                core.warning('Pull request author is not a member.')
+                return
               }
-            } else {
-              const message = `Review period will end on ${formatDate(reviewEndDate)}.`
-              core.warning(message)
 
-              if (!hasReviewLabel) {
-                await github.pulls.createReview({
-                  ...context.repo,
-                  pull_number: context.issue.number,
-                  event: 'COMMENT',
-                  body: message,
-                })
+              const reviewLabel = 'waiting for feedback'
+              const criticalLabel = 'critical'
 
+              const labels = pullRequest.labels.map(label => label.name)
+              const hasReviewLabel = labels.includes(reviewLabel)
+              const hasCriticalLabel = labels.includes(criticalLabel)
+
+              if (hasCriticalLabel) {
+                if (hasReviewLabel) {
+                  await github.issues.removeLabel({
+                    ...context.repo,
+                    issue_number: pullRequestNumber,
+                    name: reviewLabel,
+                  })
+
+                  const message = `Review period cancelled due to \`${criticalLabel}\` label.`
+                  core.info(message)
+
+                  await approvePullRequest(pullRequestNumber, message)
+                } else {
+                  const message = `Review period skipped due to \`${criticalLabel}\` label.`
+                  core.info(message)
+
+                  await approvePullRequest(pullRequestNumber, message)
+                }
+
+                return
+              }
+
+              const reviewStartDate = new Date(pullRequest.created_at)
+              const reviewEndDate = new Date(reviewStartDate)
+              switch (reviewStartDate.getDay()) {
+                // Skip from Friday to Monday and from Saturday to Tuesday.
+                case 5:
+                case 6:
+                  reviewEndDate.setDate(reviewStartDate.getDate() + 3)
+                  break
+                // Skip from Sunday to Tuesday.
+                case 0:
+                  reviewEndDate.setDate(reviewStartDate.getDate() + 2)
+                  break
+                default:
+                  reviewEndDate.setDate(reviewStartDate.getDate() + 1)
+                  break
+              }
+
+              const currentDate = new Date()
+              const reviewEnded = currentDate > reviewEndDate
+
+              function formatDate(date) {
+                return date.toISOString().replace(/\.\d+Z$/, ' UTC').replace('T', ' at ')
+              }
+
+              if (reviewEnded) {
+                const message = 'Review period ended.'
+                core.warning(message)
+
+                if (hasReviewLabel) {
+                  await github.issues.removeLabel({
+                    ...context.repo,
+                    issue_number: pullRequestNumber,
+                    name: reviewLabel,
+                  })
+
+                  await approvePullRequest(pullRequestNumber, message)
+                }
+              } else {
+                const message = `Review period will end on ${formatDate(reviewEndDate)}.`
+                core.warning(message)
+
+                await createOrUpdateComment(pullRequestNumber, 'review-period-begin', message)
                 await github.issues.addLabels({
                   ...context.repo,
-                  issue_number: context.issue.number,
+                  issue_number: pullRequestNumber,
                   labels: [reviewLabel],
                 })
-              }
 
-              core.setFailed('Review period has not ended yet.')
+                core.setFailed('Review period has not ended yet.')
+              }
             }
+
+            await reviewPullRequest(context.issue.number)
