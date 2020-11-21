@@ -999,6 +999,10 @@ Build bottles for these formulae with GitHub Actions.
   Version of macOS the bottle should be built for.
 * `--workflow`:
   Dispatch specified workflow (default: `dispatch-build-bottle.yml`).
+* `--linux`:
+  Build a Linux bottle.
+* `--linux-self-hosted`:
+  Build a Linux bottle on a self hosted runner.
 * `--upload`:
   Upload built bottles to Bintray.
 
