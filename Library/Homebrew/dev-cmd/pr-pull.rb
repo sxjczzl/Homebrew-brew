@@ -366,9 +366,9 @@ module Homebrew
     odeprecated "`brew pr-pull --workflow`", "`brew pr-pull --workflows=`" if args.workflow.presence
 
     workflows = if args.workflow.blank?
-      args.workflows.presence || ["tests.yml"]
-    else
       [args.workflow].compact.presence || ["tests.yml"]
+    else
+      args.workflows.presence || ["tests.yml"]
     end
     artifact = args.artifact || "bottles"
     bintray_org = args.bintray_org || "homebrew"
