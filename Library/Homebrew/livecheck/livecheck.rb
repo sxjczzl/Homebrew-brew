@@ -16,15 +16,6 @@ module Homebrew
     GITHUB_SPECIAL_CASES = %w[
       api.github.com
       /latest
-      mednafen
-      camlp5
-      kotlin
-      osrm-backend
-      prometheus
-      pyenv-virtualenv
-      sysdig
-      shairport-sync
-      yuicompressor
     ].freeze
 
     UNSTABLE_VERSION_KEYWORDS = %w[
