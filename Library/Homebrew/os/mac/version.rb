@@ -11,7 +11,7 @@ module OS
     # @api private
     class Version < ::Version
       SYMBOLS = {
-        big_sur:     "11.0",
+        big_sur:     "11",
         catalina:    "10.15",
         mojave:      "10.14",
         high_sierra: "10.13",

@@ -25,7 +25,14 @@ module OS
     # This can be compared to numerics, strings, or symbols
     # using the standard Ruby Comparable methods.
     def version
-      @version ||= Version.new(full_version.to_s[/^\d+\.\d+/])
+      vers = full_version.to_s.split(".")
+      @version ||= if vers[0] == "10"
+        # For 10.y.z the major version is 10.y
+        Version.new(full_version.to_s[/^\d+\.\d+/])
+      else
+        # For x.y.z with x >= 11, the major version is x
+        Version.new(vers[0])
+      end
     end
 
     # This can be compared to numerics, strings, or symbols
@@ -41,7 +48,7 @@ module OS
 
     def latest_sdk_version
       # TODO: bump version when new Xcode macOS SDK is released
-      Version.new "11.0"
+      Version.new "11"
     end
 
     def outdated_release?
