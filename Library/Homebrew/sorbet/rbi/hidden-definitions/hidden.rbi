@@ -5494,103 +5494,6 @@ module Cask::Cache
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class Cask::Cask
-  def app(&block); end
-
-  def appcast(&block); end
-
-  def appdir(&block); end
-
-  def artifact(&block); end
-
-  def artifacts(&block); end
-
-  def audio_unit_plugin(&block); end
-
-  def auto_updates(&block); end
-
-  def binary(&block); end
-
-  def caveats(&block); end
-
-  def colorpicker(&block); end
-
-  def conflicts_with(&block); end
-
-  def container(&block); end
-
-  def depends_on(&block); end
-
-  def desc(&block); end
-
-  def dictionary(&block); end
-
-  def discontinued?(&block); end
-
-  def font(&block); end
-
-  def homepage(&block); end
-
-  def input_method(&block); end
-
-  def installer(&block); end
-
-  def internet_plugin(&block); end
-
-  def language(&block); end
-
-  def languages(&block); end
-
-  def manpage(&block); end
-
-  def mdimporter(&block); end
-
-  def name(&block); end
-
-  def pkg(&block); end
-
-  def postflight(&block); end
-
-  def preflight(&block); end
-
-  def prefpane(&block); end
-
-  def qlplugin(&block); end
-
-  def screen_saver(&block); end
-
-  def service(&block); end
-
-  def sha256(&block); end
-
-  def stage_only(&block); end
-
-  def staged_path(&block); end
-
-  def suite(&block); end
-
-  def uninstall(&block); end
-
-  def uninstall_postflight(&block); end
-
-  def uninstall_preflight(&block); end
-
-  def url(&block); end
-
-  def version(&block); end
-
-  def vst3_plugin(&block); end
-
-  def vst_plugin(&block); end
-
-  def zap(&block); end
-end
-
-class Cask::Cask
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 class Cask::CaskLoader::FromURILoader
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -5612,15 +5515,6 @@ class Cask::CaskUnspecifiedError
 end
 
 module Cask::Caskroom
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-class Cask::Cmd::AbstractCommand
-  include ::Homebrew::Search::Extension
-end
-
-class Cask::Cmd::AbstractCommand
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
 end
@@ -5681,62 +5575,6 @@ class Cask::Config
   def vst_plugindir(); end
 
   def vst_plugindir=(path); end
-end
-
-class Cask::DSL
-  def app(*args); end
-
-  def artifact(*args); end
-
-  def audio_unit_plugin(*args); end
-
-  def binary(*args); end
-
-  def colorpicker(*args); end
-
-  def dictionary(*args); end
-
-  def font(*args); end
-
-  def input_method(*args); end
-
-  def installer(*args); end
-
-  def internet_plugin(*args); end
-
-  def manpage(*args); end
-
-  def mdimporter(*args); end
-
-  def pkg(*args); end
-
-  def postflight(&block); end
-
-  def preflight(&block); end
-
-  def prefpane(*args); end
-
-  def qlplugin(*args); end
-
-  def screen_saver(*args); end
-
-  def service(*args); end
-
-  def stage_only(*args); end
-
-  def suite(*args); end
-
-  def uninstall(*args); end
-
-  def uninstall_postflight(&block); end
-
-  def uninstall_preflight(&block); end
-
-  def vst3_plugin(*args); end
-
-  def vst_plugin(*args); end
-
-  def zap(*args); end
 end
 
 class Cask::DSL::Base
@@ -5817,11 +5655,6 @@ module Cask::Denylist
 end
 
 class Cask::MultipleCaskErrors
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-class Cask::Pkg
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
 end
@@ -6769,10 +6602,6 @@ end
 class Dependencies
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module DependenciesHelpers
-  include ::DependenciesHelpers::Compat
 end
 
 class Dependency
@@ -8150,11 +7979,6 @@ class Homebrew::CLI::Args
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class Homebrew::CLI::NamedArgs
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 class Homebrew::CLI::Parser
   include ::Homebrew::CLI::Parser::Compat
 end
@@ -8297,14 +8121,6 @@ class Homebrew::FormulaCreator
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-module Homebrew::MissingFormula
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module Homebrew::Search
-  include ::Homebrew::Search::Extension
-end
-
 class Homebrew::Style::LineLocation
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -8316,11 +8132,9 @@ class Homebrew::TapAuditor
 end
 
 module Homebrew
-  extend ::FileUtils::StreamUtils_
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
   extend ::Homebrew::Compat
-  def self.default_prefix?(prefix=T.unsafe(nil)); end
 end
 
 module HostEnvironmentSimulatorHelper
@@ -10509,10 +10323,6 @@ module Kernel
   def self.load(*_); end
 
   def self.require(path); end
-end
-
-module Language::Haskell::Cabal
-  include ::Language::Haskell::Cabal::Compat
 end
 
 module Language::Node
@@ -13428,7 +13238,6 @@ end
 
 class NilClass
   include ::JSON::Ext::Generator::GeneratorMethods::NilClass
-  include ::NilClass::Compat
   def to_d(); end
 
   def try(method_name=T.unsafe(nil), *args); end
@@ -13525,11 +13334,6 @@ module OS::Mac::CLT
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class OS::Mac::CLTSDKLocator
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 module OS::Mac::XQuartz
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -13540,22 +13344,12 @@ module OS::Mac::Xcode
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-class OS::Mac::XcodeSDKLocator
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-module OS::Mac
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 class Object
   include ::ActiveSupport::Dependencies::Loadable
   include ::ActiveSupport::Tryable
   include ::Minitest::Expectations
-  include ::SystemCommand::Mixin
   include ::Utils::Curl
+  include ::SystemCommand::Mixin
   include ::ActiveSupport::ToJsonWithActiveSupportEncoder
   def acts_like?(duck); end
 
@@ -13603,23 +13397,16 @@ class Object
   HOMEBREW_DATA_PATH = ::T.let(nil, ::T.untyped)
   HOMEBREW_DEFAULT_CACHE = ::T.let(nil, ::T.untyped)
   HOMEBREW_DEFAULT_LOGS = ::T.let(nil, ::T.untyped)
-  HOMEBREW_DEFAULT_PREFIX = ::T.let(nil, ::T.untyped)
   HOMEBREW_DEFAULT_TEMP = ::T.let(nil, ::T.untyped)
   HOMEBREW_LIBRARY = ::T.let(nil, ::T.untyped)
   HOMEBREW_LIBRARY_PATH = ::T.let(nil, ::T.untyped)
   HOMEBREW_LINKED_KEGS = ::T.let(nil, ::T.untyped)
-  HOMEBREW_LINUX_DEFAULT_PREFIX = ::T.let(nil, ::T.untyped)
   HOMEBREW_LOCKS = ::T.let(nil, ::T.untyped)
   HOMEBREW_LOGS = ::T.let(nil, ::T.untyped)
-  HOMEBREW_MACOS_ARM_DEFAULT_PREFIX = ::T.let(nil, ::T.untyped)
   HOMEBREW_OFFICIAL_REPO_PREFIXES_REGEX = ::T.let(nil, ::T.untyped)
   HOMEBREW_PATCHELF_RB_WRITE = ::T.let(nil, ::T.untyped)
   HOMEBREW_PINNED_KEGS = ::T.let(nil, ::T.untyped)
   HOMEBREW_PREFIX = ::T.let(nil, ::T.untyped)
-  HOMEBREW_PRODUCT = ::T.let(nil, ::T.untyped)
-  HOMEBREW_PULL_API_REGEX = ::T.let(nil, ::T.untyped)
-  HOMEBREW_PULL_OR_COMMIT_URL_REGEX = ::T.let(nil, ::T.untyped)
-  HOMEBREW_RELEASES_URL_REGEX = ::T.let(nil, ::T.untyped)
   HOMEBREW_REPOSITORY = ::T.let(nil, ::T.untyped)
   HOMEBREW_REQUIRED_RUBY_VERSION = ::T.let(nil, ::T.untyped)
   HOMEBREW_SHIMS_PATH = ::T.let(nil, ::T.untyped)
@@ -13628,21 +13415,14 @@ class Object
   HOMEBREW_TAP_FORMULA_REGEX = ::T.let(nil, ::T.untyped)
   HOMEBREW_TAP_PATH_REGEX = ::T.let(nil, ::T.untyped)
   HOMEBREW_TEMP = ::T.let(nil, ::T.untyped)
-  HOMEBREW_USER_AGENT_CURL = ::T.let(nil, ::T.untyped)
-  HOMEBREW_USER_AGENT_FAKE_SAFARI = ::T.let(nil, ::T.untyped)
-  HOMEBREW_USER_AGENT_RUBY = ::T.let(nil, ::T.untyped)
-  HOMEBREW_VERSION = ::T.let(nil, ::T.untyped)
-  HOMEBREW_WWW = ::T.let(nil, ::T.untyped)
   OFFICIAL_CASK_TAPS = ::T.let(nil, ::T.untyped)
   OFFICIAL_CMD_TAPS = ::T.let(nil, ::T.untyped)
   OPTION_DESC_WIDTH = ::T.let(nil, ::T.untyped)
-  ORIGINAL_PATHS = ::T.let(nil, ::T.untyped)
   OS_VERSION = ::T.let(nil, ::T.untyped)
   PATCH_A_SHA256 = ::T.let(nil, ::T.untyped)
   PATCH_B_SHA256 = ::T.let(nil, ::T.untyped)
   REQUIRED_RUBY_X = ::T.let(nil, ::T.untyped)
   REQUIRED_RUBY_Y = ::T.let(nil, ::T.untyped)
-  RUBY_BIN = ::T.let(nil, ::T.untyped)
   RUBY_COPYRIGHT = ::T.let(nil, ::T.untyped)
   RUBY_DESCRIPTION = ::T.let(nil, ::T.untyped)
   RUBY_ENGINE = ::T.let(nil, ::T.untyped)
@@ -13650,7 +13430,6 @@ class Object
   RUBY_FRAMEWORK = ::T.let(nil, ::T.untyped)
   RUBY_FRAMEWORK_VERSION = ::T.let(nil, ::T.untyped)
   RUBY_PATCHLEVEL = ::T.let(nil, ::T.untyped)
-  RUBY_PATH = ::T.let(nil, ::T.untyped)
   RUBY_PLATFORM = ::T.let(nil, ::T.untyped)
   RUBY_RELEASE_DATE = ::T.let(nil, ::T.untyped)
   RUBY_REVISION = ::T.let(nil, ::T.untyped)
@@ -13675,10 +13454,6 @@ class Object
   def self.yaml_tag(url); end
 end
 
-module ObserverPathnameExtension
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 class OpenSSL::ASN1::ASN1Data
   def indefinite_length(); end
 
@@ -13693,10 +13468,6 @@ class OpenSSL::BN
   def /(_); end
 
   def negative?(); end
-end
-
-module OpenSSL::Buffering
-  include ::ActiveSupport::ToJsonWithActiveSupportEncoder
 end
 
 module OpenSSL::KDF
@@ -13853,10 +13624,6 @@ end
 class Options
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
-end
-
-class PATH
-  def each(*args, &block); end
 end
 
 class PATH
@@ -15331,8 +15098,8 @@ class Parser::Ruby26
 end
 
 class Pathname
-  include ::MachOShim
   include ::ELFShim
+  include ::MachOShim
   def fnmatch?(*_); end
 
   def glob(*_); end
@@ -18662,6 +18429,16 @@ module Psych
   def self.load_tags=(load_tags); end
 
   def self.remove_type(type_tag); end
+end
+
+class PyPI::Package
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
+end
+
+module PyPI
+  extend ::T::Private::Methods::MethodHooks
+  extend ::T::Private::Methods::SingletonMethodHooks
 end
 
 class RDiscount
@@ -26446,10 +26223,6 @@ module RuboCop::AST::NodePattern::Sets
   SET___METHOD_____CALLEE__ = ::T.let(nil, ::T.untyped)
 end
 
-class RuboCop::Cask::AST::CaskBlock
-  def cask_body(*args, &block); end
-end
-
 class RuboCop::Cask::AST::CaskHeader
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -26500,8 +26273,6 @@ class RuboCop::Cask::AST::Stanza
 
   def name?(); end
 
-  def parent_node(*args, &block); end
-
   def pkg?(); end
 
   def postflight?(); end
@@ -26518,13 +26289,7 @@ class RuboCop::Cask::AST::Stanza
 
   def sha256?(); end
 
-  def source(*args, &block); end
-
-  def source_with_comments(*args, &block); end
-
   def stage_only?(); end
-
-  def stanza_name(*args, &block); end
 
   def suite?(); end
 
@@ -26554,8 +26319,6 @@ class RuboCop::Cop::Cask::HomepageMatchesUrl
 end
 
 class RuboCop::Cop::Cask::NoDslVersion
-  def header_range(*args, &block); end
-
   def header_str(*args, &block); end
 
   def preferred_header_str(*args, &block); end
@@ -27734,14 +27497,6 @@ class Set
 end
 
 module SharedEnvExtension
-  def clang(); end
-
-  def gcc(); end
-
-  def llvm_clang(); end
-end
-
-module SharedEnvExtension
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
 end
@@ -28559,7 +28314,6 @@ class Socket
   IPV6_PATHMTU = ::T.let(nil, ::T.untyped)
   IPV6_RECVPATHMTU = ::T.let(nil, ::T.untyped)
   IPV6_USE_MIN_MTU = ::T.let(nil, ::T.untyped)
-  IP_DONTFRAG = ::T.let(nil, ::T.untyped)
   IP_PORTRANGE = ::T.let(nil, ::T.untyped)
   IP_RECVDSTADDR = ::T.let(nil, ::T.untyped)
   IP_RECVIF = ::T.let(nil, ::T.untyped)
@@ -28651,7 +28405,6 @@ module Socket::Constants
   IPV6_PATHMTU = ::T.let(nil, ::T.untyped)
   IPV6_RECVPATHMTU = ::T.let(nil, ::T.untyped)
   IPV6_USE_MIN_MTU = ::T.let(nil, ::T.untyped)
-  IP_DONTFRAG = ::T.let(nil, ::T.untyped)
   IP_PORTRANGE = ::T.let(nil, ::T.untyped)
   IP_RECVDSTADDR = ::T.let(nil, ::T.untyped)
   IP_RECVIF = ::T.let(nil, ::T.untyped)
@@ -28878,25 +28631,7 @@ class Spoom::Timeline
   extend ::T::Private::Methods::SingletonMethodHooks
 end
 
-module Stdenv
-  def O0(); end
-
-  def O1(); end
-
-  def O2(); end
-
-  def O3(); end
-
-  def Os(); end
-end
-
-module Stdenv
-  extend ::T::Private::Methods::MethodHooks
-  extend ::T::Private::Methods::SingletonMethodHooks
-end
-
 class String
-  include ::String::Compat
   def acts_like_string?(); end
 
   def at(position); end
@@ -29183,18 +28918,6 @@ end
 Struct::Passwd = Etc::Passwd
 
 Struct::Tms = Process::Tms
-
-module Superenv
-  def O0(); end
-
-  def O1(); end
-
-  def O2(); end
-
-  def O3(); end
-
-  def Os(); end
-end
 
 module Superenv
   extend ::T::Private::Methods::MethodHooks
