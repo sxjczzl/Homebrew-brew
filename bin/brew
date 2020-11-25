@@ -58,6 +58,16 @@ then
   fi
 fi
 
+# If we're in /usr/local, which is the prefix we've set aside for Intel under Rosetta 2,
+# and this is an arm64 machine not running under Rosetta, then re-exec this same file
+# within Rosetta with all arguments passed to it.
+if [[ "$(uname -s)" = "Darwin" ]] && \
+   [[ "$HOMEBREW_PREFIX" = "/usr/local" ]] && \
+   [[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]] && \
+   [[ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = "0" ]]; then
+  exec arch -x86_64 "$HOMEBREW_BREW_FILE" "$@"
+fi
+
 HOMEBREW_LIBRARY="$HOMEBREW_REPOSITORY/Library"
 
 # Copy and export all HOMEBREW_* variables previously mentioned in
