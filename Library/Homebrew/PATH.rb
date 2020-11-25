@@ -10,8 +10,6 @@ class PATH
   include Enumerable
   extend Forwardable
 
-  def_delegator :@paths, :each
-
   # FIXME: Enable cop again when https://github.com/sorbet/sorbet/issues/3532 is fixed.
   # rubocop:disable Style/MutableConstant
   Element = T.type_alias { T.nilable(T.any(Pathname, String, PATH)) }
@@ -41,6 +39,11 @@ class PATH
   def insert(index, *paths)
     @paths = parse(@paths.insert(index, *paths))
     self
+  end
+
+  sig { override.params(block: T.nilable(T.proc.params(path: String).void)).returns(T.untyped) }
+  def each(&block)
+    @paths.each(&block)
   end
 
   sig { params(block: T.proc.params(arg0: String).returns(T::Boolean)).returns(T.self_type) }
