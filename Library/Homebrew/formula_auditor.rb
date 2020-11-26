@@ -401,6 +401,7 @@ module Homebrew
     end
 
     CERT_ERROR_ALLOWLIST = {
+      "dashing"     => "https://ruby-doc.com/",
       "hashcat"     => "https://hashcat.net/hashcat/",
       "jinx"        => "https://www.jinx-lang.org/",
       "lmod"        => "https://www.tacc.utexas.edu/research-development/tacc-projects/lmod",
