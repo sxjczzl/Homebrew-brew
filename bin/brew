@@ -7,14 +7,18 @@ if ! [[ -d "$PWD" ]]; then
   exit 1
 fi
 
+# Enforce use of MacOS versions of some tools.
+DIRNAME="/usr/bin/dirname"
+READLINK="/usr/bin/readlink"
+
 quiet_cd() {
   cd "$@" >/dev/null || return
 }
 
 symlink_target_directory() {
   local target target_dirname
-  target="$(readlink "$1")"
-  target_dirname="$(dirname "$target")"
+  target="$("$READLINK" "$1")"
+  target_dirname="$("$DIRNAME" "$target")"
   local directory="$2"
   quiet_cd "$directory" && quiet_cd "$target_dirname" && pwd -P
 }
