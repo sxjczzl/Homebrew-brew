@@ -3,6 +3,21 @@
 #:  List all locally installable formulae including short names.
 #:
 
+smart-sed() {
+  if [[ -n $(/usr/bin/sed -E 's:1::' <<< 1 2>&1) ]]
+  then
+    for arg in "$@"
+    do
+      if [[ "$arg" =~ ^-.*E ]]
+      then
+        shift
+        set -- "${arg//E/r}" "$@"
+      fi
+    done
+  fi
+  /usr/bin/sed "$@"
+}
+
 homebrew-formulae() {
   local formulae
   formulae="$( \
@@ -16,7 +31,8 @@ homebrew-formulae() {
            -name vendor \
           \) \
          -prune -false -o -name '*\.rb' | \
-    sed -r -e 's/\.rb//g' \
+    smart-sed \
+        -E -e 's/\.rb//g' \
            -e 's_.*/Taps/(.*)/(home|linux)brew-_\1/_' \
            -e 's|/Formula/|/|' \
   )"
