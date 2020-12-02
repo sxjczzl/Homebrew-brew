@@ -31,20 +31,19 @@ You can use `brew update-python-resources` to help you write resource stanzas. T
 If using `brew update-python-resources` doesn't work, you can use [homebrew-pypi-poet](https://pypi.python.org/pypi/homebrew-pypi-poet) to help you write resource stanzas. To use it, set up a virtualenv and install your package and all its dependencies. Then, `pip install homebrew-pypi-poet` into the same virtualenv. Running `poet some_package` will generate the necessary resource stanzas. You can do this like:
 
 ```sh
-# Install virtualenvwrapper
-brew install python
-python3 -m pip install virtualenvwrapper
-source $(brew --prefix)/bin/virtualenvwrapper.sh
+# Dependency manager that supports virtual environments
+brew reinstall pipenv
 
-# Set up a temporary virtual environment
-mktmpenv
+# Use a temporary directory for the virtual environment
+cd "$(mktemp -d)"
 
 # Install the package of interest as well as homebrew-pypi-poet
-pip3 install some_package homebrew-pypi-poet
-poet some_package
+# This will also set up a temporary virtual environment
+pipenv install some_package homebrew-pypi-poet
+pipenv run poet some_package
 
 # Destroy the temporary virtualenv you just created
-deactivate
+pipenv --rm
 ```
 
 Homebrew provides helper methods for instantiating and populating virtualenvs. You can use them by putting `include Language::Python::Virtualenv` at the top of the `Formula` class definition.
