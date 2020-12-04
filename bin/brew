@@ -40,6 +40,16 @@ fi
 
 HOMEBREW_REPOSITORY="$HOMEBREW_PREFIX"
 
+# If we're running under macOS Rosetta 2, and it was requested by setting
+# HOMEBREW_CHANGE_ARCH_TO_ARM (for example in CI), then we re-exec this
+# same file under the native architecture
+if [[ "$HOMEBREW_CHANGE_ARCH_TO_ARM" = "1" ]] && \
+   [[ "$(uname -s)" = "Darwin" ]] && \
+   [[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]] && \
+   [[ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = "1" ]]; then
+  exec arch -arm64e "$HOMEBREW_BREW_FILE" "$@"
+fi
+
 # Resolve the bin/brew symlink to find Homebrew's repository
 if [[ -L "$HOMEBREW_BREW_FILE" ]]
 then
