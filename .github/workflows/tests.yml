@@ -7,6 +7,7 @@ on:
 env:
   HOMEBREW_DEVELOPER: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
+  HOMEBREW_CHANGE_ARCH_TO_ARM: 1
 jobs:
   syntax:
     if: github.repository == 'Homebrew/brew'
@@ -195,6 +196,9 @@ jobs:
             test-flags: --online --coverage
           - name: tests (macOS)
             os: macos-11.0
+            test-flags: --online --coverage
+          - name: tests (macOS ARM)
+            os: macos-11-arm
             test-flags: --online --coverage
     steps:
       - name: Set up Homebrew
