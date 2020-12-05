@@ -36,6 +36,7 @@ module SharedAudits
     "extraterm"        => :all,
     "freetube"         => :all,
     "gitless"          => "0.8.8",
+    "gron"             => :all,
     "haptickey"        => :all,
     "home-assistant"   => :all,
     "lidarr"           => :all,
