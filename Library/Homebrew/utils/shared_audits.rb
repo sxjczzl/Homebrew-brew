@@ -66,6 +66,11 @@ module SharedAudits
       return "#{tag} is a GitHub pre-release."
     end
 
+    if !release["prerelease"] && ((formula && GITHUB_PRERELEASE_ALLOWLIST.key?(formula.name)) ||
+        (cask && GITHUB_PRERELEASE_ALLOWLIST[cask.token]))
+      return "#{tag} is not a GitHub pre-release but is expected to be."
+    end
+
     return "#{tag} is a GitHub draft." if release["draft"]
   end
 
