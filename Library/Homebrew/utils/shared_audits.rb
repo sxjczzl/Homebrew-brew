@@ -59,7 +59,8 @@ module SharedAudits
     end
 
     if release["prerelease"]
-      return if formula && GITHUB_PRERELEASE_ALLOWLIST[formula.name] == formula.version
+      return if formula && (GITHUB_PRERELEASE_ALLOWLIST[formula.name] == formula.version ||
+                            GITHUB_PRERELEASE_ALLOWLIST[formula.name] == :all)
 
       return "#{tag} is a GitHub pre-release."
     end
