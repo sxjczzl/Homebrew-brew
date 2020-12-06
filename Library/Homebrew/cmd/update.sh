@@ -396,7 +396,7 @@ EOS
   then
     odie <<EOS
 homebrew-core is a shallow clone. To \`brew update\` first run:
-  git -C "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" fetch --unshallow
+  git -C "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" fetch --unshallow && rm $HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core/.git/shallow
 EOS
   fi
 
@@ -406,7 +406,7 @@ EOS
   then
     odie <<EOS
 homebrew-cask is a shallow clone. To \`brew update\` first run:
-  git -C "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-cask" fetch --unshallow
+  git -C "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-cask" fetch --unshallow && rm $HOMEBREW_LIBRARY/Taps/homebrew/homebrew-cask/.git/shallow
 EOS
   fi
 
