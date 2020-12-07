@@ -246,6 +246,7 @@ module Cask
       return unless cask.sha256
 
       check_sha256_no_check_if_latest
+      check_sha256_no_check_if_unversioned
       check_sha256_actually_256
       check_sha256_invalid
     end
@@ -256,6 +257,13 @@ module Cask
       return if cask.sha256 == :no_check
 
       add_error "you should use sha256 :no_check when version is :latest"
+    end
+
+    def check_sha256_no_check_if_unversioned
+      return if cask.sha256 == :no_check
+
+      # TODO: Change to error once all official casks conform to this.
+      add_error "Use `sha256 :no_check` when URL is unversioned." if cask.url.unversioned?
     end
 
     def check_sha256_actually_256
