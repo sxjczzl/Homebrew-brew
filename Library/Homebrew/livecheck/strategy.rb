@@ -86,6 +86,7 @@ end
 
 require_relative "strategy/apache"
 require_relative "strategy/bitbucket"
+require_relative "strategy/crates"
 require_relative "strategy/git"
 require_relative "strategy/github_latest"
 require_relative "strategy/gnome"
