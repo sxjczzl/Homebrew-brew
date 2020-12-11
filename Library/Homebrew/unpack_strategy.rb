@@ -75,6 +75,7 @@ module UnpackStrategy
       Sit,
       Rar,
       Lha,
+      CargoCrate,
     ].freeze
   end
   private_class_method :strategies
@@ -173,6 +174,7 @@ require "unpack_strategy/air"
 require "unpack_strategy/bazaar"
 require "unpack_strategy/bzip2"
 require "unpack_strategy/cab"
+require "unpack_strategy/cargo_crate"
 require "unpack_strategy/compress"
 require "unpack_strategy/cvs"
 require "unpack_strategy/directory"
