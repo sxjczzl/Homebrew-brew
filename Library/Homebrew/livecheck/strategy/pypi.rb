@@ -28,12 +28,16 @@ module Homebrew
         /ix.freeze
 
         # The `Regexp` used to determine if the strategy applies to the URL.
+<<<<<<< HEAD
         URL_MATCH_REGEX = %r{
           ^https?://files\.pythonhosted\.org
           /packages
           (?:/[^/]+)+ # The hexadecimal paths before the filename
           /#{FILENAME_REGEX.source.strip} # The filename
         }ix.freeze
+=======
+        URL_MATCH_REGEX = %r{^https?://files\.pythonhosted\.org/packages(?:/[^/]+){4}i}.freeze
+>>>>>>> livecheck: strengthen URL patterns
 
         # Whether the strategy can be applied to the provided URL.
         #
