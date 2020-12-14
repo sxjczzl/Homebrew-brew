@@ -119,25 +119,58 @@ module Homebrew
 
       # Fetches the content at the URL and returns a hash containing the
       # content and, if there are any redirections, the final URL.
+      # If `curl` encounters an error, the hash will contain a `:messages`
+      # array with the error message instead.
       #
       # @param url [String] the URL of the content to check
+      # @param user_agent [Symbol, String] the symbol for a corresponding user
+      #   agent or a user agent string
       # @return [Hash]
-      sig { params(url: String).returns(T::Hash[Symbol, T.untyped]) }
-      def self.page_content(url)
+      sig { params(url: String, user_agent: T.any(Symbol, String)).returns(T::Hash[Symbol, T.untyped]) }
+      def self.page_content(url, user_agent: :default)
         original_url = url
 
-        # Manually handling `URI#open` redirections allows us to detect the
-        # resolved URL while also supporting HTTPS to HTTP redirections (which
-        # are normally forbidden by `OpenURI`).
-        begin
-          content = URI.parse(url).open(redirect: false, &:read)
-        rescue OpenURI::HTTPRedirect => e
-          url = e.uri.to_s
-          retry
+        args = curl_args(
+          "--compressed",            # Request compressed transfer encoding
+          "--include",               # Include HTTP response headers in output
+          "--location",              # Follow redirects
+          "--connect-timeout", "15", # Max time allowed for connection (secs)
+          "--max-time", "30"         # Max time allowed for transfer (secs)
+        )
+
+        stdout, stderr, status = curl_with_workarounds(
+          *args, url,
+          print_stdout: false, print_stderr: false,
+          debug: false, verbose: false,
+          user_agent: user_agent, retry: false
+        )
+
+        unless status.success?
+          /^(?<error_msg>curl: \(\d+\) .+)/ =~ stderr
+          return { messages: [error_msg] } if error_msg.present?
         end
 
-        data = { content: content }
-        data[:final_url] = url unless url == original_url
+        # stdout contains the header information followed by the page content.
+        # We use #scrub here to avoid "invalid byte sequence in UTF-8" errors.
+        output = stdout.scrub
+
+        # Separate the content from the headers
+        status_code = :unknown
+        while status_code == :unknown || status_code.to_s.start_with?("3")
+          headers, _, output = output.partition("\r\n\r\n")
+          status_code = headers[%r{HTTP/.* (\d+)}, 1]
+
+          location = headers[/^Location:\s*(.*)$/i, 1]
+          next unless location
+
+          location.chomp!
+          # Convert a relative redirect URL to an absolute URL
+          location = URI.join(url, location) unless location.match?(PageMatch::URL_MATCH_REGEX)
+          final_url = location
+        end
+
+        data = { content: output }
+        data[:final_url] = final_url if final_url.present? && final_url != original_url
         data
       end
     end
