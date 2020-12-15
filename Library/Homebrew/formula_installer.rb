@@ -360,7 +360,8 @@ class FormulaInstaller
 
     unless ignore_deps?
       deps = compute_dependencies
-      if ((pour_bottle? && !DevelopmentTools.installed?) || build_bottle?) &&
+      if !ENV["HOMEBREW_ALLOW_UNBOTTLED_DEPS"] &&
+         ((pour_bottle? && !DevelopmentTools.installed?) || build_bottle?) &&
          (unbottled = unbottled_dependencies(deps)).presence
         # Check that each dependency in deps has a bottle available, terminating
         # abnormally with a UnbottledError if one or more don't.
