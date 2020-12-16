@@ -232,14 +232,14 @@ describe Cask::Audit, :cask do
       let(:online) { false }
       let(:cask) do
         tmp_cask cask_token.to_s, <<~RUBY
-          cask '#{cask_token}' do
-            version '1.0'
-            sha256 '8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a'
-            url "https://brew.sh/"
-            name 'Audit'
-            desc 'Cask for testing tokens'
-            homepage 'https://brew.sh/'
-            app 'Audit.app'
+          cask "#{cask_token}" do
+            version "1.0"
+            sha256 "8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a"
+            url "https://brew.sh/v\#{version}.zip"
+            name "Audit"
+            desc "Cask for testing tokens"
+            homepage "https://brew.sh/"
+            app "Audit.app"
           end
         RUBY
       end
@@ -756,13 +756,19 @@ describe Cask::Audit, :cask do
       context "with relative target" do
         let(:cask_token) { "generic-artifact-relative-target" }
 
-        it { is_expected.to fail_with(/target must be absolute path for Generic Artifact/) }
+        it { is_expected.to fail_with(/target must be.*absolute/) }
+      end
+
+      context "with user-relative target" do
+        let(:cask_token) { "generic-artifact-user-relative-target" }
+
+        it { is_expected.not_to fail_with(/target must be.*absolute/) }
       end
 
       context "with absolute target" do
         let(:cask_token) { "generic-artifact-absolute-target" }
 
-        it { is_expected.not_to fail_with(/target required for Generic Artifact/) }
+        it { is_expected.not_to fail_with(/target must be.*absolute/) }
       end
     end
 
@@ -808,7 +814,6 @@ describe Cask::Audit, :cask do
       let(:cask_token) { "with-binary" }
       let(:cask) { Cask::CaskLoader.load(cask_token) }
       let(:download_double) { instance_double(Cask::Download) }
-      let(:verify) { class_double(Cask::Verify).as_stubbed_const }
       let(:message) { "Download Failed" }
 
       before do
@@ -817,19 +822,12 @@ describe Cask::Audit, :cask do
       end
 
       it "when download and verification succeed it does not fail" do
-        expect(download_double).to receive(:perform)
-        expect(verify).to receive(:all)
+        expect(download_double).to receive(:fetch)
         expect(subject).to pass
       end
 
       it "when download fails it fails" do
-        expect(download_double).to receive(:perform).and_raise(StandardError.new(message))
-        expect(subject).to fail_with(/#{message}/)
-      end
-
-      it "when verification fails it fails" do
-        expect(download_double).to receive(:perform)
-        expect(verify).to receive(:all).and_raise(StandardError.new(message))
+        expect(download_double).to receive(:fetch).and_raise(StandardError.new(message))
         expect(subject).to fail_with(/#{message}/)
       end
     end
@@ -879,14 +877,14 @@ describe Cask::Audit, :cask do
       let(:cask_token) { "with-description" }
       let(:cask) do
         tmp_cask cask_token.to_s, <<~RUBY
-          cask '#{cask_token}' do
-            version '1.0'
-            sha256 '8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a'
-            url "https://brew.sh/"
-            name 'Audit'
-            desc 'Cask Auditor'
-            homepage 'https://brew.sh/'
-            app 'Audit.app'
+          cask "#{cask_token}" do
+            version "1.0"
+            sha256 "8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a"
+            url "https://brew.sh/\#{version}.zip"
+            name "Audit"
+            desc "Cask Auditor"
+            homepage "https://brew.sh/"
+            app "Audit.app"
           end
         RUBY
       end
@@ -894,6 +892,81 @@ describe Cask::Audit, :cask do
       it "passes" do
         expect(subject).to pass
       end
+    end
+
+    context "when the url matches the homepage" do
+      let(:cask_token) { "foo" }
+      let(:cask) do
+        tmp_cask cask_token.to_s, <<~RUBY
+          cask '#{cask_token}' do
+            version '1.0'
+            sha256 '8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a'
+            url 'https://foo.brew.sh/foo.zip'
+            name 'Audit'
+            desc 'Audit Description'
+            homepage 'https://foo.brew.sh'
+            app 'Audit.app'
+          end
+        RUBY
+      end
+
+      it { is_expected.to pass }
+    end
+
+    context "when the url does not match the homepage" do
+      let(:cask_token) { "foo" }
+      let(:cask) do
+        tmp_cask cask_token.to_s, <<~RUBY
+          cask '#{cask_token}' do
+            version "1.8.0_72,8.13.0.5"
+            sha256 "8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a"
+            url "https://brew.sh/foo-\#{version.after_comma}.zip"
+            name "Audit"
+            desc "Audit Description"
+            homepage "https://foo.example.org"
+            app "Audit.app"
+          end
+        RUBY
+      end
+
+      it { is_expected.to fail_with(/a `verified` parameter has to be added/) }
+    end
+
+    context "when the url does not match the homepage with verified" do
+      let(:cask_token) { "foo" }
+      let(:cask) do
+        tmp_cask cask_token.to_s, <<~RUBY
+          cask "#{cask_token}" do
+            version "1.8.0_72,8.13.0.5"
+            sha256 "8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a"
+            url "https://brew.sh/foo-\#{version.after_comma}.zip", verified: "brew.sh"
+            name "Audit"
+            desc "Audit Description"
+            homepage "https://foo.example.org"
+            app "Audit.app"
+          end
+        RUBY
+      end
+
+      it { is_expected.to pass }
+    end
+
+    context "when there is no homepage" do
+      let(:cask_token) { "foo" }
+      let(:cask) do
+        tmp_cask cask_token.to_s, <<~RUBY
+          cask '#{cask_token}' do
+            version '1.8.0_72,8.13.0.5'
+            sha256 '8dd95daa037ac02455435446ec7bc737b34567afe9156af7d20b2a83805c1d8a'
+            url 'https://brew.sh/foo.zip'
+            name 'Audit'
+            desc 'Audit Description'
+            app 'Audit.app'
+          end
+        RUBY
+      end
+
+      it { is_expected.to fail_with(/a homepage stanza is required/) }
     end
   end
 end

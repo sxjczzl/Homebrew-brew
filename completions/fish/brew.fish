@@ -99,12 +99,12 @@ function __fish_brew_suggest_formulae_all -d 'Lists all available formulae with 
             '.each{ |k, v| puts([k, v].reject(&:nil?).join("\t")) }'
         # backup: (note that it lists only formulae names without descriptions)
     else
-        brew search
+        brew formulae
     end
 end
 
 function __fish_brew_suggest_formulae_installed
-    brew list
+    brew list --formula
 end
 
 function __fish_brew_suggest_formulae_pinned

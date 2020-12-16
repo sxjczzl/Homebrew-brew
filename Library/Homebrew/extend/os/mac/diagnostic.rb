@@ -63,6 +63,7 @@ module Homebrew
 
       def supported_configuration_checks
         %w[
+          check_for_unsupported_arch
           check_for_unsupported_macos
         ].freeze
       end
@@ -90,18 +91,30 @@ module Homebrew
         nil
       end
 
+      def check_for_unsupported_arch
+        return if Homebrew::EnvConfig.developer?
+        return unless Hardware::CPU.arm?
+
+        <<~EOS
+          You are running macOS on a #{Hardware::CPU.arch} CPU architecture.
+          We do not provide support for this (yet).
+          Reinstall Homebrew under Rosetta 2 until we support it.
+          #{please_create_pull_requests}
+        EOS
+      end
+
       def check_for_unsupported_macos
         return if Homebrew::EnvConfig.developer?
 
         who = +"We"
-        if OS::Mac.prerelease?
-          what = "pre-release version"
+        what = if OS::Mac.prerelease?
+          "pre-release version"
         elsif OS::Mac.outdated_release?
           who << " (and Apple)"
-          what = "old version"
-        else
-          return
+          "old version"
         end
+        return if what.blank?
+
         who.freeze
 
         <<~EOS
@@ -411,8 +424,10 @@ module Homebrew
         locator = MacOS.sdk_locator
 
         source = if locator.source == :clt
+          update_instructions = MacOS::CLT.update_instructions
           "CLT"
         else
+          update_instructions = MacOS::Xcode.update_instructions
           "Xcode"
         end
 
@@ -420,6 +435,7 @@ module Homebrew
           Your #{source} does not support macOS #{MacOS.version}.
           It is either outdated or was modified.
           Please update your #{source} or delete it if no updates are available.
+          #{update_instructions}
         EOS
       end
     end

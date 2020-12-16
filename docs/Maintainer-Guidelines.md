@@ -157,13 +157,25 @@ Any maintainer can merge any PR they have carefully reviewed and is passing CI t
 
 Any maintainer can revert a PR created by another maintainer after a user submitted issue or CI failure that results. The maintainer who created the original PR should be given no less than an hour to fix the issue themselves or decide to revert the PR themselves if they would rather.
 
+### Give time for other maintainers to review
+
+PRs that are an "enhancement" to existing functionality i.e. not a fix to an open user issue/discussion, not a version bump, not a security fix, not a fix for CI failure, a usability improvement, a new feature, refactoring etc. should wait 24h Monday - Friday before being merged. For example,
+
+- a new feature PR submitted at 5pm on Thursday should wait until 5pm on Friday before it is merged
+- a usability fix PR submitted at 5pm on Friday should wait until 5pm on Monday before it is merged
+- a user-reported issue fix PR can be merged immediately after CI is green
+
+If a maintainer is on holiday/vacation/sick during this time and leaves comments after they are back: please treat post-merge PR comments and feedback as you would left within the time period and follow-up with another PR to address their requests (if agreed).
+
+The vast majority of Homebrew/homebrew-core PRs are bug fixes or version bumps so can be self-merged once CI has completed.
+
 ## Communication
 
 Maintainers have a variety of ways to communicate with each other:
 
 - Homebrew's public repositories on GitHub
-- Homebrew's group communications between more than two maintainers on private channels (e.g. GitHub/Slack/Discourse)
-- Homebrew's direct 1:1 messages between two maintainers on private channels (e.g. iMessage/Slack/Discourse/IRC/carrier pigeon)
+- Homebrew's group communications between more than two maintainers on private channels (e.g. GitHub/Slack)
+- Homebrew's direct 1:1 messages between two maintainers on private channels (e.g. iMessage/Slack/carrier pigeon)
 
 All communication should ideally occur in public on GitHub. Where this is not possible or appropriate (e.g. a security disclosure, interpersonal issue between two maintainers, urgent breakage that needs to be resolved) this can move to maintainers' private group communication and, if necessary, 1:1 communication. Technical decisions should not happen in 1:1 communications but if they do (or did in the past) they must end up back as something linkable on GitHub. For example, if a technical decision was made a year ago on Slack and another maintainer/contributor/user asks about it on GitHub, that's a good chance to explain it to them and have something that can be linked to in the future.
 

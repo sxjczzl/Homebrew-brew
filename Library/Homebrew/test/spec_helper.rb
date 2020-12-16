@@ -26,6 +26,7 @@ end
 require "rspec/its"
 require "rspec/wait"
 require "rspec/retry"
+require "rspec/sorbet"
 require "rubocop"
 require "rubocop/rspec/support"
 require "find"
@@ -58,6 +59,10 @@ TEST_DIRECTORIES = [
   HOMEBREW_TEMP,
 ].freeze
 
+# Make `instance_double` and `class_double`
+# work when type-checking is active.
+RSpec::Sorbet.allow_doubles!
+
 RSpec.configure do |config|
   config.order = :random
 
@@ -75,10 +80,15 @@ RSpec.configure do |config|
   if ENV["CI"]
     config.verbose_retry = true
     config.display_try_failure_messages = true
-    config.default_retry_count = 2
+
+    config.around(:each, :integration_test) do |example|
+      example.metadata[:timeout] ||= 120
+      example.run
+    end
 
     config.around(:each, :needs_network) do |example|
-      example.run_with_retry retry: 3, retry_wait: 3
+      example.metadata[:timeout] ||= 120
+      example.run_with_retry retry: 5, retry_wait: 5
     end
   end
 
@@ -189,20 +199,15 @@ RSpec.configure do |config|
       end
 
       begin
-        timeout = example.metadata.fetch(:timeout, 120)
-        inner_timeout = nil
+        timeout = example.metadata.fetch(:timeout, 60)
         Timeout.timeout(timeout) do
           example.run
-        rescue Timeout::Error => e
-          inner_timeout = e
         end
-      rescue Timeout::Error
-        raise "Example exceeded maximum runtime of #{timeout} seconds."
+      rescue Timeout::Error => e
+        example.example.set_exception(e)
       end
-
-      raise inner_timeout if inner_timeout
     rescue SystemExit => e
-      raise "Unexpected exit with status #{e.status}."
+      example.example.set_exception(e)
     ensure
       ENV.replace(@__env)
 
@@ -237,6 +242,10 @@ RSpec.configure do |config|
         CoreTap.instance.path/".git",
         CoreTap.instance.alias_dir,
         CoreTap.instance.path/"formula_renames.json",
+        CoreTap.instance.path/"tap_migrations.json",
+        CoreTap.instance.path/"audit_exceptions",
+        CoreTap.instance.path/"style_exceptions",
+        CoreTap.instance.path/"pypi_formula_mappings.json",
         *Pathname.glob("#{HOMEBREW_CELLAR}/*/"),
       ]
 

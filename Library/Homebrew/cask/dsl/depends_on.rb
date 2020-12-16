@@ -24,6 +24,7 @@ module Cask
         intel:  { type: :intel, bits: 64 },
         # specific
         x86_64: { type: :intel, bits: 64 },
+        arm64:  { type: :arm, bits: 64 },
       }.freeze
 
       attr_accessor :java
@@ -63,7 +64,7 @@ module Cask
             MacOSRequirement.new([version.to_sym], comparator: comparator)
           elsif /^\s*(?<comparator><|>|[=<>]=)\s*(?<version>\S+)\s*$/ =~ args.first
             MacOSRequirement.new([version], comparator: comparator)
-          else
+          else # rubocop:disable Lint/DuplicateBranch
             MacOSRequirement.new([args.first], comparator: "==")
           end
         rescue MacOSVersionError => e

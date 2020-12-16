@@ -15,12 +15,16 @@ BOTTLE_ERB = <<-EOS
     <% if root_url != "#{HOMEBREW_BOTTLE_DEFAULT_DOMAIN}/bottles" %>
     root_url "<%= root_url %>"
     <% end %>
-    <% if ![HOMEBREW_DEFAULT_PREFIX, LINUXBREW_DEFAULT_PREFIX].include?(prefix) %>
+    <% if ![HOMEBREW_DEFAULT_PREFIX,
+            HOMEBREW_MACOS_ARM_DEFAULT_PREFIX,
+            HOMEBREW_LINUX_DEFAULT_PREFIX].include?(prefix) %>
     prefix "<%= prefix %>"
     <% end %>
     <% if cellar.is_a? Symbol %>
     cellar :<%= cellar %>
-    <% elsif ![Homebrew::DEFAULT_CELLAR, "/usr/local/Cellar"].include?(cellar) %>
+    <% elsif ![Homebrew::DEFAULT_MACOS_CELLAR,
+               Homebrew::DEFAULT_MACOS_ARM_CELLAR,
+               Homebrew::DEFAULT_LINUX_CELLAR].include?(cellar) %>
     cellar "<%= cellar %>"
     <% end %>
     <% if rebuild.positive? %>
@@ -38,8 +42,11 @@ EOS
 MAXIMUM_STRING_MATCHES = 100
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def bottle_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -254,8 +261,8 @@ module Homebrew
 
     formula_and_runtime_deps_names = [f.name] + f.runtime_dependencies.map(&:name)
     keg = Keg.new(f.prefix)
-    relocatable = false
-    skip_relocation = false
+    relocatable = T.let(false, T::Boolean)
+    skip_relocation = T.let(false, T::Boolean)
 
     keg.lock do
       original_tab = nil
@@ -429,30 +436,32 @@ module Homebrew
     end
   end
 
-  def merge(args:)
-    bottles_hash = args.named.reduce({}) do |hash, json_file|
-      hash.deep_merge(JSON.parse(IO.read(json_file))) do |key, first, second|
+  def parse_json_files(filenames)
+    filenames.map do |filename|
+      JSON.parse(IO.read(filename))
+    end
+  end
+
+  def merge_json_files(json_files)
+    json_files.reduce({}) do |hash, json_file|
+      hash.deep_merge(json_file) do |key, first, second|
         if key == "cellar"
           # Prioritize HOMEBREW_CELLAR over :any over :any_skip_relocation
           cellars = [first, second]
-          if cellars.include?(HOMEBREW_CELLAR)
-            HOMEBREW_CELLAR
-          elsif first.start_with?("/")
-            first
-          elsif second.start_with?("/")
-            second
-          elsif cellars.include?("any")
-            "any"
-          elsif cellars.include?("any_skip_relocation")
-            "any_skip_relocation"
-          else
-            second
-          end
-        else
-          second
+          next HOMEBREW_CELLAR if cellars.include?(HOMEBREW_CELLAR)
+          next first if first.start_with?("/")
+          next second if second.start_with?("/")
+          next "any" if cellars.include?("any")
+          next "any_skip_relocation" if cellars.include?("any_skip_relocation")
         end
+
+        second
       end
     end
+  end
+
+  def merge(args:)
+    bottles_hash = merge_json_files(parse_json_files(args.named))
 
     any_cellars = ["any", "any_skip_relocation"]
     bottles_hash.each do |formula_name, bottle_hash|
@@ -473,7 +482,7 @@ module Homebrew
 
       if args.write?
         path = Pathname.new((HOMEBREW_REPOSITORY/bottle_hash["formula"]["path"]).to_s)
-        update_or_add = nil
+        update_or_add = T.let(nil, T.nilable(String))
 
         Utils::Inreplace.inreplace(path) do |s|
           if s.inreplace_string.include? "bottle do"
@@ -527,28 +536,13 @@ module Homebrew
             odie "--keep-old was passed but there was no existing bottle block!" if args.keep_old?
             puts output
             update_or_add = "add"
-            pattern = /(
-                (\ {2}\#[^\n]*\n)*                                                # comments
-                \ {2}(                                                            # two spaces at the beginning
-                  (url|head)\ ['"][\S\ ]+['"]                                     # url or head with a string
-                  (
-                    ,[\S\ ]*$                                                     # url may have options
-                    (\n^\ {3}[\S\ ]+$)*                                           # options can be in multiple lines
-                  )?|
-                  (homepage|desc|sha256|version|mirror|license)\ ['"][\S\ ]+['"]| # specs with a string
-                  (license)\ [^\[]+?\[[^\]]+?\]|                                  # license may contain a list
-                  (revision|version_scheme)\ \d+|                                 # revision with a number
-                  (stable|livecheck)\ do(\n+^\ {4}[\S\ ]+$)*\n+^\ {2}end          # components with blocks
-                )\n+                                                              # multiple empty lines
-               )+
-             /mx
-            string = s.sub!(pattern, "\\0#{output}\n")
-            odie "Bottle block addition failed!" unless string
+            Utils::Bottles.add_bottle_stanza!(s.inreplace_string, output)
           end
         end
 
         unless args.no_commit?
           Utils::Git.set_name_email!
+          Utils::Git.setup_gpg!
 
           short_name = formula_name.split("/", -1).last
           pkg_version = bottle_hash["formula"]["pkg_version"]

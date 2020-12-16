@@ -7,6 +7,8 @@ require "language/java"
 #
 # @api private
 class JavaRequirement < Requirement
+  extend T::Sig
+
   fatal true
 
   attr_reader :java_home, :version
@@ -32,20 +34,25 @@ class JavaRequirement < Requirement
   end
 
   def initialize(tags = [])
+    odeprecated "depends_on :java",
+                '"depends_on "openjdk@11", "depends_on "openjdk@8" or "depends_on "openjdk"'
+
     @version = tags.shift if tags.first&.match?(/^\d/)
     super(tags)
     @cask = suggestion.token
   end
 
+  sig { returns(String) }
   def message
     version_string = " #{@version}" if @version
-    s = "Java#{version_string} is required to install this formula.\n"
+    s = "Java#{version_string} is required for this software.\n"
     s += suggestion
     s
   end
 
+  sig { returns(String) }
   def inspect
-    "#<#{self.class.name}: #{tags.inspect} version=#{@version.inspect}>"
+    "#<#{self.class.name}: version=#{@version.inspect} #{tags.inspect}>"
   end
 
   def display_s
@@ -55,20 +62,23 @@ class JavaRequirement < Requirement
       else
         ">="
       end
-      "#{name} #{op} #{version_without_plus}"
+      "#{name.capitalize} #{op} #{version_without_plus}"
     else
-      name
+      name.capitalize
     end
   end
 
   private
 
   CaskSuggestion = Struct.new(:token, :title) do
+    extend T::Sig
+
+    sig { returns(String) }
     def to_str
       title_string = " #{title}" if title
       <<~EOS
         Install#{title_string} with Homebrew Cask:
-          brew cask install #{token}
+          brew install --cask #{token}
       EOS
     end
   end

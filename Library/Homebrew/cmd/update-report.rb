@@ -10,6 +10,8 @@ require "description_cache_store"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
   def update_preinstall_header(args:)
@@ -19,6 +21,7 @@ module Homebrew
     end
   end
 
+  sig { returns(CLI::Parser) }
   def update_report_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -63,7 +66,7 @@ module Homebrew
     HOMEBREW_REPOSITORY.cd do
       donation_message_displayed =
         Utils.popen_read("git", "config", "--get", "homebrew.donationmessage").chomp == "true"
-      unless donation_message_displayed
+      if !donation_message_displayed && !args.quiet?
         ohai "Homebrew is run entirely by unpaid volunteers. Please consider donating:"
         puts "  #{Formatter.url("https://github.com/Homebrew/brew#donations")}\n"
 
@@ -113,11 +116,9 @@ module Homebrew
       updated = true
     end
 
-    if !updated
-      puts "Already up-to-date." if !args.preinstall? && !ENV["HOMEBREW_UPDATE_FAILED"]
-    else
+    if updated
       if hub.empty?
-        puts "No changes to formulae."
+        puts "No changes to formulae." unless args.quiet?
       else
         hub.dump(updated_formula_report: !args.preinstall?)
         hub.reporters.each(&:migrate_tap_migration)
@@ -128,6 +129,8 @@ module Homebrew
         end
       end
       puts if args.preinstall?
+    elsif !args.preinstall? && !ENV["HOMEBREW_UPDATE_FAILED"]
+      puts "Already up-to-date." unless args.quiet?
     end
 
     Commands.rebuild_commands_completion_list
@@ -311,7 +314,7 @@ class Reporter
         name
       end
 
-      # This means it is a Cask
+      # This means it is a cask
       if report[:DC].include? full_name
         next unless (HOMEBREW_PREFIX/"Caskroom"/new_name).exist?
 
@@ -319,7 +322,7 @@ class Reporter
         new_tap.install unless new_tap.installed?
         ohai "#{name} has been moved to Homebrew.", <<~EOS
           To uninstall the cask run:
-            brew cask uninstall --force #{name}
+            brew uninstall --cask --force #{name}
         EOS
         next if (HOMEBREW_CELLAR/new_name.split("/").last).directory?
 
@@ -349,8 +352,8 @@ class Reporter
           system HOMEBREW_BREW_FILE, "unlink", name
           ohai "brew cleanup"
           system HOMEBREW_BREW_FILE, "cleanup"
-          ohai "brew cask install #{new_name}"
-          system HOMEBREW_BREW_FILE, "cask", "install", new_name
+          ohai "brew install --cask #{new_name}"
+          system HOMEBREW_BREW_FILE, "install", "--cask", new_name
           ohai <<~EOS
             #{name} has been moved to Homebrew Cask.
             The existing keg has been unlinked.
@@ -362,7 +365,7 @@ class Reporter
             To uninstall the formula and install the cask run:
               brew uninstall --force #{name}
               brew tap #{new_tap_name}
-              brew cask install #{new_name}
+              brew install --cask #{new_name}
           EOS
         end
       else
@@ -413,10 +416,13 @@ class Reporter
 end
 
 class ReporterHub
+  extend T::Sig
+
   extend Forwardable
 
   attr_reader :reporters
 
+  sig { void }
   def initialize
     @hash = {}
     @reporters = []
@@ -450,7 +456,15 @@ class ReporterHub
     dump_formula_report :R, "Renamed Formulae"
     dump_formula_report :D, "Deleted Formulae"
     dump_formula_report :AC, "New Casks"
-    dump_formula_report :MC, "Updated Casks"
+    if updated_formula_report
+      dump_formula_report :MC, "Updated Casks"
+    else
+      updated = select_formula(:MC).count
+      if updated.positive?
+        ohai "Updated Casks"
+        puts "Updated #{updated} #{"cask".pluralize(updated)}."
+      end
+    end
     dump_formula_report :DC, "Deleted Casks"
   end
 

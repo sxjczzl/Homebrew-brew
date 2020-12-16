@@ -4,6 +4,7 @@
 require "cask/denylist"
 require "cask/download"
 require "digest"
+require "livecheck/livecheck"
 require "utils/curl"
 require "utils/git"
 require "utils/shared_audits"
@@ -13,6 +14,8 @@ module Cask
   #
   # @api private
   class Audit
+    extend T::Sig
+
     extend Predicable
 
     attr_reader :cask, :download
@@ -50,6 +53,9 @@ module Cask
       check_sha256
       check_desc
       check_url
+      check_unnecessary_verified
+      check_missing_verified
+      check_no_match
       check_generic_artifacts
       check_token_valid
       check_token_bad_words
@@ -61,10 +67,11 @@ module Cask
       check_single_uninstall_zap
       check_untrusted_pkg
       check_hosting_with_appcast
-      check_latest_with_appcast
+      check_latest_with_appcast_or_livecheck
       check_latest_with_auto_updates
       check_stanza_requires_uninstall
       check_appcast_contains_version
+      check_livecheck_version
       check_gitlab_repository
       check_gitlab_repository_archived
       check_gitlab_prerelease_version
@@ -117,6 +124,7 @@ module Cask
       end
     end
 
+    sig { returns(String) }
     def summary
       summary = ["audit for #{cask}: #{result}"]
 
@@ -240,6 +248,7 @@ module Cask
       return unless cask.sha256
 
       check_sha256_no_check_if_latest
+      check_sha256_no_check_if_unversioned
       check_sha256_actually_256
       check_sha256_invalid
     end
@@ -252,27 +261,33 @@ module Cask
       add_error "you should use sha256 :no_check when version is :latest"
     end
 
-    def check_sha256_actually_256(sha256: cask.sha256, stanza: "sha256")
-      odebug "Verifying #{stanza} string is a legal SHA-256 digest"
-      return unless sha256.is_a?(String)
-      return if sha256.length == 64 && sha256[/^[0-9a-f]+$/i]
+    def check_sha256_no_check_if_unversioned
+      return if cask.sha256 == :no_check
 
-      add_error "#{stanza} string must be of 64 hexadecimal characters"
+      add_error "Use `sha256 :no_check` when URL is unversioned." if cask.url&.unversioned?
     end
 
-    def check_sha256_invalid(sha256: cask.sha256, stanza: "sha256")
-      odebug "Verifying #{stanza} is not a known invalid value"
+    def check_sha256_actually_256
+      odebug "Verifying sha256 string is a legal SHA-256 digest"
+      return unless cask.sha256.is_a?(Checksum)
+      return if cask.sha256.length == 64 && cask.sha256[/^[0-9a-f]+$/i]
+
+      add_error "sha256 string must be of 64 hexadecimal characters"
+    end
+
+    def check_sha256_invalid
+      odebug "Verifying sha256 is not a known invalid value"
       empty_sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
-      return unless sha256 == empty_sha256
+      return unless cask.sha256 == empty_sha256
 
-      add_error "cannot use the sha256 for an empty string in #{stanza}: #{empty_sha256}"
+      add_error "cannot use the sha256 for an empty string: #{empty_sha256}"
     end
 
-    def check_latest_with_appcast
+    def check_latest_with_appcast_or_livecheck
       return unless cask.version.latest?
-      return unless cask.appcast
 
-      add_error "Casks with an appcast should not use version :latest"
+      add_error "Casks with an appcast should not use version :latest" if cask.appcast
+      add_error "Casks with a livecheck should not use version :latest" if cask.livecheckable?
     end
 
     def check_latest_with_auto_updates
@@ -342,6 +357,86 @@ module Cask
       bad_url_format?(/osd/, [%r{\Ahttps?://([^/]+.)?dl\.osdn\.jp/}])
     end
 
+    def homepage
+      URI(cask.homepage.to_s).host
+    end
+
+    def domain
+      URI(cask.url.to_s).host
+    end
+
+    def url_match_homepage?
+      host = cask.url.to_s
+      host_uri = URI(host)
+      host = if host.match?(/:\d/) && host_uri.port != 80
+        "#{host_uri.host}:#{host_uri.port}"
+      else
+        host_uri.host
+      end
+      home = homepage.downcase
+      if (split_host = host.split(".")).length >= 3
+        host = split_host[-2..].join(".")
+      end
+      if (split_home = homepage.split(".")).length >= 3
+        home = split_home[-2..].join(".")
+      end
+      host == home
+    end
+
+    def strip_url_scheme(url)
+      url.sub(%r{^[^:/]+://(www\.)?}, "")
+    end
+
+    def url_from_verified
+      strip_url_scheme(cask.url.verified)
+    end
+
+    def verified_matches_url?
+      url_domain, url_path = strip_url_scheme(cask.url.to_s).split("/", 2)
+      verified_domain, verified_path = url_from_verified.split("/", 2)
+
+      (url_domain == verified_domain || (verified_domain && url_domain&.end_with?(".#{verified_domain}"))) &&
+        (!verified_path || url_path&.start_with?(verified_path))
+    end
+
+    def verified_present?
+      cask.url.verified.present?
+    end
+
+    def file_url?
+      URI(cask.url.to_s).scheme == "file"
+    end
+
+    def check_unnecessary_verified
+      return unless verified_present?
+      return unless url_match_homepage?
+      return unless verified_matches_url?
+
+      add_error "The URL's domain #{domain} matches the homepage domain #{homepage}, " \
+                "the `verified` parameter of the `url` stanza is unnecessary. " \
+                "See https://github.com/Homebrew/homebrew-cask/blob/master/doc/cask_language_reference/stanzas/url.md#when-url-and-homepage-hostnames-differ-add-verified"
+    end
+
+    def check_missing_verified
+      return if cask.url.from_block?
+      return if file_url?
+      return if url_match_homepage?
+      return if verified_present?
+
+      add_error "The URL's domain #{domain} does not match the homepage domain #{homepage}, " \
+                "a `verified` parameter has to be added to the `url` stanza. " \
+                "See https://github.com/Homebrew/homebrew-cask/blob/master/doc/cask_language_reference/stanzas/url.md#when-url-and-homepage-hostnames-differ-add-verified"
+    end
+
+    def check_no_match
+      return if url_match_homepage?
+      return unless verified_present?
+      return if !url_match_homepage? && verified_matches_url?
+
+      add_error "Verified URL #{url_from_verified} does not match URL #{strip_url_scheme(cask.url.to_s)}. " \
+                "See https://github.com/Homebrew/homebrew-cask/blob/master/doc/cask_language_reference/stanzas/url.md#when-url-and-homepage-hostnames-differ-add-verified"
+    end
+
     def check_generic_artifacts
       cask.artifacts.select { |a| a.is_a?(Artifact::Artifact) }.each do |artifact|
         unless artifact.target.absolute?
@@ -403,7 +498,7 @@ module Cask
 
       add_warning "cask token mentions architecture" if token.end_with? "x86", "32_bit", "x86_64", "64_bit"
 
-      return unless token.end_with?("cocoa", "qt", "gtk", "wx", "java") && !%w[cocoa qt gtk wx java].include?(token)
+      return unless token.end_with?("cocoa", "qt", "gtk", "wx", "java") && %w[cocoa qt gtk wx java].exclude?(token)
 
       add_warning "cask token mentions framework"
     end
@@ -416,6 +511,7 @@ module Cask
       core_tap.formula_names
     end
 
+    sig { returns(String) }
     def core_formula_url
       "#{core_tap.default_remote}/blob/HEAD/Formula/#{cask.token}.rb"
     end
@@ -424,10 +520,21 @@ module Cask
       return unless download && cask.url
 
       odebug "Auditing download"
-      downloaded_path = download.perform
-      Verify.all(cask, downloaded_path)
+      download.fetch
     rescue => e
       add_error "download not possible: #{e}"
+    end
+
+    def check_livecheck_version
+      return unless appcast?
+      return unless cask.livecheckable?
+      return if cask.livecheck.skip?
+      return if cask.version.latest?
+
+      latest_version = Homebrew::Livecheck.latest_version(cask)&.fetch(:latest)
+      return if cask.version.to_s == latest_version.to_s
+
+      add_error "Version '#{cask.version}' differs from '#{latest_version}' retrieved by livecheck."
     end
 
     def check_appcast_contains_version
@@ -435,24 +542,20 @@ module Cask
       return if cask.appcast.to_s.empty?
       return if cask.appcast.must_contain == :no_check
 
-      appcast_stanza = cask.appcast.to_s
-      appcast_contents, = begin
-        curl_output("--compressed", "--user-agent", HOMEBREW_USER_AGENT_FAKE_SAFARI, "--location",
-                    "--globoff", "--max-time", "5", appcast_stanza)
+      appcast_url = cask.appcast.to_s
+      begin
+        details = curl_http_content_headers_and_checksum(appcast_url, user_agent: HOMEBREW_USER_AGENT_FAKE_SAFARI)
+        appcast_contents = details[:file]
       rescue
-        add_error "appcast at URL '#{appcast_stanza}' offline or looping"
+        add_error "appcast at URL '#{appcast_url}' offline or looping"
         return
       end
 
       version_stanza = cask.version.to_s
-      adjusted_version_stanza = if cask.appcast.must_contain.blank?
-        version_stanza.match(/^[[:alnum:].]+/)[0]
-      else
-        cask.appcast.must_contain
-      end
+      adjusted_version_stanza = cask.appcast.must_contain.presence || version_stanza.match(/^[[:alnum:].]+/)[0]
       return if appcast_contents.include? adjusted_version_stanza
 
-      add_error "appcast at URL '#{appcast_stanza}' does not contain"\
+      add_error "appcast at URL '#{appcast_url}' does not contain"\
                   " the version number '#{adjusted_version_stanza}':\n#{appcast_contents}"
     end
 
@@ -492,7 +595,15 @@ module Cask
       metadata = SharedAudits.github_repo_data(user, repo)
       return if metadata.nil?
 
-      add_error "GitHub repo is archived" if metadata["archived"]
+      return unless metadata["archived"]
+
+      message = "GitHub repo is archived"
+
+      if cask.discontinued?
+        add_warning message
+      else
+        add_error message
+      end
     end
 
     def check_gitlab_repository_archived
@@ -504,7 +615,15 @@ module Cask
       metadata = SharedAudits.gitlab_repo_data(user, repo)
       return if metadata.nil?
 
-      add_error "GitLab repo is archived" if metadata["archived"]
+      return unless metadata["archived"]
+
+      message = "GitLab repo is archived"
+
+      if cask.discontinued?
+        add_warning message
+      else
+        add_error message
+      end
     end
 
     def check_github_repository

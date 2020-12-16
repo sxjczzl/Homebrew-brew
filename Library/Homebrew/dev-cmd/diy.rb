@@ -1,12 +1,15 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 require "formula"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def diy_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -22,11 +25,14 @@ module Homebrew
              description: "Explicitly set the <version> of the package being installed."
 
       max_named 0
+      hide_from_man_page!
     end
   end
 
   def diy
     args = diy_args.parse
+
+    odeprecated "`brew diy`"
 
     path = Pathname.getwd
 
@@ -56,6 +62,8 @@ module Homebrew
   def detect_name(path, version)
     basename = path.basename.to_s
     detected_name = basename[/(.*?)-?#{Regexp.escape(version)}/, 1] || basename
+    detected_name.downcase!
+
     canonical_name = Formulary.canonical_name(detected_name)
 
     odie <<~EOS if detected_name != canonical_name

@@ -4,10 +4,13 @@
 require "requirement"
 
 class OsxfuseRequirement < Requirement
+  extend T::Sig
+
   download "https://osxfuse.github.io/"
 
   satisfy(build_env: false) { self.class.binary_osxfuse_installed? }
 
+  sig { returns(T::Boolean) }
   def self.binary_osxfuse_installed?
     File.exist?("/usr/local/include/osxfuse/fuse.h") &&
       !File.symlink?("/usr/local/include/osxfuse")
@@ -20,5 +23,9 @@ class OsxfuseRequirement < Requirement
       ENV.append_path "HOMEBREW_LIBRARY_PATHS", "/usr/local/lib"
       ENV.append_path "HOMEBREW_INCLUDE_PATHS", "/usr/local/include/osxfuse"
     end
+  end
+
+  def message
+    "FUSE for macOS is required for this software. #{super}"
   end
 end

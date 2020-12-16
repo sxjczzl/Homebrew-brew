@@ -6,6 +6,8 @@ require "utils"
 
 # Raised when a command is used wrong.
 class UsageError < RuntimeError
+  extend T::Sig
+
   attr_reader :reason
 
   def initialize(reason = nil)
@@ -14,6 +16,7 @@ class UsageError < RuntimeError
     @reason = reason
   end
 
+  sig { returns(String) }
   def to_s
     s = "Invalid usage"
     s += ": #{reason}" if reason
@@ -78,6 +81,8 @@ end
 
 # Raised when neither a formula nor a cask with the given name is available.
 class FormulaOrCaskUnavailableError < RuntimeError
+  extend T::Sig
+
   attr_reader :name
 
   def initialize(name)
@@ -86,6 +91,7 @@ class FormulaOrCaskUnavailableError < RuntimeError
     @name = name
   end
 
+  sig { returns(String) }
   def to_s
     "No available formula or cask with the name \"#{name}\"."
   end
@@ -93,14 +99,18 @@ end
 
 # Raised when a formula is not available.
 class FormulaUnavailableError < FormulaOrCaskUnavailableError
+  extend T::Sig
+
   attr_accessor :dependent
 
+  sig { returns(T.nilable(String)) }
   def dependent_s
-    "(dependency of #{dependent})" if dependent && dependent != name
+    " (dependency of #{dependent})" if dependent && dependent != name
   end
 
+  sig { returns(String) }
   def to_s
-    "No available formula with the name \"#{name}\" #{dependent_s}"
+    "No available formula with the name \"#{name}\"#{dependent_s}."
   end
 end
 
@@ -108,6 +118,8 @@ end
 #
 # @api private
 module FormulaClassUnavailableErrorModule
+  extend T::Sig
+
   attr_reader :path, :class_name, :class_list
 
   def to_s
@@ -119,6 +131,7 @@ module FormulaClassUnavailableErrorModule
 
   private
 
+  sig { returns(String) }
   def class_list_s
     formula_class_list = class_list.select { |klass| klass < Formula }
     if class_list.empty?
@@ -151,8 +164,11 @@ end
 #
 # @api private
 module FormulaUnreadableErrorModule
+  extend T::Sig
+
   attr_reader :formula_error
 
+  sig { returns(String) }
   def to_s
     "#{name}: " + formula_error.to_s
   end
@@ -210,7 +226,7 @@ class TapFormulaUnreadableError < TapFormulaUnavailableError
   end
 end
 
-# Raised when a formula with the same name is found multiple taps.
+# Raised when a formula with the same name is found in multiple taps.
 class TapFormulaAmbiguityError < RuntimeError
   attr_reader :name, :paths, :formulae
 
@@ -327,6 +343,8 @@ end
 
 # Raised when a formula conflicts with another one.
 class FormulaConflictError < RuntimeError
+  extend T::Sig
+
   attr_reader :formula, :conflicts
 
   def initialize(formula, conflicts)
@@ -342,6 +360,7 @@ class FormulaConflictError < RuntimeError
     message.join
   end
 
+  sig { returns(String) }
   def message
     message = []
     message << "Cannot install #{formula.full_name} because conflicting formulae are installed."
@@ -469,17 +488,18 @@ class BuildError < RuntimeError
   end
 end
 
-# Raised by {FormulaInstaller#check_dependencies_bottled} and
-# {FormulaInstaller#install} if the formula or its dependencies are not bottled
-# and are being installed on a system without necessary build tools.
-class BuildToolsError < RuntimeError
+# Raised if the formula or its dependencies are not bottled and are being
+# installed in a situation where a bottle is required.
+class UnbottledError < RuntimeError
   def initialize(formulae)
-    super <<~EOS
-      The following #{"formula".pluralize(formulae.count)}
+    msg = +<<~EOS
+      The following #{"formula".pluralize(formulae.count)} cannot be installed from #{"bottle".pluralize(formulae.count)} and must be
+      built from source.
         #{formulae.to_sentence}
-      cannot be installed as #{"binary package".pluralize(formulae.count)} and must be built from source.
-      #{DevelopmentTools.installation_instructions}
     EOS
+    msg += "#{DevelopmentTools.installation_instructions}\n" unless DevelopmentTools.installed?
+    msg.freeze
+    super(msg)
   end
 end
 
@@ -549,6 +569,8 @@ end
 
 # Raised by {Kernel#safe_system} in `utils.rb`.
 class ErrorDuringExecution < RuntimeError
+  extend T::Sig
+
   attr_reader :cmd, :status, :output
 
   def initialize(cmd, status:, output: nil, secrets: [])
@@ -583,6 +605,7 @@ class ErrorDuringExecution < RuntimeError
     super s.freeze
   end
 
+  sig { returns(String) }
   def stderr
     Array(output).select { |type,| type == :stderr }.map(&:last).join
   end
@@ -595,15 +618,15 @@ class ChecksumMissingError < ArgumentError; end
 class ChecksumMismatchError < RuntimeError
   attr_reader :expected, :hash_type
 
-  def initialize(fn, expected, actual)
+  def initialize(path, expected, actual)
     @expected = expected
     @hash_type = expected.hash_type.to_s.upcase
 
     super <<~EOS
       #{@hash_type} mismatch
-      Expected: #{expected}
-        Actual: #{actual}
-       Archive: #{fn}
+      Expected: #{Formatter.success(expected.to_s)}
+        Actual: #{Formatter.error(actual.to_s)}
+          File: #{path}
       To retry an incomplete download, remove the file above.
     EOS
   end

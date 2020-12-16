@@ -41,7 +41,7 @@ module RuboCop
         end
       end
 
-      # This cop ensures that a `url` is specified in the livecheck block.
+      # This cop ensures that a `url` is specified in the `livecheck` block.
       #
       # @api private
       class LivecheckUrlProvided < FormulaCop
@@ -124,7 +124,7 @@ module RuboCop
         end
       end
 
-      # This cop ensures that the `regex` call in the livecheck block uses parentheses.
+      # This cop ensures that the `regex` call in the `livecheck` block uses parentheses.
       #
       # @api private
       class LivecheckRegexParentheses < FormulaCop
@@ -146,7 +146,7 @@ module RuboCop
 
         def autocorrect(node)
           lambda do |corrector|
-            pattern = node.source.split(" ")[1..].join
+            pattern = node.source.split[1..].join
             corrector.replace(node.source_range, "regex(#{pattern})")
           end
         end
@@ -188,7 +188,7 @@ module RuboCop
       end
 
       # This cop ensures that a `regex` is provided when `strategy :page_match` is specified
-      # in the livecheck block.
+      # in the `livecheck` block.
       #
       # @api private
       class LivecheckRegexIfPageMatch < FormulaCop
@@ -218,10 +218,8 @@ module RuboCop
       #
       # @api private
       class LivecheckRegexCaseInsensitive < FormulaCop
-        REGEX_CASE_SENSITIVE_ALLOWLIST = %w[].freeze
-
         def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          return if REGEX_CASE_SENSITIVE_ALLOWLIST.include?(@formula_name)
+          return if tap_style_exception? :regex_case_sensitive_allowlist
 
           livecheck_node = find_block(body_node, :livecheck)
           return if livecheck_node.blank?

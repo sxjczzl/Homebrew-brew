@@ -7,7 +7,7 @@ module Language
   # @api public
   module Python
     def self.major_minor_version(python)
-      version = /\d\.\d/.match `#{python} --version 2>&1`
+      version = /\d\.\d+/.match `#{python} --version 2>&1`
       return unless version
 
       Version.create(version.to_s)
@@ -114,11 +114,13 @@ module Language
 
     # Mixin module for {Formula} adding virtualenv support features.
     module Virtualenv
+      extend T::Sig
+
       def self.included(base)
         base.class_eval do
           resource "homebrew-virtualenv" do
-            url "https://files.pythonhosted.org/packages/85/3e/6c3abf78b2207f3565ebadd0b99d1945f4ff18abdc6879617a4f6d939e41/virtualenv-20.0.33.tar.gz"
-            sha256 "a5e0d253fe138097c6559c906c528647254f437d1019af9d5a477b09bfa7300f"
+            url "https://files.pythonhosted.org/packages/c6/3e/d00f1500aa0e8a69323101c33f6e6910bbc68d34df3e8a0b1e510219a956/virtualenv-20.2.2.tar.gz"
+            sha256 "b7a8ec323ee02fb2312f098b6b4c9de99559b462775bc8fe3627a73706603c1b"
           end
 
           resource "homebrew-appdirs" do
@@ -146,11 +148,12 @@ module Language
       # Instantiates, creates, and yields a {Virtualenv} object for use from
       # {Formula#install}, which provides helper methods for instantiating and
       # installing packages into a Python virtualenv.
+      #
       # @param venv_root [Pathname, String] the path to the root of the virtualenv
       #   (often `libexec/"venv"`)
-      # @param python [String] which interpreter to use (e.g. "python"
-      #   or "python2")
-      # @param formula [Formula] the active Formula
+      # @param python [String] which interpreter to use (e.g. "python3"
+      #   or "python3.x")
+      # @param formula [Formula] the active {Formula}
       # @return [Virtualenv] a {Virtualenv} instance
       def virtualenv_create(venv_root, python = "python", formula = self)
         ENV.refurbish_args
@@ -179,10 +182,11 @@ module Language
 
       # Returns true if a formula option for the specified python is currently
       # active or if the specified python is required by the formula. Valid
-      # inputs are "python", "python2", :python, and :python2. Note that
+      # inputs are "python", "python2", and :python3. Note that
       # "with-python", "without-python", "with-python@2", and "without-python@2"
       # formula options are handled correctly even if not associated with any
       # corresponding depends_on statement.
+      #
       # @api private
       def needs_python?(python)
         return true if build.with?(python)
@@ -193,7 +197,7 @@ module Language
       # Helper method for the common case of installing a Python application.
       # Creates a virtualenv in `libexec`, installs all `resource`s defined
       # on the formula, and then installs the formula. An options hash may be
-      # passed (e.g., `:using => "python"`) to override the default, guessed
+      # passed (e.g. `:using => "python"`) to override the default, guessed
       # formula preference for python or python@x.y, or to resolve an ambiguous
       # case where it's not clear whether python or python@x.y should be the
       # default guess.
@@ -213,6 +217,7 @@ module Language
         venv
       end
 
+      sig { returns(T::Array[String]) }
       def python_names
         %w[python python3 pypy pypy3] + Formula.names.select { |name| name.start_with? "python@" }
       end
@@ -222,10 +227,11 @@ module Language
       class Virtualenv
         # Initializes a Virtualenv instance. This does not create the virtualenv
         # on disk; {#create} does that.
-        # @param formula [Formula] the active Formula
+        #
+        # @param formula [Formula] the active {Formula}
         # @param venv_root [Pathname, String] the path to the root of the
         #   virtualenv
-        # @param python [String] which interpreter to use, i.e. "python" or
+        # @param python [String] which interpreter to use, e.g. "python" or
         #   "python2"
         def initialize(formula, venv_root, python)
           @formula = formula
@@ -233,8 +239,8 @@ module Language
           @python = python
         end
 
-        # Obtains a copy of the virtualenv library and creates a new virtualenv
-        # on disk.
+        # Obtains a copy of the virtualenv library and creates a new virtualenv on disk.
+        #
         # @return [void]
         def create
           return if (@venv_root/"bin/python").exist?
@@ -264,7 +270,7 @@ module Language
             next unless f.symlink?
             next unless (rp = f.realpath.to_s).start_with? HOMEBREW_CELLAR
 
-            version = rp.match %r{^#{HOMEBREW_CELLAR}/python@(.*?)/}
+            version = rp.match %r{^#{HOMEBREW_CELLAR}/python@(.*?)/}o
             version = "@#{version.captures.first}" unless version.nil?
 
             new_target = rp.sub %r{#{HOMEBREW_CELLAR}/python#{version}/[^/]+}, Formula["python#{version}"].opt_prefix
@@ -275,7 +281,7 @@ module Language
           Pathname.glob(@venv_root/"lib/python*/orig-prefix.txt").each do |prefix_file|
             prefix_path = prefix_file.read
 
-            version = prefix_path.match %r{^#{HOMEBREW_CELLAR}/python@(.*?)/}
+            version = prefix_path.match %r{^#{HOMEBREW_CELLAR}/python@(.*?)/}o
             version = "@#{version.captures.first}" unless version.nil?
 
             prefix_path.sub! %r{^#{HOMEBREW_CELLAR}/python#{version}/[^/]+}, Formula["python#{version}"].opt_prefix
@@ -284,8 +290,9 @@ module Language
         end
 
         # Installs packages represented by `targets` into the virtualenv.
+        #
         # @param targets [String, Pathname, Resource,
-        #   Array<String, Pathname, Resource>] (A) token(s) passed to pip
+        #   Array<String, Pathname, Resource>] (A) token(s) passed to `pip`
         #   representing the object to be installed. This can be a directory
         #   containing a setup.py, a {Resource} which will be staged and
         #   installed, or a package identifier to be fetched from PyPI.
@@ -307,7 +314,8 @@ module Language
         end
 
         # Installs packages represented by `targets` into the virtualenv, but
-        #   unlike {#pip_install} also links new scripts to {Formula#bin}.
+        # unlike {#pip_install} also links new scripts to {Formula#bin}.
+        #
         # @param (see #pip_install)
         # @return (see #pip_install)
         def pip_install_and_link(targets)

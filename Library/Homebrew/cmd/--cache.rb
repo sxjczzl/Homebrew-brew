@@ -6,14 +6,17 @@ require "cli/parser"
 require "cask/download"
 
 module Homebrew
+  extend T::Sig
+
   extend Fetch
 
   module_function
 
+  sig { returns(CLI::Parser) }
   def __cache_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
-        `--cache` [<options>] [<formula|cask>]
+        `--cache` [<options>] [<formula>|<cask>]
 
         Display Homebrew's download cache. See also `HOMEBREW_CACHE`.
 
@@ -32,6 +35,7 @@ module Homebrew
     end
   end
 
+  sig { void }
   def __cache
     args = __cache_args.parse
 
@@ -57,6 +61,7 @@ module Homebrew
     end
   end
 
+  sig { params(formula: Formula, args: CLI::Args).void }
   def print_formula_cache(formula, args:)
     if fetch_bottle?(formula, args: args)
       puts formula.bottle.cached_download
@@ -65,6 +70,7 @@ module Homebrew
     end
   end
 
+  sig { params(cask: Cask::Cask).void }
   def print_cask_cache(cask)
     puts Cask::Download.new(cask).downloader.cached_location
   end

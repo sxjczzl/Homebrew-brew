@@ -11,7 +11,7 @@ it does it too. You have to confirm everything it will do before it starts.
 ## macOS Requirements
 
 * A 64-bit Intel CPU <sup>[1](#1)</sup>
-* macOS High Sierra (10.13) (or higher) <sup>[2](#2)</sup>
+* macOS Mojave (10.14) (or higher) <sup>[2](#2)</sup>
 * Command Line Tools (CLT) for Xcode: `xcode-select --install`,
   [developer.apple.com/downloads](https://developer.apple.com/downloads) or
   [Xcode](https://itunes.apple.com/us/app/xcode/id497799835) <sup>[3](#3)</sup>
@@ -31,10 +31,11 @@ Just extract (or `git clone`) Homebrew wherever you want. Just avoid:
 * `/tmp` subdirectories because Homebrew gets upset.
 * `/sw` and `/opt/local` because build scripts get confused when Homebrew is there instead of Fink or MacPorts, respectively.
 
-However do yourself a favour and install to `/usr/local`. Some things may
+However do yourself a favour and install to `/usr/local` on macOS Intel, `/opt/homebrew` on macOS ARM,
+and `/home/linuxbrew/.linuxbrew` on Linux. Some things may
 not build when installed elsewhere. One of the reasons Homebrew just
 works relative to the competition is **because** we recommend installing
-to `/usr/local`. *Pick another prefix at your peril!*
+here. *Pick another prefix at your peril!*
 
 ```sh
 mkdir homebrew && curl -L https://github.com/Homebrew/brew/tarball/master | tar xz --strip 1 -C homebrew
@@ -51,7 +52,7 @@ Uninstallation is documented in the [FAQ](FAQ.md).
 <a name="1"><sup>1</sup></a> For 32-bit or PPC support see
 [Tigerbrew](https://github.com/mistydemeo/tigerbrew).
 
-<a name="2"><sup>2</sup></a> 10.13 or higher is recommended. 10.9–10.12 are
+<a name="2"><sup>2</sup></a> 10.14 or higher is recommended. 10.9–10.13 are
 supported on a best-effort basis. For 10.4-10.6 see
 [Tigerbrew](https://github.com/mistydemeo/tigerbrew).
 

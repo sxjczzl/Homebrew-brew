@@ -8,7 +8,7 @@ class Keg
 
   Relocation = Struct.new(:old_prefix, :old_cellar, :old_repository,
                           :new_prefix, :new_cellar, :new_repository) do
-    # Use keyword args instead of positional args for initialization
+    # Use keyword args instead of positional args for initialization.
     def initialize(**kwargs)
       super(*members.map { |k| kwargs[k] })
     end
@@ -69,10 +69,12 @@ class Keg
       s = first.open("rb", &:read)
 
       replacements = {
-        relocation.old_prefix     => relocation.new_prefix,
-        relocation.old_cellar     => relocation.new_cellar,
-        relocation.old_repository => relocation.new_repository,
+        relocation.old_prefix => relocation.new_prefix,
+        relocation.old_cellar => relocation.new_cellar,
       }
+      # when HOMEBREW_PREFIX == HOMEBREW_REPOSITORY we should use HOMEBREW_PREFIX for all relocations to avoid
+      # being unable to differentiate between them.
+      replacements[relocation.old_repository] = relocation.new_repository if HOMEBREW_PREFIX != HOMEBREW_REPOSITORY
       changed = s.gsub!(Regexp.union(replacements.keys.sort_by(&:length).reverse), replacements)
       next unless changed
 
@@ -171,7 +173,7 @@ class Keg
     libtool_files = []
 
     path.find do |pn|
-      next if pn.symlink? || pn.directory? || !Keg::LIBTOOL_EXTENSIONS.include?(pn.extname)
+      next if pn.symlink? || pn.directory? || Keg::LIBTOOL_EXTENSIONS.exclude?(pn.extname)
 
       libtool_files << pn
     end

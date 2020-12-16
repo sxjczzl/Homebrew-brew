@@ -17,6 +17,8 @@ require "utils/curl"
 #
 # @api private
 class AbstractDownloadStrategy
+  extend T::Sig
+
   extend Forwardable
   include FileUtils
   include Context
@@ -55,6 +57,7 @@ class AbstractDownloadStrategy
   # TODO: Deprecate once we have an explicitly documented alternative.
   #
   # @api public
+  sig { void }
   def shutup!
     @quiet = true
   end
@@ -255,7 +258,7 @@ class AbstractFileDownloadStrategy < AbstractDownloadStrategy
     @symlink_location = @cache/"#{name}--#{version}#{ext}"
   end
 
-  # Path for storing the completed download .
+  # Path for storing the completed download.
   #
   # @api public
   def cached_location
@@ -353,7 +356,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
 
       ohai "Downloading #{url}"
 
-      resolved_url, _, url_time = resolve_url_basename_time(url)
+      resolved_url, _, url_time, = resolve_url_basename_time_file_size(url)
 
       fresh = if cached_location.exist? && url_time
         url_time <= cached_location.mtime
@@ -395,14 +398,19 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
     rm_rf(temporary_path)
   end
 
+  def resolved_time_file_size
+    _, _, time, file_size = resolve_url_basename_time_file_size(url)
+    [time, file_size]
+  end
+
   private
 
   def resolved_url_and_basename
-    resolved_url, basename, = resolve_url_basename_time(url)
+    resolved_url, basename, = resolve_url_basename_time_file_size(url)
     [resolved_url, basename]
   end
 
-  def resolve_url_basename_time(url)
+  def resolve_url_basename_time_file_size(url)
     @resolved_info_cache ||= {}
     return @resolved_info_cache[url] if @resolved_info_cache.include?(url)
 
@@ -455,9 +463,15 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
            .map { |t| t.match?(/^\d+$/) ? Time.at(t.to_i) : Time.parse(t) }
            .last
 
+    file_size =
+      lines.map { |line| line[/^Content-Length:\s*(\d+)/i, 1] }
+           .compact
+           .map(&:to_i)
+           .last
+
     basename = filenames.last || parse_basename(redirect_url)
 
-    @resolved_info_cache[url] = [redirect_url, basename, time]
+    @resolved_info_cache[url] = [redirect_url, basename, time, file_size]
   end
 
   def _fetch(url:, resolved_url:)
@@ -509,6 +523,12 @@ end
 # @api public
 class CurlApacheMirrorDownloadStrategy < CurlDownloadStrategy
   def mirrors
+    combined_mirrors
+  end
+
+  private
+
+  def combined_mirrors
     return @combined_mirrors if defined?(@combined_mirrors)
 
     backup_mirrors = apache_mirrors.fetch("backup", [])
@@ -517,9 +537,7 @@ class CurlApacheMirrorDownloadStrategy < CurlDownloadStrategy
     @combined_mirrors = [*@mirrors, *backup_mirrors]
   end
 
-  private
-
-  def resolve_url_basename_time(url)
+  def resolve_url_basename_time_file_size(url)
     if url == self.url
       super("#{apache_mirrors["preferred"]}#{apache_mirrors["path_info"]}")
     else
@@ -582,6 +600,8 @@ end
 #
 # @api public
 class SubversionDownloadStrategy < VCSDownloadStrategy
+  extend T::Sig
+
   def initialize(url, name, version, **meta)
     super
     @url = @url.sub("svn+http://", "")
@@ -598,6 +618,7 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     time = if Version.create(Utils::Svn.version) >= Version.create("1.9")
       out, = silent_command("svn", args: ["info", "--show-item", "last-changed-date"], chdir: cached_location)
@@ -656,6 +677,7 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     end
   end
 
+  sig { returns(String) }
   def cache_tag
     head? ? "svn-HEAD" : "svn"
   end
@@ -702,6 +724,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     out, = silent_command("git", args: ["--git-dir", git_dir, "show", "-s", "--format=%cD"])
     Time.parse(out)
@@ -715,10 +738,12 @@ class GitDownloadStrategy < VCSDownloadStrategy
 
   private
 
+  sig { returns(String) }
   def cache_tag
     "git"
   end
 
+  sig { returns(Integer) }
   def cache_version
     0
   end
@@ -766,6 +791,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
     (cached_location/".gitmodules").exist?
   end
 
+  sig { returns(T::Array[String]) }
   def clone_args
     args = %w[clone]
     args << "--depth" << "1" if shallow_clone?
@@ -779,6 +805,7 @@ class GitDownloadStrategy < VCSDownloadStrategy
     args << @url << cached_location
   end
 
+  sig { returns(String) }
   def refspec
     case @ref_type
     when :branch then "+refs/heads/#{@ref}:refs/remotes/origin/#{@ref}"
@@ -929,9 +956,7 @@ class GitHubGitDownloadStrategy < GitDownloadStrategy
 
   def commit_outdated?(commit)
     @last_commit ||= github_last_commit
-    if !@last_commit
-      super
-    else
+    if @last_commit
       return true unless commit
       return true unless @last_commit.start_with?(commit)
 
@@ -941,6 +966,8 @@ class GitHubGitDownloadStrategy < GitDownloadStrategy
         version.update_commit(commit)
         false
       end
+    else
+      super
     end
   end
 end
@@ -949,6 +976,8 @@ end
 #
 # @api public
 class CVSDownloadStrategy < VCSDownloadStrategy
+  extend T::Sig
+
   def initialize(url, name, version, **meta)
     super
     @url = @url.sub(%r{^cvs://}, "")
@@ -963,6 +992,7 @@ class CVSDownloadStrategy < VCSDownloadStrategy
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     # Filter CVS's files because the timestamp for each of them is the moment
     # of clone.
@@ -983,6 +1013,7 @@ class CVSDownloadStrategy < VCSDownloadStrategy
     { "PATH" => PATH.new("/usr/bin", Formula["cvs"].opt_bin, ENV["PATH"]) }
   end
 
+  sig { returns(String) }
   def cache_tag
     "cvs"
   end
@@ -1022,12 +1053,15 @@ end
 #
 # @api public
 class MercurialDownloadStrategy < VCSDownloadStrategy
+  extend T::Sig
+
   def initialize(url, name, version, **meta)
     super
     @url = @url.sub(%r{^hg://}, "")
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     out, = silent_command("hg",
                           args: ["tip", "--template", "{date|isodate}", "-R", cached_location])
@@ -1047,6 +1081,7 @@ class MercurialDownloadStrategy < VCSDownloadStrategy
     { "PATH" => PATH.new(Formula["mercurial"].opt_bin, ENV["PATH"]) }
   end
 
+  sig { returns(String) }
   def cache_tag
     "hg"
   end
@@ -1077,12 +1112,15 @@ end
 #
 # @api public
 class BazaarDownloadStrategy < VCSDownloadStrategy
+  extend T::Sig
+
   def initialize(url, name, version, **meta)
     super
     @url.sub!(%r{^bzr://}, "")
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     out, = silent_command("bzr", args: ["log", "-l", "1", "--timezone=utc", cached_location])
     timestamp = out.chomp
@@ -1106,6 +1144,7 @@ class BazaarDownloadStrategy < VCSDownloadStrategy
     }
   end
 
+  sig { returns(String) }
   def cache_tag
     "bzr"
   end
@@ -1131,12 +1170,15 @@ end
 #
 # @api public
 class FossilDownloadStrategy < VCSDownloadStrategy
+  extend T::Sig
+
   def initialize(url, name, version, **meta)
     super
     @url = @url.sub(%r{^fossil://}, "")
   end
 
   # (see AbstractDownloadStrategy#source_modified_time)
+  sig { returns(Time) }
   def source_modified_time
     out, = silent_command("fossil", args: ["info", "tip", "-R", cached_location])
     Time.parse(out[/^uuid: +\h+ (.+)$/, 1])
@@ -1158,6 +1200,7 @@ class FossilDownloadStrategy < VCSDownloadStrategy
     { "PATH" => PATH.new(Formula["fossil"].opt_bin, ENV["PATH"]) }
   end
 
+  sig { returns(String) }
   def cache_tag
     "fossil"
   end
@@ -1193,7 +1236,8 @@ class DownloadStrategyDetector
     when %r{^https?://github\.com/[^/]+/[^/]+\.git$}
       GitHubGitDownloadStrategy
     when %r{^https?://.+\.git$},
-         %r{^git://}
+         %r{^git://},
+         %r{^https?://git\.sr\.ht/[^/]+/[^/]+$}
       GitDownloadStrategy
     when %r{^https?://www\.apache\.org/dyn/closer\.cgi},
          %r{^https?://www\.apache\.org/dyn/closer\.lua}
@@ -1201,22 +1245,20 @@ class DownloadStrategyDetector
     when %r{^https?://(.+?\.)?googlecode\.com/svn},
          %r{^https?://svn\.},
          %r{^svn://},
+         %r{^svn\+http://},
+         %r{^http://svn\.apache\.org/repos/},
          %r{^https?://(.+?\.)?sourceforge\.net/svnroot/}
       SubversionDownloadStrategy
     when %r{^cvs://}
       CVSDownloadStrategy
     when %r{^hg://},
-         %r{^https?://(.+?\.)?googlecode\.com/hg}
+         %r{^https?://(.+?\.)?googlecode\.com/hg},
+         %r{^https?://(.+?\.)?sourceforge\.net/hgweb/}
       MercurialDownloadStrategy
     when %r{^bzr://}
       BazaarDownloadStrategy
     when %r{^fossil://}
       FossilDownloadStrategy
-    when %r{^svn\+http://},
-         %r{^http://svn\.apache\.org/repos/}
-      SubversionDownloadStrategy
-    when %r{^https?://(.+?\.)?sourceforge\.net/hgweb/}
-      MercurialDownloadStrategy
     else
       CurlDownloadStrategy
     end

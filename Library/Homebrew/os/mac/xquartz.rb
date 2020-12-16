@@ -7,9 +7,11 @@ module OS
     #
     # @api private
     module XQuartz
+      extend T::Sig
+
       module_function
 
-      DEFAULT_BUNDLE_PATH = Pathname.new("Applications/Utilities/XQuartz.app").freeze
+      DEFAULT_BUNDLE_PATH = Pathname("Applications/Utilities/XQuartz.app").freeze
       FORGE_BUNDLE_ID = "org.macosforge.xquartz.X11"
       FORGE_PKG_ID = "org.macosforge.xquartz.pkg"
 
@@ -52,14 +54,15 @@ module OS
         end
       end
 
+      sig { returns(String) }
       def minimum_version
         # Update this a little later than latest_version to give people
         # time to upgrade.
         "2.7.11"
       end
 
-      # - https://xquartz.macosforge.org/trac/wiki
-      # - https://xquartz.macosforge.org/trac/wiki/Releases
+      # @see https://www.xquartz.org/releases/index.html
+      sig { returns(String) }
       def latest_version
         "2.7.11"
       end

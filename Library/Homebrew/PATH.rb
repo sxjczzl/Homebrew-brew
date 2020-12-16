@@ -10,7 +10,7 @@ class PATH
   include Enumerable
   extend Forwardable
 
-  def_delegator :@paths, :each
+  delegate each: :@paths
 
   # FIXME: Enable cop again when https://github.com/sorbet/sorbet/issues/3532 is fixed.
   # rubocop:disable Style/MutableConstant
@@ -67,13 +67,9 @@ class PATH
 
   sig { params(other: T.untyped).returns(T::Boolean) }
   def ==(other)
-    if other.respond_to?(:to_ary) && to_ary == other.to_ary
-      true
-    elsif other.respond_to?(:to_str) && to_str == other.to_str
-      true
-    else
+    (other.respond_to?(:to_ary) && to_ary == other.to_ary) ||
+      (other.respond_to?(:to_str) && to_str == other.to_str) ||
       false
-    end
   end
 
   sig { returns(T::Boolean) }

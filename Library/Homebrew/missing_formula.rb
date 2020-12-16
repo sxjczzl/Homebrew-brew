@@ -30,7 +30,7 @@ module Homebrew
         EOS
         when "macruby" then <<~EOS
           MacRuby has been discontinued. Consider RubyMotion:
-            brew cask install rubymotion
+            brew install --cask rubymotion
         EOS
         when /(lib)?lzma/ then <<~EOS
           lzma is now part of the xz formula:
@@ -74,8 +74,8 @@ module Homebrew
         when "ngrok" then <<~EOS
           Upstream sunsetted 1.x in March 2016 and 2.x is not open-source.
 
-          If you wish to use the 2.x release you can install with Homebrew Cask:
-            brew cask install ngrok
+          If you wish to use the 2.x release you can install it with:
+            brew install --cask ngrok
         EOS
         when "cargo" then <<~EOS
           cargo is part of the rust formula:
@@ -94,7 +94,7 @@ module Homebrew
       alias generic_disallowed_reason disallowed_reason
 
       def tap_migration_reason(name)
-        message = nil
+        message = T.let(nil, T.nilable(String))
 
         Tap.each do |old_tap|
           new_tap = old_tap.tap_migrations[name]

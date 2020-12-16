@@ -19,9 +19,9 @@ module Homebrew
       DEFAULT_PRIORITY = 5
       private_constant :DEFAULT_PRIORITY
 
-      # Creates and/or returns a `@strategies` `Hash` ,which maps a snake
-      # case strategy name symbol (e.g., `:page_match`) to the associated
-      # `Strategy`.
+      # Creates and/or returns a `@strategies` `Hash`, which maps a snake
+      # case strategy name symbol (e.g. `:page_match`) to the associated
+      # {Strategy}.
       #
       # At present, this should only be called after tap strategies have been
       # loaded, otherwise livecheck won't be able to use them.
@@ -39,29 +39,40 @@ module Homebrew
       end
       private_class_method :strategies
 
-      # Returns the `Strategy` that corresponds to the provided `Symbol` (or
-      # `nil` if there is no matching `Strategy`).
+      # Returns the {Strategy} that corresponds to the provided `Symbol` (or
+      # `nil` if there is no matching {Strategy}).
+      #
       # @param symbol [Symbol] the strategy name in snake case as a `Symbol`
-      #   (e.g., `:page_match`)
+      #   (e.g. `:page_match`)
       # @return [Strategy, nil]
       def from_symbol(symbol)
         strategies[symbol]
       end
 
       # Returns an array of strategies that apply to the provided URL.
+      #
       # @param url [String] the URL to check for matching strategies
-      # @param regex_provided [Boolean] whether a regex is provided in a
+      # @param livecheck_strategy [Symbol] a {Strategy} symbol from the
+      #   `livecheck` block
+      # @param regex_provided [Boolean] whether a regex is provided in the
       #   `livecheck` block
       # @return [Array]
-      def from_url(url, regex_provided = nil)
+      def from_url(url, livecheck_strategy: nil, regex_provided: nil)
         usable_strategies = strategies.values.select do |strategy|
-          # Ignore strategies with a priority of 0 or lower
-          next if strategy.const_defined?(:PRIORITY) && !strategy::PRIORITY.positive?
+          if strategy == PageMatch
+            # Only treat the `PageMatch` strategy as usable if a regex is
+            # present in the `livecheck` block
+            next unless regex_provided
+          elsif strategy.const_defined?(:PRIORITY) &&
+                !strategy::PRIORITY.positive? &&
+                from_symbol(livecheck_strategy) != strategy
+            # Ignore strategies with a priority of 0 or lower, unless the
+            # strategy is specified in the `livecheck` block
+            next
+          end
 
           strategy.respond_to?(:match?) && strategy.match?(url)
         end
-
-        usable_strategies << strategies[:page_match] if strategies.key?(:page_match) && regex_provided
 
         # Sort usable strategies in descending order by priority, using the
         # DEFAULT_PRIORITY when a strategy doesn't contain a PRIORITY constant
@@ -75,7 +86,9 @@ end
 
 require_relative "strategy/apache"
 require_relative "strategy/bitbucket"
+require_relative "strategy/cpan"
 require_relative "strategy/git"
+require_relative "strategy/github_latest"
 require_relative "strategy/gnome"
 require_relative "strategy/gnu"
 require_relative "strategy/hackage"

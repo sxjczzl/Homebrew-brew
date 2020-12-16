@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "utils/bottles"
+
 require "utils/gems"
 require "formula"
 require "cask/cask_loader"
@@ -12,10 +13,10 @@ module Homebrew
   #
   # @api private
   class Cleanup
-    CLEANUP_DEFAULT_DAYS = 30
+    CLEANUP_DEFAULT_DAYS = Homebrew::EnvConfig.cleanup_periodic_full_days.to_i.freeze
     private_constant :CLEANUP_DEFAULT_DAYS
 
-    # `Pathname` refinement with helper functions for cleaning up files.
+    # {Pathname} refinement with helper functions for cleaning up files.
     module CleanupRefinement
       refine Pathname do
         def incomplete?
@@ -84,8 +85,10 @@ module Homebrew
           formula = begin
             Formulary.from_rack(HOMEBREW_CELLAR/formula_name)
           rescue FormulaUnavailableError, TapFormulaAmbiguityError, TapFormulaWithOldnameAmbiguityError
-            return false
+            nil
           end
+
+          return false if formula.blank?
 
           resource_name = basename.to_s[/\A.*?--(.*?)--?(?:#{Regexp.escape(version)})/, 1]
 
@@ -113,12 +116,14 @@ module Homebrew
           cask = begin
             Cask::CaskLoader.load(name)
           rescue Cask::CaskError
-            return false
+            nil
           end
+
+          return false if cask.blank?
 
           return true unless basename.to_s.match?(/\A#{Regexp.escape(name)}--#{Regexp.escape(cask.version)}\b/)
 
-          return true if scrub && !cask.versions.include?(cask.version)
+          return true if scrub && cask.versions.exclude?(cask.version)
 
           if cask.version.latest?
             return mtime < CLEANUP_DEFAULT_DAYS.days.ago &&
@@ -164,6 +169,7 @@ module Homebrew
       return false if Homebrew::EnvConfig.no_install_cleanup?
 
       unless PERIODIC_CLEAN_FILE.exist?
+        HOMEBREW_CACHE.mkpath
         FileUtils.touch PERIODIC_CLEAN_FILE
         return false
       end
@@ -356,6 +362,8 @@ module Homebrew
 
       use_system_ruby = if Homebrew::EnvConfig.force_vendor_ruby?
         false
+      elsif OS.mac?
+        ENV["HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH"].present?
       else
         check_ruby_version = HOMEBREW_LIBRARY_PATH/"utils/ruby_check_version_script.rb"
         rubies.uniq.any? do |ruby|
@@ -439,7 +447,7 @@ module Homebrew
                 path.unlink
               end
             end
-          elsif path.directory? && !Keg::MUST_EXIST_SUBDIRECTORIES.include?(path)
+          elsif path.directory? && Keg::MUST_EXIST_SUBDIRECTORIES.exclude?(path)
             dirs << path
           end
         end

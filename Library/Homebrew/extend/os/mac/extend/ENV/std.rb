@@ -7,7 +7,7 @@ module Stdenv
   undef homebrew_extra_pkg_config_paths, x11
 
   def homebrew_extra_pkg_config_paths
-    ["#{HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/#{MacOS.version}"]
+    ["#{HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/#{MacOS.sdk_version}"]
   end
 
   def x11
@@ -101,8 +101,8 @@ module Stdenv
     append_path "CMAKE_FRAMEWORK_PATH", "#{sdk}/System/Library/Frameworks"
   end
 
-  # Some configure scripts won't find libxml2 without help
-  # This is a no-op with macOS SDK 10.15.4 and later
+  # Some configure scripts won't find libxml2 without help.
+  # This is a no-op with macOS SDK 10.15.4 and later.
   def libxml2
     sdk = self["SDKROOT"] || MacOS.sdk_path_if_needed
     if !sdk

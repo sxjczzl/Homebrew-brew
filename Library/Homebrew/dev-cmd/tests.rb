@@ -5,8 +5,11 @@ require "cli/parser"
 require "fileutils"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def tests_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -39,7 +42,6 @@ module Homebrew
     args = tests_args.parse
 
     Homebrew.install_bundler_gems!
-    gem_user_dir = Gem.user_dir
 
     require "byebug" if args.byebug?
 
@@ -55,6 +57,7 @@ module Homebrew
       ENV.delete("HOMEBREW_NO_EMOJI")
       ENV.delete("HOMEBREW_DEVELOPER")
       ENV.delete("HOMEBREW_PRY")
+      ENV.delete("HOMEBREW_BAT")
       ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] = "1"
       ENV["HOMEBREW_NO_COMPAT"] = "1" if args.no_compat?
       ENV["HOMEBREW_TEST_GENERIC_OS"] = "1" if args.generic?
@@ -133,6 +136,9 @@ module Homebrew
       end
 
       puts "Randomized with seed #{seed}"
+
+      # Let tests find `bundle` in the actual location.
+      ENV["HOMEBREW_TESTS_GEM_USER_DIR"] = gem_user_dir
 
       # Let `bundle` in PATH find its gem.
       ENV["GEM_PATH"] = "#{ENV["GEM_PATH"]}:#{gem_user_dir}"

@@ -10,6 +10,8 @@ require "os/mac/keg"
 module OS
   # Helper module for querying system information on macOS.
   module Mac
+    extend T::Sig
+
     module_function
 
     # rubocop:disable Naming/ConstantName
@@ -23,7 +25,7 @@ module OS
     # This can be compared to numerics, strings, or symbols
     # using the standard Ruby Comparable methods.
     def version
-      @version ||= Version.new(full_version.to_s[/^\d+\.\d+/])
+      @version ||= Version.from_symbol(full_version.to_sym)
     end
 
     # This can be compared to numerics, strings, or symbols
@@ -37,27 +39,30 @@ module OS
       @version = nil
     end
 
+    sig { returns(::Version) }
     def latest_sdk_version
       # TODO: bump version when new Xcode macOS SDK is released
-      Version.new "10.15"
+      ::Version.new("11.0")
     end
+    private :latest_sdk_version
 
-    def latest_stable_version
-      # TODO: bump version when new macOS is released and also update
-      # references in docs/Installation.md and
-      # https://github.com/Homebrew/install/blob/HEAD/install
-      Version.new "10.15"
+    sig { returns(::Version) }
+    def sdk_version
+      full_version.major_minor
     end
 
     def outdated_release?
       # TODO: bump version when new macOS is released and also update
       # references in docs/Installation.md and
-      # https://github.com/Homebrew/install/blob/HEAD/install
-      version < "10.13"
+      # https://github.com/Homebrew/install/blob/HEAD/install.sh
+      version < "10.14"
     end
 
     def prerelease?
-      version > latest_stable_version
+      # TODO: bump version when new macOS is released or announced
+      # and also update references in docs/Installation.md and
+      # https://github.com/Homebrew/install/blob/HEAD/install.sh
+      version >= "12"
     end
 
     def languages
@@ -81,6 +86,7 @@ module OS
       @active_developer_dir ||= Utils.popen_read("/usr/bin/xcode-select", "-print-path").strip
     end
 
+    sig { returns(T::Boolean) }
     def sdk_root_needed?
       if MacOS::CLT.installed?
         # If there's no CLT SDK, return false
@@ -121,7 +127,7 @@ module OS
       sdk(v)
     end
 
-    # Returns the path to an SDK or nil, following the rules set by {.sdk}.
+    # Returns the path to an SDK or nil, following the rules set by {sdk}.
     def sdk_path(v = nil)
       s = sdk(v)
       s&.path
@@ -143,9 +149,9 @@ module OS
 
     # See these issues for some history:
     #
-    # - https://github.com/Homebrew/legacy-homebrew/issues/13
-    # - https://github.com/Homebrew/legacy-homebrew/issues/41
-    # - https://github.com/Homebrew/legacy-homebrew/issues/48
+    # - {https://github.com/Homebrew/legacy-homebrew/issues/13}
+    # - {https://github.com/Homebrew/legacy-homebrew/issues/41}
+    # - {https://github.com/Homebrew/legacy-homebrew/issues/48}
     def macports_or_fink
       paths = []
 
@@ -179,7 +185,7 @@ module OS
       path = mdfind(*ids)
              .reject { |p| p.include?("/Backups.backupdb/") }
              .first
-      Pathname.new(path) unless path.nil? || path.empty?
+      Pathname.new(path) if path.present?
     end
 
     def mdfind(*ids)

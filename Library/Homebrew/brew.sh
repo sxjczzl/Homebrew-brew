@@ -10,6 +10,16 @@ case "$HOMEBREW_SYSTEM" in
   Linux)  HOMEBREW_LINUX="1" ;;
 esac
 
+# If we're running under macOS Rosetta 2, and it was requested by setting
+# HOMEBREW_CHANGE_ARCH_TO_ARM (for example in CI), then we re-exec this
+# same file under the native architecture
+if [[ "$HOMEBREW_CHANGE_ARCH_TO_ARM" = "1" ]] && \
+   [[ "$HOMEBREW_MACOS" = "1" ]] && \
+   [[ "$(sysctl -n hw.optional.arm64 2>/dev/null)" = "1" ]] && \
+   [[ "$(sysctl -n sysctl.proc_translated 2>/dev/null)" = "1" ]]; then
+  exec arch -arm64e "$HOMEBREW_BREW_FILE" "$@"
+fi
+
 # Where we store built products; a Cellar in HOMEBREW_PREFIX (often /usr/local
 # for bottles) unless there's already a Cellar in HOMEBREW_REPOSITORY.
 if [[ -d "$HOMEBREW_REPOSITORY/Cellar" ]]
@@ -44,6 +54,7 @@ case "$*" in
   --caskroom)          echo "$HOMEBREW_PREFIX/Caskroom"; exit 0 ;;
   --cache)             echo "$HOMEBREW_CACHE"; exit 0 ;;
   shellenv)            source "$HOMEBREW_LIBRARY/Homebrew/cmd/shellenv.sh"; homebrew-shellenv; exit 0 ;;
+  formulae)            source "$HOMEBREW_LIBRARY/Homebrew/cmd/formulae.sh"; homebrew-formulae; exit 0 ;;
 esac
 
 #####
@@ -159,7 +170,7 @@ update-preinstall() {
   fi
 
   if [[ "$HOMEBREW_COMMAND" = "install" || "$HOMEBREW_COMMAND" = "upgrade" ||
-        "$HOMEBREW_COMMAND" = "bump-formula-pr" ||
+        "$HOMEBREW_COMMAND" = "bump-formula-pr" || "$HOMEBREW_COMMAND" = "bump-cask-pr" ||
         "$HOMEBREW_COMMAND" = "bundle" ||
         "$HOMEBREW_COMMAND" = "tap" && $HOMEBREW_ARG_COUNT -gt 1 ||
         "$HOMEBREW_CASK_COMMAND" = "install" || "$HOMEBREW_CASK_COMMAND" = "upgrade" ]]
@@ -330,7 +341,9 @@ then
 
   # Set a variable when the macOS system Ruby is new enough to avoid spawning
   # a Ruby process unnecessarily.
-  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101500" ]]
+  # On Catalina the system Ruby is technically new enough but don't allow it:
+  # https://github.com/Homebrew/brew/issues/9410
+  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101600" ]]
   then
     unset HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH
   else
@@ -344,23 +357,32 @@ else
   : "${HOMEBREW_OS_VERSION:=$(uname -r)}"
   HOMEBREW_OS_USER_AGENT_VERSION="$HOMEBREW_OS_VERSION"
 
-  # Ensure the system Curl is a version that supports modern HTTPS certificates.
-  HOMEBREW_MINIMUM_CURL_VERSION="7.41.0"
+  if [[ -n "$HOMEBREW_FORCE_HOMEBREW_ON_LINUX" && -n "$HOMEBREW_ON_DEBIAN7" ]]
+  then
+    # Special version for our debian 7 docker container used to build patchelf and binutils
+    HOMEBREW_MINIMUM_CURL_VERSION="7.25.0"
+  else
+    # Ensure the system Curl is a version that supports modern HTTPS certificates.
+    HOMEBREW_MINIMUM_CURL_VERSION="7.41.0"
+  fi
   curl_version_output="$($HOMEBREW_CURL --version 2>/dev/null)"
   curl_name_and_version="${curl_version_output%% (*}"
   if [[ $(numeric "${curl_name_and_version##* }") -lt $(numeric "$HOMEBREW_MINIMUM_CURL_VERSION") ]]
   then
-    if [[ -z $HOMEBREW_CURL_PATH ]]; then
+      message="Please update your system cURL.
+Minimum required version: ${HOMEBREW_MINIMUM_CURL_VERSION}
+Your cURL version: ${curl_name_and_version##* }
+Your cURL executable: $(type -p $HOMEBREW_CURL)"
+
+    if [[ -z $HOMEBREW_CURL_PATH || -z $HOMEBREW_DEVELOPER ]]; then
       HOMEBREW_SYSTEM_CURL_TOO_OLD=1
       HOMEBREW_FORCE_BREWED_CURL=1
+      if [[ -z $HOMEBREW_CURL_WARNING ]]; then
+        onoe "$message"
+        HOMEBREW_CURL_WARNING=1
+      fi
     else
-      odie <<EOS
-The version of cURL that you provided to Homebrew using HOMEBREW_CURL_PATH is too old.
-Minimum required version: ${HOMEBREW_MINIMUM_CURL_VERSION}.
-Your cURL version: ${curl_name_and_version##* }.
-Please point Homebrew to cURL ${HOMEBREW_MINIMUM_CURL_VERSION} or newer
-or unset HOMEBREW_CURL_PATH variable.
-EOS
+      odie "$message"
     fi
   fi
 
@@ -373,16 +395,18 @@ EOS
   IFS=. read -r major minor micro build extra <<< "${git_version_output##* }"
   if [[ $(numeric "$major.$minor.$micro.$build") -lt $(numeric "$HOMEBREW_MINIMUM_GIT_VERSION") ]]
   then
-    if [[ -z $HOMEBREW_GIT_PATH ]]; then
+    message="Please update your system Git.
+Minimum required version: ${HOMEBREW_MINIMUM_GIT_VERSION}
+Your Git version: $major.$minor.$micro.$build
+Your Git executable: $(unset git && type -p $HOMEBREW_GIT)"
+    if [[ -z $HOMEBREW_GIT_PATH || -z $HOMEBREW_DEVELOPER ]]; then
       HOMEBREW_FORCE_BREWED_GIT="1"
+      if [[ -z $HOMEBREW_GIT_WARNING ]]; then
+        onoe "$message"
+        HOMEBREW_GIT_WARNING=1
+      fi
     else
-      odie <<EOS
-The version of Git that you provided to Homebrew using HOMEBREW_GIT_PATH is too old.
-Minimum required version: ${HOMEBREW_MINIMUM_GIT_VERSION}.
-Your Git version: $major.$minor.$micro.$build.
-Please point Homebrew to Git ${HOMEBREW_MINIMUM_CURL_VERSION} or newer
-or unset HOMEBREW_GIT_PATH variable.
-EOS
+      odie "$message"
     fi
   fi
 
@@ -418,8 +442,10 @@ export HOMEBREW_TEMP
 export HOMEBREW_CELLAR
 export HOMEBREW_SYSTEM
 export HOMEBREW_CURL
+export HOMEBREW_CURL_WARNING
 export HOMEBREW_SYSTEM_CURL_TOO_OLD
 export HOMEBREW_GIT
+export HOMEBREW_GIT_WARNING
 export HOMEBREW_MINIMUM_GIT_VERSION
 export HOMEBREW_PROCESSOR
 export HOMEBREW_PRODUCT
@@ -429,6 +455,7 @@ export HOMEBREW_MACOS_VERSION_NUMERIC
 export HOMEBREW_USER_AGENT
 export HOMEBREW_USER_AGENT_CURL
 export HOMEBREW_BOTTLE_DEFAULT_DOMAIN
+export HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH
 
 if [[ -n "$HOMEBREW_MACOS" && -x "/usr/bin/xcode-select" ]]
 then

@@ -38,6 +38,8 @@ module Cask
   #
   # @api private
   class Cmd
+    extend T::Sig
+
     include Context
 
     ALIASES = {
@@ -52,43 +54,37 @@ module Cask
     }.freeze
 
     DEPRECATED_COMMANDS = {
-      Cmd::Cache     => "brew --cache --cask",
+      Cmd::Cache     => "brew --cache [--cask]",
+      Cmd::Audit     => "brew audit [--cask]",
+      Cmd::Cat       => "brew cat [--cask]",
+      Cmd::Create    => "brew create --cask --set-name <name> <url>",
       Cmd::Doctor    => "brew doctor --verbose",
+      Cmd::Edit      => "brew edit [--cask]",
+      Cmd::Fetch     => "brew fetch [--cask]",
+      Cmd::Help      => "brew help",
       Cmd::Home      => "brew home",
-      Cmd::List      => "brew list --cask",
-      Cmd::Outdated  => "brew outdated --cask",
-      Cmd::Reinstall => "brew reinstall",
-      Cmd::Upgrade   => "brew upgrade --cask",
+      Cmd::Info      => "brew info [--cask]",
+      Cmd::Install   => "brew install [--cask]",
+      Cmd::List      => "brew list [--cask]",
+      Cmd::Outdated  => "brew outdated [--cask]",
+      Cmd::Reinstall => "brew reinstall [--cask]",
+      Cmd::Style     => "brew style",
+      Cmd::Uninstall => "brew uninstall [--cask]",
+      Cmd::Upgrade   => "brew upgrade [--cask]",
+      Cmd::Zap       => "brew uninstall --zap [--cask]",
     }.freeze
-
-    def self.description
-      max_command_length = Cmd.commands.map(&:length).max
-
-      command_lines = Cmd.command_classes
-                         .select(&:visible?)
-                         .map do |klass|
-        "  - #{"`#{klass.command_name}`".ljust(max_command_length + 2)}  #{klass.short_description}\n"
-      end
-
-      <<~EOS
-        Homebrew Cask provides a friendly CLI workflow for the administration of macOS applications distributed as binaries.
-
-        Commands:
-        #{command_lines.join}
-
-        See also: `man brew`
-      EOS
-    end
 
     def self.parser(&block)
       Homebrew::CLI::Parser.new do
-        if block_given?
+        if block
           instance_eval(&block)
         else
           usage_banner <<~EOS
             `cask` <command> [<options>] [<cask>]
 
-            #{Cmd.description}
+            Homebrew Cask provides a friendly CLI workflow for the administration of macOS applications distributed as binaries.
+
+            See also: `man brew`
           EOS
         end
 
@@ -171,7 +167,7 @@ module Cask
 
       args = self.class.parser.parse(argv, ignore_invalid_options: true)
 
-      Tap.default_cask_tap.install unless Tap.default_cask_tap.installed?
+      Tap.install_default_cask_tap_if_necessary
 
       command, argv = detect_internal_command(*argv) ||
                       detect_external_command(*argv) ||

@@ -4,6 +4,7 @@
 module Utils
   # Helper functions for querying Git information.
   #
+  # @see GitRepositoryExtension
   # @api private
   module Git
     module_function
@@ -88,8 +89,9 @@ module Utils
     end
 
     def commit_message(repo, commit = nil)
+      odeprecated "Utils::Git.commit_message(repo)", "Pathname(repo).git_commit_message"
       commit ||= "HEAD"
-      Utils.safe_popen_read(git, "-C", repo, "log", "-1", "--pretty=%B", commit, "--", err: :out).strip
+      Pathname(repo).extend(GitRepositoryExtension).git_commit_message(commit)
     end
 
     def ensure_installed!
@@ -126,13 +128,21 @@ module Utils
       ENV["GIT_COMMITTER_EMAIL"] = Homebrew::EnvConfig.git_email if committer
     end
 
+    def setup_gpg!
+      return unless Formula["gnupg"].optlinked?
+
+      ENV["PATH"] = PATH.new(ENV["PATH"])
+                        .prepend(Formula["gnupg"].opt_bin)
+    end
+
     def origin_branch(repo)
-      Utils.popen_read(git, "-C", repo, "symbolic-ref", "-q", "--short",
-                       "refs/remotes/origin/HEAD").chomp.presence
+      odeprecated "Utils::Git.origin_branch(repo)", "Pathname(repo).git_origin_branch"
+      Pathname(repo).extend(GitRepositoryExtension).git_origin_branch
     end
 
     def current_branch(repo)
-      Utils.popen_read("git", "-C", repo, "symbolic-ref", "--short", "HEAD").chomp.presence
+      odeprecated "Utils::Git.current_branch(repo)", "Pathname(repo).git_branch"
+      Pathname(repo).extend(GitRepositoryExtension).git_branch
     end
 
     # Special case of `git cherry-pick` that permits non-verbose output and

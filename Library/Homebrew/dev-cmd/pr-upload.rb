@@ -5,8 +5,11 @@ require "cli/parser"
 require "bintray"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def pr_upload_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -57,8 +60,8 @@ module Homebrew
   def pr_upload
     args = pr_upload_args.parse
 
-    json_files = Dir["*.json"]
-    odie "No JSON files found in the current working directory" if json_files.empty?
+    json_files = Dir["*.bottle.json"]
+    odie "No bottle JSON files found in the current working directory" if json_files.empty?
 
     bottles_hash = json_files.reduce({}) do |hash, json_file|
       hash.deep_merge(JSON.parse(IO.read(json_file)))
@@ -86,6 +89,15 @@ module Homebrew
     check_bottled_formulae(bottles_hash)
 
     safe_system HOMEBREW_BREW_FILE, *bottle_args
+
+    # Check the bottle commits did not break `brew audit`
+    unless args.no_commit?
+      audit_args = ["audit", "--skip-style"]
+      audit_args << "--verbose" if args.verbose?
+      audit_args << "--debug" if args.debug?
+      audit_args += bottles_hash.keys
+      safe_system HOMEBREW_BREW_FILE, *audit_args
+    end
 
     if github_releases?(bottles_hash)
       # Handle uploading to GitHub Releases.

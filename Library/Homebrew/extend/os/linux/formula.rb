@@ -9,12 +9,6 @@ class Formula
   end
 
   class << self
-    undef on_linux
-
-    def on_linux(&_block)
-      yield
-    end
-
     undef ignore_missing_libraries
 
     def ignore_missing_libraries(*libs)

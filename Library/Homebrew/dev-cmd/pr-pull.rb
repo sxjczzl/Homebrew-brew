@@ -8,8 +8,11 @@ require "tmpdir"
 require "formula"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def pr_pull_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -47,7 +50,10 @@ module Homebrew
              depends_on:  "--autosquash",
              description: "Message to include when autosquashing revision bumps, deletions, and rebuilds."
       flag   "--workflow=",
-             description: "Retrieve artifacts from the specified workflow (default: `tests.yml`)."
+             description: "Retrieve artifacts from the specified workflow (default: `tests.yml`). "\
+                          "*Legacy:* use `--workflows` instead."
+      # TODO: enable for next major/minor release
+      #      replacement: "`--workflows`"
       flag   "--artifact=",
              description: "Download artifacts with the specified name (default: `bottles`)."
       flag   "--bintray-org=",
@@ -59,29 +65,14 @@ module Homebrew
       flag   "--bintray-mirror=",
              description: "Use the specified Bintray repository to automatically mirror stable URLs "\
                           "defined in the formulae (default: `mirror`)."
-      min_named 1
+      comma_array "--workflows=",
+                  description: "Retrieve artifacts from the specified workflow (default: `tests.yml`) "\
+                               "Comma-separated list to include multiple workflows."
+      comma_array "--ignore-missing-artifacts=",
+                  description: "Comma-separated list of workflows which can be ignored if they have not been run."
+
       conflicts "--clean", "--autosquash"
-    end
-  end
-
-  def setup_git_environment!
-    # Passthrough Git environment variables
-    ENV["GIT_COMMITTER_NAME"] = ENV["HOMEBREW_GIT_NAME"] if ENV["HOMEBREW_GIT_NAME"]
-    ENV["GIT_COMMITTER_EMAIL"] = ENV["HOMEBREW_GIT_EMAIL"] if ENV["HOMEBREW_GIT_EMAIL"]
-
-    # Depending on user configuration, git may try to invoke gpg.
-    return unless Utils.popen_read("git config --get --bool commit.gpgsign").chomp == "true"
-
-    begin
-      gnupg = Formula["gnupg"]
-    rescue FormulaUnavailableError
-      nil
-    else
-      if gnupg.any_version_installed?
-        path = PATH.new(ENV.fetch("PATH"))
-        path.prepend(gnupg.any_installed_prefix/"bin")
-        ENV["PATH"] = path
-      end
+      min_named 1
     end
   end
 
@@ -100,7 +91,7 @@ module Homebrew
   end
 
   def signoff!(path, pr: nil, dry_run: false)
-    subject, body, trailers = separate_commit_message(Utils::Git.commit_message(path))
+    subject, body, trailers = separate_commit_message(path.git_commit_message)
 
     if pr
       # This is a tap pull request and approving reviewers should also sign-off.
@@ -132,14 +123,18 @@ module Homebrew
     new_formula = begin
       Formulary.from_contents(formula_name, formula_path, new_contents, :stable)
     rescue FormulaUnavailableError
-      return "#{formula_name}: delete #{reason}".strip
+      nil
     end
+
+    return "#{formula_name}: delete #{reason}".strip if new_formula.blank?
 
     old_formula = begin
       Formulary.from_contents(formula_name, formula_path, old_contents, :stable)
     rescue FormulaUnavailableError
-      return "#{formula_name} #{new_formula.stable.version} (new formula)"
+      nil
     end
+
+    return "#{formula_name} #{new_formula.stable.version} (new formula)" if old_formula.blank?
 
     if old_formula.stable.version != new_formula.stable.version
       "#{formula_name} #{new_formula.stable.version}"
@@ -151,7 +146,7 @@ module Homebrew
   end
 
   # Cherry picks a single commit that modifies a single file.
-  # Potentially rewords this commit using `determine_bump_subject`.
+  # Potentially rewords this commit using {determine_bump_subject}.
   def reword_formula_commit(commit, file, reason: "", verbose: false, resolve: false, path: ".")
     formula_file = Pathname.new(path) / file
     formula_name = formula_file.basename.to_s.chomp(".rb")
@@ -163,7 +158,7 @@ module Homebrew
     new_formula = Utils::Git.file_at_commit(path, file, "HEAD")
 
     bump_subject = determine_bump_subject(old_formula, new_formula, formula_file, reason: reason).strip
-    subject, body, trailers = separate_commit_message(Utils::Git.commit_message(path))
+    subject, body, trailers = separate_commit_message(path.git_commit_message)
 
     if subject != bump_subject && !subject.start_with?("#{formula_name}:")
       safe_system("git", "-C", path, "commit", "--amend", "-q",
@@ -175,7 +170,7 @@ module Homebrew
   end
 
   # Cherry picks multiple commits that each modify a single file.
-  # Words the commit according to `determine_bump_subject` with the body
+  # Words the commit according to {determine_bump_subject} with the body
   # corresponding to all the original commit messages combined.
   def squash_formula_commits(commits, file, reason: "", verbose: false, resolve: false, path: ".")
     odebug "Squashing #{file}: #{commits.join " "}"
@@ -188,7 +183,7 @@ module Homebrew
     messages = []
     trailers = []
     commits.each do |commit|
-      subject, body, trailer = separate_commit_message(Utils::Git.commit_message(path, commit))
+      subject, body, trailer = separate_commit_message(path.git_commit_message(commit))
       body = body.lines.map { |line| "  #{line.strip}" }.join("\n")
       messages << "* #{subject}\n#{body}".strip
       trailers << trailer
@@ -223,7 +218,8 @@ module Homebrew
   end
 
   def autosquash!(original_commit, path: ".", reason: "", verbose: false, resolve: false)
-    original_head = Utils.safe_popen_read("git", "-C", path, "rev-parse", "HEAD").strip
+    path = Pathname(path).extend(GitRepositoryExtension)
+    original_head = path.git_head
 
     commits = Utils.safe_popen_read("git", "-C", path, "rev-list",
                                     "--reverse", "#{original_commit}..HEAD").lines.map(&:strip)
@@ -299,8 +295,9 @@ module Homebrew
     Utils::Git.cherry_pick!(path, "--ff", "--allow-empty", *commits, verbose: args.verbose?, resolve: args.resolve?)
   end
 
-  def formulae_need_bottles?(tap, original_commit, args:)
+  def formulae_need_bottles?(tap, original_commit, user, repo, pr, args:)
     return if args.dry_run?
+    return false if GitHub.pull_request_labels(user, repo, pr).include? "CI-syntax-only"
 
     changed_formulae(tap, original_commit).any? do |f|
       !f.bottle_unneeded? && !f.bottle_disabled?
@@ -369,13 +366,20 @@ module Homebrew
   def pr_pull
     args = pr_pull_args.parse
 
-    workflow = args.workflow || "tests.yml"
+    odeprecated "`brew pr-pull --workflow`", "`brew pr-pull --workflows=`" if args.workflow.presence
+
+    workflows = if args.workflow.blank?
+      args.workflows.presence || ["tests.yml"]
+    else
+      [args.workflow].compact.presence || ["tests.yml"]
+    end
     artifact = args.artifact || "bottles"
     bintray_org = args.bintray_org || "homebrew"
     mirror_repo = args.bintray_mirror || "mirror"
     tap = Tap.fetch(args.tap || CoreTap.instance.name)
 
-    setup_git_environment!
+    Utils::Git.set_name_email!
+    Utils::Git.setup_gpg!
 
     args.named.uniq.each do |arg|
       arg = "#{tap.default_remote}/pull/#{arg}" if arg.to_i.positive?
@@ -383,17 +387,14 @@ module Homebrew
       _, user, repo, pr = *url_match
       odie "Not a GitHub pull request: #{arg}" unless pr
 
-      current_branch = Utils::Git.current_branch(tap.path)
-      origin_branch = Utils::Git.origin_branch(tap.path).split("/").last
-
-      if current_branch != origin_branch || args.branch_okay? || args.clean?
-        opoo "Current branch is #{current_branch}: do you need to pull inside #{origin_branch}?"
+      if !tap.path.git_default_origin_branch? || args.branch_okay? || args.clean?
+        opoo "Current branch is #{tap.path.git_branch}: do you need to pull inside #{tap.path.git_origin_branch}?"
       end
 
       ohai "Fetching #{tap} pull request ##{pr}"
       Dir.mktmpdir pr do |dir|
         cd dir do
-          original_commit = Utils.popen_read("git", "-C", tap.path, "rev-parse", "HEAD").chomp
+          original_commit = tap.path.git_head
           cherry_pick_pr!(user, repo, pr, path: tap.path, args: args)
           if args.autosquash? && !args.dry_run?
             autosquash!(original_commit, path: tap.path,
@@ -407,13 +408,28 @@ module Homebrew
                             args: args)
           end
 
-          unless formulae_need_bottles?(tap, original_commit, args: args)
+          unless formulae_need_bottles?(tap, original_commit, user, repo, pr, args: args)
             ohai "Skipping artifacts for ##{pr} as the formulae don't need bottles"
             next
           end
 
-          url = GitHub.get_artifact_url(user, repo, pr, workflow_id: workflow, artifact_name: artifact)
-          download_artifact(url, dir, pr)
+          workflows.each do |workflow|
+            workflow_run = GitHub.get_workflow_run(
+              user, repo, pr, workflow_id: workflow, artifact_name: artifact
+            )
+            if args.ignore_missing_artifacts.present? &&
+               args.ignore_missing_artifacts.include?(workflow) &&
+               workflow_run.first.blank?
+              # Ignore that workflow as it was not executed and we specified
+              # that we could skip it.
+              ohai "Ignoring workflow #{workflow} as requested by --ignore-missing-artifacts"
+              next
+            end
+
+            ohai "Downloading bottles for workflow: #{workflow}"
+            url = GitHub.get_artifact_url(workflow_run)
+            download_artifact(url, dir, pr)
+          end
 
           next if args.no_upload?
 
@@ -434,6 +450,8 @@ module Homebrew
 end
 
 class GitHubArtifactDownloadStrategy < AbstractFileDownloadStrategy
+  extend T::Sig
+
   def fetch
     ohai "Downloading #{url}"
     if cached_location.exist?
@@ -457,6 +475,7 @@ class GitHubArtifactDownloadStrategy < AbstractFileDownloadStrategy
 
   private
 
+  sig { returns(String) }
   def resolved_basename
     "artifact.zip"
   end

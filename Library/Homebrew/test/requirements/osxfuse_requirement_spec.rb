@@ -1,7 +1,6 @@
 # typed: false
 # frozen_string_literal: true
 
-require "cli/args"
 require "requirements/osxfuse_requirement"
 
 describe OsxfuseRequirement do
@@ -44,7 +43,7 @@ describe OsxfuseRequirement do
 
   describe "#message" do
     it "prompts for installation of 'libfuse' on Linux", :needs_linux do
-      expect(requirement.message).to match("libfuse is required to install this formula")
+      expect(requirement.message).to match("libfuse is required for this software")
     end
 
     it "prompts for installation of 'osxFuse' on macOS", :needs_macos do

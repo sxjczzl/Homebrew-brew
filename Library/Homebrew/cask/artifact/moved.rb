@@ -5,10 +5,13 @@ require "cask/artifact/relocated"
 
 module Cask
   module Artifact
-    # Superclass for all artifacts which are installed by moving them to the target location.
+    # Superclass for all artifacts that are installed by moving them to the target location.
     #
     # @api private
     class Moved < Relocated
+      extend T::Sig
+
+      sig { returns(String) }
       def self.english_description
         "#{english_name}s"
       end

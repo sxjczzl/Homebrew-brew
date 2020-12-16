@@ -1,12 +1,15 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
 require "cli/parser"
 require "utils/github"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def dispatch_build_bottle_args
     Homebrew::CLI::Parser.new do
       usage_banner <<~EOS
@@ -24,20 +27,32 @@ module Homebrew
              description: "Dispatch specified workflow (default: `dispatch-build-bottle.yml`)."
       switch "--upload",
              description: "Upload built bottles to Bintray."
+
+      min_named :formula
     end
   end
 
   def dispatch_build_bottle
     args = dispatch_build_bottle_args.parse
 
-    raise FormulaUnspecifiedError if args.named.empty?
+    # Fixup version for ARM/Apple Silicon
+    # TODO: fix label name to be 11-arm64 instead and remove this.
+    args.macos&.gsub!(/^11-arm$/, "11-arm64")
 
-    odie "Must specify --macos option" unless args.macos
-
-    macos = begin
-      MacOS::Version.from_symbol(args.macos.to_sym)
+    macos = args.macos&.yield_self do |s|
+      MacOS::Version.from_symbol(s.to_sym)
     rescue MacOSVersionError
-      MacOS::Version.new(args.macos)
+      MacOS::Version.new(s)
+    end
+
+    raise UsageError, "Must specify --macos option" if macos.blank?
+
+    # Fixup label for ARM/Apple Silicon
+    macos_label = if macos.arch == :arm64
+      # TODO: fix label name to be 11-arm64 instead.
+      "#{macos}-arm"
+    else
+      macos.to_s
     end
 
     tap = Tap.fetch(args.tap || CoreTap.instance.name)
@@ -50,7 +65,7 @@ module Homebrew
       # Required inputs
       inputs = {
         formula: formula.name,
-        macos:   macos.to_s,
+        macos:   macos_label,
       }
 
       # Optional inputs

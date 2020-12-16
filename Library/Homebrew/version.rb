@@ -7,14 +7,18 @@ require "version/null"
 #
 # @api private
 class Version
+  extend T::Sig
+
   include Comparable
 
   def self.formula_optionally_versioned_regex(name, full: true)
     /#{"^" if full}#{Regexp.escape(name)}(@\d[\d.]*)?#{"$" if full}/
   end
 
-  # A part of a `Version`.
+  # A part of a {Version}.
   class Token
+    extend T::Sig
+
     include Comparable
 
     def self.create(val)
@@ -48,6 +52,7 @@ class Version
       @value = value
     end
 
+    sig { returns(String) }
     def inspect
       "#<#{self.class.name} #{value.inspect}>"
     end
@@ -69,6 +74,7 @@ class Version
     end
     alias to_str to_s
 
+    sig { returns(T::Boolean) }
     def numeric?
       false
     end
@@ -76,6 +82,8 @@ class Version
 
   # A pseudo-token representing the absence of a token.
   class NullToken < Token
+    extend T::Sig
+
     def initialize
       super(nil)
     end
@@ -95,10 +103,12 @@ class Version
       end
     end
 
+    sig { returns(T::Boolean) }
     def null?
       true
     end
 
+    sig { returns(String) }
     def inspect
       "#<#{self.class.name}>"
     end
@@ -133,6 +143,7 @@ class Version
   # A token consisting of only numbers.
   class NumericToken < Token
     PATTERN = /[0-9]+/i.freeze
+    extend T::Sig
 
     def initialize(value)
       super
@@ -153,6 +164,7 @@ class Version
       end
     end
 
+    sig { returns(T::Boolean) }
     def numeric?
       true
     end
@@ -165,7 +177,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is an alpha release.
+  # A token representing the part of a version designating it as an alpha release.
   class AlphaToken < CompositeToken
     PATTERN = /alpha[0-9]*|a[0-9]+/i.freeze
 
@@ -183,7 +195,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is a beta release.
+  # A token representing the part of a version designating it as a beta release.
   class BetaToken < CompositeToken
     PATTERN = /beta[0-9]*|b[0-9]+/i.freeze
 
@@ -203,7 +215,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is a pre-release.
+  # A token representing the part of a version designating it as a pre-release.
   class PreToken < CompositeToken
     PATTERN = /pre[0-9]*/i.freeze
 
@@ -223,7 +235,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is a release-candidate.
+  # A token representing the part of a version designating it as a release candidate.
   class RCToken < CompositeToken
     PATTERN = /rc[0-9]*/i.freeze
 
@@ -243,7 +255,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is a patch release.
+  # A token representing the part of a version designating it as a patch release.
   class PatchToken < CompositeToken
     PATTERN = /p[0-9]*/i.freeze
 
@@ -261,7 +273,7 @@ class Version
     end
   end
 
-  # A token representing the part of a version designating it is a post release.
+  # A token representing the part of a version designating it as a post release.
   class PostToken < CompositeToken
     PATTERN = /.post[0-9]+/i.freeze
 
@@ -504,13 +516,11 @@ class Version
         l += 1
         r += 1
         next
-      elsif a.numeric? && b.numeric?
-        return a <=> b
-      elsif a.numeric?
+      elsif a.numeric? && !b.numeric?
         return 1 if a > NULL_TOKEN
 
         l += 1
-      elsif b.numeric?
+      elsif !a.numeric? && b.numeric?
         return -1 if b > NULL_TOKEN
 
         r += 1
@@ -583,10 +593,13 @@ class Version
   end
 end
 
-# A formula's [HEAD version](https://docs.brew.sh/Formula-Cookbook#unstable-versions-head).
+# A formula's HEAD version.
+# @see https://docs.brew.sh/Formula-Cookbook#unstable-versions-head Unstable versions (head)
 #
 # @api private
 class HeadVersion < Version
+  extend T::Sig
+
   attr_reader :commit
 
   def initialize(*)
@@ -603,6 +616,7 @@ class HeadVersion < Version
     end
   end
 
+  sig { returns(T::Boolean) }
   def head?
     true
   end

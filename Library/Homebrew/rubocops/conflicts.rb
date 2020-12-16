@@ -7,14 +7,10 @@ require "extend/string"
 module RuboCop
   module Cop
     module FormulaAudit
-      # This cop audits versioned Formulae for `conflicts_with`.
+      # This cop audits versioned formulae for `conflicts_with`.
       class Conflicts < FormulaCop
         MSG = "Versioned formulae should not use `conflicts_with`. " \
               "Use `keg_only :versioned_formula` instead."
-
-        ALLOWLIST = %w[
-          bash-completion@2
-        ].freeze
 
         def audit_formula(_node, _class_node, _parent_class_node, body_node)
           find_method_calls_by_name(body_node, :conflicts_with).each do |conflicts_with_call|
@@ -35,7 +31,7 @@ module RuboCop
 
           return unless versioned_formula?
 
-          problem MSG if !ALLOWLIST.include?(@formula_name) &&
+          problem MSG if !tap_style_exception?(:versioned_formulae_conflicts_allowlist) &&
                          method_called_ever?(body_node, :conflicts_with)
         end
 

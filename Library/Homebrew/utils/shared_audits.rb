@@ -32,15 +32,17 @@ module SharedAudits
   end
 
   GITHUB_PRERELEASE_ALLOWLIST = {
-    "amd-power-gadget" => :all,
     "elm-format"       => "0.8.3",
     "extraterm"        => :all,
     "freetube"         => :all,
     "gitless"          => "0.8.8",
+    "haptickey"        => :all,
     "home-assistant"   => :all,
-    "infrakit"         => "0.5",
+    "lidarr"           => :all,
+    "nuclear"          => :all,
     "pock"             => :all,
     "riff"             => "0.5.0",
+    "syntax-highlight" => :all,
     "telegram-cli"     => "1.3.1",
     "toggl-track"      => :all,
     "volta"            => "0.8.6",
@@ -68,28 +70,20 @@ module SharedAudits
   def gitlab_repo_data(user, repo)
     @gitlab_repo_data ||= {}
     @gitlab_repo_data["#{user}/#{repo}"] ||= begin
-      out, _, status= curl_output("--request", "GET", "https://gitlab.com/api/v4/projects/#{user}%2F#{repo}")
-      return unless status.success?
-
-      JSON.parse(out)
+      out, _, status = curl_output("https://gitlab.com/api/v4/projects/#{user}%2F#{repo}")
+      JSON.parse(out) if status.success?
     end
-
-    @gitlab_repo_data["#{user}/#{repo}"]
   end
 
   def gitlab_release_data(user, repo, tag)
     id = "#{user}/#{repo}/#{tag}"
     @gitlab_release_data ||= {}
     @gitlab_release_data[id] ||= begin
-      out, _, status= curl_output(
+      out, _, status = curl_output(
         "https://gitlab.com/api/v4/projects/#{user}%2F#{repo}/releases/#{tag}", "--fail"
       )
-      return unless status.success?
-
-      JSON.parse(out)
+      JSON.parse(out) if status.success?
     end
-
-    @gitlab_release_data[id]
   end
 
   GITLAB_PRERELEASE_ALLOWLIST = {}.freeze
@@ -113,7 +107,7 @@ module SharedAudits
 
     return if metadata.nil?
 
-    if metadata["fork"] && !GITHUB_FORK_ALLOWLIST.include?("#{user}/#{repo}")
+    if metadata["fork"] && GITHUB_FORK_ALLOWLIST.exclude?("#{user}/#{repo}")
       return "GitHub fork (not canonical repository)"
     end
 

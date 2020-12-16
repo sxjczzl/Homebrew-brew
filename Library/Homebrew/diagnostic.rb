@@ -48,11 +48,13 @@ module Homebrew
 
     # Diagnostic checks.
     class Checks
+      extend T::Sig
+
       def initialize(verbose: true)
         @verbose = verbose
       end
 
-      ############# HELPERS
+      ############# @!group HELPERS
       # Finds files in `HOMEBREW_PREFIX` *and* /usr/local.
       # Specify paths relative to a prefix, e.g. "include/foo.h".
       # Sets @found for your convenience.
@@ -71,6 +73,7 @@ module Homebrew
         path.gsub(ENV["HOME"], "~")
       end
 
+      sig { returns(String) }
       def none_string
         "<NONE>"
       end
@@ -78,7 +81,7 @@ module Homebrew
       def add_info(*args)
         ohai(*args) if @verbose
       end
-      ############# END HELPERS
+      ############# @!endgroup END HELPERS
 
       def fatal_preinstall_checks
         %w[
@@ -112,8 +115,9 @@ module Homebrew
         <<~EOS
           You will encounter build failures with some formulae.
           Please create pull requests instead of asking for help on Homebrew's GitHub,
-          Discourse, Twitter or IRC. You are responsible for resolving any issues you
-          experience while you are running this #{what}.
+          Twitter or any other official channels. You are responsible for resolving
+          any issues you experience while you are running this
+          #{what}.
         EOS
       end
 
@@ -337,6 +341,8 @@ module Homebrew
       alias generic_check_tmpdir_sticky_bit check_tmpdir_sticky_bit
 
       def check_exist_directories
+        return if HOMEBREW_PREFIX.writable_real?
+
         not_exist_dirs = Keg::MUST_EXIST_DIRECTORIES.reject(&:exist?)
         return if not_exist_dirs.empty?
 
@@ -556,26 +562,29 @@ module Homebrew
       end
 
       def check_casktap_git_origin
-        cask_tap = Tap.default_cask_tap
-        return unless cask_tap.installed?
+        default_cask_tap = Tap.default_cask_tap
+        return unless default_cask_tap.installed?
 
-        examine_git_origin(cask_tap.path, cask_tap.remote)
+        examine_git_origin(default_cask_tap.path, default_cask_tap.remote)
       end
 
-      def check_coretap_git_branch
+      sig { returns(T.nilable(String)) }
+      def check_tap_git_branch
         return if ENV["CI"]
+        return unless Utils::Git.available?
 
-        coretap_path = CoreTap.instance.path
-        return if !Utils::Git.available? || !(coretap_path/".git").exist?
+        commands = Tap.map do |tap|
+          next if tap.path.git_default_origin_branch?
 
-        branch = coretap_path.git_branch
-        return if branch.blank? || branch.include?("master")
+          "git -C $(brew --repo #{tap.name}) checkout #{tap.path.git_origin_branch}"
+        end.compact
+
+        return if commands.blank?
 
         <<~EOS
-          #{CoreTap.instance.full_name} is not on the master branch.
-
-          Check out the master branch by running:
-            git -C "$(brew --repo homebrew/core)" checkout master
+          Some taps are not on the default git origin branch and may not receive
+          updates. If this is a surprise to you, check out the default branch with:
+            #{commands.join("\n  ")}
         EOS
       end
 
@@ -758,14 +767,14 @@ module Homebrew
 
       def check_for_unlinked_but_not_keg_only
         unlinked = Formula.racks.reject do |rack|
-          if !(HOMEBREW_LINKED_KEGS/rack.basename).directory?
+          if (HOMEBREW_LINKED_KEGS/rack.basename).directory?
+            true
+          else
             begin
               Formulary.from_rack(rack).keg_only?
             rescue FormulaUnavailableError, TapFormulaAmbiguityError, TapFormulaWithOldnameAmbiguityError
               false
             end
-          else
-            true
           end
         end.map(&:basename)
         return if unlinked.empty?
@@ -851,7 +860,8 @@ module Homebrew
         return if deleted_formulae.blank?
 
         <<~EOS
-          Some installed formulae were deleted!
+          Some installed kegs have no formulae!
+          This means they were either deleted or installed with `brew diy`.
           You should find replacements for the following formulae:
             #{deleted_formulae.join("\n  ")}
         EOS
@@ -906,12 +916,12 @@ module Homebrew
       end
 
       def check_cask_taps
-        default_tap = Tap.default_cask_tap
-        alt_taps = Tap.select { |t| t.cask_dir.exist? && t != default_tap }
+        default_cask_tap = Tap.default_cask_tap
+        alt_taps = Tap.select { |t| t.cask_dir.exist? && t != default_cask_tap }
 
         error_tap_paths = []
 
-        add_info "Homebrew Cask Taps:", ([default_tap, *alt_taps].map do |tap|
+        add_info "Homebrew Cask Taps:", ([default_cask_tap, *alt_taps].map do |tap|
           if tap.path.blank?
             none_string
           else

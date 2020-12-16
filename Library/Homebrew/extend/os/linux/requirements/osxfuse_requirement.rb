@@ -4,6 +4,8 @@
 require "requirement"
 
 class OsxfuseRequirement < Requirement
+  extend T::Sig
+
   download "https://github.com/libfuse/libfuse"
 
   satisfy(build_env: false) do
@@ -20,8 +22,9 @@ class OsxfuseRequirement < Requirement
     false
   end
 
+  sig { returns(String) }
   def message
-    msg = "libfuse is required to install this formula.\n"
+    msg = "libfuse is required for this software.\n"
     if libfuse_formula_exists?
       <<~EOS
         #{msg}Run `brew install libfuse` to install it.
@@ -33,6 +36,7 @@ class OsxfuseRequirement < Requirement
 
   private
 
+  sig { returns(T::Boolean) }
   def libfuse_formula_exists?
     begin
       Formula["libfuse"]
