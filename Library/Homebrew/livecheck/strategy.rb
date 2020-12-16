@@ -154,22 +154,12 @@ module Homebrew
         # We use #scrub here to avoid "invalid byte sequence in UTF-8" errors.
         output = stdout.scrub
 
-        # Separate the content from the headers
-        status_code = :unknown
-        while status_code == :unknown || status_code.to_s.start_with?("3")
-          headers, _, output = output.partition("\r\n\r\n")
-          status_code = headers[%r{HTTP/.* (\d+)}, 1]
+        # Separate the headers/body and identify the final URL (after any
+        # redirections)
+        headers, body = response_headers_and_body(output)
+        _, final_url = response_status_code_and_location(headers, url: url, absolutize: true)
 
-          location = headers[/^Location:\s*(.*)$/i, 1]
-          next unless location
-
-          location.chomp!
-          # Convert a relative redirect URL to an absolute URL
-          location = URI.join(url, location) unless location.match?(PageMatch::URL_MATCH_REGEX)
-          final_url = location
-        end
-
-        data = { content: output }
+        data = { content: body }
         data[:final_url] = final_url if final_url.present? && final_url != original_url
         data
       end

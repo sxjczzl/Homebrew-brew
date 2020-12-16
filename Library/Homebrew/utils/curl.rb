@@ -239,6 +239,48 @@ module Utils
       "The URL #{url} may be able to use HTTPS rather than HTTP. Please verify it in a browser."
     end
 
+    # Separates cURL response text into headers and body content. Headers (if
+    # any) are split into an array, where each member is a string of headers
+    # for an individual response.
+    # @param response_text [String] The response text from `curl` containing
+    #   headers, body, or both
+    # @return [Array<Array<String>, String, nil>] An array containing an array
+    #   of headers and the body content.
+    def response_headers_and_body(response_text)
+      headers = []
+      while response_text.match?(%r{\AHTTP/.* (\d+)})
+        response_text = response_text.lstrip
+        header_text, _, response_text = response_text.partition("\r\n\r\n")
+        headers << header_text.chomp if header_text.present?
+      end
+
+      [headers, response_text.lstrip]
+    end
+
+    # Extracts the status code from the final response along with the URL of
+    # the last `location` header encountered (if any).
+    # @param headers [Array<String>, String]
+    # @param url [String, nil] The URL to use as a base for making the
+    #  `location` URL absolute
+    # @param absolutize [true, false] Whether to make the location URL absolute
+    # @return [Array<String, nil>]
+    def response_status_code_and_location(headers, url: nil, absolutize: false)
+      # Separate the headers into individual responses if we're given a string
+      headers, = response_headers_and_body(headers) if headers.is_a?(String)
+
+      # Identify the last status code and location
+      status_code, final_location = nil
+      headers.each do |response_headers|
+        status_code = response_headers[%r{HTTP/.* (\d+)}, 1]
+        location = response_headers[/^Location:\s*(.*)$/i, 1]&.chomp
+        next unless location
+
+        final_location = absolutize ? URI.join(url, location).to_s : location
+      end
+
+      [status_code, final_location]
+    end
+
     def curl_http_content_headers_and_checksum(url, specs: {}, hash_needed: false, user_agent: :default)
       file = Tempfile.new.tap(&:close)
 
@@ -250,28 +292,22 @@ module Utils
         user_agent: user_agent
       )
 
-      status_code = :unknown
-      while status_code == :unknown || status_code.to_s.start_with?("3")
-        headers, _, output = output.partition("\r\n\r\n")
-        status_code = headers[%r{HTTP/.* (\d+)}, 1]
-        location = headers[/^Location:\s*(.*)$/i, 1]
-        final_url = location.chomp if location
-      end
+      headers_array, = response_headers_and_body(output)
+      status_code, final_url = response_status_code_and_location(headers_array)
+      final_url ||= url
 
       if status.success?
         file_contents = File.read(file.path)
         file_hash = Digest::SHA2.hexdigest(file_contents) if hash_needed
       end
 
-      final_url ||= url
-
       {
         url:            url,
         final_url:      final_url,
         status:         status_code,
-        etag:           headers[%r{ETag: ([wW]/)?"(([^"]|\\")*)"}, 2],
-        content_length: headers[/Content-Length: (\d+)/, 1],
-        headers:        headers,
+        etag:           headers_array.last[%r{ETag: ([wW]/)?"(([^"]|\\")*)"}, 2],
+        content_length: headers_array.last[/Content-Length: (\d+)/, 1],
+        headers:        headers_array.last,
         file_hash:      file_hash,
         file:           file_contents,
       }
