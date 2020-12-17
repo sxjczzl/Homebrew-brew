@@ -48,3 +48,4 @@ RUN cd /home/linuxbrew/.linuxbrew \
   && rm -rf ~/.cache \
   && chown -R linuxbrew: /home/linuxbrew/.linuxbrew \
   && chmod -R g+w,o-w /home/linuxbrew/.linuxbrew
+
