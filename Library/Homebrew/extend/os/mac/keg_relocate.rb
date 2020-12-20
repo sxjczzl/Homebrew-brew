@@ -61,7 +61,11 @@ class Keg
   def fix_dynamic_linkage
     mach_o_files.each do |file|
       file.ensure_writable do
-        change_dylib_id(dylib_id_for(file), file) if file.dylib?
+        # Don't fix the id of dylibs rooted in the build directory
+        change_dylib_id(dylib_id_for(file), file) if file.dylib? &&
+                                                     file.dylib_id.start_with?("/") &&
+                                                     !file.dylib_id.start_with?(HOMEBREW_TEMP.to_s) &&
+                                                     !file.dylib_id.start_with?(HOMEBREW_TEMP.realpath.to_s)
 
         each_install_name_for(file) do |bad_name|
           # Don't fix absolute paths unless they are rooted in the build directory
