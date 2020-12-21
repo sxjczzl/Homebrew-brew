@@ -14,8 +14,12 @@
 #
 # For indeterminable cases, consult https://opensource.apple.com for the version used.
 describe "pkg-config" do
+  def pc_path(library)
+    HOMEBREW_LIBRARY_PATH/"os/mac/pkgconfig/#{MacOS.sdk_version}/#{library}.pc"
+  end
+
   def pc_version(library)
-    path = HOMEBREW_LIBRARY_PATH/"os/mac/pkgconfig/#{MacOS.sdk_version}/#{library}.pc"
+    path = pc_path(library)
     version = File.foreach(path)
                   .lazy
                   .grep(/^Version:\s*?(.+)$/) { Regexp.last_match(1) }
@@ -29,6 +33,25 @@ describe "pkg-config" do
                     .strip
     end
     version
+  end
+
+  def pc_libs(library)
+    path = pc_path(library)
+    variable_paris = File.foreach(path)
+                         .grep(/^([\w_]+)=(.+)$/) { Regexp.last_match.to_a[1..] }
+    variables = Hash[*variable_paris.flatten]
+    libs = File.foreach(path)
+               .lazy
+               .grep(/^Libs:\s*?(.+)$/) { Regexp.last_match(1) }
+               .first
+               .strip
+    while libs.include?("$")
+      libs.gsub!(/\$\{(.+?)\}/) do
+        name = Regexp.last_match(1)
+        variables[name]
+      end
+    end
+    libs
   end
 
   let(:sdk) { MacOS.sdk_path_if_needed }
@@ -74,6 +97,10 @@ describe "pkg-config" do
     skip "Cannot detect system libffi version." if version == "PyOBJC"
 
     expect(pc_version("libffi")).to eq(version)
+  end
+
+  it "returns the correct library flags for libffi" do
+    expect(pc_libs("libffi")).to eq("-L#{sdk}/usr/lib -lffi")
   end
 
   it "returns the correct version for libxml-2.0" do
