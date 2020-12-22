@@ -29238,9 +29238,6 @@ class SimpleCov::Filter
   def self.class_for_argument(filter_argument); end
 end
 
-module SimpleCov::Formatter
-end
-
 class SimpleCov::Formatter::HTMLFormatter
   def branchable_result?(); end
 
