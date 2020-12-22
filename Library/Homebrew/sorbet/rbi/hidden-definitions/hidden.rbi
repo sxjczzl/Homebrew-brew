@@ -5449,6 +5449,8 @@ class Class
   def any_instance(); end
 
   def class_attribute(*attrs, instance_accessor: T.unsafe(nil), instance_reader: T.unsafe(nil), instance_writer: T.unsafe(nil), instance_predicate: T.unsafe(nil), default: T.unsafe(nil)); end
+
+  def json_creatable?(); end
 end
 
 class Cleaner
@@ -6352,6 +6354,16 @@ end
 
 module Docile
   VERSION = ::T.let(nil, ::T.untyped)
+end
+
+module Docile::BacktraceFilter
+  def backtrace(); end
+
+  def backtrace_locations(); end
+  FILTER_PATTERN = ::T.let(nil, ::T.untyped)
+end
+
+module Docile::BacktraceFilter
 end
 
 class Docile::ChainingFallbackContextProxy
@@ -9956,6 +9968,12 @@ end
 class JSON::Ext::Parser
   def initialize(*_); end
 end
+
+JSON::Parser = JSON::Ext::Parser
+
+JSON::State = JSON::Ext::Generator::State
+
+JSON::UnparserError = JSON::GeneratorError
 
 class JavaRequirement::CaskSuggestion
   extend ::T::Private::Methods::MethodHooks
@@ -29221,54 +29239,6 @@ class SimpleCov::Filter
 end
 
 module SimpleCov::Formatter
-end
-
-class SimpleCov::Formatter::Codecov
-  def build_params(ci); end
-
-  def create_report(report); end
-
-  def detect_ci(); end
-
-  def display_header(); end
-
-  def format(result, disable_net_blockers=T.unsafe(nil)); end
-
-  def gzip_report(report); end
-
-  def handle_report_response(report); end
-
-  def retry_request(req, https); end
-
-  def upload_to_codecov(ci, report); end
-
-  def upload_to_v2(url, report, query, query_without_token); end
-
-  def upload_to_v4(url, report, query, query_without_token); end
-  APPVEYOR = ::T.let(nil, ::T.untyped)
-  AZUREPIPELINES = ::T.let(nil, ::T.untyped)
-  BITBUCKET = ::T.let(nil, ::T.untyped)
-  BITRISE = ::T.let(nil, ::T.untyped)
-  BUILDKITE = ::T.let(nil, ::T.untyped)
-  CIRCLE = ::T.let(nil, ::T.untyped)
-  CODEBUILD = ::T.let(nil, ::T.untyped)
-  CODESHIP = ::T.let(nil, ::T.untyped)
-  DRONEIO = ::T.let(nil, ::T.untyped)
-  GITHUB = ::T.let(nil, ::T.untyped)
-  GITLAB = ::T.let(nil, ::T.untyped)
-  HEROKU = ::T.let(nil, ::T.untyped)
-  JENKINS = ::T.let(nil, ::T.untyped)
-  RECOGNIZED_CIS = ::T.let(nil, ::T.untyped)
-  SEMAPHORE = ::T.let(nil, ::T.untyped)
-  SHIPPABLE = ::T.let(nil, ::T.untyped)
-  SOLANO = ::T.let(nil, ::T.untyped)
-  TEAMCITY = ::T.let(nil, ::T.untyped)
-  TRAVIS = ::T.let(nil, ::T.untyped)
-  VERSION = ::T.let(nil, ::T.untyped)
-  WERCKER = ::T.let(nil, ::T.untyped)
-end
-
-class SimpleCov::Formatter::Codecov
 end
 
 class SimpleCov::Formatter::HTMLFormatter

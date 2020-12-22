@@ -5,6 +5,7 @@
 module ::StackProf; end
 module DependencyCollector::Compat; end
 module OS::Mac::Version::NULL; end
+module SimpleCov::Formatter::Codecov; end
 module T::InterfaceWrapper::Helpers; end
 module T::Private::Abstract::Hooks; end
 module T::Private::Methods::MethodHooks; end
