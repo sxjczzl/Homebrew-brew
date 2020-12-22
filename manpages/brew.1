@@ -830,6 +830,10 @@ Treat all named arguments as formulae\. If no named arguments are specified, upg
 Compile \fIformula\fR from source even if a bottle is available\.
 .
 .TP
+\fB\-\-env\fR
+If \fBstd\fR is passed, use the standard build environment instead of superenv\. If \fBsuper\fR is passed, use superenv even if the formula specifies the standard build environment\.
+.
+.TP
 \fB\-i\fR, \fB\-\-interactive\fR
 Download and patch \fIformula\fR, then open a shell\. This allows the user to run \fB\./configure \-\-help\fR and otherwise determine how to turn the software package into a Homebrew package\.
 .

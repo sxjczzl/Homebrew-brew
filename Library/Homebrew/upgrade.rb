@@ -77,6 +77,7 @@ module Homebrew
           build_bottle:               args.build_bottle? || tab&.built_bottle?,
           force_bottle:               args.force_bottle?,
           build_from_source_formulae: args.build_from_source_formulae,
+          env:                        args.env,
           keep_tmp:                   args.keep_tmp?,
           force:                      args.force?,
           debug:                      args.debug?,

@@ -45,6 +45,10 @@ module Homebrew
         [:switch, "-s", "--build-from-source", {
           description: "Compile <formula> from source even if a bottle is available.",
         }],
+        [:flag, "--env=", {
+          description: "If `std` is passed, use the standard build environment instead of superenv. If `super` is " \
+                       "passed, use superenv even if the formula specifies the standard build environment.",
+        }],
         [:switch, "-i", "--interactive", {
           description: "Download and patch <formula>, then open a shell. This allows the user to "\
                        "run `./configure --help` and otherwise determine how to turn the software "\
