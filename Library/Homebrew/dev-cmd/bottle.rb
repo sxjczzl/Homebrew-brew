@@ -546,13 +546,23 @@ module Homebrew
     {
       root_url: new_bottle_hash["root_url"],
       prefix:   new_bottle_hash["prefix"],
-      cellar:   new_bottle_hash["cellar"].to_sym,
+      cellar:   new_bottle_hash["cellar"]&.to_sym,
       rebuild:  new_bottle_hash["rebuild"],
     }.each do |key, new_value|
       old_value = old_bottle_spec.send(key)
       next if key == :rebuild && old_value.zero?
-      next if key == :prefix && old_value == Homebrew::DEFAULT_PREFIX
+      next if key == :root_url && [
+        HOMEBREW_BOTTLE_DEFAULT_MACOS_DOMAIN,
+        HOMEBREW_BOTTLE_DEFAULT_LINUX_DOMAIN,
+      ].any? { |domain| old_value.start_with? domain }
+      next if key == :prefix && [
+        Homebrew::DEFAULT_PREFIX,
+        HOMEBREW_DEFAULT_PREFIX,
+        HOMEBREW_MACOS_ARM_DEFAULT_PREFIX,
+        HOMEBREW_LINUX_DEFAULT_PREFIX,
+      ].include?(old_value)
       next if key == :cellar && [
+        Homebrew::DEFAULT_CELLAR,
         Homebrew::DEFAULT_MACOS_CELLAR,
         Homebrew::DEFAULT_MACOS_ARM_CELLAR,
         Homebrew::DEFAULT_LINUX_CELLAR,
@@ -565,7 +575,7 @@ module Homebrew
 
     old_bottle_spec.collector.each_key do |tag|
       old_value = old_bottle_spec.collector[tag].hexdigest
-      new_value = new_bottle_hash["tags"][tag.to_s]
+      new_value = new_bottle_hash["tags"].present? && new_bottle_hash["tags"][tag.to_s]
       if new_value.present?
         mismatches << "sha256 => #{tag}"
       else

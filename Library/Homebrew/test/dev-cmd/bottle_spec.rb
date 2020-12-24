@@ -193,6 +193,75 @@ describe Homebrew do
       "d9cc50eec8ac243148a121049c236cba06af4a0b1156ab397d0a2850aa79c137",
     )
   end
+
+  describe "#merge_bottle_spec" do
+    let(:old_bottle_spec) { BottleSpecification.new }
+    let(:new_bottle_hash) do
+      {
+        "root_url" => "https://testbrew.bintray.com/bottles",
+        "prefix"   => "/opt/testbrew",
+        "cellar"   => "/opt/testbrew/Cellar",
+        "rebuild"  => 2,
+        "tags"     => {
+          "big_sur"  => "d90778f52d65b204fd7bae32cd61b01ebe735fb51ee8ce051c4aee368ac82527",
+          "catalina" => "ec6d7f08412468f28dee2be17ad8cd8b883b16b34329efcecce019b8c9736428",
+        },
+      }
+    end
+
+    it "allows new bottle hash to be empty" do
+      old_bottle_spec.sha256("f59bc65c91e4e698f6f050e1efea0040f57372d4dcf0996cbb8f97ced320403b" => :big_sur)
+      expect { homebrew.merge_bottle_spec(old_bottle_spec, {}) }.not_to raise_error
+    end
+
+    it "returns no mismatches if old bottle spec only contains default values" do
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `cellar` is default macOS cellar" do
+      old_bottle_spec.cellar(Homebrew::DEFAULT_MACOS_CELLAR)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `cellar` is default macOS ARM cellar" do
+      old_bottle_spec.cellar(Homebrew::DEFAULT_MACOS_ARM_CELLAR)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `cellar` is default Linux cellar" do
+      old_bottle_spec.cellar(Homebrew::DEFAULT_LINUX_CELLAR)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `prefix` is default macOS prefix" do
+      old_bottle_spec.prefix(HOMEBREW_DEFAULT_PREFIX)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `prefix` is default macOS ARM prefix" do
+      old_bottle_spec.prefix(HOMEBREW_MACOS_ARM_DEFAULT_PREFIX)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "returns no mismatches if old `prefix` is default Linux prefix" do
+      old_bottle_spec.prefix(HOMEBREW_LINUX_DEFAULT_PREFIX)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [[], []]
+    end
+
+    it "checks for conflicting checksums" do
+      old_bottle_spec.sha256("f59bc65c91e4e698f6f050e1efea0040f57372d4dcf0996cbb8f97ced320403b" => :big_sur)
+      old_bottle_spec.sha256("109c0cb581a7b5d84da36d84b221fb9dd0f8a927b3044d82611791c9907e202e" => :catalina)
+      old_bottle_spec.sha256("7571772bf7a0c9fe193e70e521318b53993bee6f351976c9b6e01e00d13d6c3f" => :mojave)
+      old_bottle_spec.sha256("122ca0353c08691958dd86570b369f70bbabd93744399e54aec9c922d3f99087" => :high_sierra)
+      expect(homebrew.merge_bottle_spec(old_bottle_spec, new_bottle_hash)).to eq [
+        ["sha256 => big_sur", "sha256 => catalina"],
+        [
+          { "7571772bf7a0c9fe193e70e521318b53993bee6f351976c9b6e01e00d13d6c3f" => :mojave },
+          { "122ca0353c08691958dd86570b369f70bbabd93744399e54aec9c922d3f99087" => :high_sierra },
+        ],
+      ]
+    end
+  end
 end
 
 describe "brew bottle --merge", :integration_test, :needs_linux do
