@@ -117,6 +117,7 @@ module Homebrew
       if !$stdout.tty? && !args.formula? && !args.cask?
         odisabled "`brew list` to only list formulae", "`brew list --formula`"
       else
+        safe_system "du", "-sh", HOMEBREW_CELLAR if args.l?
         safe_system "ls", *ls_args, HOMEBREW_CELLAR unless args.cask?
         list_casks(args: args) unless args.formula?
       end
