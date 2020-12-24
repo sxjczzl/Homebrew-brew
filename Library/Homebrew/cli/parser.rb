@@ -232,6 +232,8 @@ module Homebrew
       def name_to_option(name)
         if name.length == 1
           "-#{name}"
+        elsif Homebrew::CLI::Parser.global_cask_options.any? { |_, option, **| name == option_to_name(option) }
+          "--#{name}"
         else
           "--#{name.tr("_", "-")}"
         end
