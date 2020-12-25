@@ -1891,7 +1891,7 @@ class Formula
 
     mktemp("#{name}-test") do |staging|
       staging.retain! if keep_tmp
-      @testpath = staging.tmpdir
+      @testpath = staging.tmpdir.extend(GitRepositoryExtension)
       test_env[:HOME] = @testpath
       setup_home @testpath
       begin
@@ -2224,7 +2224,7 @@ class Formula
   def stage(interactive: false)
     active_spec.stage do |staging|
       @source_modified_time = active_spec.source_modified_time
-      @buildpath = Pathname.pwd
+      @buildpath = Pathname.pwd.extend(GitRepositoryExtension)
       env_home = buildpath/".brew_home"
       mkdir_p env_home
 
