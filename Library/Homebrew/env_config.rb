@@ -204,8 +204,8 @@ module Homebrew
         boolean:     true,
       },
       HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK:     {
-        description: "If set, fail on the failure of installation from a bottle rather than " \
-                     "falling back to building from source.",
+        description: "If set, bottle installation failures due to pouring issues will fail " \
+                     "and not fall back to building from source. This is the default on macOS.",
         boolean:     true,
       },
       HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: {

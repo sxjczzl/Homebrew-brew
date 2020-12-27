@@ -2600,7 +2600,7 @@ If set, do not automatically update before running \fBbrew install\fR, \fBbrew u
 \fBHOMEBREW_NO_BOTTLE_SOURCE_FALLBACK\fR
 .
 .br
-If set, fail on the failure of installation from a bottle rather than falling back to building from source\.
+If set, bottle installation failures due to pouring issues will fail and not fall back to building from source\. This is the default on macOS\.
 .
 .TP
 \fBHOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK\fR

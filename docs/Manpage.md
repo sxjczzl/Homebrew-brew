@@ -1813,7 +1813,7 @@ example, run `export HOMEBREW_NO_INSECURE_REDIRECT=1` rather than just
   <br>If set, do not automatically update before running `brew install`, `brew upgrade` or `brew tap`.
 
 - `HOMEBREW_NO_BOTTLE_SOURCE_FALLBACK`
-  <br>If set, fail on the failure of installation from a bottle rather than falling back to building from source.
+  <br>If set, bottle installation failures due to pouring issues will fail and not fall back to building from source. This is the default on macOS.
 
 - `HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK`
   <br>If set, do not check for broken dependents after installing, upgrading or reinstalling formulae.
