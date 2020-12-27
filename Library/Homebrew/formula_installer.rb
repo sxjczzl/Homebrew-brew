@@ -238,6 +238,7 @@ class FormulaInstaller
        formula.tap&.core_tap? && !formula.bottle_unneeded? && !formula.any_version_installed? &&
        # Integration tests override homebrew-core locations
        ENV["HOMEBREW_TEST_TMPDIR"].nil? &&
+       ENV["HOMEBREW_BOTTLE_SOURCE_FALLBACK"].nil? &&
        !pour_bottle?
       raise CannotInstallFormulaError, <<~EOS
         #{formula}: no bottle available!
