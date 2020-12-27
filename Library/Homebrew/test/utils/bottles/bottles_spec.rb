@@ -166,12 +166,12 @@ describe Utils::Bottles do
           class Foo < Formula
             url "https://brew.sh/foo-1.0.tar.gz"
 
-            bottle do
-              sha256 "f7b1fc772c79c20fddf621ccc791090bc1085fcef4da6cca03399424c66e06ca" => :sierra
-            end
-
             head do
               url "https://brew.sh/foo.git"
+            end
+
+            bottle do
+              sha256 "f7b1fc772c79c20fddf621ccc791090bc1085fcef4da6cca03399424c66e06ca" => :sierra
             end
           end
         RUBY
