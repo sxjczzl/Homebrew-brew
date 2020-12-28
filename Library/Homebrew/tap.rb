@@ -629,6 +629,8 @@ class Tap
   private
 
   def read_or_set_private_config
+    return true unless installed?
+
     case config["private"]
     when "true" then true
     when "false" then false
