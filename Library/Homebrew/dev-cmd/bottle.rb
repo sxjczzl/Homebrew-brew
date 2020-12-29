@@ -499,12 +499,36 @@ module Homebrew
         puts output
 
         Utils::Inreplace.inreplace(path) do |s|
+<<<<<<< HEAD
           formula_contents = s.inreplace_string
           case update_or_add
           when "update"
             Utils::AST.replace_bottle_stanza!(formula_contents, output)
           when "add"
             Utils::AST.add_bottle_stanza!(formula_contents, output)
+=======
+          if s.inreplace_string.include? "bottle do"
+            update_or_add = "update"
+            if args.keep_old?
+              old_bottle_spec = Formulary.factory(path).bottle_specification
+              mismatches, checksums = merge_bottle_spec(old_bottle_spec, bottle_hash["bottle"])
+              if mismatches.present?
+                odie <<~EOS
+                  --keep-old was passed but there are changes in:
+                  #{mismatches.join("\n")}
+                EOS
+              end
+              checksums.each { |cksum| bottle.sha256(cksum) }
+              output = bottle_output bottle
+            end
+            puts output
+            Utils::AST.replace_bottle_stanza!(s.inreplace_string, output)
+          else
+            odie "--keep-old was passed but there was no existing bottle block!" if args.keep_old?
+            puts output
+            update_or_add = "add"
+            Utils::AST.add_bottle_stanza!(s.inreplace_string, output)
+>>>>>>> utils/ast: cleanup
           end
         end
 

@@ -53,9 +53,15 @@ module Homebrew
         Utils::Inreplace.inreplace(formula.path) do |s|
           s = s.inreplace_string
           if current_revision.zero?
+<<<<<<< HEAD
             Utils::AST.add_formula_stanza!(s, :revision, new_revision)
           else
             Utils::AST.replace_formula_stanza!(s, :revision, new_revision)
+=======
+            Utils::AST.add_formula_stanza!(s, :revision, text)
+          else
+            Utils::AST.replace_formula_stanza!(s, :revision, text)
+>>>>>>> utils/ast: cleanup
           end
         end
       end
