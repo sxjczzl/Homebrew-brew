@@ -316,7 +316,8 @@ module Homebrew
           next
         end
 
-        next cleanup_path(path) { path.unlink } if path.stale?(scrub: scrub?)
+        # `stale` is expensive, so skip it on CI where we have many files in cache
+        next cleanup_path(path) { path.unlink } if !ENV["CI"] && path.stale?(scrub: scrub?)
       end
 
       cleanup_unreferenced_downloads
