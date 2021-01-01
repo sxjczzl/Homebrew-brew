@@ -67,16 +67,19 @@ HOMEBREW_LIBRARY="$HOMEBREW_REPOSITORY/Library"
 for VAR in BROWSER DISPLAY EDITOR NO_COLOR PATH
 do
   # Skip if variable value is empty.
-  [[ -z "${!VAR}" ]] && continue
-
+  if [[ -z "${!VAR:-}" ]]; then
+    continue
+  fi 
   VAR_NEW="HOMEBREW_${VAR}"
   # Skip if existing HOMEBREW_* variable is set.
-  [[ -n "${!VAR_NEW}" ]] && continue
+  if [[ -n "${!VAR_NEW}" ]]; then
+    continue
+  fi
   export "$VAR_NEW"="${!VAR}"
 done
 
 # Use VISUAL if HOMEBREW_EDITOR and EDITOR are unset.
-if [[ -z "$HOMEBREW_EDITOR" && -n "$VISUAL" ]]
+if [[ -z "${HOMEBREW_EDITOR:-}" && -n "$VISUAL" ]]
 then
   export HOMEBREW_EDITOR="$VISUAL"
 fi
