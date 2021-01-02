@@ -181,6 +181,7 @@ DEPENDENCIES
   rspec-sorbet
   rspec-wait
   rubocop
+  rubocop-ast
   rubocop-performance
   rubocop-rails
   rubocop-rspec

@@ -1,6 +1,8 @@
 # typed: true
 # frozen_string_literal: true
 
+require "rubocop-ast"
+
 module Utils
   # Helper functions for editing Ruby files.
   #
@@ -87,9 +89,6 @@ module Utils
       private
 
       def process_formula(formula_contents)
-        Homebrew.install_bundler_gems!
-        require "rubocop-ast"
-
         ruby_version = Version.new(HOMEBREW_REQUIRED_RUBY_VERSION).major_minor.to_f
         processed_source = RuboCop::AST::ProcessedSource.new(formula_contents, ruby_version)
         root_node = processed_source.ast
