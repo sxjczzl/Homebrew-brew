@@ -1,6 +1,7 @@
 # typed: true
 # frozen_string_literal: true
 
+require "ast_constants"
 require "rubocop-ast"
 
 module Utils
@@ -108,9 +109,7 @@ module Utils
       end
 
       def formula_component_before_target?(node, target_name:, target_type: nil)
-        require "rubocops/components_order"
-
-        RuboCop::Cop::FormulaAudit::ComponentsOrder::COMPONENT_PRECEDENCE_LIST.each do |components|
+        FORMULA_COMPONENT_PRECEDENCE_LIST.each do |components|
           return false if components.any? do |component|
             component_match?(component_name: component[:name],
                              component_type: component[:type],
