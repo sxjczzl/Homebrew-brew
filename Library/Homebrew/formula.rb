@@ -1412,7 +1412,11 @@ class Formula
 
   # Standard parameters for cargo builds.
   def std_cargo_args
-    ["--locked", "--root", prefix, "--path", "."]
+    if Hardware::CPU.arch == :arm64
+      ["--root", prefix, "--path", "."]
+    else
+      ["--locked", "--root", prefix, "--path", "."]
+    end
   end
 
   # Standard parameters for CMake builds.
