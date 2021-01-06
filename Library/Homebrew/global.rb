@@ -77,6 +77,9 @@ HOMEBREW_RELEASES_URL_REGEX =
 
 require "fileutils"
 
+require "env_config"
+Homebrew::EnvConfig.load!
+
 require "os"
 require "os/global"
 require "messages"
@@ -116,8 +119,6 @@ module Homebrew
     end
   end
 end
-
-require "env_config"
 
 require "config"
 require "context"

@@ -54,16 +54,16 @@ HOMEBREW_LOCKS = (HOMEBREW_PREFIX/"var/homebrew/locks").freeze
 HOMEBREW_CELLAR = Pathname(EnvVar["HOMEBREW_CELLAR"]).freeze
 
 # Where downloads (bottles, source tarballs, etc.) are cached
-HOMEBREW_CACHE = Pathname(EnvVar["HOMEBREW_CACHE"]).freeze
+HOMEBREW_CACHE = Pathname(Homebrew::EnvConfig.cache).freeze
 
 # Where brews installed via URL are cached
 HOMEBREW_CACHE_FORMULA = (HOMEBREW_CACHE/"Formula").freeze
 
 # Where build, postinstall, and test logs of formulae are written to
-HOMEBREW_LOGS = Pathname(EnvVar["HOMEBREW_LOGS"]).expand_path.freeze
+HOMEBREW_LOGS = Pathname(Homebrew::EnvConfig.logs).expand_path.freeze
 
 # Must use `/tmp` instead of `TMPDIR` because long paths break Unix domain sockets
-HOMEBREW_TEMP = Pathname(EnvVar["HOMEBREW_TEMP"]).yield_self do |tmp|
+HOMEBREW_TEMP = Pathname(Homebrew::EnvConfig.temp).yield_self do |tmp|
   tmp.mkpath unless tmp.exist?
   tmp.realpath
 end.freeze

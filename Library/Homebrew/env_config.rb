@@ -313,6 +313,15 @@ module Homebrew
       },
     }.freeze
 
+    def load!
+      return if @env.present?
+
+      @env = {}
+      ENVS.each_key do |env|
+        @env[env] = ENV.delete(env.to_s)
+      end
+    end
+
     def env_method_name(env, hash)
       method_name = env.to_s
                        .sub(/^HOMEBREW_/, "")
@@ -328,22 +337,21 @@ module Homebrew
 
     ENVS.each do |env, hash|
       method_name = env_method_name(env, hash)
-      env = env.to_s
 
       if hash[:boolean]
         define_method(method_name) do
-          ENV[env].present?
+          @env[env].present?
         end
       elsif hash[:default].present?
         # Needs a custom implementation.
         next if CUSTOM_IMPLEMENTATIONS.include?(env)
 
         define_method(method_name) do
-          ENV[env].presence || hash.fetch(:default).to_s
+          @env[env].presence || hash.fetch(:default).to_s
         end
       else
         define_method(method_name) do
-          ENV[env].presence
+          @env[env].presence
         end
       end
     end
@@ -351,7 +359,7 @@ module Homebrew
     # Needs a custom implementation.
     sig { returns(String) }
     def make_jobs
-      jobs = ENV["HOMEBREW_MAKE_JOBS"].to_i
+      jobs = @env["HOMEBREW_MAKE_JOBS"].to_i
       return jobs.to_s if jobs.positive?
 
       ENVS.fetch(:HOMEBREW_MAKE_JOBS)
