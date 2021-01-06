@@ -27,8 +27,12 @@ module Homebrew
         should also be specified. A best effort to determine the <revision> will be made
         if the value is not supplied by the user.
 
-        If a <version> is specified, a best effort to determine the <URL> and <SHA-256> or
-        the <tag> and <revision> will be made if both values are not supplied by the user.
+        If a <version> is specified, a best effort will be made to determine either (the
+        <URL> and <SHA-256>) or (the <tag> and <revision>) if the pair of values is not
+        supplied by the user.
+
+        If a <formula> is specified and no other values are supplied by the user, a best
+        effort will be made to determine the latest <version>.
 
         *Note:* this command cannot be used to transition a formula from a
         URL-and-SHA-256 style specification into a tag-and-revision style specification,
@@ -140,20 +144,31 @@ module Homebrew
 
     odie "This formula is disabled!" if formula.disabled?
 
+    formula_spec = formula.stable
+    odie "#{formula}: no stable specification found!" if formula_spec.blank?
+
     tap_full_name, remote, remote_branch, previous_branch = use_correct_linux_tap(formula, args: args)
     check_open_pull_requests(formula, tap_full_name, args: args)
 
+    new_hash = args.sha256
+    new_tag = args.tag
+    new_revision = args.revision
     new_version = args.version
+    if [new_url, new_hash, new_tag, new_revision, new_version].all?(&:blank?)
+      require "livecheck/livecheck"
+      version_info = Homebrew::Livecheck.latest_version(formula,
+                                                        json:      true,
+                                                        full_name: true,
+                                                        verbose:   args.verbose?,
+                                                        debug:     args.debug?)
+      new_version = version_info[:latest]&.to_s
+    end
     check_closed_pull_requests(formula, tap_full_name, version: new_version, args: args) if new_version.present?
 
     opoo "This formula has patches that may be resolved upstream." if formula.patchlist.present?
     if formula.resources.any? { |resource| !resource.name.start_with?("homebrew-") }
       opoo "This formula has resources that may need to be updated."
     end
-
-    requested_spec = :stable
-    formula_spec = formula.stable
-    odie "#{formula}: no #{requested_spec} specification found!" if formula_spec.blank?
 
     old_mirrors = formula_spec.mirrors
     new_mirrors ||= args.mirror
@@ -162,16 +177,10 @@ module Homebrew
 
     check_for_mirrors(formula, old_mirrors, new_mirrors, args: args) if new_url.present?
 
-    hash_type, old_hash = if (checksum = formula_spec.checksum)
-      [checksum.hash_type, checksum.hexdigest]
-    end
-
-    new_hash = args[hash_type] if hash_type.present?
-    new_tag = args.tag
-    new_revision = args.revision
+    old_hash = formula_spec.checksum&.hexdigest
     old_url = formula_spec.url
     old_tag = formula_spec.specs[:tag]
-    old_formula_version = formula_version(formula, requested_spec)
+    old_formula_version = formula_version(formula)
     old_version = old_formula_version.to_s
     forced_version = new_version.present?
     new_url_hash = if new_url.present? && new_hash.present?
@@ -180,7 +189,7 @@ module Homebrew
     elsif new_tag && new_revision
       check_closed_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag, args: args) if new_version.blank?
       false
-    elsif hash_type.blank?
+    elsif old_hash.blank?
       if new_tag.blank? && new_version.blank? && new_revision.blank?
         raise UsageError, "#{formula}: no --tag= or --version= argument specified!"
       end
@@ -194,8 +203,7 @@ module Homebrew
           EOS
         end
         if new_version.blank?
-          check_closed_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag,
-args: args)
+          check_closed_pull_requests(formula, tap_full_name, url: old_url, tag: new_tag, args: args)
         end
         resource_path, forced_version = fetch_resource(formula, new_version, old_url, tag: new_tag)
         new_revision = Utils.popen_read("git -C \"#{resource_path}\" rev-parse -q --verify HEAD")
@@ -230,7 +238,7 @@ args: args)
     end
 
     replacement_pairs = []
-    if requested_spec == :stable && formula.revision.nonzero?
+    if formula.revision.nonzero?
       replacement_pairs << [
         /^  revision \d+\n(\n(  head "))?/m,
         "\\2",
@@ -339,7 +347,7 @@ args: args)
                                                     read_only_run: args.dry_run?,
                                                     silent:        args.quiet?)
 
-    new_formula_version = formula_version(formula, requested_spec, new_contents)
+    new_formula_version = formula_version(formula, new_contents)
 
     if new_formula_version < old_formula_version
       formula.path.atomic_write(old_contents) unless args.dry_run?
@@ -449,13 +457,13 @@ args: args)
     [resource.fetch, forced_version]
   end
 
-  def formula_version(formula, spec, contents = nil)
+  def formula_version(formula, contents = nil)
     name = formula.name
     path = formula.path
     if contents.present?
-      Formulary.from_contents(name, path, contents, spec).version
+      Formulary.from_contents(name, path, contents, :stable).version
     else
-      Formulary::FormulaLoader.new(name, path).get_formula(spec).version
+      Formulary::FormulaLoader.new(name, path).get_formula(:stable).version
     end
   end
 

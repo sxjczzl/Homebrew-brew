@@ -860,8 +860,12 @@ If a *`tag`* is specified, the Git commit *`revision`* corresponding to that tag
 should also be specified. A best effort to determine the *`revision`* will be made
 if the value is not supplied by the user.
 
-If a *`version`* is specified, a best effort to determine the *`URL`* and *`SHA-256`* or
-the *`tag`* and *`revision`* will be made if both values are not supplied by the user.
+If a *`version`* is specified, a best effort will be made to determine either (the
+*`URL`* and *`SHA-256`*) or (the *`tag`* and *`revision`*) if the pair of values is not
+supplied by the user.
+
+If a *`formula`* is specified and no other values are supplied by the user, a best
+effort will be made to determine the latest *`version`*.
 
 *Note:* this command cannot be used to transition a formula from a
 URL-and-SHA-256 style specification into a tag-and-revision style specification,
