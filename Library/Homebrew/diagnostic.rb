@@ -853,6 +853,26 @@ module Homebrew
         EOS
       end
 
+      def check_for_pip_conf
+        # https://pip.pypa.io/en/stable/user_guide/
+        dirs_to_check = [
+          "/Library/Application Support/pip",
+          "#{ENV["HOME"]}/.pip",
+          "#{ENV["HOME"]}/.config/pip",
+          "#{ENV["HOME"]}/Library/Application Support/pip",
+        ]
+        pip_confs_found = dirs_to_check
+                          .map { |dir| Pathname("#{dir}/pip.conf") }
+                          .select(&:exist?)
+                          .map(&method(:user_tilde))
+        return if pip_confs_found.blank?
+
+        inject_file_list pip_confs_found, <<~EOS
+          Customizing `pip` may break the `python` formula.
+          Consider deleting the following #{"file".pluralize(pip_confs_found.count)}:
+        EOS
+      end
+
       def check_cask_software_versions
         add_info "Homebrew Version", HOMEBREW_VERSION
         add_info "macOS", MacOS.full_version
