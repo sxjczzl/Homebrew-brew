@@ -29,7 +29,7 @@ Additionally, [homebrew/core](https://github.com/Homebrew/homebrew-core) formula
 
 - macOS
 - Java
-- OSXFuse
+- macFUSE
 - XQuartz
 
 This includes automatic installation of casks at runtime.

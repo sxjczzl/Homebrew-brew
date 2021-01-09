@@ -6,9 +6,9 @@ require "requirement"
 # A requirement on FUSE for macOS.
 #
 # @api private
-class OsxfuseRequirement < Requirement
+class MacfuseRequirement < Requirement
   extend T::Sig
-  cask "osxfuse"
+  cask "macfuse"
   fatal true
 
   sig { returns(String) }
@@ -17,4 +17,4 @@ class OsxfuseRequirement < Requirement
   end
 end
 
-require "extend/os/requirements/osxfuse_requirement"
+require "extend/os/requirements/macfuse_requirement"

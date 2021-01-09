@@ -199,13 +199,13 @@ module Homebrew
         # Dylibs which are generally OK should be added to this list,
         # with a short description of the software they come with.
         allow_list = [
-          "libfuse.2.dylib", # MacFuse
-          "libfuse_ino64.2.dylib", # MacFuse
-          "libmacfuse_i32.2.dylib", # OSXFuse MacFuse compatibility layer
-          "libmacfuse_i64.2.dylib", # OSXFuse MacFuse compatibility layer
-          "libosxfuse_i32.2.dylib", # OSXFuse
-          "libosxfuse_i64.2.dylib", # OSXFuse
-          "libosxfuse.2.dylib", # OSXFuse
+          "libfuse.2.dylib", # macFUSE
+          "libfuse_ino64.2.dylib", # macFUSE
+          "libmacfuse_i32.2.dylib", # macFUSE compatibility layer
+          "libmacfuse_i64.2.dylib", # macFUSE compatibility layer
+          "libmacfuse_i32.2.dylib", # macFUSE
+          "libmacfuse_i64.2.dylib", # macFUSE
+          "libmacfuse.2.dylib", # macFUSE
           "libTrAPI.dylib", # TrAPI/Endpoint Security VPN
           "libntfs-3g.*.dylib", # NTFS-3G
           "libntfs.*.dylib", # NTFS-3G
@@ -256,9 +256,9 @@ module Homebrew
         # Package-config files which are generally OK should be added to this list,
         # with a short description of the software they come with.
         allow_list = [
-          "fuse.pc", # OSXFuse/MacFuse
-          "macfuse.pc", # OSXFuse MacFuse compatibility layer
-          "osxfuse.pc", # OSXFuse
+          "fuse.pc", # macFUSE/macFUSE
+          "macfuse.pc", # macFUSE compatibility layer
+          "macfuse.pc", # macFUSE
           "libntfs-3g.pc", # NTFS-3G
           "libublio.pc", # NTFS-3G
         ]
@@ -274,11 +274,11 @@ module Homebrew
 
       def check_for_stray_las
         allow_list = [
-          "libfuse.la", # MacFuse
-          "libfuse_ino64.la", # MacFuse
-          "libosxfuse_i32.la", # OSXFuse
-          "libosxfuse_i64.la", # OSXFuse
-          "libosxfuse.la", # OSXFuse
+          "libfuse.la", # macFUSE
+          "libfuse_ino64.la", # macFUSE
+          "libmacfuse_i32.la", # macFUSE
+          "libmacfuse_i64.la", # macFUSE
+          "libmacfuse.la", # macFUSE
           "libntfs-3g.la", # NTFS-3G
           "libntfs.la", # NTFS-3G
           "libublio.la", # NTFS-3G
@@ -295,10 +295,10 @@ module Homebrew
 
       def check_for_stray_headers
         allow_list = [
-          "fuse.h", # MacFuse
-          "fuse/**/*.h", # MacFuse
-          "macfuse/**/*.h", # OSXFuse MacFuse compatibility layer
-          "osxfuse/**/*.h", # OSXFuse
+          "fuse.h", # macFUSE
+          "fuse/**/*.h", # macFUSE
+          "macfuse/**/*.h", # macFUSE compatibility layer
+          "macfuse/**/*.h", # macFUSE
           "ntfs/**/*.h", # NTFS-3G
           "ntfs-3g/**/*.h", # NTFS-3G
         ]

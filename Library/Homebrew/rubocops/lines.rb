@@ -653,7 +653,7 @@ module RuboCop
             problem "Formulae in homebrew/core should depend on specific X libraries instead of :x11"
           end
 
-          problem ":osxfuse is deprecated in homebrew/core" if depends_on? :osxfuse
+          problem ":macfuse is deprecated in homebrew/core" if depends_on? :macfuse
         end
       end
 

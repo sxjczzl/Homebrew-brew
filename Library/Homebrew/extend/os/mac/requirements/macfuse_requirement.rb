@@ -3,22 +3,22 @@
 
 require "requirement"
 
-class OsxfuseRequirement < Requirement
+class MacfuseRequirement < Requirement
   extend T::Sig
 
   def initialize(tags = [])
-    odeprecated "depends_on :osxfuse"
+    odeprecated "depends_on :macfuse"
     super(tags)
   end
 
-  download "https://osxfuse.github.io/"
+  download "https://macfuse.github.io/"
 
-  satisfy(build_env: false) { self.class.binary_osxfuse_installed? }
+  satisfy(build_env: false) { self.class.binary_macfuse_installed? }
 
   sig { returns(T::Boolean) }
-  def self.binary_osxfuse_installed?
-    File.exist?("/usr/local/include/osxfuse/fuse.h") &&
-      !File.symlink?("/usr/local/include/osxfuse")
+  def self.binary_macfuse_installed?
+    File.exist?("/usr/local/include/macfuse/fuse.h") &&
+      !File.symlink?("/usr/local/include/macfuse")
   end
 
   env do
@@ -26,7 +26,7 @@ class OsxfuseRequirement < Requirement
 
     unless HOMEBREW_PREFIX.to_s == "/usr/local"
       ENV.append_path "HOMEBREW_LIBRARY_PATHS", "/usr/local/lib"
-      ENV.append_path "HOMEBREW_INCLUDE_PATHS", "/usr/local/include/osxfuse"
+      ENV.append_path "HOMEBREW_INCLUDE_PATHS", "/usr/local/include/macfuse"
     end
   end
 
