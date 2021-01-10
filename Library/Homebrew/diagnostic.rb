@@ -203,8 +203,6 @@ module Homebrew
           "libfuse_ino64.2.dylib", # macFUSE
           "libmacfuse_i32.2.dylib", # macFUSE compatibility layer
           "libmacfuse_i64.2.dylib", # macFUSE compatibility layer
-          "libmacfuse_i32.2.dylib", # macFUSE
-          "libmacfuse_i64.2.dylib", # macFUSE
           "libmacfuse.2.dylib", # macFUSE
           "libTrAPI.dylib", # TrAPI/Endpoint Security VPN
           "libntfs-3g.*.dylib", # NTFS-3G
@@ -256,9 +254,8 @@ module Homebrew
         # Package-config files which are generally OK should be added to this list,
         # with a short description of the software they come with.
         allow_list = [
-          "fuse.pc", # macFUSE/macFUSE
+          "fuse.pc", # OSXFuse/macFUSE
           "macfuse.pc", # macFUSE compatibility layer
-          "macfuse.pc", # macFUSE
           "libntfs-3g.pc", # NTFS-3G
           "libublio.pc", # NTFS-3G
         ]
@@ -298,7 +295,6 @@ module Homebrew
           "fuse.h", # macFUSE
           "fuse/**/*.h", # macFUSE
           "macfuse/**/*.h", # macFUSE compatibility layer
-          "macfuse/**/*.h", # macFUSE
           "ntfs/**/*.h", # NTFS-3G
           "ntfs-3g/**/*.h", # NTFS-3G
         ]

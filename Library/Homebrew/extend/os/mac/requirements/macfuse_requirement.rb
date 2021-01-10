@@ -19,6 +19,8 @@ class MacfuseRequirement < Requirement
   def self.binary_macfuse_installed?
     File.exist?("/usr/local/include/macfuse/fuse.h") &&
       !File.symlink?("/usr/local/include/macfuse")
+    File.exist?("/usr/local/include/osxfuse/fuse.h") &&
+      !File.symlink?("/usr/local/include/macfuse")
   end
 
   env do
@@ -31,6 +33,6 @@ class MacfuseRequirement < Requirement
   end
 
   def message
-    "FUSE for macOS is required for this software. #{super}"
+    "macFUSE (previously named `FUSE for macOS` and `OSXFUSE`) is required for this software. #{super}"
   end
 end
