@@ -236,6 +236,56 @@ describe Cask::DSL, :cask do
     end
   end
 
+  describe "cpu stanza" do
+    context "if CPUs are specified" do
+      subject(:cask) {
+        Cask::Cask.new("cask-with-cpus") do
+          cpu :intel do
+            sha256 "abc123"
+            "x64"
+          end
+
+          cpu :arm do
+            sha256 "xyz789"
+            "arm64"
+          end
+
+          url "https://example.org/#{cpu}.zip"
+        end
+      }
+
+      it "uses the Intel version when CPU is Intel" do
+        allow(Hardware::CPU).to receive(:type).and_return(:intel)
+        expect(cask.cpu).to eq("x64")
+        expect(cask.sha256).to eq("abc123")
+        expect(cask.url.to_s).to eq("https://example.org/x64.zip")
+      end
+
+      it "uses the ARM version when CPU is ARM" do
+        allow(Hardware::CPU).to receive(:type).and_return(:arm)
+        expect(cask.cpu).to eq("arm64")
+        expect(cask.sha256).to eq("xyz789")
+        expect(cask.url.to_s).to eq("https://example.org/arm64.zip")
+      end
+
+      it "returns an array of supported CPUs" do
+        expect(cask.cpus).to eq([:intel, :arm])
+      end
+    end
+
+    context "if no CPUs are specified" do
+      subject(:cask) {
+        Cask::Cask.new("cask-with-cpus") do
+          url "https://example.org/file.zip"
+        end
+      }
+
+      it "returns an empty array" do
+        expect(cask.cpus).to be_empty
+      end
+    end
+  end
+
   describe "app stanza" do
     it "allows you to specify app stanzas" do
       cask = Cask::Cask.new("cask-with-apps") do
