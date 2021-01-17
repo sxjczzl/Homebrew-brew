@@ -184,6 +184,8 @@ module Cask
 
       @cpu_blocks ||= {}
       @cpu_blocks[arg] = block
+
+      cpu_eval if arg == Hardware::CPU.type
     end
 
     def cpu_eval
