@@ -131,7 +131,7 @@ describe Cask::DSL, :cask do
   describe "language stanza" do
     context "when language is set explicitly" do
       subject(:cask) {
-        Cask::Cask.new("cask-with-apps") do
+        Cask::Cask.new("cask-with-languages") do
           language "zh" do
             sha256 "abc123"
             "zh-CN"
@@ -207,7 +207,7 @@ describe Cask::DSL, :cask do
 
     it "returns an empty array if no languages are specified" do
       cask = lambda do
-        Cask::Cask.new("cask-with-apps") do
+        Cask::Cask.new("cask-without-languages") do
           url "https://example.org/file.zip"
         end
       end
@@ -217,7 +217,7 @@ describe Cask::DSL, :cask do
 
     it "returns an array of available languages" do
       cask = lambda do
-        Cask::Cask.new("cask-with-apps") do
+        Cask::Cask.new("cask-with-languages") do
           language "zh" do
             sha256 "abc123"
             "zh-CN"
@@ -275,7 +275,7 @@ describe Cask::DSL, :cask do
 
     context "if no CPUs are specified" do
       subject(:cask) {
-        Cask::Cask.new("cask-with-cpus") do
+        Cask::Cask.new("cask-without-cpus") do
           url "https://example.org/file.zip"
         end
       }
