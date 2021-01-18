@@ -36,7 +36,7 @@ module Cask
     def self.defaults
       {
         languages: LazyObject.new { MacOS.languages },
-        cpu_type: LazyObject.new { Hardware::CPU.type.to_s },
+        cpu_type:  LazyObject.new { Hardware::CPU.type.to_s },
       }.merge(DEFAULT_DIRS).freeze
     end
 
