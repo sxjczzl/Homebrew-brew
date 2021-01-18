@@ -58,7 +58,6 @@ module Cask
         vst3_plugindir:       args.vst3_plugindir,
         screen_saverdir:      args.screen_saverdir,
         languages:            args.language,
-        cpu_type:             args.cpu_type,
       }.compact)
     end
 
@@ -171,7 +170,7 @@ module Cask
 
     sig { returns(Symbol) }
     def cpu_type
-      (explicit[:cpu_type] || env[:cpu_type] || default[:cpu_type]).to_sym
+      T.cast(explicit[:cpu_type] || env[:cpu_type] || default[:cpu_type], String).to_sym
     end
 
     sig { params(cpu_type: Symbol).void }
