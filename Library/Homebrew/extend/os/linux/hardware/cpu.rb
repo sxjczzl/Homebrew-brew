@@ -122,6 +122,27 @@ module Hardware
         flags.include? "sse4_1"
       end
 
+      sig { returns(Symbol) }
+      def arch_64_bit
+        # FIXME: don't duplicate so much code
+        if arm?
+          :arm64
+        elsif intel?
+          # Split the arch into SSSE3-having and not to prevent bottle match
+          if ssse3?
+            :x86_64
+          else
+            :x86_64_no_ssse3
+          end
+        elsif ppc64le?
+          :ppc64le
+        elsif ppc64?
+          :ppc64
+        else
+          :dunno
+        end
+      end
+
       private
 
       def cpuinfo
