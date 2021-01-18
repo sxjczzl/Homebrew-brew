@@ -236,24 +236,24 @@ describe Cask::DSL, :cask do
     end
   end
 
-  describe "cpu stanza" do
-    context "if CPUs are specified" do
-      subject(:cask) {
-        Cask::Cask.new("cask-with-cpus") do
-          cpu :intel do
-            sha256 "abc123"
-            "x64"
-          end
-
-          cpu :arm do
-            sha256 "xyz789"
-            "arm64"
-          end
-
-          url "https://example.org/#{cpu}.zip"
+  context "if CPUs are specified" do
+    subject(:cask) {
+      Cask::Cask.new("cask-with-cpus") do
+        cpu :intel do
+          sha256 "abc123"
+          "x64"
         end
-      }
 
+        cpu :arm do
+          sha256 "xyz789"
+          "arm64"
+        end
+
+        url "https://example.org/#{cpu}.zip"
+      end
+    }
+
+    describe "#cpu" do
       it "uses the Intel version when CPU is Intel" do
         config = cask.config
         config.cpu_type = :intel
@@ -273,21 +273,31 @@ describe Cask::DSL, :cask do
         expect(cask.sha256).to eq("xyz789")
         expect(cask.url.to_s).to eq("https://example.org/arm64.zip")
       end
+    end
 
+    describe "#cpu_types" do
       it "returns an array of supported CPUs" do
-        expect(cask.cpus).to eq([:intel, :arm])
+        expect(cask.cpu_types).to eq([:intel, :arm])
+      end
+    end
+  end
+
+  context "if no CPUs are specified" do
+    subject(:cask) {
+      Cask::Cask.new("cask-without-cpus") do
+        url "https://example.org/file.zip"
+      end
+    }
+
+    describe "#cpu" do
+      it "returns nil" do
+        expect(cask.cpu).to eq(nil)
       end
     end
 
-    context "if no CPUs are specified" do
-      subject(:cask) {
-        Cask::Cask.new("cask-without-cpus") do
-          url "https://example.org/file.zip"
-        end
-      }
-
+    describe "#cpu_types" do
       it "returns an empty array" do
-        expect(cask.cpus).to be_empty
+        expect(cask.cpu_types).to be_empty
       end
     end
   end

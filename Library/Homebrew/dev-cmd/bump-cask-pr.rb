@@ -117,7 +117,7 @@ module Homebrew
       if new_version.latest?
         opoo "Ignoring specified --sha256= argument." if new_hash.present?
         new_hash = :no_check
-      elsif new_hash.nil? || cask.languages.present? || cask.cpus.present?
+      elsif new_hash.nil? || cask.languages.present? || cask.cpu_types.present?
         tmp_contents = Utils::Inreplace.inreplace_pairs(cask.sourcefile_path,
                                                         replacement_pairs.uniq.compact,
                                                         read_only_run: true,
@@ -152,10 +152,10 @@ module Homebrew
           ]
         end
 
-        cask.cpus.each do |cpu|
-          next if cpu == cask.cpu
+        cask.cpu_types.each do |cpu_type|
+          next if cpu_type == cask.cpu
 
-          cpu_config = tmp_config.merge(Cask::Config.new(explicit: { cpu_type: cpu.to_s }))
+          cpu_config = tmp_config.merge(Cask::Config.new(explicit: { cpu_type: cpu_type.to_s }))
           cpu_cask = Cask::CaskLoader.load(tmp_contents)
           cpu_cask.config = cpu_config
           cpu_url = cpu_cask.url.to_s
