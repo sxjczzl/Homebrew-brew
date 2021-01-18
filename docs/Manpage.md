@@ -853,7 +853,7 @@ supplied by the user.
 * `--no-fork`:
   Don't try to fork the repository.
 * `--version`:
-  Specify the new *`version`* for the cask.
+  Specify the new *`version`* for the cask. If *`version`* is a semicolon-separated list of versions, the corresponding versions will be replaced.
 * `--message`:
   Append *`message`* to the default pull request message.
 * `--url`:
