@@ -60,7 +60,6 @@ module Cask
 
       @dsl.instance_eval(&@block)
       @dsl.language_eval
-      @dsl.cpu_eval
     end
 
     DSL::DSL_METHODS.each do |method_name|

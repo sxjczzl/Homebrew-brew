@@ -179,26 +179,17 @@ module Cask
     end
 
     def cpu(arg = nil, &block)
-      return cpu_eval if arg.nil?
+      return @cpu if arg.nil?
+
       raise CaskInvalidError.new(cask, "No block given to cpu stanza.") if block.nil?
 
-      @cpu_blocks ||= {}
-      @cpu_blocks[arg] = block
+      cpus << arg
 
-      cpu_eval if arg == Hardware::CPU.type
-    end
-
-    def cpu_eval
-      return @cpu_eval if defined?(@cpu_eval)
-      return @cpu_eval = nil if @cpu_blocks.blank?
-
-      @cpu_eval = @cpu_blocks[Hardware::CPU.type]&.call
+      @cpu = yield if arg == Hardware::CPU.type
     end
 
     def cpus
-      return [] if @cpu_blocks.nil?
-
-      @cpu_blocks.keys
+      @cpus ||= []
     end
 
     def url(*args, **options)
