@@ -36,6 +36,7 @@ module Cask
     def self.defaults
       {
         languages: LazyObject.new { MacOS.languages },
+        cpu_type: LazyObject.new { Hardware::CPU.type.to_s },
       }.merge(DEFAULT_DIRS).freeze
     end
 
@@ -57,6 +58,7 @@ module Cask
         vst3_plugindir:       args.vst3_plugindir,
         screen_saverdir:      args.screen_saverdir,
         languages:            args.language,
+        cpu_type:             args.cpu_type,
       }.compact)
     end
 
@@ -165,6 +167,16 @@ module Cask
 
     def languages=(languages)
       explicit[:languages] = languages
+    end
+
+    sig { returns(Symbol) }
+    def cpu_type
+      (explicit[:cpu_type] || env[:cpu_type] || default[:cpu_type]).to_sym
+    end
+
+    sig { params(cpu_type: Symbol).void }
+    def cpu_type=(cpu_type)
+      explicit[:cpu_type] = cpu_type.to_s
     end
 
     DEFAULT_DIRS.each_key do |dir|

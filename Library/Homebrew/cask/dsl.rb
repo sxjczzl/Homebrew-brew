@@ -185,7 +185,7 @@ module Cask
 
       cpus << arg
 
-      @cpu = yield if arg == Hardware::CPU.type
+      @cpu = yield if arg == cask.config.cpu_type
     end
 
     def cpus

@@ -255,14 +255,20 @@ describe Cask::DSL, :cask do
       }
 
       it "uses the Intel version when CPU is Intel" do
-        allow(Hardware::CPU).to receive(:type).and_return(:intel)
+        config = cask.config
+        config.cpu_type = :intel
+        cask.config = config
+
         expect(cask.cpu).to eq("x64")
         expect(cask.sha256).to eq("abc123")
         expect(cask.url.to_s).to eq("https://example.org/x64.zip")
       end
 
       it "uses the ARM version when CPU is ARM" do
-        allow(Hardware::CPU).to receive(:type).and_return(:arm)
+        config = cask.config
+        config.cpu_type = :arm
+        cask.config = config
+
         expect(cask.cpu).to eq("arm64")
         expect(cask.sha256).to eq("xyz789")
         expect(cask.url.to_s).to eq("https://example.org/arm64.zip")
