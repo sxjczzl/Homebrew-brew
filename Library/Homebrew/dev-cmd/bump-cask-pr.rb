@@ -40,7 +40,8 @@ module Homebrew
       switch "--no-fork",
              description: "Don't try to fork the repository."
       flag   "--version=",
-             description: "Specify the new <version> for the cask."
+             description: "Specify the new <version> for the cask. If <version> is a semicolon-separated "\
+                          "list of versions, the corresponding versions will be replaced."
       flag   "--message=",
              description: "Append <message> to the default pull request message."
       flag   "--url=",
@@ -72,34 +73,35 @@ module Homebrew
     odie "This cask is not in a tap!" if cask.tap.blank?
     odie "This cask's tap is not a Git repository!" unless cask.tap.git?
 
-    new_version = args.version
-    new_version = :latest if ["latest", ":latest"].include?(new_version)
-    new_version = Cask::DSL::Version.new(new_version) if new_version.present?
+    new_version_list = args.version&.split(";")&.map do |version|
+      Cask::DSL::Version.new(version.delete_prefix(":"))
+    end
+    new_version_list ||= []
     new_base_url = args.url
     new_hash = args.sha256
-    new_hash = :no_check if ["no_check", ":no_check"].include? new_hash
+    new_hash = :no_check if new_hash&.delete_prefix(":") == "no_check"
 
-    if new_version.nil? && new_base_url.nil? && new_hash.nil?
+    if new_version_list.blank? && new_base_url.blank? && new_hash.blank?
       raise UsageError, "No --version=/--url=/--sha256= argument specified!"
     end
 
+    old_contents = File.read(cask.sourcefile_path)
+    if new_version_list.present?
+      old_count = old_contents.scan(/^ +version [":]/).count
+      if new_version_list.size != old_count
+        raise UsageError, "Expected #{old_count} #{"version".pluralize(old_count)} but got #{new_version_list.size}"
+      end
+    end
+
+    new_version = new_version_list.first if new_version_list.size == 1
     old_version = cask.version
     old_hash = cask.sha256
 
     check_open_pull_requests(cask, args: args)
 
-    old_contents = File.read(cask.sourcefile_path)
-
     replacement_pairs = []
 
-    if new_version.present?
-      old_version_regex = old_version.latest? ? ":latest" : "[\"']#{Regexp.escape(old_version.to_s)}[\"']"
-
-      replacement_pairs << [
-        /version\s+#{old_version_regex}/m,
-        "version #{new_version.latest? ? ":latest" : "\"#{new_version}\""}",
-      ]
-    end
+    replacement_pairs << version_replacement_pair(old_version, new_version) if new_version.present?
 
     if new_base_url.present?
       m = /^ +url "(.+?)"\n/m.match(old_contents)
@@ -113,8 +115,8 @@ module Homebrew
       ]
     end
 
-    if new_version.present?
-      if new_version.latest?
+    if new_version_list.present?
+      if new_version&.latest?
         opoo "Ignoring specified --sha256= argument." if new_hash.present?
         new_hash = :no_check
       elsif new_hash.nil? || cask.languages.present? || cask.cpu_types.present?
@@ -127,7 +129,7 @@ module Homebrew
         tmp_config = cask.config
         tmp_url = tmp_cask.url.to_s
 
-        if new_hash.nil? && old_hash != :no_check
+        if new_version.present? && new_hash.nil? && old_hash != :no_check
           resource_path = fetch_resource(cask, new_version, tmp_url)
           Utils::Tar.validate_file(resource_path)
           new_hash = resource_path.sha256
@@ -146,41 +148,47 @@ module Homebrew
           Utils::Tar.validate_file(resource_path)
           lang_new_hash = resource_path.sha256
 
-          replacement_pairs << [
-            lang_old_hash,
-            lang_new_hash,
-          ]
+          replacement_pairs << hash_replacement_pair(lang_old_hash, lang_new_hash)
         end
 
         cask.cpu_types.each do |cpu_type|
-          next if cpu_type == cask.cpu
+          next if new_version.present? && cpu_type == cask.cpu
 
           cpu_config = tmp_config.merge(Cask::Config.new(explicit: { cpu_type: cpu_type.to_s }))
-          cpu_cask = Cask::CaskLoader.load(tmp_contents)
+
+          if new_version.present?
+            cpu_version = new_version
+            cpu_contents = tmp_contents
+          else
+            cpu_version = new_version_list.shift
+
+            cpu_cask = Cask::CaskLoader.load(tmp_contents)
+            cpu_cask.config = cpu_config
+            cpu_old_version = cpu_cask.version
+
+            replacement_pairs << version_replacement_pair(cpu_old_version, cpu_version)
+
+            cpu_contents = Utils::Inreplace.inreplace_pairs(cask.sourcefile_path,
+                                                            replacement_pairs.uniq.compact,
+                                                            read_only_run: true,
+                                                            silent:        true)
+          end
+
+          cpu_cask = Cask::CaskLoader.load(cpu_contents)
           cpu_cask.config = cpu_config
           cpu_url = cpu_cask.url.to_s
           cpu_old_hash = cpu_cask.sha256.to_s
 
-          resource_path = fetch_resource(cask, new_version, cpu_url)
+          resource_path = fetch_resource(cask, cpu_version, cpu_url)
           Utils::Tar.validate_file(resource_path)
           cpu_new_hash = resource_path.sha256
 
-          replacement_pairs << [
-            cpu_old_hash,
-            cpu_new_hash,
-          ]
+          replacement_pairs << hash_replacement_pair(cpu_old_hash, cpu_new_hash)
         end
       end
     end
 
-    if new_hash.present?
-      hash_regex = old_hash == :no_check ? ":no_check" : "[\"']#{Regexp.escape(old_hash.to_s)}[\"']"
-
-      replacement_pairs << [
-        /sha256\s+#{hash_regex}/m,
-        "sha256 #{new_hash == :no_check ? ":no_check" : "\"#{new_hash}\""}",
-      ]
-    end
+    replacement_pairs << hash_replacement_pair(old_hash, new_hash) if new_hash.present?
 
     Utils::Inreplace.inreplace_pairs(cask.sourcefile_path,
                                      replacement_pairs.uniq.compact,
@@ -205,6 +213,24 @@ module Homebrew
       pr_message:      "Created with `brew bump-cask-pr`.",
     }
     GitHub.create_bump_pr(pr_info, args: args)
+  end
+
+  def version_replacement_pair(old_version, new_version)
+    old_version_regex = old_version.latest? ? ":latest" : "[\"']#{Regexp.escape(old_version.to_s)}[\"']"
+
+    [
+      /version\s+#{old_version_regex}/m,
+      "version #{new_version.latest? ? ":latest" : "\"#{new_version}\""}",
+    ]
+  end
+
+  def hash_replacement_pair(old_hash, new_hash)
+    hash_regex = old_hash == :no_check ? ":no_check" : "[\"']#{Regexp.escape(old_hash.to_s)}[\"']"
+
+    [
+      /sha256\s+#{hash_regex}/m,
+      "sha256 #{new_hash == :no_check ? ":no_check" : "\"#{new_hash}\""}",
+    ]
   end
 
   def fetch_resource(cask, new_version, url, **specs)
