@@ -50,7 +50,7 @@ If you're using an older distribution of Linux, installing your first package wi
 + **GCC** 4.7.0 or newer
 + **Linux** 2.6.32 or newer
 + **Glibc** 2.13 or newer
-+ **64-bit x86_64** CPU
++ **64-bit x86_64** CPU; SSSE3 recommended
 
 Paste at a terminal prompt:
 
