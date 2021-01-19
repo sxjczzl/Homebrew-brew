@@ -309,8 +309,8 @@ module GitHub
     open_api(url_to("repos", user, repo))
   end
 
-  def search_code(**qualifiers)
-    matches = search("code", **qualifiers)
+  def search_code(user: "Homebrew", path: ["Formula", "Casks", "."], filename: nil, extension: "rb")
+    matches = search("code", user: user, path: path, filename: filename, extension: extension)
     return matches if matches.blank?
 
     matches.map do |match|
