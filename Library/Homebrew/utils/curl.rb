@@ -118,18 +118,10 @@ module Utils
            destination.size == %r{^.*Content-Range: bytes \d+-\d+/(\d+)\r\n.*$}m.match(headers)&.[](1)&.to_i
           return # We've already downloaded all the bytes
         end
-      else
-        supports_partial_download = false
-      end
-
-      continue_at = if destination.exist? && supports_partial_download
-        "-"
-      else
-        0
       end
 
       curl(
-        "--location", "--remote-time", "--continue-at", continue_at.to_s, "--output", destination, *args, **options
+        "--location", "--remote-time", "--output", destination, *args, **options
       )
     end
 
