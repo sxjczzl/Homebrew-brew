@@ -85,7 +85,7 @@ module Homebrew
 
     Install.perform_preinstall_checks
 
-    formulae, casks = args.named.to_formulae_and_casks(method: :resolve)
+    formulae, casks = args.named.to_formulae_and_casks(method: :resolve, quiet: args.quiet?)
                           .partition { |o| o.is_a?(Formula) }
 
     formulae.each do |f|

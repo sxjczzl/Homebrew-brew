@@ -108,7 +108,7 @@ module Homebrew
     else
       remote_results = search_taps(query, silent: true)
 
-      local_formulae = search_formulae(string_or_regex)
+      local_formulae = search_formulae(string_or_regex, quiet: args.quiet?)
       remote_formulae = remote_results[:formulae]
       all_formulae = local_formulae + remote_formulae
 

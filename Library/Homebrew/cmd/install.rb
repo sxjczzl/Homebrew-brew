@@ -323,7 +323,7 @@ module Homebrew
     end
 
     ohai "Searching for similarly named formulae..."
-    formulae_search_results = search_formulae(e.name)
+    formulae_search_results = search_formulae(e.name, quiet: args.quiet?)
     case formulae_search_results.length
     when 0
       ofail "No similarly named formulae found."

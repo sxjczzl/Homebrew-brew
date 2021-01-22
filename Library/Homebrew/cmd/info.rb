@@ -137,7 +137,7 @@ module Homebrew
 
   sig { params(args: CLI::Args).void }
   def print_info(args:)
-    args.named.to_formulae_and_casks_and_unavailable.each_with_index do |obj, i|
+    args.named.to_formulae_and_casks_and_unavailable(quiet: args.quiet?).each_with_index do |obj, i|
       puts unless i.zero?
 
       case obj

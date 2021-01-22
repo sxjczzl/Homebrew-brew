@@ -43,13 +43,17 @@ module Homebrew
       # If both a formula and cask with the same name exist, returns
       # the formula and prints a warning unless `only` is specified.
       sig {
-        params(only: T.nilable(Symbol), ignore_unavailable: T.nilable(T::Boolean), method: T.nilable(Symbol))
-          .returns(T::Array[T.any(Formula, Keg, Cask::Cask)])
+        params(
+          only:               T.nilable(Symbol),
+          ignore_unavailable: T.nilable(T::Boolean),
+          method:             T.nilable(Symbol),
+          quiet:              T.nilable(T::Boolean),
+        ).returns(T::Array[T.any(Formula, Keg, Cask::Cask)])
       }
-      def to_formulae_and_casks(only: parent&.only_formula_or_cask, ignore_unavailable: nil, method: nil)
+      def to_formulae_and_casks(only: parent&.only_formula_or_cask, ignore_unavailable: nil, method: nil, quiet: true)
         @to_formulae_and_casks ||= {}
         @to_formulae_and_casks[only] ||= downcased_unique_named.flat_map do |name|
-          load_formula_or_cask(name, only: only, method: method)
+          load_formula_or_cask(name, only: only, method: method, quiet: quiet)
         rescue NoSuchKegError, FormulaUnavailableError, Cask::CaskUnavailableError
           ignore_unavailable ? [] : raise
         end.uniq.freeze
@@ -62,23 +66,23 @@ module Homebrew
                                                 .map(&:freeze).freeze
       end
 
-      def to_formulae_and_casks_and_unavailable(only: parent&.only_formula_or_cask, method: nil)
+      def to_formulae_and_casks_and_unavailable(only: parent&.only_formula_or_cask, method: nil, quiet: true)
         @to_formulae_casks_unknowns ||= {}
         @to_formulae_casks_unknowns[method] = downcased_unique_named.map do |name|
-          load_formula_or_cask(name, only: only, method: method)
+          load_formula_or_cask(name, only: only, method: method, quiet: quiet)
         rescue FormulaOrCaskUnavailableError => e
           e
         end.uniq.freeze
       end
 
-      def load_formula_or_cask(name, only: nil, method: nil)
+      def load_formula_or_cask(name, only: nil, method: nil, quiet: true)
         if only != :cask
           begin
             formula = case method
             when nil, :factory
-              Formulary.factory(name, *spec, force_bottle: @force_bottle, flags: @flags)
+              Formulary.factory(name, *spec, force_bottle: @force_bottle, flags: @flags, quiet: quiet)
             when :resolve
-              resolve_formula(name)
+              resolve_formula(name, quiet: quiet)
             when :keg
               resolve_keg(name)
             when :kegs
@@ -107,8 +111,8 @@ module Homebrew
       end
       private :load_formula_or_cask
 
-      def resolve_formula(name)
-        Formulary.resolve(name, spec: spec, force_bottle: @force_bottle, flags: @flags)
+      def resolve_formula(name, quiet: true)
+        Formulary.resolve(name, spec: spec, force_bottle: @force_bottle, flags: @flags, quiet: quiet)
       end
       private :resolve_formula
 

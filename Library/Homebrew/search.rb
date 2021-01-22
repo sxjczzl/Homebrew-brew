@@ -72,10 +72,10 @@ module Homebrew
       results
     end
 
-    def search_formulae(string_or_regex)
+    def search_formulae(string_or_regex, quiet: true)
       if string_or_regex.is_a?(String) && string_or_regex.match?(HOMEBREW_TAP_FORMULA_REGEX)
         return begin
-          [Formulary.factory(string_or_regex).name]
+          [Formulary.factory(string_or_regex, quiet: quiet).name]
         rescue FormulaUnavailableError
           []
         end
@@ -89,7 +89,7 @@ module Homebrew
 
       results.map do |name|
         formula, canonical_full_name = begin
-          f = Formulary.factory(name)
+          f = Formulary.factory(name, quiet: quiet)
           [f, f.full_name]
         rescue
           [nil, name]
