@@ -313,7 +313,7 @@ class Version
 
   # A token representing the part of a version designating it as a post release.
   class PostToken < CompositeToken
-    PATTERN = /.post[0-9]+/i.freeze
+    PATTERN = /.post[0-9]+/i.freeze # TODO: "." should be escaped
 
     sig { override.params(other: T.untyped).returns(T.nilable(Integer)) }
     def <=>(other)
@@ -382,74 +382,224 @@ class Version
   VERSION_PARSERS = [
     # date-based versioning
     # e.g. ltopers-v2017-04-14.tar.gz
-    StemParser.new(/-v?(\d{4}-\d{2}-\d{2})/),
+    StemParser.new(/
+      -v?                 # example: -v
+      (\d{4}-\d{2}-\d{2}) # VERSION: 2017-04-14
+    /x),
 
     # GitHub tarballs
     # e.g. https://github.com/foo/bar/tarball/v1.2.3
     # e.g. https://github.com/sam-github/libnet/tarball/libnet-1.1.4
     # e.g. https://github.com/isaacs/npm/tarball/v0.2.5-1
     # e.g. https://github.com/petdance/ack/tarball/1.93_02
-    UrlParser.new(%r{github\.com/.+/(?:zip|tar)ball/(?:v|\w+-)?((?:\d+[-._])+\d*)$}),
+    UrlParser.new(%r{
+      github\.com/     # example: https://github.com/
+      .+/              # example: sam-github/libnet/
+      (?:zip|tar)ball/ # example: tarball/
+      (?:v|\w+-)?      # example: libnet-
+      (
+        (?:\d+[-._])+  # example: 1.1.
+        \d*            # example: 4
+      )                # VERSION: 1.1.4
+      $                # end of string
+    }x),
 
     # e.g. https://github.com/erlang/otp/tarball/OTP_R15B01 (erlang style)
-    UrlParser.new(/[-_]([Rr]\d+[AaBb]\d*(?:-\d+)?)/),
+    UrlParser.new(/
+      [-_]        # example: _
+      (
+        [Rr]      # example: R
+        \d+       # example: 15
+        [AaBb]    # example: B
+        \d*       # example: 01
+        (?:-\d+)? # example: (blank)
+      )           # VERSION: R15B01
+    /x),
 
     # e.g. boost_1_39_0
-    StemParser.new(/((?:\d+_)+\d+)$/) { |s| s.tr("_", ".") },
+    StemParser.new(/
+      (
+        (?:\d+_)+ # example: 1_39_
+        \d+       # example: 0
+      )           # VERSION: 1_39_0
+      $           # end of string
+    /x) { |s| s.tr("_", ".") },
 
     # e.g. foobar-4.5.1-1
     # e.g. unrtf_0.20.4-1
     # e.g. ruby-1.9.1-p243
-    StemParser.new(/[-_]((?:\d+\.)*\d+\.\d+-(?:p|rc|RC)?\d+)(?:[-._](?i:bin|dist|stable|src|sources?|final|full))?$/),
+    StemParser.new(/
+      [-_]           # example: -
+      (
+        (?:\d+\.)*   # example: 1.
+        \d+\.\d+     # example: 9.1
+        -            # example: -
+        (?:p|rc|RC)? # example: p
+        \d+          # example: 243
+      )              # VERSION: 1.9.1-p243
+      (?:
+        [-._]
+        (?i:bin|dist|stable|src|sources?|final|full)
+      )?
+      $              # end of string
+    /x),
 
     # URL with no extension
     # e.g. https://waf.io/waf-1.8.12
     # e.g. https://codeload.github.com/gsamokovarov/jump/tar.gz/v0.7.1
-    UrlParser.new(/[-v]((?:\d+\.)*\d+)$/),
+    UrlParser.new(/
+      [-v]         # example: v
+      (
+        (?:\d+\.)* # example: 0.7.
+        \d+        # example: 1
+      )            # VERSION: 0.7.1
+      $            # end of string
+    /x),
 
     # e.g. lame-398-1
-    StemParser.new(/-(\d+-\d+)/),
+    StemParser.new(/
+      -     # example: -
+      (
+        \d+ # example: 398
+        -   # example: -
+        \d+ # example: 1
+      )     # VERSION: 398-1
+    /x),
 
     # e.g. foobar-4.5.1
-    StemParser.new(/-((?:\d+\.)*\d+)$/),
+    StemParser.new(/
+      -            # example: -
+      (
+        (?:\d+\.)* # example: 4.5.
+        \d+        # example: 1
+      )            # VERSION: 4.5.1
+      $            # end of string
+    /x),
 
     # e.g. foobar-4.5.1.post1
-    StemParser.new(/-((?:\d+\.)*\d+(.post\d+)?)$/),
+    StemParser.new(/
+      -            # example: -
+      (
+        (?:\d+\.)* # example: 4.5.
+        \d+        # example: 1
+        (
+          .        # example: . (TODO: "." should be escaped)
+          post     # example: post
+          \d+      # example: 1
+        )?
+      )            # VERSION: 4.5.1.post1
+      $            # end of string
+    /x),
 
     # e.g. foobar-4.5.1b
-    StemParser.new(/-((?:\d+\.)*\d+(?:[abc]|rc|RC)\d*)$/),
+    StemParser.new(/
+      -                 # example: -
+      (
+        (?:\d+\.)*      # example: 4.5.
+        \d+             # example: 1
+        (?:[abc]|rc|RC) # example: b
+        \d*             # example: (blank)
+      )                 # VERSION: 4.5.1b
+      $                 # end of string
+    /x),
 
     # e.g. foobar-4.5.0-alpha5, foobar-4.5.0-beta1, or foobar-4.50-beta
-    StemParser.new(/-((?:\d+\.)*\d+-(?:alpha|beta|rc)\d*)$/),
+    StemParser.new(/
+      -            # example: -
+      (
+        (?:\d+\.)* # example: 4.5.
+        \d+        # example: 0
+        -          # example: -
+        (?:alpha|beta|rc) # example: alpha
+        \d*        # example: 5
+      )            # VERSION: 4.5.0-alpha5
+      $            # end of string
+    /x),
 
     # e.g. https://ftpmirror.gnu.org/libidn/libidn-1.29-win64.zip
     # e.g. https://ftpmirror.gnu.org/libmicrohttpd/libmicrohttpd-0.9.17-w32.zip
-    StemParser.new(/-(\d+\.\d+(?:\.\d+)?)-w(?:in)?(?:32|64)$/),
+    StemParser.new(/
+      -            # example: -
+      (
+        \d+\.\d+   # example: 0.9
+        (?:\.\d+)? # example: .17
+      )            # VERSION: 0.9.17
+      -w(?:in)?    # example: -w
+      (?:32|64)    # example: 32
+      $            # end of string
+    /x),
 
     # Opam packages
     # e.g. https://opam.ocaml.org/archives/sha.1.9+opam.tar.gz
     # e.g. https://opam.ocaml.org/archives/lablgtk.2.18.3+opam.tar.gz
     # e.g. https://opam.ocaml.org/archives/easy-format.1.0.2+opam.tar.gz
-    StemParser.new(/\.(\d+\.\d+(?:\.\d+)?)\+opam$/),
+    StemParser.new(/
+      \.           # example: .
+      (
+        \d+\.\d+   # example: 1.0
+        (?:\.\d+)? # example: .2
+      )            # VERSION: 1.0.2
+      \+opam       # example: +opam
+      $            # end of string
+    /x),
 
     # e.g. https://ftpmirror.gnu.org/mtools/mtools-4.0.18-1.i686.rpm
     # e.g. https://ftpmirror.gnu.org/autogen/autogen-5.5.7-5.i386.rpm
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x86.zip
     # e.g. https://ftpmirror.gnu.org/libtasn1/libtasn1-2.8-x64.zip
     # e.g. https://ftpmirror.gnu.org/mtools/mtools_4.0.18_i386.deb
-    StemParser.new(/[-_](\d+\.\d+(?:\.\d+)?(?:-\d+)?)[-_.](?:i[36]86|x86|x64(?:[-_](?:32|64))?)$/),
+    StemParser.new(/
+      [-_]         # example: -
+      (
+        \d+\.\d+   # example: 4.0
+        (?:\.\d+)? # example: .18
+        (?:-\d+)?  # example: -1
+      )            # VERSION: 4.0.18-1
+      [-_.]        # example: .
+      (?:
+        i[36]86|x86|x64    # example: i386
+        (?:[-_](?:32|64))? # TODO: this doesn't work as intended
+      )
+      $            # end of string
+    /x),
 
     # e.g. https://registry.npmjs.org/@angular/cli/-/cli-1.3.0-beta.1.tgz
     # e.g. https://github.com/dlang/dmd/archive/v2.074.0-beta1.tar.gz
     # e.g. https://github.com/dlang/dmd/archive/v2.074.0-rc1.tar.gz
     # e.g. https://github.com/premake/premake-core/releases/download/v5.0.0-alpha10/premake-5.0.0-alpha10-src.zip
-    StemParser.new(/[-.vV]?((?:\d+\.)+\d+[-_.]?(?i:alpha|beta|pre|rc)\.?\d{,2})/),
+    StemParser.new(/
+      [-.vV]?      # example: -
+      (
+        (?:\d+\.)+ # example: 1.3.
+        \d+        # example: 0
+        [-_.]?     # example: -
+        (?i:alpha|beta|pre|rc) # example: beta
+        \.?        # example: .
+        \d{,2}     # example: 1
+      )            # VERSION: 1.3.0-beta.1
+    /x),
 
     # e.g. foobar4.5.1
-    StemParser.new(/((?:\d+\.)*\d+)$/),
+    StemParser.new(/
+      (
+        (?:\d+\.)* # example: 4.5.
+        \d+        # example: 1
+      )            # VERSION: 4.5.1
+      $            # end of string
+    /x),
 
     # e.g. foobar-4.5.0-bin
-    StemParser.new(/[-vV]((?:\d+\.)+\d+[abc]?)[-._](?i:bin|dist|stable|src|sources?|final|full)$/),
+    StemParser.new(/
+      [-vV]        # example: -
+      (
+        (?:\d+\.)+ # example: 4.5.
+        \d+        # example: 0
+        [abc]?     # example: (blank)
+      )            # VERSION: 4.5.0
+      [-._]        # example: -
+      (?i:bin|dist|stable|src|sources?|final|full) # example: bin
+      $            # end of string
+    /x),
 
     # dash version style
     # e.g. http://www.antlr.org/download/antlr-3.4-complete.jar
@@ -457,16 +607,44 @@ class Version
     # e.g. https://search.maven.org/remotecontent?filepath=com/facebook/presto/presto-cli/0.181/presto-cli-0.181-executable.jar
     # e.g. https://search.maven.org/remotecontent?filepath=org/fusesource/fuse-extra/fusemq-apollo-mqtt/1.3/fusemq-apollo-mqtt-1.3-uber.jar
     # e.g. https://search.maven.org/remotecontent?filepath=org/apache/orc/orc-tools/1.2.3/orc-tools-1.2.3-uber.jar
-    StemParser.new(/-((?:\d+\.)+\d+)-/),
+    StemParser.new(/
+      -            # example: -
+      (
+        (?:\d+\.)+ # example: 1.2.
+        \d+        # example: 3
+      )            # VERSION: 1.2.3
+      -            # example: -
+    /x),
 
     # e.g. dash_0.5.5.1.orig.tar.gz (Debian style)
-    StemParser.new(/_((?:\d+\.)+\d+[abc]?)[.]orig$/),
+    StemParser.new(/
+      _            # example: _
+      (
+        (?:\d+\.)+ # example: 0.5.5.
+        \d+        # example: 1
+        [abc]?     # example: (blank)
+      )            # VERSION: 0.5.5.1
+      [.]orig      # example: .orig
+      $            # end of string
+    /x),
 
     # e.g. https://www.openssl.org/source/openssl-0.9.8s.tar.gz
-    StemParser.new(/-v?(\d[^-]+)/),
+    StemParser.new(/
+      -v?     # example: -
+      (
+        \d    # example: 0
+        [^-]+ # example: .9.8s
+      )       # VERSION: 0.9.8s
+    /x),
 
     # e.g. astyle_1.23_macosx.tar.gz
-    StemParser.new(/_v?(\d[^_]+)/),
+    StemParser.new(/
+      _v?     # example: _
+      (
+        \d    # example: 1
+        [^_]+ # example: .23
+      )       # VERSION: 1.23
+    /x),
 
     # e.g. http://mirrors.jenkins-ci.org/war/1.486/jenkins.war
     # e.g. https://github.com/foo/bar/releases/download/0.10.11/bar.phar
@@ -475,13 +653,37 @@ class Version
     # e.g. https://wwwlehre.dhbw-stuttgart.de/~sschulz/WORK/E_DOWNLOAD/V_1.9/E.tgz
     # e.g. https://github.com/JustArchi/ArchiSteamFarm/releases/download/2.3.2.0/ASF.zip
     # e.g. https://people.gnome.org/~newren/eg/download/1.7.5.2/eg
-    UrlParser.new(%r{/(?:[rvV]_?)?(\d+\.\d+(?:\.\d+){,2})}),
+    UrlParser.new(%r{
+      /(?:[rvV]_?)?   # example: /r
+      (
+        \d+\.\d+      # example: 1.9
+        (?:\.\d+){,2} # example: .293
+      )               # VERSION: 1.9.293
+    }x),
 
     # e.g. https://www.ijg.org/files/jpegsrc.v8d.tar.gz
-    StemParser.new(/\.v(\d+[a-z]?)/),
+    StemParser.new(/
+      \.v      # example: .v
+      (
+        \d+    # example: 8
+        [a-z]? # example: d
+      )        # VERSION: 8d
+    /x),
 
     # e.g. https://secure.php.net/get/php-7.1.10.tar.bz2/from/this/mirror
-    UrlParser.new(/[-.vV]?((?:\d+\.)+\d+(?:[-_.]?(?i:alpha|beta|pre|rc)\.?\d{,2})?)/),
+    UrlParser.new(/
+      [-.vV]?      # example: -
+      (
+        (?:\d+\.)+ # example: 7.1.
+        \d+        # example: 10
+        (?:        # example: (blank)
+          [-_.]?
+          (?i:alpha|beta|pre|rc)
+          \.?
+          \d{,2}
+        )?
+      )            # VERSION: 7.1.10
+    /x),
   ].freeze
   private_constant :VERSION_PARSERS
 
