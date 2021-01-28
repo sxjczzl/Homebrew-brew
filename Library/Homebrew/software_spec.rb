@@ -173,6 +173,7 @@ class SoftwareSpec
   end
 
   def depends_on(spec)
+    remove_gnu_compilers(spec)
     dep = dependency_collector.add(spec)
     add_dep_option(dep) if dep
   end
@@ -181,6 +182,9 @@ class SoftwareSpec
     spec = Hash[*spec.first] if spec.is_a?(Hash)
     depends_on(spec)
   end
+
+  sig { params(spec: T.any(String, T::Hash[T.untyped, T.untyped])).void }
+  def remove_gnu_compilers(spec); end
 
   def deps
     dependency_collector.deps
