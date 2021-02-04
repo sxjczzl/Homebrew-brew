@@ -270,8 +270,10 @@ module OS
             sudo rm -rf /Library/Developer/CommandLineTools
             sudo xcode-select --install
 
-          Alternatively, manually download them from:
+          Alternatively (or if other options fail), manually download them from:
             #{Formatter.url("https://developer.apple.com/download/more/")}.
+          And refer to the following for the most recent available for your OS:
+            #{Formatter.url("https://en.wikipedia.org/wiki/Xcode#Version_comparison_table")}.
         EOS
       end
 
