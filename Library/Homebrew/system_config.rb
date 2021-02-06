@@ -117,11 +117,12 @@ module SystemConfig
     def describe_java
       return "N/A" unless which "java"
 
-      _, err, status = system_command("java", args: ["-version"], print_stderr: false)
+      _, err, status = system_command("java", args: ["-version"], print_stderr: false, verbose: false)
       return "N/A" unless status.success?
 
-      err[/java version "([\d._]+)"/, 1] || "N/A"
+      err[/(?:openjdk|java) version "([\d._]+)"/, 1] || "N/A"
     end
+    alias generic_describe_java describe_java
 
     sig { returns(String) }
     def describe_git
@@ -132,7 +133,7 @@ module SystemConfig
 
     sig { returns(String) }
     def describe_curl
-      out, = system_command(curl_executable, args: ["--version"])
+      out, = system_command(curl_executable, args: ["--version"], verbose: false)
 
       if /^curl (?<curl_version>[\d.]+)/ =~ out
         "#{curl_version} => #{curl_executable}"
