@@ -75,6 +75,8 @@ module Cask
                             :homepage,
                             :language,
                             :languages,
+                            :cpu,
+                            :cpu_types,
                             :name,
                             :sha256,
                             :staged_path,
@@ -174,6 +176,20 @@ module Cask
       return [] if @language_blocks.nil?
 
       @language_blocks.keys.flatten
+    end
+
+    def cpu(arg = nil, &block)
+      return @cpu if arg.nil?
+
+      raise CaskInvalidError.new(cask, "No block given to cpu stanza.") if block.nil?
+
+      cpu_types << arg
+
+      @cpu = yield if arg == cask.config.cpu_type
+    end
+
+    def cpu_types
+      @cpu_types ||= []
     end
 
     def url(*args, **options)

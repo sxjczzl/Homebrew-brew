@@ -45,6 +45,18 @@ git_init_if_necessary() {
     trap - EXIT
   fi
 
+  if [[ -n "${HOMEBREW_MACOS_VERSION}" ]] &&
+    [[ -z "$(git config --get homebrew.flavour 2>/dev/null)" ]]
+  then
+    if [[ "${HOMEBREW_PREFIX}" = "${HOMEBREW_MACOS_ARM_DEFAULT_PREFIX}" ]]; then
+      git config --replace-all homebrew.flavour "arm64" 2>/dev/null
+    elif [[ "${HOMEBREW_PREFIX}" = "${HOMEBREW_DEFAULT_PREFIX}" ]]; then
+      git config --replace-all homebrew.flavour "x86_64" 2>/dev/null
+    else
+      git config --replace-all homebrew.flavour "$(uname -m)" 2>/dev/null
+    fi
+  fi
+
   [[ -d "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core" ]] || return
   safe_cd "$HOMEBREW_LIBRARY/Taps/homebrew/homebrew-core"
   if [[ ! -d ".git" ]]

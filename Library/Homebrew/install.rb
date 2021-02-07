@@ -14,7 +14,7 @@ module Homebrew
     module_function
 
     def perform_preinstall_checks(all_fatal: false, cc: nil)
-      check_prefix
+      check_flavour_matches_architecture
       check_cpu
       attempt_directory_creation
       check_cc_argv(cc)
@@ -51,7 +51,19 @@ module Homebrew
           You can migrate your previously installed formula list with:
             brew bundle dump
         EOS
+      else
+        "To use it, you need to install Rosetta 2 first."
       end
+
+      odie <<~EOS
+        #{error_title}
+        #{rosetta_instructions}
+        Or create a new installation in #{HOMEBREW_MACOS_ARM_DEFAULT_PREFIX} using one of the
+        "Alternative Installs" from:
+          #{Formatter.url("https://docs.brew.sh/Installation")}
+        You can migrate your previously installed formula list with:
+          brew bundle dump
+      EOS
     end
 
     def check_cpu
