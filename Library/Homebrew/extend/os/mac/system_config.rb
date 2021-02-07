@@ -7,7 +7,7 @@ module SystemConfig
   class << self
     include SystemCommand::Mixin
 
-    undef describe_homebrew_ruby
+    undef describe_homebrew_ruby, describe_java
 
     def describe_homebrew_ruby
       s = describe_homebrew_ruby_version
@@ -17,6 +17,14 @@ module SystemConfig
       else
         "#{s} => #{RUBY_PATH}"
       end
+    end
+
+    def describe_java
+      # Check any Java is detected.
+      # We can't do this by invoking `java` as that will trigger an installation pop-up.
+      return "N/A" unless quiet_system "/usr/libexec/java_home"
+
+      generic_describe_java
     end
 
     def xcode
