@@ -3,24 +3,17 @@
 
 if ENV["HOMEBREW_TESTS_COVERAGE"]
   require "simplecov"
+  require "simplecov_json_formatter"
 
-  formatters = [SimpleCov::Formatter::HTMLFormatter]
-  if ENV["HOMEBREW_CODECOV_TOKEN"] && RUBY_PLATFORM[/darwin/]
-    require "codecov"
-
-    formatters << SimpleCov::Formatter::Codecov
-
-    if ENV["TEST_ENV_NUMBER"]
-      SimpleCov.at_exit do
-        result = SimpleCov.result
-        result.format! if ParallelTests.number_of_running_processes <= 1
-      end
-    end
-
-    ENV["CODECOV_TOKEN"] = ENV["HOMEBREW_CODECOV_TOKEN"]
-  end
-
+  formatters = [SimpleCov::Formatter::HTMLFormatter, SimpleCov::Formatter::JSONFormatter]
   SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new(formatters)
+
+  if RUBY_PLATFORM[/darwin/] && ENV["TEST_ENV_NUMBER"]
+    SimpleCov.at_exit do
+      result = SimpleCov.result
+      result.format! if ParallelTests.number_of_running_processes <= 1
+    end
+  end
 end
 
 require "rspec/its"

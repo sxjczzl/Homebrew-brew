@@ -12,8 +12,11 @@ GEM
     bootsnap (1.7.1)
       msgpack (~> 1.0)
     byebug (11.1.3)
+<<<<<<< HEAD
     codecov (0.4.3)
       simplecov (>= 0.15, < 0.22)
+=======
+>>>>>>> pr/10514
     coderay (1.1.3)
     colorize (0.8.1)
     commander (4.5.2)
@@ -174,7 +177,6 @@ DEPENDENCIES
   activesupport
   bootsnap
   byebug
-  codecov
   concurrent-ruby
   mechanize
   nokogiri
@@ -203,3 +205,4 @@ DEPENDENCIES
 
 BUNDLED WITH
    1.17.3
+   
