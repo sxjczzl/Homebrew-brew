@@ -1,16 +1,18 @@
+# typed: false
 # frozen_string_literal: true
 
 require "cli/parser"
 require "fileutils"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def tests_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `tests` [<options>]
-
+      description <<~EOS
         Run Homebrew's unit and integration tests.
       EOS
       switch "--coverage",
@@ -22,44 +24,51 @@ module Homebrew
       switch "--online",
              description: "Include tests that use the GitHub API and tests that use any of the taps for "\
                           "official external commands."
+      switch "--byebug",
+             description: "Enable debugging using byebug."
       flag   "--only=",
              description: "Run only <test_script>`_spec.rb`. Appending `:`<line_number> will start at a "\
                           "specific line."
       flag   "--seed=",
-             description: "Randomise tests with the provided <value> instead of a random seed."
-      switch :verbose
-      switch :debug
+             description: "Randomise tests with the specified <value> instead of a random seed."
+
+      named_args :none
     end
   end
 
   def tests
-    tests_args.parse
+    args = tests_args.parse
 
     Homebrew.install_bundler_gems!
-    gem_user_dir = Gem.user_dir
+
+    require "byebug" if args.byebug?
 
     HOMEBREW_LIBRARY_PATH.cd do
-      ENV.delete("HOMEBREW_COLOR")
-      ENV.delete("HOMEBREW_NO_COLOR")
-      ENV.delete("HOMEBREW_VERBOSE")
-      ENV.delete("HOMEBREW_DEBUG")
-      ENV.delete("VERBOSE")
-      ENV.delete("HOMEBREW_CASK_OPTS")
-      ENV.delete("HOMEBREW_TEMP")
-      ENV.delete("HOMEBREW_NO_GITHUB_API")
-      ENV.delete("HOMEBREW_NO_EMOJI")
-      ENV.delete("HOMEBREW_DEVELOPER")
-      ENV.delete("HOMEBREW_PRY")
+      # Cleanup any unwanted user configuration.
+      allowed_test_env = [
+        "HOMEBREW_GITHUB_API_TOKEN",
+        "HOMEBREW_TEMP",
+      ]
+      Homebrew::EnvConfig::ENVS.keys.map(&:to_s).each do |env|
+        next if allowed_test_env.include?(env)
+
+        ENV.delete(env)
+      end
+
       ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] = "1"
       ENV["HOMEBREW_NO_COMPAT"] = "1" if args.no_compat?
       ENV["HOMEBREW_TEST_GENERIC_OS"] = "1" if args.generic?
       ENV["HOMEBREW_TEST_ONLINE"] = "1" if args.online?
+      ENV["HOMEBREW_SORBET_RUNTIME"] = "1"
 
       ENV["USER"] ||= system_command!("id", args: ["-nu"]).stdout.chomp
 
       # Avoid local configuration messing with tests, e.g. git being configured
       # to use GPG to sign by default
       ENV["HOME"] = "#{HOMEBREW_LIBRARY_PATH}/test"
+
+      # Print verbose output when requesting debug or verbose output.
+      ENV["HOMEBREW_VERBOSE_TESTS"] = "1" if args.debug? || args.verbose?
 
       if args.coverage?
         ENV["HOMEBREW_TESTS_COVERAGE"] = "1"
@@ -114,6 +123,8 @@ module Homebrew
         --out #{HOMEBREW_CACHE}/tests/parallel_runtime_rspec.log
       ]
 
+      bundle_args << "--format" << "RSpec::Github::Formatter" if ENV["GITHUB_ACTIONS"]
+
       unless OS.mac?
         bundle_args << "--tag" << "~needs_macos" << "--tag" << "~cask"
         files = files.reject { |p| p =~ %r{^test/(os/mac|cask)(/.*|_spec\.rb)$} }
@@ -125,6 +136,9 @@ module Homebrew
       end
 
       puts "Randomized with seed #{seed}"
+
+      # Let tests find `bundle` in the actual location.
+      ENV["HOMEBREW_TESTS_GEM_USER_DIR"] = gem_user_dir
 
       # Let `bundle` in PATH find its gem.
       ENV["GEM_PATH"] = "#{ENV["GEM_PATH"]}:#{gem_user_dir}"

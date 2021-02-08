@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "cxxstdlib"
@@ -8,10 +9,11 @@ require "development_tools"
 require "extend/cachable"
 
 # Inherit from OpenStruct to gain a generic initialization method that takes a
-# hash and creates an attribute for each key and value. `Tab.new` probably
-# should not be called directly, instead use one of the class methods like
-# `Tab.create`.
+# hash and creates an attribute for each key and value. Rather than calling
+# `new` directly, use one of the class methods like {Tab.create}.
 class Tab < OpenStruct
+  extend T::Sig
+
   extend Cachable
 
   FILENAME = "INSTALL_RECEIPT.json"
@@ -36,29 +38,35 @@ class Tab < OpenStruct
       "stdlib"                  => stdlib,
       "aliases"                 => formula.aliases,
       "runtime_dependencies"    => Tab.runtime_deps_hash(runtime_deps),
+      "arch"                    => Hardware::CPU.arch,
       "source"                  => {
         "path"     => formula.specified_path.to_s,
         "tap"      => formula.tap&.name,
         "spec"     => formula.active_spec_sym.to_s,
         "versions" => {
           "stable"         => formula.stable&.version.to_s,
-          "devel"          => formula.devel&.version.to_s,
           "head"           => formula.head&.version.to_s,
           "version_scheme" => formula.version_scheme,
         },
       },
+      "built_on"                => DevelopmentTools.build_system_info,
     }
 
     new(attributes)
   end
 
-  # Returns the Tab for an install receipt at `path`.
+  # Returns the {Tab} for an install receipt at `path`.
   # Results are cached.
   def self.from_file(path)
-    cache.fetch(path) { |p| cache[p] = from_file_content(File.read(p), p) }
+    cache.fetch(path) do |p|
+      content = File.read(p)
+      return empty if content.blank?
+
+      cache[p] = from_file_content(content, p)
+    end
   end
 
-  # Like Tab.from_file, but bypass the cache.
+  # Like {from_file}, but bypass the cache.
   def self.from_file_content(content, path)
     attributes = begin
       JSON.parse(content)
@@ -81,17 +89,16 @@ class Tab < OpenStruct
 
     if attributes["source"]["spec"].nil?
       version = PkgVersion.parse path.to_s.split("/").second_to_last
-      if version.head?
-        attributes["source"]["spec"] = "head"
+      attributes["source"]["spec"] = if version.head?
+        "head"
       else
-        attributes["source"]["spec"] = "stable"
+        "stable"
       end
     end
 
     if attributes["source"]["versions"].nil?
       attributes["source"]["versions"] = {
         "stable"         => nil,
-        "devel"          => nil,
         "head"           => nil,
         "version_scheme" => 0,
       }
@@ -113,7 +120,7 @@ class Tab < OpenStruct
     tab
   end
 
-  # Returns a tab for the named formula's installation,
+  # Returns a {Tab} for the named formula's installation,
   # or a fake one if the formula is not installed.
   def self.for_name(name)
     for_formula(Formulary.factory(name))
@@ -130,7 +137,7 @@ class Tab < OpenStruct
     options
   end
 
-  # Returns a Tab for an already installed formula,
+  # Returns a {Tab} for an already installed formula,
   # or a fake one if the formula is not installed.
   def self.for_formula(f)
     paths = []
@@ -143,7 +150,7 @@ class Tab < OpenStruct
       paths << dirs.first
     end
 
-    paths << f.installed_prefix
+    paths << f.latest_installed_prefix
 
     path = paths.map { |pn| pn/FILENAME }.find(&:file?)
 
@@ -161,7 +168,6 @@ class Tab < OpenStruct
         "spec"     => f.active_spec_sym.to_s,
         "versions" => {
           "stable"         => f.stable&.version.to_s,
-          "devel"          => f.devel&.version.to_s,
           "head"           => f.head&.version.to_s,
           "version_scheme" => f.version_scheme,
         },
@@ -187,17 +193,18 @@ class Tab < OpenStruct
       "compiler"                => DevelopmentTools.default_compiler,
       "aliases"                 => [],
       "runtime_dependencies"    => nil,
+      "arch"                    => nil,
       "source"                  => {
         "path"     => nil,
         "tap"      => nil,
         "spec"     => "stable",
         "versions" => {
           "stable"         => nil,
-          "devel"          => nil,
           "head"           => nil,
           "version_scheme" => 0,
         },
       },
+      "built_on"                => DevelopmentTools.generic_build_system_info,
     }
 
     new(attributes)
@@ -230,20 +237,8 @@ class Tab < OpenStruct
     used_options.include? opt
   end
 
-  def universal?
-    include?("universal")
-  end
-
-  def cxx11?
-    include?("c++11")
-  end
-
   def head?
     spec == :head
-  end
-
-  def devel?
-    spec == :devel
   end
 
   def stable?
@@ -310,10 +305,6 @@ class Tab < OpenStruct
     Version.create(versions["stable"]) if versions["stable"]
   end
 
-  def devel_version
-    Version.create(versions["devel"]) if versions["devel"]
-  end
-
   def head_version
     Version.create(versions["head"]) if versions["head"]
   end
@@ -322,8 +313,9 @@ class Tab < OpenStruct
     versions["version_scheme"] || 0
   end
 
+  sig { returns(Time) }
   def source_modified_time
-    Time.at(super)
+    Time.at(super || 0)
   end
 
   def to_json(options = nil)
@@ -339,11 +331,13 @@ class Tab < OpenStruct
       "time"                    => time,
       "source_modified_time"    => source_modified_time.to_i,
       "HEAD"                    => self.HEAD,
-      "stdlib"                  => (stdlib&.to_s),
-      "compiler"                => (compiler&.to_s),
+      "stdlib"                  => stdlib&.to_s,
+      "compiler"                => compiler&.to_s,
       "aliases"                 => aliases,
       "runtime_dependencies"    => runtime_dependencies,
       "source"                  => source,
+      "arch"                    => Hardware::CPU.arch,
+      "built_on"                => built_on,
     }
 
     JSON.generate(attributes, options)
@@ -352,18 +346,19 @@ class Tab < OpenStruct
   def write
     # If this is a new installation, the cache of installed formulae
     # will no longer be valid.
-    Formula.clear_installed_formulae_cache unless tabfile.exist?
+    Formula.clear_cache unless tabfile.exist?
 
     self.class.cache[tabfile] = self
     tabfile.atomic_write(to_json)
   end
 
+  sig { returns(String) }
   def to_s
     s = []
-    if poured_from_bottle
-      s << "Poured from bottle"
+    s << if poured_from_bottle
+      "Poured from bottle"
     else
-      s << "Built from source"
+      "Built from source"
     end
 
     s << Time.at(time).strftime("on %Y-%m-%d at %H:%M:%S") if time

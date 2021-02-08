@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 describe SystemCommand do
@@ -23,7 +24,11 @@ describe SystemCommand do
         it "includes the given variables explicitly" do
           expect(Open3)
             .to receive(:popen3)
-            .with(an_instance_of(Hash), ["env", "env"], "A=1", "B=2", "C=3", "env", *env_args, {})
+            .with(
+              an_instance_of(Hash), ["/usr/bin/env", "/usr/bin/env"], "A=1", "B=2", "C=3",
+              "env", *env_args,
+              pgroup: true
+            )
             .and_call_original
 
           command.run!
@@ -37,7 +42,7 @@ describe SystemCommand do
       it "unsets them" do
         expect {
           command.run!
-        }.to raise_error(/C: parameter null or not set/)
+        }.to raise_error(/C: parameter (null or )?not set/)
       end
     end
 
@@ -48,8 +53,10 @@ describe SystemCommand do
         it "includes the given variables explicitly" do
           expect(Open3)
             .to receive(:popen3)
-            .with(an_instance_of(Hash), ["/usr/bin/sudo", "/usr/bin/sudo"], "-E", "--",
-                  "env", "A=1", "B=2", "C=3", "env", *env_args, {})
+            .with(
+              an_instance_of(Hash), ["/usr/bin/sudo", "/usr/bin/sudo"], "-E", "--",
+              "/usr/bin/env", "A=1", "B=2", "C=3", "env", *env_args, pgroup: nil
+            )
             .and_wrap_original do |original_popen3, *_, &block|
               original_popen3.call("true", &block)
             end
@@ -250,6 +257,51 @@ describe SystemCommand do
 
       it "does not interpret the executable as a shell line" do
         expect(system_command(executable)).to be_a_success
+      end
+    end
+
+    context "when given arguments with secrets" do
+      it "does not leak the secrets" do
+        redacted_msg = /#{Regexp.escape("username:******")}/
+        expect {
+          described_class.run! "curl",
+                               args:    %w[--user username:hunter2],
+                               verbose: true,
+                               secrets: %w[hunter2]
+        }.to raise_error.with_message(redacted_msg).and output(redacted_msg).to_stderr
+      end
+
+      it "does not leak the secrets set by environment" do
+        redacted_msg = /#{Regexp.escape("username:******")}/
+        expect {
+          ENV["PASSWORD"] = "hunter2"
+          described_class.run! "curl",
+                               args:    %w[--user username:hunter2],
+                               verbose: true
+        }.to raise_error.with_message(redacted_msg).and output(redacted_msg).to_stderr
+      end
+    end
+
+    context "when a `SIGINT` handler is set in the parent process" do
+      it "is not interrupted" do
+        start_time = Time.now
+
+        pid = fork do
+          trap("INT") do
+            # Ignore SIGINT.
+          end
+
+          described_class.run! "sleep", args: [5]
+
+          exit!
+        end
+
+        sleep 1
+        Process.kill("INT", pid)
+
+        Process.waitpid(pid)
+
+        expect(Time.now - start_time).to be >= 5
       end
     end
   end

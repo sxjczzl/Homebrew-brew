@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "rubocops/rubocop-cask"
@@ -150,7 +151,7 @@ describe RuboCop::Cop::Cask::StanzaGrouping do
           url 'https://foo.brew.sh/foo.zip'
           name 'Foo'
           app 'Foo.app'
-          %{caveats}
+          %<caveats>s
         end
       CASK
     end
@@ -165,7 +166,7 @@ describe RuboCop::Cop::Cask::StanzaGrouping do
 
           app 'Foo.app'
 
-          %{caveats}
+          %<caveats>s
         end
       CASK
     end

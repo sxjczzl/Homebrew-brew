@@ -1,15 +1,22 @@
+# typed: false
 # frozen_string_literal: true
 
 require "timeout"
 
 require "utils/user"
 require "cask/artifact/abstract_artifact"
+require "cask/pkg"
 require "extend/hash_validator"
 using HashValidator
 
 module Cask
   module Artifact
+    # Abstract superclass for uninstall artifacts.
+    #
+    # @api private
     class AbstractUninstall < AbstractArtifact
+      extend T::Sig
+
       ORDERED_DIRECTIVES = [
         :early_script,
         :launchctl,
@@ -24,8 +31,6 @@ module Cask
         :rmdir,
       ].freeze
 
-      TRASH_SCRIPT = (HOMEBREW_LIBRARY_PATH/"cask/utils/trash.swift").freeze
-
       def self.from_args(cask, **directives)
         new(cask, directives)
       end
@@ -36,7 +41,7 @@ module Cask
         directives.assert_valid_keys!(*ORDERED_DIRECTIVES)
 
         super(cask)
-        directives[:signal] = [*directives[:signal]].flatten.each_slice(2).to_a
+        directives[:signal] = Array(directives[:signal]).flatten.each_slice(2).to_a
         @directives = directives
 
         return unless directives.key?(:kext)
@@ -50,8 +55,9 @@ module Cask
         directives.to_h
       end
 
+      sig { returns(String) }
       def summarize
-        to_h.flat_map { |key, val| [*val].map { |v| "#{key.inspect} => #{v.inspect}" } }.join(", ")
+        to_h.flat_map { |key, val| Array(val).map { |v| "#{key.inspect} => #{v.inspect}" } }.join(", ")
       end
 
       private
@@ -76,22 +82,23 @@ module Cask
 
       # Preserve prior functionality of script which runs first. Should rarely be needed.
       # :early_script should not delete files, better defer that to :script.
-      # If Cask writers never need :early_script it may be removed in the future.
+      # If cask writers never need :early_script it may be removed in the future.
       def uninstall_early_script(directives, **options)
         uninstall_script(directives, directive_name: :early_script, **options)
       end
 
       # :launchctl must come before :quit/:signal for cases where app would instantly re-launch
       def uninstall_launchctl(*services, command: nil, **_)
+        booleans = [false, true]
         services.each do |service|
           ohai "Removing launchctl service #{service}"
-          [false, true].each do |with_sudo|
+          booleans.each do |with_sudo|
             plist_status = command.run(
               "/bin/launchctl",
               args: ["list", service],
               sudo: with_sudo, print_stderr: false
             ).stdout
-            if plist_status =~ /^\{/
+            if plist_status.start_with?("{")
               command.run!("/bin/launchctl", args: ["remove", service], sudo: with_sudo)
               sleep 1
             end
@@ -116,21 +123,30 @@ module Cask
 
       def running_processes(bundle_id)
         system_command!("/bin/launchctl", args: ["list"])
-          .stdout.lines
+          .stdout.lines.drop(1)
           .map { |line| line.chomp.split("\t") }
           .map { |pid, state, id| [pid.to_i, state.to_i, id] }
           .select do |(pid, _, id)|
-            pid.nonzero? && id.match?(/^#{Regexp.escape(bundle_id)}($|\.\d+)/)
+            pid.nonzero? && /\A(?:application\.)?#{Regexp.escape(bundle_id)}(?:\.\d+){0,2}\Z/.match?(id)
           end
+      end
+
+      sig { returns(String) }
+      def automation_access_instructions
+        <<~EOS
+          Enable Automation access for "Terminal → System Events" in:
+            System Preferences → Security & Privacy → Privacy → Automation
+          if you haven't already.
+        EOS
       end
 
       # :quit/:signal must come before :kext so the kext will not be in use by a running process
       def uninstall_quit(*bundle_ids, command: nil, **_)
         bundle_ids.each do |bundle_id|
-          next if running_processes(bundle_id).empty?
+          next unless running?(bundle_id)
 
           unless User.current.gui?
-            ohai "Not logged into a GUI; skipping quitting application ID '#{bundle_id}'."
+            opoo "Not logged into a GUI; skipping quitting application ID '#{bundle_id}'."
             next
           end
 
@@ -141,17 +157,38 @@ module Cask
               Kernel.loop do
                 next unless quit(bundle_id).success?
 
-                if running_processes(bundle_id).empty?
-                  puts "Application '#{bundle_id}' quit successfully."
-                  break
-                end
+                next if running?(bundle_id)
+
+                puts "Application '#{bundle_id}' quit successfully."
+                break
               end
             end
           rescue Timeout::Error
-            opoo "Application '#{bundle_id}' did not quit."
-            next
+            opoo "Application '#{bundle_id}' did not quit. #{automation_access_instructions}"
           end
         end
+      end
+
+      def running?(bundle_id)
+        script = <<~JAVASCRIPT
+          'use strict';
+
+          ObjC.import('stdlib')
+
+          function run(argv) {
+            try {
+              var app = Application(argv[0])
+              if (app.running()) {
+                $.exit(0)
+              }
+            } catch (err) { }
+
+            $.exit(1)
+          }
+        JAVASCRIPT
+
+        system_command("osascript", args:         ["-l", "JavaScript", "-e", script, bundle_id],
+                                    print_stderr: true).status.success?
       end
 
       def quit(bundle_id)
@@ -176,8 +213,7 @@ module Cask
         JAVASCRIPT
 
         system_command "osascript", args:         ["-l", "JavaScript", "-e", script, bundle_id],
-                                    print_stderr: false,
-                                    sudo:         true
+                                    print_stderr: false
       end
       private :quit
 
@@ -206,15 +242,28 @@ module Cask
       def uninstall_login_item(*login_items, command: nil, upgrade: false, **_)
         return if upgrade
 
-        login_items.each do |name|
-          ohai "Removing login item #{name}"
-          system_command!(
+        apps = cask.artifacts.select { |a| a.class.dsl_key == :app }
+        derived_login_items = apps.map { |a| { path: a.target } }
+
+        [*derived_login_items, *login_items].each do |item|
+          type, id = if item.respond_to?(:key) && item.key?(:path)
+            ["path", item[:path]]
+          else
+            ["name", item]
+          end
+
+          ohai "Removing login item #{id}"
+
+          result = system_command(
             "osascript",
             args: [
               "-e",
-              %Q(tell application "System Events" to delete every login item whose name is "#{name}"),
+              %Q(tell application "System Events" to delete every login item whose #{type} is #{id.to_s.inspect}),
             ],
           )
+
+          opoo "Removal of login item #{id} failed. #{automation_access_instructions}" unless result.success?
+
           sleep 1
         end
       end
@@ -254,7 +303,7 @@ module Cask
           message = "uninstall script #{executable} does not exist"
           raise CaskError, "#{message}." unless force
 
-          opoo "#{message}, skipping."
+          opoo "#{message}; skipping."
           return
         end
 
@@ -290,7 +339,14 @@ module Cask
             next
           end
 
-          yield path, Pathname.glob(resolved_path)
+          begin
+            yield path, Pathname.glob(resolved_path)
+          rescue Errno::EPERM
+            raise if File.readable?(File.expand_path("~/Library/Application Support/com.apple.TCC"))
+
+            odie "Unable to remove some files. Please enable Full Disk Access for your terminal under " \
+                 "System Preferences → Security & Privacy → Privacy → Full Disk Access."
+          end
         end
       end
 
@@ -314,34 +370,71 @@ module Cask
 
         resolved_paths = each_resolved_path(:trash, paths).to_a
 
-        ohai "Trashing files:"
-        puts resolved_paths.map(&:first)
+        ohai "Trashing files:", resolved_paths.map(&:first)
         trash_paths(*resolved_paths.flat_map(&:last), **options)
       end
 
       def trash_paths(*paths, command: nil, **_)
         return if paths.empty?
 
-        result = command.run!("/usr/bin/swift", args: [TRASH_SCRIPT, *paths])
+        stdout, stderr, = system_command HOMEBREW_LIBRARY_PATH/"cask/utils/trash.swift",
+                                         args:         paths,
+                                         print_stderr: false
 
-        # Remove AppleScript's automatic newline.
-        result.tap { |r| r.stdout.sub!(/\n$/, "") }
+        trashed = stdout.split(":").sort
+        untrashable = stderr.split(":").sort
+
+        return trashed, untrashable if untrashable.empty?
+
+        untrashable.delete_if do |path|
+          Utils.gain_permissions(path, ["-R"], SystemCommand) do
+            system_command! HOMEBREW_LIBRARY_PATH/"cask/utils/trash.swift",
+                            args:         [path],
+                            print_stderr: false
+          end
+
+          true
+        rescue
+          false
+        end
+
+        opoo "The following files could not be trashed, please do so manually:"
+        $stderr.puts untrashable
+
+        [trashed, untrashable]
       end
 
-      def uninstall_rmdir(*directories, command: nil, **_)
-        return if directories.empty?
+      def all_dirs?(*directories)
+        directories.all?(&:directory?)
+      end
 
-        ohai "Removing directories if empty:"
-        each_resolved_path(:rmdir, directories) do |path, resolved_paths|
-          puts path
-          resolved_paths.select(&:directory?).each do |resolved_path|
+      def recursive_rmdir(*directories, command: nil, **_)
+        success = true
+        each_resolved_path(:rmdir, directories) do |_path, resolved_paths|
+          resolved_paths.select(&method(:all_dirs?)).each do |resolved_path|
+            puts resolved_path.sub(Dir.home, "~")
+
             if (ds_store = resolved_path.join(".DS_Store")).exist?
               command.run!("/bin/rm", args: ["-f", "--", ds_store], sudo: true, print_stderr: false)
             end
 
-            command.run("/bin/rmdir", args: ["--", resolved_path], sudo: true, print_stderr: false)
+            unless recursive_rmdir(*resolved_path.children, command: command)
+              success = false
+              next
+            end
+
+            status = command.run("/bin/rmdir", args: ["--", resolved_path], sudo: true, print_stderr: false).success?
+            success &= status
           end
         end
+        success
+      end
+
+      def uninstall_rmdir(*args)
+        return if args.empty?
+
+        ohai "Removing directories if empty:"
+        recursive_rmdir(*args)
       end
     end
   end

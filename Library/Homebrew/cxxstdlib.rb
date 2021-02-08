@@ -1,10 +1,15 @@
+# typed: true
 # frozen_string_literal: true
 
 require "compilers"
 
+# Combination of C++ standard library and compiler.
 class CxxStdlib
+  extend T::Sig
+
   include CompilerConstants
 
+  # Error for when a formula's dependency was built with a different C++ standard library.
   class CompatibilityError < StandardError
     def initialize(formula, dep, stdlib)
       super <<~EOS
@@ -15,10 +20,10 @@ class CxxStdlib
   end
 
   def self.create(type, compiler)
-    raise ArgumentError, "Invalid C++ stdlib type: #{type}" if type && ![:libstdcxx, :libcxx].include?(type)
+    raise ArgumentError, "Invalid C++ stdlib type: #{type}" if type && [:libstdcxx, :libcxx].exclude?(type)
 
-    klass = (compiler.to_s =~ GNU_GCC_REGEXP) ? GnuStdlib : AppleStdlib
-    klass.new(type, compiler)
+    apple_compiler = !compiler.to_s.match?(GNU_GCC_REGEXP)
+    CxxStdlib.new(type, compiler, apple_compiler)
   end
 
   def self.check_compatibility(formula, deps, keg, compiler)
@@ -35,15 +40,16 @@ class CxxStdlib
 
   attr_reader :type, :compiler
 
-  def initialize(type, compiler)
+  def initialize(type, compiler, apple_compiler)
     @type = type
     @compiler = compiler.to_sym
+    @apple_compiler = apple_compiler
   end
 
   # If either package doesn't use C++, all is well.
   # libstdc++ and libc++ aren't ever intercompatible.
   # libstdc++ is compatible across Apple compilers, but
-  # not between Apple and GNU compilers, or between GNU compiler versions.
+  # not between Apple and GNU compilers, nor between GNU compiler versions.
   def compatible_with?(other)
     return true if type.nil? || other.type.nil?
 
@@ -68,19 +74,12 @@ class CxxStdlib
     type.to_s.gsub(/cxx$/, "c++")
   end
 
+  sig { returns(String) }
   def inspect
     "#<#{self.class.name}: #{compiler} #{type}>"
   end
 
-  class AppleStdlib < CxxStdlib
-    def apple_compiler?
-      true
-    end
-  end
-
-  class GnuStdlib < CxxStdlib
-    def apple_compiler?
-      false
-    end
+  def apple_compiler?
+    @apple_compiler
   end
 end

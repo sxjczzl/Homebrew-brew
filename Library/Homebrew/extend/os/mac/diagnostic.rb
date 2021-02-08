@@ -1,10 +1,61 @@
+# typed: false
 # frozen_string_literal: true
 
 module Homebrew
   module Diagnostic
+    class Volumes
+      def initialize
+        @volumes = get_mounts
+      end
+
+      def which(path)
+        vols = get_mounts path
+
+        # no volume found
+        return -1 if vols.empty?
+
+        vol_index = @volumes.index(vols[0])
+        # volume not found in volume list
+        return -1 if vol_index.nil?
+
+        vol_index
+      end
+
+      def get_mounts(path = nil)
+        vols = []
+        # get the volume of path, if path is nil returns all volumes
+
+        args = %w[/bin/df -P]
+        args << path if path
+
+        Utils.popen_read(*args) do |io|
+          io.each_line do |line|
+            case line.chomp
+              # regex matches: /dev/disk0s2   489562928 440803616  48247312    91%    /
+            when /^.+\s+[0-9]+\s+[0-9]+\s+[0-9]+\s+[0-9]{1,3}%\s+(.+)/
+              vols << Regexp.last_match(1)
+            end
+          end
+        end
+        vols
+      end
+    end
+
     class Checks
-      undef fatal_build_from_source_checks, supported_configuration_checks,
+      undef fatal_preinstall_checks, fatal_build_from_source_checks,
+            fatal_setup_build_environment_checks, supported_configuration_checks,
             build_from_source_checks
+
+      def fatal_preinstall_checks
+        checks = %w[
+          check_access_directories
+        ]
+
+        # We need the developer tools for `codesign`.
+        checks << "check_for_installed_developer_tools" if Hardware::CPU.arm?
+
+        checks.freeze
+      end
 
       def fatal_build_from_source_checks
         %w[
@@ -12,6 +63,13 @@ module Homebrew
           check_xcode_minimum_version
           check_clt_minimum_version
           check_if_xcode_needs_clt_installed
+          check_if_supported_sdk_available
+        ].freeze
+      end
+
+      def fatal_setup_build_environment_checks
+        %w[
+          check_if_supported_sdk_available
         ].freeze
       end
 
@@ -45,17 +103,17 @@ module Homebrew
       end
 
       def check_for_unsupported_macos
-        return if ARGV.homebrew_developer?
+        return if Homebrew::EnvConfig.developer?
 
         who = +"We"
-        if OS::Mac.prerelease?
-          what = "pre-release version"
+        what = if OS::Mac.prerelease?
+          "pre-release version"
         elsif OS::Mac.outdated_release?
           who << " (and Apple)"
-          what = "old version"
-        else
-          return
+          "old version"
         end
+        return if what.blank?
+
         who.freeze
 
         <<~EOS
@@ -72,7 +130,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["HOMEBREW_AZURE_PIPELINES"]
+        return if ENV["GITHUB_ACTIONS"]
 
         message = <<~EOS
           Your Xcode (#{MacOS::Xcode.version}) is outdated.
@@ -99,7 +157,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["HOMEBREW_AZURE_PIPELINES"]
+        return if ENV["GITHUB_ACTIONS"]
 
         <<~EOS
           A newer Command Line Tools release is available.
@@ -139,13 +197,12 @@ module Homebrew
       end
 
       def check_ruby_version
-        ruby_version = "2.3.7"
-        return if RUBY_VERSION == ruby_version
-        return if ARGV.homebrew_developer? && OS::Mac.prerelease?
+        return if RUBY_VERSION == HOMEBREW_REQUIRED_RUBY_VERSION
+        return if Homebrew::EnvConfig.developer? && OS::Mac.prerelease?
 
         <<~EOS
           Ruby version #{RUBY_VERSION} is unsupported on #{MacOS.version}. Homebrew
-          is developed and tested on Ruby #{ruby_version}, and may not work correctly
+          is developed and tested on Ruby #{HOMEBREW_REQUIRED_RUBY_VERSION}, and may not work correctly
           on other Rubies. Patches are accepted as long as they don't cause breakage
           on supported Rubies.
         EOS
@@ -183,14 +240,15 @@ module Homebrew
         <<~EOS
           Your Xcode is configured with an invalid path.
           You should change it to the correct path:
-            sudo xcode-select -switch #{path}
+            sudo xcode-select --switch #{path}
         EOS
       end
 
       def check_xcode_license_approved
         # If the user installs Xcode-only, they have to approve the
         # license or no "xc*" tool will work.
-        return unless `/usr/bin/xcrun clang 2>&1` =~ /license/ && !$CHILD_STATUS.success?
+        return unless `/usr/bin/xcrun clang 2>&1`.include?("license")
+        return if $CHILD_STATUS.success?
 
         <<~EOS
           You have not agreed to the Xcode license.
@@ -206,7 +264,7 @@ module Homebrew
           Your XQuartz (#{MacOS::XQuartz.version}) is outdated.
           Please install XQuartz #{MacOS::XQuartz.latest_version} (or delete the current version).
           XQuartz can be updated using Homebrew Cask by running:
-            brew cask reinstall xquartz
+            brew reinstall xquartz
         EOS
       end
 
@@ -343,6 +401,41 @@ module Homebrew
 
           You should set the "HOMEBREW_TEMP" environment variable to a suitable
           directory on the same volume as your Cellar.
+        EOS
+      end
+
+      def check_deprecated_caskroom_taps
+        tapped_caskroom_taps = Tap.select { |t| t.user == "caskroom" || t.name == "phinze/cask" }
+                                  .map(&:name)
+        return if tapped_caskroom_taps.empty?
+
+        <<~EOS
+          You have the following deprecated, cask taps tapped:
+            #{tapped_caskroom_taps.join("\n  ")}
+          Untap them with `brew untap`.
+        EOS
+      end
+
+      def check_if_supported_sdk_available
+        return unless DevelopmentTools.installed?
+        return unless MacOS.sdk_root_needed?
+        return if MacOS.sdk
+
+        locator = MacOS.sdk_locator
+
+        source = if locator.source == :clt
+          update_instructions = MacOS::CLT.update_instructions
+          "CLT"
+        else
+          update_instructions = MacOS::Xcode.update_instructions
+          "Xcode"
+        end
+
+        <<~EOS
+          Your #{source} does not support macOS #{MacOS.version}.
+          It is either outdated or was modified.
+          Please update your #{source} or delete it if no updates are available.
+          #{update_instructions}
         EOS
       end
     end

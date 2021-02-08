@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 describe Cask::Pkg, :cask do
@@ -146,13 +147,18 @@ describe Cask::Pkg, :cask do
     end
 
     it "correctly parses a Property List" do
-      pkg = Cask::Pkg.new(pkg_id, fake_system_command)
+      pkg = described_class.new(pkg_id, fake_system_command)
 
       expect(fake_system_command).to receive(:run!).with(
         "/usr/sbin/pkgutil",
         args: ["--pkg-info-plist", pkg_id],
       ).and_return(
-        SystemCommand::Result.new(nil, [[:stdout, pkg_info_plist]], instance_double(Process::Status, exitstatus: 0)),
+        SystemCommand::Result.new(
+          ["/usr/sbin/pkgutil", "--pkg-info-plist", pkg_id],
+          [[:stdout, pkg_info_plist]],
+          instance_double(Process::Status, exitstatus: 0),
+          secrets: [],
+        ),
       )
 
       info = pkg.info

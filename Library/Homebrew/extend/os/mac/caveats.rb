@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 class Caveats
@@ -5,7 +6,7 @@ class Caveats
 
   def plist_caveats
     s = []
-    if f.plist || (keg&.plist_installed?)
+    if f.plist || keg&.plist_installed?
       plist_domain = f.plist_path.basename(".plist")
 
       # we readlink because this path probably doesn't exist since caveats
@@ -44,6 +45,6 @@ class Caveats
         s << "" << "WARNING: brew services will fail when run under tmux."
       end
     end
-    s.join("\n") + "\n" unless s.empty?
+    "#{s.join("\n")}\n" unless s.empty?
   end
 end

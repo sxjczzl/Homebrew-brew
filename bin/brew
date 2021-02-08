@@ -19,6 +19,15 @@ symlink_target_directory() {
   quiet_cd "$directory" && quiet_cd "$target_dirname" && pwd -P
 }
 
+# Enable and use default Bash builtins rather than user-defined functions
+builtin enable compgen unset
+for cmd in $(builtin compgen -A builtin)
+do
+  builtin unset -f "$cmd"
+  builtin enable "$cmd"
+done
+unset cmd
+
 BREW_FILE_DIRECTORY="$(quiet_cd "${0%/*}/" && pwd -P)"
 HOMEBREW_BREW_FILE="${BREW_FILE_DIRECTORY%/}/${0##*/}"
 HOMEBREW_PREFIX="${HOMEBREW_BREW_FILE%/*/*}"
@@ -49,12 +58,13 @@ then
   fi
 fi
 
+# If the location of HOMEBREW_LIBRARY changes
+# keg_relocate.rb, formula_cellar_checks.rb, and test/global_spec.rb need to change.
 HOMEBREW_LIBRARY="$HOMEBREW_REPOSITORY/Library"
 
-# Whitelist and copy to HOMEBREW_* all variables previously mentioned in
+# Copy and export all HOMEBREW_* variables previously mentioned in
 # manpage or used elsewhere by Homebrew.
-for VAR in AWS_ACCESS_KEY_ID AWS_SECRET_ACCESS_KEY BINTRAY_USER BINTRAY_KEY \
-           BROWSER DISPLAY EDITOR GIT NO_COLOR PATH VISUAL
+for VAR in BROWSER DISPLAY EDITOR NO_COLOR PATH
 do
   # Skip if variable value is empty.
   [[ -z "${!VAR}" ]] && continue
@@ -65,22 +75,30 @@ do
   export "$VAR_NEW"="${!VAR}"
 done
 
-# Set CI variable for Azure Pipelines, Jenkins.
-if [[ -n "$TF_BUILD" || -n "$JENKINS_HOME" ]]
+# Use VISUAL if HOMEBREW_EDITOR and EDITOR are unset.
+if [[ -z "$HOMEBREW_EDITOR" && -n "$VISUAL" ]]
+then
+  export HOMEBREW_EDITOR="$VISUAL"
+fi
+
+# Set CI variable for Azure Pipelines and Jenkins
+# (Set by default on Circle and Travis CI)
+if [[ -z "$CI" ]] && [[ -n "$TF_BUILD" || -n "$JENKINS_HOME" ]]
 then
   export CI="1"
 fi
 
-# test-bot does environment filtering itself
-if [[ -z "$HOMEBREW_NO_ENV_FILTERING" && "$1" != "test-bot" ]]
+if [[ -z "$HOMEBREW_NO_ENV_FILTERING" ]]
 then
   PATH="/usr/bin:/bin:/usr/sbin:/sbin"
 
   FILTERED_ENV=()
   # Filter all but the specific variables.
-  for VAR in HOME SHELL PATH TERM TERMINFO COLUMNS LOGNAME USER CI SSH_AUTH_SOCK SUDO_ASKPASS \
+  for VAR in HOME SHELL PATH TERM TERMINFO COLUMNS DISPLAY LOGNAME USER CI SSH_AUTH_SOCK SUDO_ASKPASS \
              http_proxy https_proxy ftp_proxy no_proxy all_proxy HTTPS_PROXY FTP_PROXY ALL_PROXY \
-             "${!HOMEBREW_@}" "${!TRAVIS_@}"
+             GITHUB_ACTIONS GITHUB_WORKSPACE GITHUB_ACTIONS_HOMEBREW_SELF_HOSTED \
+             GITHUB_REPOSITORY GITHUB_RUN_ID GITHUB_SHA GITHUB_HEAD_REF GITHUB_BASE_REF GITHUB_REF \
+             "${!HOMEBREW_@}"
   do
     # Skip if variable value is empty.
     [[ -z "${!VAR}" ]] && continue

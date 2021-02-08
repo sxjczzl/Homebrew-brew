@@ -1,19 +1,19 @@
+# typed: false
 # frozen_string_literal: true
 
-require "cask/all"
+require "cask/config"
+require "cask/cache"
 
-require "test/support/helper/cask/fake_system_command"
 require "test/support/helper/cask/install_helper"
 require "test/support/helper/cask/never_sudo_system_command"
 
 module Cask
   class Config
-    remove_const :DEFAULT_DIRS
-
-    DEFAULT_DIRS = {
+    DEFAULT_DIRS_PATHNAMES = {
       appdir:               Pathname(TEST_TMPDIR)/"cask-appdir",
       prefpanedir:          Pathname(TEST_TMPDIR)/"cask-prefpanedir",
       qlplugindir:          Pathname(TEST_TMPDIR)/"cask-qlplugindir",
+      mdimporterdir:        Pathname(TEST_TMPDIR)/"cask-mdimporter",
       dictionarydir:        Pathname(TEST_TMPDIR)/"cask-dictionarydir",
       fontdir:              Pathname(TEST_TMPDIR)/"cask-fontdir",
       colorpickerdir:       Pathname(TEST_TMPDIR)/"cask-colorpickerdir",
@@ -25,6 +25,9 @@ module Cask
       vst3_plugindir:       Pathname(TEST_TMPDIR)/"cask-vst3_plugindir",
       screen_saverdir:      Pathname(TEST_TMPDIR)/"cask-screen_saverdir",
     }.freeze
+
+    remove_const :DEFAULT_DIRS
+    DEFAULT_DIRS = DEFAULT_DIRS_PATHNAMES.transform_values(&:to_s).freeze
   end
 end
 
@@ -33,8 +36,7 @@ RSpec.shared_context "Homebrew Cask", :needs_macos do
     third_party_tap = Tap.fetch("third-party", "tap")
 
     begin
-      Cask::Config::DEFAULT_DIRS.values.each(&:mkpath)
-      Cask::Config.global.binarydir.mkpath
+      Cask::Config::DEFAULT_DIRS_PATHNAMES.values.each(&:mkpath)
 
       Tap.default_cask_tap.tap do |tap|
         FileUtils.mkdir_p tap.path.dirname
@@ -48,12 +50,11 @@ RSpec.shared_context "Homebrew Cask", :needs_macos do
 
       example.run
     ensure
-      FileUtils.rm_rf Cask::Config::DEFAULT_DIRS.values
-      FileUtils.rm_rf [Cask::Config.global.binarydir, Cask::Caskroom.path, Cask::Cache.path]
+      FileUtils.rm_rf Cask::Config::DEFAULT_DIRS_PATHNAMES.values
+      FileUtils.rm_rf [Cask::Config.new.binarydir, Cask::Caskroom.path, Cask::Cache.path]
       Tap.default_cask_tap.path.unlink
       third_party_tap.path.unlink
       FileUtils.rm_rf third_party_tap.path.parent
-      Cask::Config.clear
     end
   end
 end

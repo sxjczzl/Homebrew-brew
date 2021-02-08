@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "rubocops/urls"
@@ -5,7 +6,7 @@ require "rubocops/urls"
 describe RuboCop::Cop::FormulaAudit::Urls do
   subject(:cop) { described_class.new }
 
-  let(:formulae) {
+  let(:offense_list) {
     [{
       "url" => "https://ftpmirror.gnu.org/lightning/lightning-2.1.0.tar.gz",
       "msg" => 'Please use "https://ftp.gnu.org/gnu/lightning/lightning-2.1.0.tar.gz" instead of https://ftpmirror.gnu.org/lightning/lightning-2.1.0.tar.gz.',
@@ -17,6 +18,11 @@ describe RuboCop::Cop::FormulaAudit::Urls do
     }, {
       "url" => "http://tools.ietf.org/tools/rfcmarkup/rfcmarkup-1.119.tgz",
       "msg" => "Please use https:// for http://tools.ietf.org/tools/rfcmarkup/rfcmarkup-1.119.tgz",
+      "col" => 2,
+    }, {
+      "url" => "https://apache.org/dyn/closer.cgi?path=/apr/apr-1.7.0.tar.bz2",
+      "msg" => "https://apache.org/dyn/closer.cgi?path=/apr/apr-1.7.0.tar.bz2 should be " \
+               "`https://www.apache.org/dyn/closer.lua?path=apr/apr-1.7.0.tar.bz2`",
       "col" => 2,
     }, {
       "url" => "http://search.mcpan.org/CPAN/authors/id/Z/ZE/ZEFRAM/Perl4-CoreLibs-0.003.tar.gz",
@@ -142,27 +148,61 @@ describe RuboCop::Cop::FormulaAudit::Urls do
       "msg" => "https://central.maven.org/maven2/com/bar/foo/1.1/foo-1.1.jar should be " \
                "`https://search.maven.org/remotecontent?filepath=com/bar/foo/1.1/foo-1.1.jar`",
       "col" => 2,
+    }, {
+      "url"         => "https://brew.sh/example-darwin.x86_64.tar.gz",
+      "msg"         => "https://brew.sh/example-darwin.x86_64.tar.gz looks like a binary package, " \
+                       "not a source archive; homebrew/core is source-only.",
+      "col"         => 2,
+      "formula_tap" => "homebrew-core",
+    }, {
+      "url"         => "https://brew.sh/example-darwin.amd64.tar.gz",
+      "msg"         => "https://brew.sh/example-darwin.amd64.tar.gz looks like a binary package, " \
+                       "not a source archive; homebrew/core is source-only.",
+      "col"         => 2,
+      "formula_tap" => "homebrew-core",
+    }, {
+      "url" => "cvs://brew.sh/foo/bar",
+      "msg" => "Use of the cvs:// scheme is deprecated, pass `:using => :cvs` instead",
+      "col" => 2,
+    }, {
+      "url" => "bzr://brew.sh/foo/bar",
+      "msg" => "Use of the bzr:// scheme is deprecated, pass `:using => :bzr` instead",
+      "col" => 2,
+    }, {
+      "url" => "hg://brew.sh/foo/bar",
+      "msg" => "Use of the hg:// scheme is deprecated, pass `:using => :hg` instead",
+      "col" => 2,
+    }, {
+      "url" => "fossil://brew.sh/foo/bar",
+      "msg" => "Use of the fossil:// scheme is deprecated, pass `:using => :fossil` instead",
+      "col" => 2,
+    }, {
+      "url" => "svn+http://brew.sh/foo/bar",
+      "msg" => "Use of the svn+http:// scheme is deprecated, pass `:using => :svn` instead",
+      "col" => 2,
     }]
   }
 
-  context "When auditing urls" do
-    it "with offenses" do
-      formulae.each do |formula|
+  context "when auditing URLs" do
+    it "reports all offenses in `offense_list`" do
+      offense_list.each do |offense_info|
+        allow_any_instance_of(RuboCop::Cop::FormulaCop).to receive(:formula_tap)
+                                                       .and_return(offense_info["formula_tap"])
         source = <<~RUBY
           class Foo < Formula
             desc "foo"
-            url "#{formula["url"]}"
+            url "#{offense_info["url"]}"
           end
         RUBY
-        expected_offenses = [{ message:  formula["msg"],
+        expected_offenses = [{ message:  offense_info["msg"],
                                severity: :convention,
                                line:     3,
-                               column:   formula["col"],
+                               column:   offense_info["col"],
                                source:   source }]
 
-        inspect_source(source)
+        offenses = inspect_source(source)
 
-        expected_offenses.zip(cop.offenses.reverse).each do |expected, actual|
+        expected_offenses.zip(offenses.reverse).each do |expected, actual|
           expect(actual.message).to eq(expected[:message])
           expect(actual.severity).to eq(expected[:severity])
           expect(actual.line).to eq(expected[:line])
@@ -171,62 +211,30 @@ describe RuboCop::Cop::FormulaAudit::Urls do
       end
     end
 
-    it "with offenses in stable/devel/head block" do
+    it "reports an offense for GitHub repositories with git:// prefix" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           desc "foo"
           url "https://foo.com"
 
-          devel do
+          stable do
             url "git://github.com/foo.git",
             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Please use https:// for git://github.com/foo.git
-                :tag => "v1.0.0-alpha.1",
+                :tag => "v1.0.1",
                 :revision => "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-            version "1.0.0-alpha.1"
+            version "1.0.1"
           end
         end
       RUBY
     end
 
-    it "with duplicate mirror" do
+    it "reports an offense if `url` is the same as `mirror`" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           desc "foo"
           url "https://ftpmirror.fnu.org/foo/foo-1.0.tar.gz"
           mirror "https://ftpmirror.fnu.org/foo/foo-1.0.tar.gz"
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ URL should not be duplicated as a mirror: https://ftpmirror.fnu.org/foo/foo-1.0.tar.gz
-        end
-      RUBY
-    end
-  end
-end
-
-describe RuboCop::Cop::FormulaAudit::PyPiUrls do
-  subject(:cop) { described_class.new }
-
-  context "when a pypi.python.org URL is used" do
-    it "reports an offense" do
-      expect_offense(<<~RUBY)
-        class Foo < Formula
-          desc "foo"
-          url "https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz"
-          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz should be `https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz`
-        end
-      RUBY
-    end
-
-    it "support auto-correction" do
-      corrected = autocorrect_source(<<~RUBY)
-        class Foo < Formula
-          desc "foo"
-          url "https://pypi.python.org/packages/source/foo/foo-0.1.tar.gz"
-        end
-      RUBY
-
-      expect(corrected).to eq <<~RUBY
-        class Foo < Formula
-          desc "foo"
-          url "https://files.pythonhosted.org/packages/source/foo/foo-0.1.tar.gz"
         end
       RUBY
     end

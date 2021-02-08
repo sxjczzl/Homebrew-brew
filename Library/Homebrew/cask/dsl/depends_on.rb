@@ -1,10 +1,16 @@
+# typed: false
 # frozen_string_literal: true
 
-require "rubygems"
+require "delegate"
+
+require "requirements/macos_requirement"
 
 module Cask
   class DSL
-    class DependsOn < DelegateClass(Hash)
+    # Class corresponding to the `depends_on` stanza.
+    #
+    # @api private
+    class DependsOn < SimpleDelegator
       VALID_KEYS = Set.new([
                              :formula,
                              :cask,
@@ -18,10 +24,10 @@ module Cask
         intel:  { type: :intel, bits: 64 },
         # specific
         x86_64: { type: :intel, bits: 64 },
+        arm64:  { type: :arm, bits: 64 },
       }.freeze
 
-      attr_accessor :java
-      attr_reader :arch, :cask, :formula, :macos, :x11
+      attr_reader :arch, :cask, :formula, :java, :macos, :x11
 
       def initialize
         super({})
@@ -37,25 +43,6 @@ module Cask
         end
       end
 
-      def self.coerce_os_release(arg)
-        @macos_symbols ||= MacOS::Version::SYMBOLS
-        @inverted_macos_symbols ||= @macos_symbols.invert
-
-        begin
-          if arg.is_a?(Symbol)
-            Gem::Version.new(@macos_symbols.fetch(arg))
-          elsif arg =~ /^\s*:?([a-z]\S+)\s*$/i
-            Gem::Version.new(@macos_symbols.fetch(Regexp.last_match[1].downcase.to_sym))
-          elsif @inverted_macos_symbols.key?(arg)
-            Gem::Version.new(arg)
-          else
-            raise
-          end
-        rescue
-          raise "invalid 'depends_on macos' value: #{arg.inspect}"
-        end
-      end
-
       def formula=(*args)
         @formula.concat(args)
       end
@@ -65,19 +52,23 @@ module Cask
       end
 
       def macos=(*args)
-        @macos ||= []
-        macos = if args.count == 1 && args.first =~ /^\s*(<|>|[=<>]=)\s*(\S+)\s*$/
-          raise "'depends_on macos' comparison expressions cannot be combined" unless @macos.empty?
+        raise "Only a single 'depends_on macos' is allowed." if defined?(@macos)
 
-          operator = Regexp.last_match[1].to_sym
-          release = self.class.coerce_os_release(Regexp.last_match[2])
-          [[operator, release]]
-        else
-          raise "'depends_on macos' comparison expressions cannot be combined" if @macos.first.is_a?(Symbol)
-
-          args.map(&self.class.method(:coerce_os_release)).sort
+        begin
+          @macos = if args.count > 1
+            MacOSRequirement.new([args], comparator: "==")
+          elsif MacOS::Version::SYMBOLS.key?(args.first)
+            MacOSRequirement.new([args.first], comparator: "==")
+          elsif /^\s*(?<comparator><|>|[=<>]=)\s*:(?<version>\S+)\s*$/ =~ args.first
+            MacOSRequirement.new([version.to_sym], comparator: comparator)
+          elsif /^\s*(?<comparator><|>|[=<>]=)\s*(?<version>\S+)\s*$/ =~ args.first
+            MacOSRequirement.new([version], comparator: comparator)
+          else # rubocop:disable Lint/DuplicateBranch
+            MacOSRequirement.new([args.first], comparator: "==")
+          end
+        rescue MacOSVersionError => e
+          raise "invalid 'depends_on macos' value: #{e}"
         end
-        @macos.concat(macos)
       end
 
       def arch=(*args)
@@ -91,8 +82,16 @@ module Cask
         @arch.concat(arches.map { |arch| VALID_ARCHES[arch] })
       end
 
+      def java=(arg)
+        odisabled "depends_on :java", "depends_on a specific Java formula"
+
+        @java = arg
+      end
+
       def x11=(arg)
         raise "invalid 'depends_on x11' value: #{arg.inspect}" unless [true, false].include?(arg)
+
+        odisabled "depends_on :x11", "depends_on specific X11 formula(e)"
 
         @x11 = arg
       end

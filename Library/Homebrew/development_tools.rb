@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 # @private
@@ -78,7 +79,7 @@ class DevelopmentTools
         path = HOMEBREW_PREFIX/"opt/gcc/bin"/cc
         path = locate(cc) unless path.exist?
         version = if path &&
-                     build_version = `#{path} --version`[/gcc(?:(?:-\d(?:\.\d)?)? \(.+\))? (\d\.\d\.\d)/, 1]
+                     build_version = `#{path} --version`[/gcc(?:(?:-\d+(?:\.\d)?)? \(.+\))? (\d+\.\d\.\d)/, 1]
           Version.new build_version
         else
           Version::NULL
@@ -99,6 +100,15 @@ class DevelopmentTools
     def subversion_handles_most_https_certificates?
       true
     end
+
+    def build_system_info
+      {
+        "os"         => ENV["HOMEBREW_SYSTEM"],
+        "os_version" => OS_VERSION,
+        "cpu_family" => Hardware::CPU.family,
+      }
+    end
+    alias generic_build_system_info build_system_info
   end
 end
 

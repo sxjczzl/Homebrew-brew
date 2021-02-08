@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 class DependencyCollector
@@ -6,7 +7,9 @@ class DependencyCollector
 
   def git_dep_if_needed(tags); end
 
-  def subversion_dep_if_needed(tags); end
+  def subversion_dep_if_needed(tags)
+    Dependency.new("subversion", tags) if MacOS.version >= :catalina
+  end
 
   def cvs_dep_if_needed(tags)
     Dependency.new("cvs", tags)

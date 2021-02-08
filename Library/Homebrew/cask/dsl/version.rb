@@ -1,8 +1,14 @@
+# typed: false
 # frozen_string_literal: true
 
 module Cask
   class DSL
+    # Class corresponding to the `version` stanza.
+    #
+    # @api private
     class Version < ::String
+      extend T::Sig
+
       DIVIDERS = {
         "." => :dots,
         "-" => :hyphens,
@@ -11,9 +17,9 @@ module Cask
 
       DIVIDER_REGEX = /(#{DIVIDERS.keys.map { |v| Regexp.quote(v) }.join('|')})/.freeze
 
-      MAJOR_MINOR_PATCH_REGEX = /^(\d+)(?:\.(\d+)(?:\.(\d+))?)?/.freeze
+      MAJOR_MINOR_PATCH_REGEX = /^([^.,:]+)(?:.([^.,:]+)(?:.([^.,:]+))?)?/.freeze
 
-      INVALID_CHARACTERS = /[^0-9a-zA-Z\.\,\:\-\_]/.freeze
+      INVALID_CHARACTERS = /[^0-9a-zA-Z.,:\-_]/.freeze
 
       class << self
         private
@@ -58,6 +64,7 @@ module Cask
 
       attr_reader :raw_version
 
+      sig { params(raw_version: T.nilable(T.any(String, Symbol))).void }
       def initialize(raw_version)
         @raw_version = raw_version
         super(raw_version.to_s)
@@ -69,67 +76,92 @@ module Cask
         raw_version.scan(INVALID_CHARACTERS)
       end
 
+      sig { returns(T::Boolean) }
       def unstable?
         return false if latest?
 
         s = downcase.delete(".").gsub(/[^a-z\d]+/, "-")
 
         return true if s.match?(/(\d+|\b)(alpha|beta|preview|rc|dev|canary|snapshot)(\d+|\b)/i)
-        return true if s.match?(/\A[a-z\d]+(\-\d+)*\-?(a|b|pre)(\d+|\b)/i)
+        return true if s.match?(/\A[a-z\d]+(-\d+)*-?(a|b|pre)(\d+|\b)/i)
 
         false
       end
 
+      sig { returns(T::Boolean) }
       def latest?
         to_s == "latest"
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def major
         version { slice(MAJOR_MINOR_PATCH_REGEX, 1) }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def minor
         version { slice(MAJOR_MINOR_PATCH_REGEX, 2) }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def patch
         version { slice(MAJOR_MINOR_PATCH_REGEX, 3) }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def major_minor
         version { [major, minor].reject(&:empty?).join(".") }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def major_minor_patch
         version { [major, minor, patch].reject(&:empty?).join(".") }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def minor_patch
         version { [minor, patch].reject(&:empty?).join(".") }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def before_comma
         version { split(",", 2).first }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def after_comma
         version { split(",", 2).second }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def before_colon
         version { split(":", 2).first }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def after_colon
         version { split(":", 2).second }
       end
 
+      # @api public
+      sig { returns(T.self_type) }
       def no_dividers
         version { gsub(DIVIDER_REGEX, "") }
       end
 
       private
 
+      sig { returns(T.self_type) }
       def version
         return self if empty? || latest?
 

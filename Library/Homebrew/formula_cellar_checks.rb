@@ -1,7 +1,11 @@
+# typed: false
 # frozen_string_literal: true
 
 require "utils/shell"
 
+# Checks to perform on a formula's cellar.
+#
+# @api private
 module FormulaCellarChecks
   def check_env_path(bin)
     # warn the user if stuff was installed outside of their PATH
@@ -15,7 +19,7 @@ module FormulaCellarChecks
     return if ORIGINAL_PATHS.include? prefix_bin
 
     <<~EOS
-      #{prefix_bin} is not in your PATH
+      "#{prefix_bin}" is not in your PATH.
       You can amend this by altering your #{Utils::Shell.profile} file.
     EOS
   end
@@ -25,9 +29,9 @@ module FormulaCellarChecks
     return unless (formula.prefix/"man").directory?
 
     <<~EOS
-      A top-level "man" directory was found
-      Homebrew requires that man pages live under share.
-      This can often be fixed by passing "--mandir=\#{man}" to configure.
+      A top-level "man" directory was found.
+      Homebrew requires that man pages live under "share".
+      This can often be fixed by passing `--mandir=\#{man}` to `configure`.
     EOS
   end
 
@@ -36,9 +40,9 @@ module FormulaCellarChecks
     return unless (formula.prefix/"info").directory?
 
     <<~EOS
-      A top-level "info" directory was found
-      Homebrew suggests that info pages live under share.
-      This can often be fixed by passing "--infodir=\#{info}" to configure.
+      A top-level "info" directory was found.
+      Homebrew suggests that info pages live under "share".
+      This can often be fixed by passing `--infodir=\#{info}` to `configure`.
     EOS
   end
 
@@ -49,11 +53,11 @@ module FormulaCellarChecks
     return if jars.empty?
 
     <<~EOS
-      JARs were installed to "#{formula.lib}"
+      JARs were installed to "#{formula.lib}".
       Installing JARs to "lib" can cause conflicts between packages.
       For Java software, it is typically better for the formula to
       install to "libexec" and then symlink or wrap binaries into "bin".
-      See "activemq", "jruby", etc. for examples.
+      See formulae 'activemq', 'jruby', etc. for examples.
       The offending files are:
         #{jars * "\n        "}
     EOS
@@ -77,7 +81,7 @@ module FormulaCellarChecks
     return if non_libraries.empty?
 
     <<~EOS
-      Non-libraries were installed to "#{formula.lib}"
+      Non-libraries were installed to "#{formula.lib}".
       Installing non-libraries to "lib" is discouraged.
       The offending files are:
         #{non_libraries * "\n        "}
@@ -91,7 +95,7 @@ module FormulaCellarChecks
     return if non_exes.empty?
 
     <<~EOS
-      Non-executables were installed to "#{bin}"
+      Non-executables were installed to "#{bin}".
       The offending files are:
         #{non_exes * "\n  "}
     EOS
@@ -100,16 +104,15 @@ module FormulaCellarChecks
   def check_generic_executables(bin)
     return unless bin.directory?
 
-    generic_names = %w[run service start stop]
+    generic_names = %w[service start stop]
     generics = bin.children.select { |g| generic_names.include? g.basename.to_s }
     return if generics.empty?
 
     <<~EOS
-      Generic binaries were installed to "#{bin}"
-      Binaries with generic names are likely to conflict with other software,
-      and suggest that this software should be installed to "libexec" and then
+      Generic binaries were installed to "#{bin}".
+      Binaries with generic names are likely to conflict with other software.
+      Homebrew suggests that this software is installed to "libexec" and then
       symlinked as needed.
-
       The offending files are:
         #{generics * "\n        "}
     EOS
@@ -120,9 +123,9 @@ module FormulaCellarChecks
     return if pth_found.empty?
 
     <<~EOS
-      easy-install.pth files were found
-      These .pth files are likely to cause link conflicts. Please invoke
-      setup.py using Language::Python.setup_install_args.
+      'easy-install.pth' files were found.
+      These '.pth' files are likely to cause link conflicts.
+      Please invoke `setup.py` using 'Language::Python.setup_install_args'.
       The offending files are:
         #{pth_found * "\n        "}
     EOS
@@ -140,7 +143,7 @@ module FormulaCellarChecks
     return unless bad_dir_name
 
     <<~EOS
-      Emacs Lisp files were installed into the wrong site-lisp subdirectory.
+      Emacs Lisp files were installed into the wrong "site-lisp" subdirectory.
       They should be installed into:
         #{share}/emacs/site-lisp/#{name}
     EOS
@@ -151,18 +154,125 @@ module FormulaCellarChecks
     # Emacs itself can do what it wants
     return if name == "emacs"
 
-    elisps = (share/"emacs/site-lisp").children.select { |file| %w[.el .elc].include? file.extname }
+    elisps = (share/"emacs/site-lisp").children.select do |file|
+      Keg::ELISP_EXTENSIONS.include? file.extname
+    end
     return if elisps.empty?
 
     <<~EOS
-      Emacs Lisp files were linked directly to #{HOMEBREW_PREFIX}/share/emacs/site-lisp
+      Emacs Lisp files were linked directly to "#{HOMEBREW_PREFIX}/share/emacs/site-lisp".
       This may cause conflicts with other packages.
       They should instead be installed into:
         #{share}/emacs/site-lisp/#{name}
-
       The offending files are:
         #{elisps * "\n        "}
     EOS
+  end
+
+  def check_python_packages(lib, deps)
+    return unless lib.directory?
+
+    lib_subdirs = lib.children
+                     .select(&:directory?)
+                     .map(&:basename)
+
+    pythons = lib_subdirs.map do |p|
+      match = p.to_s.match(/^python(\d+\.\d+)$/)
+      next if match.blank?
+      next if match.captures.blank?
+
+      match.captures.first
+    end.compact
+
+    return if pythons.blank?
+
+    python_deps = deps.map(&:name)
+                      .grep(/^python(@.*)?$/)
+                      .map { |d| Formula[d].version.to_s[/^\d+\.\d+/] }
+                      .compact
+
+    return if python_deps.blank?
+    return if pythons.any? { |v| python_deps.include? v }
+
+    pythons = pythons.map { |v| "Python #{v}" }
+    python_deps = python_deps.map { |v| "Python #{v}" }
+
+    <<~EOS
+      Packages have been installed for:
+        #{pythons * "\n        "}
+      but this formula depends on:
+        #{python_deps * "\n        "}
+    EOS
+  end
+
+  def check_shim_references(prefix)
+    return unless prefix.directory?
+
+    keg = Keg.new(prefix)
+
+    matches = []
+    keg.each_unique_file_matching(HOMEBREW_SHIMS_PATH) do |f|
+      match = f.relative_path_from(keg.to_path)
+
+      next if match.to_s.match? %r{^share/doc/.+?/INFO_BIN$}
+
+      matches << match
+    end
+
+    return if matches.empty?
+
+    <<~EOS
+      Files were found with references to the Homebrew shims directory.
+      The offending files are:
+        #{matches * "\n  "}
+    EOS
+  end
+
+  def check_plist(prefix, plist)
+    return unless prefix.directory?
+
+    plist = begin
+      Plist.parse_xml(plist)
+    rescue
+      nil
+    end
+    return if plist.blank?
+
+    program_location = plist["ProgramArguments"]&.first
+    key = "first ProgramArguments value"
+    if program_location.blank?
+      program_location = plist["Program"]
+      key = "Program"
+    end
+    return if program_location.blank?
+
+    Dir.chdir("/") do
+      unless File.exist?(program_location)
+        return <<~EOS
+          The plist "#{key}" does not exist:
+            #{program_location}
+        EOS
+      end
+
+      return if File.executable?(program_location)
+    end
+
+    <<~EOS
+      The plist "#{key}" is not executable:
+        #{program_location}
+    EOS
+  end
+
+  def check_python_symlinks(name, keg_only)
+    return unless keg_only
+    return unless name.start_with? "python"
+
+    return if %w[pip3 wheel3].none? do |l|
+      link = HOMEBREW_PREFIX/"bin"/l
+      link.exist? && File.realpath(link).start_with?(HOMEBREW_CELLAR/name)
+    end
+
+    "Python formulae that are keg-only should not create `pip3` and `wheel3` symlinks."
   end
 
   def audit_installed
@@ -179,6 +289,10 @@ module FormulaCellarChecks
     problem_if_output(check_easy_install_pth(formula.lib))
     problem_if_output(check_elisp_dirname(formula.share, formula.name))
     problem_if_output(check_elisp_root(formula.share, formula.name))
+    problem_if_output(check_python_packages(formula.lib, formula.deps))
+    problem_if_output(check_shim_references(formula.prefix))
+    problem_if_output(check_plist(formula.prefix, formula.plist))
+    problem_if_output(check_python_symlinks(formula.name, formula.keg_only?))
   end
   alias generic_audit_installed audit_installed
 

@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "extend/ENV"
@@ -6,41 +7,40 @@ require "timeout"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def test_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `test` [<options>] <formula>
-
+      description <<~EOS
         Run the test method provided by an installed formula.
         There is no standard output or return code, but generally it should notify the
         user if something is wrong with the installed formula.
 
         *Example:* `brew install jruby && brew test jruby`
       EOS
-      switch "--devel",
-             description: "Test the development version of a formula."
       switch "--HEAD",
              description: "Test the head version of a formula."
       switch "--keep-tmp",
-             description: "Keep the temporary files created for the test."
-      switch :verbose
-      switch :debug
-      conflicts "--devel", "--HEAD"
+             description: "Retain the temporary files created for the test."
+      switch "--retry",
+             description: "Retry if a testing fails."
+
+      named_args :installed_formula, min: 1
     end
   end
 
   def test
-    test_args.parse
-
-    raise FormulaUnspecifiedError if ARGV.named.empty?
+    args = test_args.parse
 
     require "formula_assertions"
+    require "formula_free_port"
 
-    ARGV.resolved_formulae.each do |f|
+    args.named.to_resolved_formulae.each do |f|
       # Cannot test uninstalled formulae
-      unless f.installed?
+      unless f.latest_version_installed?
         ofail "Testing requires the latest version of #{f.full_name}"
         next
       end
@@ -52,7 +52,7 @@ module Homebrew
       end
 
       # Don't test unlinked formulae
-      if !ARGV.force? && !f.keg_only? && !f.linked?
+      if !args.force? && !f.keg_only? && !f.linked?
         ofail "#{f.full_name} is not linked"
         next
       end
@@ -70,28 +70,24 @@ module Homebrew
         next
       end
 
-      puts "Testing #{f.full_name}"
+      oh1 "Testing #{f.full_name}"
 
       env = ENV.to_hash
 
       begin
-        args = %W[
+        exec_args = %W[
           #{RUBY_PATH}
-          -W0
+          #{ENV["HOMEBREW_RUBY_WARNINGS"]}
           -I #{$LOAD_PATH.join(File::PATH_SEPARATOR)}
           --
           #{HOMEBREW_LIBRARY_PATH}/test.rb
           #{f.path}
-        ].concat(ARGV.options_only)
+        ].concat(args.options_only)
 
-        if f.head?
-          args << "--HEAD"
-        elsif f.devel?
-          args << "--devel"
-        end
+        exec_args << "--HEAD" if f.head?
 
         Utils.safe_fork do
-          if Sandbox.test?
+          if Sandbox.available?
             sandbox = Sandbox.new
             f.logs.mkpath
             sandbox.record_log(f.logs/"test.sandbox.log")
@@ -102,17 +98,30 @@ module Homebrew
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/homebrew/locks")
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/log")
             sandbox.allow_write_path(HOMEBREW_PREFIX/"var/run")
-            sandbox.exec(*args)
+            sandbox.exec(*exec_args)
           else
-            exec(*args)
+            exec(*exec_args)
           end
         end
       rescue Exception => e # rubocop:disable Lint/RescueException
+        retry if retry_test?(f, args: args)
         ofail "#{f.full_name}: failed"
         puts e, e.backtrace
       ensure
         ENV.replace(env)
       end
+    end
+  end
+
+  def retry_test?(f, args:)
+    @test_failed ||= Set.new
+    if args.retry? && @test_failed.add?(f)
+      oh1 "Testing #{f.full_name} (again)"
+      f.clear_cache
+      true
+    else
+      Homebrew.failed = true
+      false
     end
   end
 end

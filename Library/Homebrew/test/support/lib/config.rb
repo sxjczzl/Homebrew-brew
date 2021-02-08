@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 raise "HOMEBREW_BREW_FILE was not exported! Please call bin/brew directly!" unless ENV["HOMEBREW_BREW_FILE"]
@@ -17,7 +18,10 @@ TEST_TMPDIR = ENV.fetch("HOMEBREW_TEST_TMPDIR") do |k|
 end.freeze
 
 # Paths pointing into the Homebrew code base that persist across test runs
-HOMEBREW_SHIMS_PATH = (HOMEBREW_LIBRARY_PATH.parent/"Homebrew/shims").freeze
+HOMEBREW_SHIMS_PATH = (HOMEBREW_LIBRARY_PATH/"shims").freeze
+
+# Where external data that has been incorporated into Homebrew is stored
+HOMEBREW_DATA_PATH = (HOMEBREW_LIBRARY_PATH/"data").freeze
 
 require "extend/git_repository"
 
@@ -46,5 +50,9 @@ TEST_SHA256 = "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef"
 
 # For testing's sake always assume the default prefix
 module Homebrew
+  remove_const :DEFAULT_PREFIX if defined?(DEFAULT_PREFIX)
   DEFAULT_PREFIX = HOMEBREW_PREFIX.to_s.freeze
+
+  remove_const :DEFAULT_REPOSITORY if defined?(DEFAULT_REPOSITORY)
+  DEFAULT_REPOSITORY = HOMEBREW_REPOSITORY.to_s.freeze
 end

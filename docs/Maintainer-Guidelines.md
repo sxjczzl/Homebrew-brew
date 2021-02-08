@@ -26,8 +26,8 @@ This is all that really matters:
   [pip](https://pip.pypa.io/en/stable/).
 - Ensure that any dependencies are accurate and minimal. We don't need to
   support every possible optional feature for the software.
-- Use the GitHub squash & merge workflow where bottles aren't required.
-- Use `brew pull` otherwise, which adds messages to auto-close pull requests and pull bottles built by the Brew Test Bot.
+- When bottles aren't required or affected, use the GitHub squash & merge workflow for a single-formula PR or rebase & merge workflow for a multiple-formulae PR. See [below](#how-to-merge-without-bottles) for more details.
+- Use `brew pr-publish` or `brew pr-pull` otherwise, which adds messages to auto-close pull requests and pull bottles built by the Brew Test Bot.
 - Thank people for contributing.
 
 Checking dependencies is important, because they will probably stick around
@@ -36,6 +36,10 @@ forever. Nobody really checks if they are necessary or not. Use the
 
 Depend on as little stuff as possible. Disable X11 functionality if possible.
 For example, we build Wireshark, but not the heavy GUI.
+
+For [some formulae](https://github.com/Homebrew/homebrew-core/search?q=%22homebrew%2Fmirror%22&unscoped_q=%22homebrew%2Fmirror%22),
+we mirror the tarballs to our own BinTray automatically as part of the
+bottle publish CI run.
 
 Homebrew is about Unix software. Stuff that builds to an `.app` should
 be in Homebrew Cask instead.
@@ -57,10 +61,13 @@ We now accept versioned formulae as long as they [meet the requirements](Version
 
 ### Merging, rebasing, cherry-picking
 
-Merging should be done in the `Homebrew/brew` repository to preserve history & GPG commit signing,
-and squash/merge via GitHub should be used for formulae where those formulae
-don't need bottles or the change does not require new bottles to be pulled.
-Otherwise, you should use `brew pull` (or `rebase`/`cherry-pick` contributions).
+Merging should be done in the `Homebrew/brew` repository to preserve history and GPG commit signing.
+
+PRs modifying formulae that don't need bottles or making changes that don't
+require new bottles to be pulled should use GitHub's squash & merge or rebase & merge workflows.
+See the [table below](#how-to-merge-without-bottles) for more details.
+
+Otherwise, you should use `brew pr-pull` (or `rebase`/`cherry-pick` contributions).
 
 Don’t `rebase` until you finally `push`. Once `master` is pushed, you can’t
 `rebase`: **you’re a maintainer now!**
@@ -71,6 +78,19 @@ Don’t `merge` unclean branches. So if someone is still learning `git` and
 their branch is filled with nonsensical merges, then `rebase` and squash
 the commits. Our main branch history should be useful to other people,
 not confusing.
+
+Here’s a flowchart for managing a PR which is ready to merge:
+
+![Flowchart for managing pull requests](assets/img/docs/managing-pull-requests.drawio.svg)
+
+#### How to merge without bottles
+
+Here are guidelines about when to use squash & merge versus rebase & merge. These options should only be used with PRs where bottles are not needed or affected.
+
+| | PR modified a single formula | PR modifies multiple formulae |
+|---|---|---|
+| **Commits look good** | rebase & merge _or_ squash & merge | rebase & merge |
+| **Commits need work** | squash & merge | manually merge using the command line |
 
 ### Testing
 
@@ -149,18 +169,30 @@ Any maintainer can merge any PR they have carefully reviewed and is passing CI t
 
 Any maintainer can revert a PR created by another maintainer after a user submitted issue or CI failure that results. The maintainer who created the original PR should be given no less than an hour to fix the issue themselves or decide to revert the PR themselves if they would rather.
 
+### Give time for other maintainers to review
+
+PRs that are an "enhancement" to existing functionality i.e. not a fix to an open user issue/discussion, not a version bump, not a security fix, not a fix for CI failure, a usability improvement, a new feature, refactoring etc. should wait 24h Monday - Friday before being merged. For example,
+
+- a new feature PR submitted at 5pm on Thursday should wait until 5pm on Friday before it is merged
+- a usability fix PR submitted at 5pm on Friday should wait until 5pm on Monday before it is merged
+- a user-reported issue fix PR can be merged immediately after CI is green
+
+If a maintainer is on holiday/vacation/sick during this time and leaves comments after they are back: please treat post-merge PR comments and feedback as you would left within the time period and follow-up with another PR to address their requests (if agreed).
+
+The vast majority of Homebrew/homebrew-core PRs are bug fixes or version bumps so can be self-merged once CI has completed.
+
 ## Communication
 
 Maintainers have a variety of ways to communicate with each other:
 
 - Homebrew's public repositories on GitHub
-- Homebrew's group communications between more than two maintainers on private channels (e.g. GitHub/Slack/Discourse)
-- Homebrew's direct 1:1 messages between two maintainers on private channels (e.g. iMessage/Slack/Discourse/IRC/carrier pigeon)
+- Homebrew's group communications between more than two maintainers on private channels (e.g. GitHub/Slack)
+- Homebrew's direct 1:1 messages between two maintainers on private channels (e.g. iMessage/Slack/carrier pigeon)
 
 All communication should ideally occur in public on GitHub. Where this is not possible or appropriate (e.g. a security disclosure, interpersonal issue between two maintainers, urgent breakage that needs to be resolved) this can move to maintainers' private group communication and, if necessary, 1:1 communication. Technical decisions should not happen in 1:1 communications but if they do (or did in the past) they must end up back as something linkable on GitHub. For example, if a technical decision was made a year ago on Slack and another maintainer/contributor/user asks about it on GitHub, that's a good chance to explain it to them and have something that can be linked to in the future.
 
 This makes it easier for other maintainers, contributors and users to follow along with what we're doing (and, more importantly, why we're doing it) and means that decisions have a linkable URL.
 
-All maintainers (and lead maintainer) communication through any medium is bound by [Homebrew's Code of Conduct](https://github.com/Homebrew/.github/blob/master/CODE_OF_CONDUCT.md#code-of-conduct). Abusive behaviour towards other maintainers, contributors or users will not be tolerated; the maintainer will be given a warning and if their behaviour continues they will be removed as a maintainer.
+All maintainers (and lead maintainer) communication through any medium is bound by [Homebrew's Code of Conduct](https://github.com/Homebrew/.github/blob/HEAD/CODE_OF_CONDUCT.md#code-of-conduct). Abusive behaviour towards other maintainers, contributors or users will not be tolerated; the maintainer will be given a warning and if their behaviour continues they will be removed as a maintainer.
 
 Maintainers should feel free to pleasantly disagree with the work and decisions of other maintainers. Healthy, friendly, technical disagreement between maintainers is actively encouraged and should occur in public on the issue tracker to make the project better. Interpersonal issues should be handled privately in Slack, ideally with moderation. If work or decisions are insufficiently documented or explained any maintainer or contributor should feel free to ask for clarification. No maintainer may ever justify a decision with e.g. "because I say so" or "it was I who did X" alone. Off-topic discussions on the issue tracker, [bike-shedding](https://en.wikipedia.org/wiki/Law_of_triviality) and personal attacks are forbidden.

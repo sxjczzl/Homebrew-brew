@@ -1,4 +1,4 @@
-# Taps (third-party repositories)
+# Taps (Third-Party Repositories)
 
 `brew tap` adds more repositories to the list of formulae that `brew` tracks, updates,
 and installs from. By default, `tap` assumes that the repositories come from GitHub,
@@ -16,21 +16,20 @@ mistydemeo/tigerbrew
 dunn/emacs
 ```
 
-* `brew tap <user/repo>` makes a shallow clone of the repository at
-  https://github.com/user/repo. After that, `brew` will be able to work on
+<!-- vale Homebrew.Terms = OFF -->
+<!-- The `terms` lint suggests changing "repo" to "repository". But we need the abbreviation in the tap syntax and URL example. -->
+* `brew tap <user/repo>` makes a clone of the repository at
+  https://github.com/user/homebrew-repo. After that, `brew` will be able to work on
   those formulae as if they were in Homebrew's canonical repository. You can
   install and uninstall them with `brew [un]install`, and the formulae are
   automatically updated when you run `brew update`. (See below for details
   about how `brew tap` handles the names of repositories.)
+<!-- vale Homebrew.Terms = ON -->
 
-* `brew tap <user/repo> <URL>` makes a shallow clone of the repository at URL.
+* `brew tap <user/repo> <URL>` makes a clone of the repository at URL.
   Unlike the one-argument version, URL is not assumed to be GitHub, and it
   doesn't have to be HTTP. Any location and any protocol that Git can handle is
   fine.
-
-* Add `--full` to either the one- or two-argument invocations above to have Git
-  make a complete clone rather than a shallow one. Full is the default for
-  Homebrew developers.
 
 * `brew tap --repair` migrates tapped formulae from a symlink-based to
   directory-based structure. (This should only need to be run once.)

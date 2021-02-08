@@ -1,7 +1,11 @@
+# typed: false
 # frozen_string_literal: true
 
 require "language/python"
 
+# A formula's caveats.
+#
+# @api private
 class Caveats
   extend Forwardable
 
@@ -17,14 +21,25 @@ class Caveats
       build = f.build
       f.build = Tab.for_formula(f)
       s = f.caveats.to_s
-      caveats << s.chomp + "\n" unless s.empty?
+      caveats << "#{s.chomp}\n" unless s.empty?
     ensure
       f.build = build
     end
     caveats << keg_only_text
-    caveats << function_completion_caveats(:bash)
-    caveats << function_completion_caveats(:zsh)
-    caveats << function_completion_caveats(:fish)
+
+    valid_shells = [:bash, :zsh, :fish].freeze
+    current_shell = Utils::Shell.preferred || Utils::Shell.parent
+    shells = if current_shell.present? &&
+                (shell_sym = current_shell.to_sym) &&
+                valid_shells.include?(shell_sym)
+      [shell_sym]
+    else
+      valid_shells
+    end
+    shells.each do |shell|
+      caveats << function_completion_caveats(shell)
+    end
+
     caveats << plist_caveats
     caveats << elisp_caveats
     caveats.compact.join("\n")
@@ -47,7 +62,7 @@ class Caveats
     if f.bin.directory? || f.sbin.directory?
       s << <<~EOS
 
-        If you need to have #{f.name} first in your PATH run:
+        If you need to have #{f.name} first in your PATH, run:
       EOS
       s << "  #{Utils::Shell.prepend_path_in_profile(f.opt_bin.to_s)}\n" if f.bin.directory?
       s << "  #{Utils::Shell.prepend_path_in_profile(f.opt_sbin.to_s)}\n" if f.sbin.directory?
@@ -86,11 +101,9 @@ class Caveats
 
   def keg
     @keg ||= [f.prefix, f.opt_prefix, f.linked_keg].map do |d|
-      begin
-        Keg.new(d.resolved_path)
-      rescue
-        nil
-      end
+      Keg.new(d.resolved_path)
+    rescue
+      nil
     end.compact.first
   end
 
@@ -100,7 +113,7 @@ class Caveats
 
     completion_installed = keg.completion_installed?(shell)
     functions_installed = keg.functions_installed?(shell)
-    return unless completion_installed || functions_installed
+    return if !completion_installed && !functions_installed
 
     installed = []
     installed << "completions" if completion_installed

@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 module RuboCop
@@ -19,6 +20,7 @@ module RuboCop
         private
 
         attr_reader :cask_block
+
         def_delegators :cask_block,
                        :toplevel_stanzas
       end

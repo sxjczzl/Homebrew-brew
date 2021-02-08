@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require "formula"
@@ -5,6 +6,9 @@ require "formula_versions"
 require "search"
 require "searchable"
 
+# Helper class for printing and searching descriptions.
+#
+# @api private
 class Descriptions
   extend Homebrew::Search
 

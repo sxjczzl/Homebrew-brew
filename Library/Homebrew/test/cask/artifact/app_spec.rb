@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 describe Cask::Artifact::App, :cask do
@@ -21,7 +22,7 @@ describe Cask::Artifact::App, :cask do
       install_phase
 
       expect(target_path).to be_a_directory
-      expect(source_path).not_to exist
+      expect(source_path).to be_a_symlink
     end
 
     describe "when app is in a subdirectory" do
@@ -42,7 +43,7 @@ describe Cask::Artifact::App, :cask do
         install_phase
 
         expect(target_path).to be_a_directory
-        expect(appsubdir.join("Caffeine.app")).not_to exist
+        expect(appsubdir.join("Caffeine.app")).to be_a_symlink
       end
     end
 
@@ -53,7 +54,7 @@ describe Cask::Artifact::App, :cask do
       install_phase
 
       expect(target_path).to be_a_directory
-      expect(source_path).not_to exist
+      expect(source_path).to be_a_symlink
 
       expect(cask.config.appdir.join("Caffeine Deluxe.app")).not_to exist
       expect(cask.staged_path.join("Caffeine Deluxe.app")).to exist
@@ -88,8 +89,8 @@ describe Cask::Artifact::App, :cask do
         describe "target is both writable and user-owned" do
           it "overwrites the existing app" do
             stdout = <<~EOS
-              ==> Removing App '#{target_path}'.
-              ==> Moving App 'Caffeine.app' to '#{target_path}'.
+              ==> Removing App '#{target_path}'
+              ==> Moving App 'Caffeine.app' to '#{target_path}'
             EOS
 
             stderr = <<~EOS
@@ -100,7 +101,7 @@ describe Cask::Artifact::App, :cask do
               .to output(stdout).to_stdout
               .and output(stderr).to_stderr
 
-            expect(source_path).not_to exist
+            expect(source_path).to be_a_symlink
             expect(target_path).to be_a_directory
 
             contents_path = target_path.join("Contents/Info.plist")
@@ -136,8 +137,8 @@ describe Cask::Artifact::App, :cask do
             ).and_call_original
 
             stdout = <<~EOS
-              ==> Removing App '#{target_path}'.
-              ==> Moving App 'Caffeine.app' to '#{target_path}'.
+              ==> Removing App '#{target_path}'
+              ==> Moving App 'Caffeine.app' to '#{target_path}'
             EOS
 
             stderr = <<~EOS
@@ -148,7 +149,7 @@ describe Cask::Artifact::App, :cask do
               .to output(stdout).to_stdout
               .and output(stderr).to_stderr
 
-            expect(source_path).not_to exist
+            expect(source_path).to be_a_symlink
             expect(target_path).to be_a_directory
 
             contents_path = target_path.join("Contents/Info.plist")
@@ -179,8 +180,8 @@ describe Cask::Artifact::App, :cask do
 
         it "overwrites the existing app" do
           stdout = <<~EOS
-            ==> Removing App '#{target_path}'.
-            ==> Moving App 'Caffeine.app' to '#{target_path}'.
+            ==> Removing App '#{target_path}'
+            ==> Moving App 'Caffeine.app' to '#{target_path}'
           EOS
 
           stderr = <<~EOS
@@ -191,7 +192,7 @@ describe Cask::Artifact::App, :cask do
             .to output(stdout).to_stdout
             .and output(stderr).to_stderr
 
-          expect(source_path).not_to exist
+          expect(source_path).to be_a_symlink
           expect(target_path).to be_a_directory
 
           contents_path = target_path.join("Contents/Info.plist")

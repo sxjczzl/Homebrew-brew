@@ -1,8 +1,14 @@
+# typed: false
 # frozen_string_literal: true
 
 module Cask
   module Artifact
+    # Abstract superclass for all artifacts.
+    #
+    # @api private
     class AbstractArtifact
+      extend T::Sig
+
       include Comparable
       extend Predicable
 
@@ -42,7 +48,7 @@ module Cask
 
       def <=>(other)
         return unless other.class < AbstractArtifact
-        return 0 if self.class == other.class
+        return 0 if instance_of?(other.class)
 
         @@sort_order ||= [ # rubocop:disable Style/ClassVars
           PreflightBlock,
@@ -50,6 +56,11 @@ module Cask
           # depend on other artifacts still being installed.
           Uninstall,
           Installer,
+          # `pkg` should be run before `binary`, so
+          # targets are created prior to linking.
+          # `pkg` should be run before `app`, since an `app` could
+          # contain a nested installer (e.g. `wireshark`).
+          Pkg,
           [
             App,
             Suite,
@@ -57,6 +68,7 @@ module Cask
             Colorpicker,
             Prefpane,
             Qlplugin,
+            Mdimporter,
             Dictionary,
             Font,
             Service,
@@ -67,13 +79,11 @@ module Cask
             Vst3Plugin,
             ScreenSaver,
           ],
-          # `pkg` should be run before `binary`, so
-          # targets are created prior to linking.
-          Pkg,
           Binary,
+          Manpage,
           PostflightBlock,
           Zap,
-        ].each_with_index.flat_map { |classes, i| [*classes].map { |c| [c, i] } }.to_h
+        ].each_with_index.flat_map { |classes, i| Array(classes).map { |c| [c, i] } }.to_h
 
         (@@sort_order[self.class] <=> @@sort_order[other.class]).to_i
       end
@@ -124,6 +134,7 @@ module Cask
         cask.config
       end
 
+      sig { returns(String) }
       def to_s
         "#{summarize} (#{self.class.english_name})"
       end

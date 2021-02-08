@@ -1,5 +1,7 @@
+# typed: false
 # frozen_string_literal: true
 
+require "formulary"
 require "cli/parser"
 
 class Symbol
@@ -15,13 +17,14 @@ class String
 end
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def irb_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `irb` [<options>]
-
+      description <<~EOS
         Enter the interactive Homebrew Ruby shell.
       EOS
       switch "--examples",
@@ -34,13 +37,15 @@ module Homebrew
 
   def irb
     # work around IRB modifying ARGV.
-    irb_args.parse(ARGV.dup)
+    args = irb_args.parse(ARGV.dup.freeze)
 
     if args.examples?
-      puts "'v8'.f # => instance of the v8 formula"
-      puts ":hub.f.installed?"
-      puts ":lua.f.methods - 1.methods"
-      puts ":mpd.f.recursive_dependencies.reject(&:installed?)"
+      puts <<~EOS
+        'v8'.f # => instance of the v8 formula
+        :hub.f.latest_version_installed?
+        :lua.f.methods - 1.methods
+        :mpd.f.recursive_dependencies.reject(&:installed?)
+      EOS
       return
     end
 
@@ -54,10 +59,9 @@ module Homebrew
 
     require "formula"
     require "keg"
-    require "cask/all"
+    require "cask"
 
-    ohai "Interactive Homebrew Shell"
-    puts "Example commands available with: brew irb --examples"
+    ohai "Interactive Homebrew Shell", "Example commands available with: `brew irb --examples`"
     if args.pry?
       Pry.start
     else

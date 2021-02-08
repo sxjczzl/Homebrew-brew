@@ -1,21 +1,24 @@
+# typed: false
 # frozen_string_literal: true
 
 require "macho"
 require "os/mac/architecture_list"
 
+# {Pathname} extension for dealing with Mach-O files.
+#
+# @api private
 module MachOShim
   extend Forwardable
 
   delegate [:dylib_id, :rpaths, :delete_rpath] => :macho
 
-  # @private
   def macho
     @macho ||= begin
       MachO.open(to_s)
     end
   end
+  private :macho
 
-  # @private
   def mach_data
     @mach_data ||= begin
       machos = []
@@ -50,11 +53,12 @@ module MachOShim
     rescue
       # ... but complain about other (parse) errors for further investigation.
       onoe "Failed to read Mach-O binary: #{self}"
-      raise if ARGV.homebrew_developer?
+      raise if Homebrew::EnvConfig.developer?
 
       []
     end
   end
+  private :mach_data
 
   def dynamically_linked_libraries(except: :none)
     lcs = macho.dylib_load_commands.reject { |lc| lc.type == except }
@@ -63,6 +67,7 @@ module MachOShim
   end
 
   def archs
+    # TODO: (3.2) remove ArchitectureListExtension
     mach_data.map { |m| m.fetch :arch }.extend(ArchitectureListExtension)
   end
 
@@ -94,19 +99,16 @@ module MachOShim
     arch == :ppc64
   end
 
-  # @private
   def dylib?
     mach_data.any? { |m| m.fetch(:type) == :dylib }
   end
 
-  # @private
   def mach_o_executable?
     mach_data.any? { |m| m.fetch(:type) == :executable }
   end
 
   alias binary_executable? mach_o_executable?
 
-  # @private
   def mach_o_bundle?
     mach_data.any? { |m| m.fetch(:type) == :bundle }
   end

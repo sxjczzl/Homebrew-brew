@@ -1,37 +1,39 @@
+# typed: false
 # frozen_string_literal: true
 
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def tap_info_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `tap-info` [<options>] [<tap>]
+      description <<~EOS
+        Show detailed information about one or more <tap>s.
 
-        Display detailed information about one or more provided <tap>.
-        Display a brief summary of all installed taps if no <tap> are passed.
+        If no <tap> names are provided, display brief statistics for all installed taps.
       EOS
       switch "--installed",
-             description: "Display information on all installed taps."
-      flag "--json",
-           description: "Print a JSON representation of <taps>. Currently the default and only accepted "\
-                        "value for <version> is `v1`. See the docs for examples of using the JSON "\
-                        "output: <https://docs.brew.sh/Querying-Brew>"
-      switch :debug
+             description: "Show information on each installed tap."
+      flag   "--json",
+             description: "Print a JSON representation of <tap>. Currently the default and only accepted "\
+                          "value for <version> is `v1`. See the docs for examples of using the JSON "\
+                          "output: <https://docs.brew.sh/Querying-Brew>"
+
+      named_args :tap
     end
   end
 
   def tap_info
-    tap_info_args.parse
+    args = tap_info_args.parse
 
-    if args.installed?
-      taps = Tap
+    taps = if args.installed?
+      Tap
     else
-      taps = ARGV.named.sort.map do |name|
-        Tap.fetch(name)
-      end
+      args.named.to_taps
     end
 
     if args.json
@@ -69,15 +71,14 @@ module Homebrew
         puts unless i.zero?
         info = "#{tap}: "
         if tap.installed?
-          info += tap.pinned? ? "pinned" : "unpinned"
-          info += ", private" if tap.private?
-          info += if (contents = tap.contents).empty?
-            ", no commands/casks/formulae"
+          info += if (contents = tap.contents).blank?
+            "no commands/casks/formulae"
           else
-            ", #{contents.join(", ")}"
+            contents.join(", ")
           end
+          info += ", private" if tap.private?
           info += "\n#{tap.path} (#{tap.path.abv})"
-          info += "\nFrom: #{tap.remote.nil? ? "N/A" : tap.remote}"
+          info += "\nFrom: #{tap.remote.presence || "N/A"}"
         else
           info += "Not installed"
         end

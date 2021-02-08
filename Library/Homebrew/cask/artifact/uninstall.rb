@@ -1,9 +1,13 @@
+# typed: false
 # frozen_string_literal: true
 
 require "cask/artifact/abstract_uninstall"
 
 module Cask
   module Artifact
+    # Artifact corresponding to the `uninstall` stanza.
+    #
+    # @api private
     class Uninstall < AbstractUninstall
       def uninstall_phase(**options)
         ORDERED_DIRECTIVES.reject { |directive_sym| directive_sym == :rmdir }

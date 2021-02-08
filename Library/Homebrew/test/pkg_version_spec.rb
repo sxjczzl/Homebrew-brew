@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "pkg_version"
@@ -54,6 +55,11 @@ describe PkgVersion do
   describe "#<=>" do
     it "returns nil if the comparison fails" do
       expect(described_class.new(Version.create("1.0"), 0) <=> Object.new).to be nil
+      expect(Object.new <=> described_class.new(Version.create("1.0"), 0)).to be nil
+      expect(Object.new <=> described_class.new(Version.create("1.0"), 0)).to be nil
+      expect(described_class.new(Version.create("1.0"), 0) <=> nil).to be nil
+      # This one used to fail due to dereferencing a null `self`
+      expect(described_class.new(nil, 0) <=> described_class.new(Version.create("1.0"), 0)).to be nil
     end
   end
 
@@ -78,6 +84,48 @@ describe PkgVersion do
       expect(p1.hash).to eq(p2.hash)
       expect(p1.hash).not_to eq(p3.hash)
       expect(p1.hash).not_to eq(p4.hash)
+    end
+  end
+
+  describe "#version" do
+    it "returns package version" do
+      expect(described_class.parse("1.2.3_4").version).to be == Version.create("1.2.3")
+    end
+  end
+
+  describe "#revision" do
+    it "returns package revision" do
+      expect(described_class.parse("1.2.3_4").revision).to be == 4
+    end
+  end
+
+  describe "#major" do
+    it "returns major version token" do
+      expect(described_class.parse("1.2.3_4").major).to be == Version::Token.create("1")
+    end
+  end
+
+  describe "#minor" do
+    it "returns minor version token" do
+      expect(described_class.parse("1.2.3_4").minor).to be == Version::Token.create("2")
+    end
+  end
+
+  describe "#patch" do
+    it "returns patch version token" do
+      expect(described_class.parse("1.2.3_4").patch).to be == Version::Token.create("3")
+    end
+  end
+
+  describe "#major_minor" do
+    it "returns major.minor version" do
+      expect(described_class.parse("1.2.3_4").major_minor).to be == Version.create("1.2")
+    end
+  end
+
+  describe "#major_minor_patch" do
+    it "returns major.minor.patch version" do
+      expect(described_class.parse("1.2.3_4").major_minor_patch).to be == Version.create("1.2.3")
     end
   end
 end

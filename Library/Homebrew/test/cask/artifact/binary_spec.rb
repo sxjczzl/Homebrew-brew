@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 describe Cask::Artifact::Binary, :cask do
@@ -7,10 +8,16 @@ describe Cask::Artifact::Binary, :cask do
     end
   }
   let(:artifacts) { cask.artifacts.select { |a| a.is_a?(described_class) } }
-  let(:expected_path) { cask.config.binarydir.join("binary") }
+  let(:binarydir) { cask.config.binarydir }
+  let(:expected_path) { binarydir.join("binary") }
 
-  after do
-    FileUtils.rm expected_path if expected_path.exist?
+  around do |example|
+    binarydir.mkpath
+
+    example.run
+  ensure
+    FileUtils.rm_f expected_path
+    FileUtils.rmdir binarydir
   end
 
   context "when --no-binaries is specified" do
@@ -67,18 +74,20 @@ describe Cask::Artifact::Binary, :cask do
     expect(expected_path).not_to be :symlink?
   end
 
-  it "clobbers an existing symlink" do
+  it "avoids clobbering an existing symlink" do
     expected_path.make_symlink("/tmp")
 
-    artifacts.each do |artifact|
-      artifact.install_phase(command: NeverSudoSystemCommand, force: false)
-    end
+    expect {
+      artifacts.each do |artifact|
+        artifact.install_phase(command: NeverSudoSystemCommand, force: false)
+      end
+    }.to raise_error(Cask::CaskError)
 
-    expect(File.readlink(expected_path)).not_to eq("/tmp")
+    expect(File.readlink(expected_path)).to eq("/tmp")
   end
 
   it "creates parent directory if it doesn't exist" do
-    FileUtils.rmdir Cask::Config.global.binarydir
+    FileUtils.rmdir binarydir
 
     artifacts.each do |artifact|
       artifact.install_phase(command: NeverSudoSystemCommand, force: false)

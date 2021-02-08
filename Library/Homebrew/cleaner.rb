@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 # Cleans a newly installed keg.
@@ -10,12 +11,14 @@
 # * sets permissions on executables
 # * removes unresolved symlinks
 class Cleaner
-  # Create a cleaner for the given formula
+  include Context
+
+  # Create a cleaner for the given formula.
   def initialize(f)
     @f = f
   end
 
-  # Clean the keg of formula @f
+  # Clean the keg of the formula.
   def clean
     ObserverPathnameExtension.reset_counts!
 
@@ -26,7 +29,7 @@ class Cleaner
     [@f.bin, @f.sbin, @f.lib].each { |d| clean_dir(d) if d.exist? }
 
     # Get rid of any info 'dir' files, so they don't conflict at the link stage
-    info_dir_file = @f.info + "dir"
+    info_dir_file = @f.info/"dir"
     observe_file_removal info_dir_file if info_dir_file.file? && !@f.skip_clean?(info_dir_file)
 
     prune
@@ -58,7 +61,7 @@ class Cleaner
     # actual files gets removed correctly.
     dirs.reverse_each do |d|
       if d.children.empty?
-        puts "rmdir: #{d} (empty)" if ARGV.verbose?
+        puts "rmdir: #{d} (empty)" if verbose?
         d.rmdir
       end
     end
@@ -72,6 +75,12 @@ class Cleaner
   def executable_path?(path)
     path.text_executable? || path.executable?
   end
+
+  # Both these files are completely unnecessary to package and cause
+  # pointless conflicts with other formulae. They are removed by Debian,
+  # Arch & MacPorts amongst other packagers as well. The files are
+  # created as part of installing any Perl module.
+  PERL_BASENAMES = Set.new(%w[perllocal.pod .packlist]).freeze
 
   # Clean a top-level (bin, sbin, lib) directory, recursively, by fixing file
   # permissions and removing .la files, unless the files (or parent
@@ -90,18 +99,10 @@ class Cleaner
 
       next if path.directory?
 
-      if path.extname == ".la"
+      if path.extname == ".la" || PERL_BASENAMES.include?(path.basename.to_s)
         path.unlink
       elsif path.symlink?
         # Skip it.
-      elsif path.basename.to_s == "perllocal.pod"
-        # Both this file & the .packlist one below are completely unnecessary
-        # to package & causes pointless conflict with other formulae. They are
-        # removed by Debian, Arch & MacPorts amongst other packagers as well.
-        # The files are created as part of installing any Perl module.
-        path.unlink
-      elsif path.basename.to_s == ".packlist" # Hidden file, not file extension!
-        path.unlink
       else
         # Set permissions for executables and non-executables
         perms = if executable_path?(path)
@@ -109,9 +110,9 @@ class Cleaner
         else
           0444
         end
-        if ARGV.debug?
+        if debug?
           old_perms = path.stat.mode & 0777
-          puts "Fixing #{path} permissions from #{old_perms.to_s(8)} to #{perms.to_s(8)}" if perms != old_perms
+          odebug "Fixing #{path} permissions from #{old_perms.to_s(8)} to #{perms.to_s(8)}" if perms != old_perms
         end
         path.chmod perms
       end

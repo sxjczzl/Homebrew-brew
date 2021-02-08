@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "keg"
@@ -21,7 +22,6 @@ describe Keg do
 
   let(:dst) { HOMEBREW_PREFIX/"bin"/"helloworld" }
   let(:nonexistent) { Pathname.new("/some/nonexistent/path") }
-  let(:mode) { OpenStruct.new }
   let!(:keg) { setup_test_keg("foo", "1.0") }
   let(:kegs) { [] }
 
@@ -36,7 +36,6 @@ describe Keg do
   end
 
   specify "::all" do
-    Formula.clear_racks_cache
     expect(described_class.all).to eq([keg])
   end
 
@@ -84,11 +83,11 @@ describe Keg do
     end
 
     context "with dry run set to true" do
-      it "only prints what would be done" do
-        mode.dry_run = true
+      let(:options) { { dry_run: true } }
 
+      it "only prints what would be done" do
         expect {
-          expect(keg.link(mode)).to eq(0)
+          expect(keg.link(**options)).to eq(0)
         }.to output(<<~EOF).to_stdout
           #{HOMEBREW_PREFIX}/bin/goodbye_cruel_world
           #{HOMEBREW_PREFIX}/bin/helloworld
@@ -119,27 +118,27 @@ describe Keg do
     end
 
     context "with overwrite set to true" do
+      let(:options) { { overwrite: true } }
+
       it "overwrite existing files" do
         touch dst
-        mode.overwrite = true
-        expect(keg.link(mode)).to eq(3)
+        expect(keg.link(**options)).to eq(3)
         expect(keg).to be_linked
       end
 
       it "overwrites broken symlinks" do
         dst.make_symlink "nowhere"
-        mode.overwrite = true
-        expect(keg.link(mode)).to eq(3)
+        expect(keg.link(**options)).to eq(3)
         expect(keg).to be_linked
       end
 
       it "still supports dryrun" do
         touch dst
-        mode.overwrite = true
-        mode.dry_run = true
+
+        options[:dry_run] = true
 
         expect {
-          expect(keg.link(mode)).to eq(0)
+          expect(keg.link(**options)).to eq(0)
         }.to output(<<~EOF).to_stdout
           #{dst}
         EOF
@@ -352,7 +351,7 @@ describe Keg do
     end
 
     # 1.1.6 is the earliest version of Homebrew that generates correct runtime
-    # dependency lists in Tabs.
+    # dependency lists in {Tab}s.
     def dependencies(deps, homebrew_version: "1.1.6")
       alter_tab do |tab|
         tab.homebrew_version = homebrew_version
@@ -363,7 +362,7 @@ describe Keg do
 
     def unreliable_dependencies(deps)
       # 1.1.5 is (hopefully!) the last version of Homebrew that generates
-      # incorrect runtime dependency lists in Tabs.
+      # incorrect runtime dependency lists in {Tab}s.
       dependencies(deps, homebrew_version: "1.1.5")
     end
 

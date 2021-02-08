@@ -1,13 +1,18 @@
+# typed: false
 # frozen_string_literal: true
 
 require "mutex_m"
 require "debrew/irb"
 
+# Helper module for debugging formulae.
+#
+# @api private
 module Debrew
   extend Mutex_m
 
   Ignorable = Module.new.freeze
 
+  # Module for allowing to ignore exceptions.
   module Raise
     def raise(*)
       super
@@ -19,6 +24,7 @@ module Debrew
     alias fail raise
   end
 
+  # Module for allowing to debug formulae.
   module Formula
     def install
       Debrew.debrew { super }
@@ -33,11 +39,15 @@ module Debrew
     end
   end
 
+  # Module for displaying a debugging menu.
   class Menu
+    extend T::Sig
+
     Entry = Struct.new(:name, :action)
 
     attr_accessor :prompt, :entries
 
+    sig { void }
     def initialize
       @entries = []
     end
@@ -88,7 +98,7 @@ module Debrew
 
   def self.debrew
     @active = true
-    Object.send(:include, Raise)
+    Object.include Raise
 
     begin
       yield
@@ -102,9 +112,7 @@ module Debrew
   end
 
   def self.debug(e)
-    original_raise(e) unless active? &&
-                             debugged_exceptions.add?(e) &&
-                             try_lock
+    original_raise(e) if !active? || !debugged_exceptions.add?(e) || !try_lock
 
     begin
       puts e.backtrace.first.to_s

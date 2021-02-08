@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "rubocops/text"
@@ -5,8 +6,26 @@ require "rubocops/text"
 describe RuboCop::Cop::FormulaAudit::Text do
   subject(:cop) { described_class.new }
 
-  context "When auditing formula text" do
-    it "with both openssl and libressl optional dependencies" do
+  context "when auditing formula text" do
+    it 'reports an offense if `require "formula"` is present' do
+      expect_offense(<<~RUBY)
+        require "formula"
+        ^^^^^^^^^^^^^^^^^ `require "formula"` is now unnecessary
+        class Foo < Formula
+          url "https://brew.sh/foo-1.0.tgz"
+          homepage "https://brew.sh"
+        end
+      RUBY
+
+      expect_correction(<<~RUBY)
+        class Foo < Formula
+          url "https://brew.sh/foo-1.0.tgz"
+          homepage "https://brew.sh"
+        end
+      RUBY
+    end
+
+    it "reports an offense if both openssl and libressl are dependencies" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -17,9 +36,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Formulae should not depend on both OpenSSL and LibreSSL (even optionally).
         end
       RUBY
-    end
 
-    it "with both openssl and libressl dependencies" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -32,7 +49,29 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When xcodebuild is called without SYMROOT" do
+    it "reports an offense if veclibfort is used instead of OpenBLAS (in homebrew/core)" do
+      expect_offense(<<~RUBY, "/homebrew-core/")
+        class Foo < Formula
+          url "https://brew.sh/foo-1.0.tgz"
+          homepage "https://brew.sh"
+          depends_on "veclibfort"
+          ^^^^^^^^^^^^^^^^^^^^^^^ Formulae in homebrew/core should use OpenBLAS as the default serial linear algebra library.
+        end
+      RUBY
+    end
+
+    it "reports an offense if lapack is used instead of OpenBLAS (in homebrew/core)" do
+      expect_offense(<<~RUBY, "/homebrew-core/")
+        class Foo < Formula
+          url "https://brew.sh/foo-1.0.tgz"
+          homepage "https://brew.sh"
+          depends_on "lapack"
+          ^^^^^^^^^^^^^^^^^^^ Formulae in homebrew/core should use OpenBLAS as the default serial linear algebra library.
+        end
+      RUBY
+    end
+
+    it "reports an offense if xcodebuild is called without SYMROOT" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -44,9 +83,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
           end
         end
       RUBY
-    end
 
-    it "When xcodebuild is called without any args" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -60,7 +97,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When go get is executed" do
+    it "reports an offense if `go get` is executed" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -74,7 +111,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When xcodebuild is executed" do
+    it "reports an offense if `xcodebuild` is executed" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -88,7 +125,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When plist_options are not defined when using a formula-defined plist", :ruby23 do
+    it "reports an offense if `plist_options` are not defined when using a formula-defined `plist`", :ruby23 do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -116,7 +153,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When language/go is require'd" do
+    it 'reports an offense if `require "language/go"` is present' do
       expect_offense(<<~RUBY)
         require "language/go"
         ^^^^^^^^^^^^^^^^^^^^^ require "language/go" is unnecessary unless using `go_resource`s
@@ -133,7 +170,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When formula uses virtualenv and also `setuptools` resource" do
+    it "reports an offense if formula uses virtualenv and also `setuptools` resource" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -152,7 +189,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When Formula.factory(name) is used" do
+    it "reports an offense if `Formula.factory(name)` is present" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -166,7 +203,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When dep ensure is used without `-vendor-only`" do
+    it "reports an offense if `dep ensure` is used without `-vendor-only`" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -180,7 +217,7 @@ describe RuboCop::Cop::FormulaAudit::Text do
       RUBY
     end
 
-    it "When cargo build is executed" do
+    it "reports an offense if `cargo build` is executed" do
       expect_offense(<<~RUBY)
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
@@ -188,7 +225,49 @@ describe RuboCop::Cop::FormulaAudit::Text do
 
           def install
             system "cargo", "build"
-            ^^^^^^^^^^^^^^^^^^^^^^^ use \"cargo\", \"install\", \"--root\", prefix, \"--path\", \".\"
+            ^^^^^^^^^^^^^^^^^^^^^^^ use \"cargo\", \"install\", *std_cargo_args
+          end
+        end
+      RUBY
+    end
+
+    it "reports an offense if `make` calls are not separated" do
+      expect_offense(<<~RUBY)
+        class Foo < Formula
+          def install
+            system "make && make install"
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Use separate `make` calls
+          end
+        end
+      RUBY
+    end
+
+    it "reports an offense if paths are concatenated in string interpolation" do
+      expect_offense(<<~RUBY)
+        class Foo < Formula
+          def install
+            ohai "foo \#{bar + "baz"}"
+                      ^^^^^^^^^^^^^^ Do not concatenate paths in string interpolation
+          end
+        end
+      RUBY
+    end
+
+    it 'reports an offense if `prefix + "bin"` is present' do
+      expect_offense(<<~RUBY)
+        class Foo < Formula
+          def install
+            ohai prefix + "bin"
+                 ^^^^^^^^^^^^^^ Use `bin` instead of `prefix + "bin"`
+          end
+        end
+      RUBY
+
+      expect_offense(<<~RUBY)
+        class Foo < Formula
+          def install
+            ohai prefix + "bin/foo"
+                 ^^^^^^^^^^^^^^^^^^ Use `bin` instead of `prefix + "bin"`
           end
         end
       RUBY

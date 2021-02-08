@@ -1,76 +1,121 @@
+# typed: true
 # frozen_string_literal: true
 
-require "cask/download"
+require "cask/audit"
 
 module Cask
+  # Helper class for auditing all available languages of a cask.
+  #
+  # @api private
   class Auditor
-    include Checkable
-    extend Predicable
-
-    def self.audit(cask, audit_download: false, audit_appcast: false,
-                   check_token_conflicts: false, quarantine: true, commit_range: nil)
-      new(cask, audit_download: audit_download,
-                audit_appcast: audit_appcast,
-                check_token_conflicts: check_token_conflicts,
-                quarantine: quarantine, commit_range: commit_range).audit
+    def self.audit(
+      cask,
+      audit_download: nil,
+      audit_appcast: nil,
+      audit_online: nil,
+      audit_new_cask: nil,
+      audit_strict: nil,
+      audit_token_conflicts: nil,
+      quarantine: nil,
+      any_named_args: nil,
+      language: nil
+    )
+      new(
+        cask,
+        audit_download:        audit_download,
+        audit_appcast:         audit_appcast,
+        audit_online:          audit_online,
+        audit_new_cask:        audit_new_cask,
+        audit_strict:          audit_strict,
+        audit_token_conflicts: audit_token_conflicts,
+        quarantine:            quarantine,
+        any_named_args:        any_named_args,
+        language:              language,
+      ).audit
     end
 
-    attr_reader :cask, :commit_range
+    attr_reader :cask, :language
 
-    def initialize(cask, audit_download: false, audit_appcast: false,
-                   check_token_conflicts: false, quarantine: true, commit_range: nil)
+    def initialize(
+      cask,
+      audit_download: nil,
+      audit_appcast: nil,
+      audit_online: nil,
+      audit_strict: nil,
+      audit_token_conflicts: nil,
+      audit_new_cask: nil,
+      quarantine: nil,
+      any_named_args: nil,
+      language: nil
+    )
       @cask = cask
       @audit_download = audit_download
       @audit_appcast = audit_appcast
+      @audit_online = audit_online
+      @audit_new_cask = audit_new_cask
+      @audit_strict = audit_strict
       @quarantine = quarantine
-      @commit_range = commit_range
-      @check_token_conflicts = check_token_conflicts
-    end
-
-    def audit_download?
-      @audit_download
-    end
-
-    attr_predicate :audit_appcast?, :quarantine?
-
-    def check_token_conflicts?
-      @check_token_conflicts
+      @audit_token_conflicts = audit_token_conflicts
+      @any_named_args = any_named_args
+      @language = language
     end
 
     def audit
-      if !ARGV.value("language") && language_blocks
-        audit_all_languages
+      warnings = Set.new
+      errors = Set.new
+
+      if !language && language_blocks
+        language_blocks.each_key do |l|
+          audit = audit_languages(l)
+          puts audit.summary if output_summary?(audit)
+          warnings += audit.warnings
+          errors += audit.errors
+        end
       else
-        audit_cask_instance(cask)
+        audit = audit_cask_instance(cask)
+        puts audit.summary if output_summary?(audit)
+        warnings += audit.warnings
+        errors += audit.errors
       end
+
+      { warnings: warnings, errors: errors }
     end
 
     private
 
-    def audit_all_languages
-      saved_languages = MacOS.instance_variable_get(:@languages)
-      begin
-        language_blocks.keys.all?(&method(:audit_languages))
-      ensure
-        MacOS.instance_variable_set(:@languages, saved_languages)
-      end
+    def output_summary?(audit = nil)
+      return true if @any_named_args.present?
+      return true if @audit_strict.present?
+      return false if audit.blank?
+
+      audit.errors?
     end
 
     def audit_languages(languages)
-      ohai "Auditing language: #{languages.map { |lang| "'#{lang}'" }.to_sentence}"
-      MacOS.instance_variable_set(:@languages, languages)
-      audit_cask_instance(CaskLoader.load(cask.sourcefile_path))
+      ohai "Auditing language: #{languages.map { |lang| "'#{lang}'" }.to_sentence}" if output_summary?
+
+      original_config = cask.config
+      localized_config = original_config.merge(Config.new(explicit: { languages: languages }))
+      cask.config = localized_config
+
+      audit_cask_instance(cask)
+    ensure
+      cask.config = original_config
     end
 
     def audit_cask_instance(cask)
-      download = audit_download? && Download.new(cask, quarantine: quarantine?)
-      audit = Audit.new(cask, check_appcast:         audit_appcast?,
-                              download:              download,
-                              check_token_conflicts: check_token_conflicts?,
-                              commit_range:          commit_range)
+      audit = Audit.new(
+        cask,
+        appcast:         @audit_appcast,
+        online:          @audit_online,
+        strict:          @audit_strict,
+        new_cask:        @audit_new_cask,
+        token_conflicts: @audit_token_conflicts,
+        download:        @audit_download,
+        quarantine:      @quarantine,
+      )
       audit.run!
-      puts audit.summary
-      audit.success?
+      audit
     end
 
     def language_blocks

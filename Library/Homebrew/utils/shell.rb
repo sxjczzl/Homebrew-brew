@@ -1,11 +1,15 @@
+# typed: true
 # frozen_string_literal: true
 
 module Utils
   module Shell
+    extend T::Sig
+
     module_function
 
-    # take a path and heuristically convert it
-    # to a shell name, return nil if there's no match
+    # Take a path and heuristically convert it to a shell name,
+    # return `nil` if there's no match.
+    sig { params(path: String).returns(T.nilable(Symbol)) }
     def from_path(path)
       # we only care about the basename
       shell_name = File.basename(path)
@@ -14,15 +18,18 @@ module Utils
       shell_name.to_sym if %w[bash csh fish ksh mksh sh tcsh zsh].include?(shell_name)
     end
 
+    sig { returns(T.nilable(Symbol)) }
     def preferred
       from_path(ENV.fetch("SHELL", ""))
     end
 
+    sig { returns(T.nilable(Symbol)) }
     def parent
       from_path(`ps -p #{Process.ppid} -o ucomm=`.strip)
     end
 
-    # quote values. quoting keys is overkill
+    # Quote values. Quoting keys is overkill.
+    sig { params(key: String, value: String, shell: T.nilable(Symbol)).returns(T.nilable(String)) }
     def export_value(key, value, shell = preferred)
       case shell
       when :bash, :ksh, :mksh, :sh, :zsh
@@ -37,11 +44,21 @@ module Utils
       end
     end
 
-    # return the shell profile file based on user's preferred shell
+    # Return the shell profile file based on user's preferred shell.
+    sig { returns(String) }
     def profile
-      SHELL_PROFILE_MAP.fetch(preferred, "~/.bash_profile")
+      case preferred
+      when :bash
+        bash_profile = "#{ENV["HOME"]}/.bash_profile"
+        return bash_profile if File.exist? bash_profile
+      when :zsh
+        return "#{ENV["ZDOTDIR"]}/.zshrc" if ENV["ZDOTDIR"].present?
+      end
+
+      SHELL_PROFILE_MAP.fetch(preferred, "~/.profile")
     end
 
+    sig { params(variable: String, value: String).returns(T.nilable(String)) }
     def set_variable_in_profile(variable, value)
       case preferred
       when :bash, :ksh, :sh, :zsh, nil
@@ -53,6 +70,7 @@ module Utils
       end
     end
 
+    sig { params(path: String).returns(T.nilable(String)) }
     def prepend_path_in_profile(path)
       case preferred
       when :bash, :ksh, :mksh, :sh, :zsh, nil
@@ -65,18 +83,19 @@ module Utils
     end
 
     SHELL_PROFILE_MAP = {
-      bash: "~/.bash_profile",
+      bash: "~/.profile",
       csh:  "~/.cshrc",
       fish: "~/.config/fish/config.fish",
       ksh:  "~/.kshrc",
       mksh: "~/.kshrc",
-      sh:   "~/.bash_profile",
+      sh:   "~/.profile",
       tcsh: "~/.tcshrc",
       zsh:  "~/.zshrc",
     }.freeze
 
     UNSAFE_SHELL_CHAR = %r{([^A-Za-z0-9_\-.,:/@~\n])}.freeze
 
+    sig { params(str: String).returns(String) }
     def csh_quote(str)
       # ruby's implementation of shell_escape
       str = str.to_s
@@ -84,12 +103,13 @@ module Utils
 
       str = str.dup
       # anything that isn't a known safe character is padded
-      str.gsub!(UNSAFE_SHELL_CHAR, "\\\\" + "\\1")
+      str.gsub!(UNSAFE_SHELL_CHAR, "\\\\" + "\\1") # rubocop:disable Style/StringConcatenation
       # newlines have to be specially quoted in csh
       str.gsub!(/\n/, "'\\\n'")
       str
     end
 
+    sig { params(str: String).returns(String) }
     def sh_quote(str)
       # ruby's implementation of shell_escape
       str = str.to_s
@@ -97,7 +117,7 @@ module Utils
 
       str = str.dup
       # anything that isn't a known safe character is padded
-      str.gsub!(UNSAFE_SHELL_CHAR, "\\\\" + "\\1")
+      str.gsub!(UNSAFE_SHELL_CHAR, "\\\\" + "\\1") # rubocop:disable Style/StringConcatenation
       str.gsub!(/\n/, "'\n'")
       str
     end

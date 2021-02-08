@@ -1,9 +1,11 @@
+# typed: false
 # frozen_string_literal: true
 
 require "formula"
 require "formula_installer"
 require "keg"
 require "tab"
+require "cmd/install"
 require "test/support/fixtures/testball"
 require "test/support/fixtures/testball_bottle"
 require "test/support/fixtures/failball"
@@ -16,16 +18,17 @@ describe FormulaInstaller do
     match(&:poured_from_bottle)
   end
 
-  def temporary_install(formula)
-    expect(formula).not_to be_installed
+  def temporary_install(formula, **options)
+    expect(formula).not_to be_latest_version_installed
 
-    installer = described_class.new(formula)
+    installer = described_class.new(formula, **options)
 
+    installer.fetch
     installer.install
 
     keg = Keg.new(formula.prefix)
 
-    expect(formula).to be_installed
+    expect(formula).to be_latest_version_installed
 
     begin
       Tab.clear_cache
@@ -42,12 +45,10 @@ describe FormulaInstaller do
     end
 
     expect(keg).not_to exist
-    expect(formula).not_to be_installed
+    expect(formula).not_to be_latest_version_installed
   end
 
   specify "basic installation" do
-    ARGV << "--with-invalid_flag" # added to ensure it doesn't fail install
-
     temporary_install(Testball.new) do |f|
       # Test that things made it into the Keg
       expect(f.prefix/"readme").to exist
@@ -84,17 +85,12 @@ describe FormulaInstaller do
     expect(formula).to have_disabled_bottle
 
     temporary_install(formula) do |f|
-      expect(f).to be_installed
+      expect(f).to be_latest_version_installed
     end
   end
 
   specify "Formula is not poured from bottle when compiler specified" do
-    expect(ARGV.cc).to be nil
-
-    cc_arg = "--cc=clang"
-    ARGV << cc_arg
-
-    temporary_install(TestballBottle.new) do |f|
+    temporary_install(TestballBottle.new, cc: "clang") do |f|
       tab = Tab.for_formula(f)
       expect(tab.compiler).to eq("clang")
     end
@@ -158,6 +154,7 @@ describe FormulaInstaller do
 
     it "shows audit problems if HOMEBREW_DEVELOPER is set" do
       ENV["HOMEBREW_DEVELOPER"] = "1"
+      formula_installer.fetch
       formula_installer.install
       expect(formula_installer).to receive(:audit_installed).and_call_original
       formula_installer.caveats

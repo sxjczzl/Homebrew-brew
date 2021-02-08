@@ -1,6 +1,9 @@
 #!/usr/bin/env ruby
+# frozen_string_literal: true
 
 require "English"
+
+SimpleCov.enable_for_subprocesses true
 
 SimpleCov.start do
   coverage_dir File.expand_path("../test/coverage", File.realpath(__FILE__))
@@ -11,26 +14,40 @@ SimpleCov.start do
   # tests to be dropped. This causes random fluctuations in test coverage.
   merge_timeout 86400
 
+  at_fork do |pid|
+    # This needs a unique name so it won't be ovewritten
+    command_name "#{SimpleCov.command_name} (#{pid})"
+
+    # be quiet, the parent process will be in charge of output and checking coverage totals
+    SimpleCov.print_error_status = false
+  end
+
   if ENV["HOMEBREW_INTEGRATION_TEST"]
+    # This needs a unique name so it won't be ovewritten
     command_name "#{ENV["HOMEBREW_INTEGRATION_TEST"]} (#{$PROCESS_ID})"
 
-    at_exit do
-      exit_code = $ERROR_INFO.nil? ? 0 : $ERROR_INFO.status
-      $stdout.reopen("/dev/null")
+    # be quiet, the parent process will be in charge of output and checking coverage totals
+    SimpleCov.print_error_status = false
 
+    SimpleCov.at_exit do
       # Just save result, but don't write formatted output.
       coverage_result = Coverage.result
-      SimpleCov.add_not_loaded_files(coverage_result)
+      # TODO: this method is private, find a better way.
+      SimpleCov.send(:add_not_loaded_files, coverage_result)
       simplecov_result = SimpleCov::Result.new(coverage_result)
       SimpleCov::ResultMerger.store_result(simplecov_result)
 
-      exit! exit_code
+      # If an integration test raises a `SystemExit` exception on exit,
+      # exit immediately using the same status code to avoid reporting
+      # an error when expecting a non-successful exit status.
+      raise if $ERROR_INFO.is_a?(SystemExit)
     end
   else
     command_name "#{command_name} (#{$PROCESS_ID})"
 
+    excludes = ["test", "vendor"]
     subdirs = Dir.chdir(SimpleCov.root) { Dir.glob("*") }
-                 .reject { |d| d.end_with?(".rb") || ["test", "vendor"].include?(d) }
+                 .reject { |d| d.end_with?(".rb") || excludes.include?(d) }
                  .map { |d| "#{d}/**/*.rb" }.join(",")
 
     # Not using this during integration tests makes the tests 4x times faster
@@ -50,8 +67,8 @@ SimpleCov.start do
 
   require "rbconfig"
   host_os = RbConfig::CONFIG["host_os"]
-  add_filter %r{/os/mac} if host_os !~ /darwin/
-  add_filter %r{/os/linux} if host_os !~ /linux/
+  add_filter %r{/os/mac} unless /darwin/.match?(host_os)
+  add_filter %r{/os/linux} unless /linux/.match?(host_os)
 
   # Add groups and the proper project name to the output.
   project_name "Homebrew"

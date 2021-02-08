@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require "formula"
@@ -8,36 +9,33 @@ require "socket"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
+  extend Install
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def gist_logs_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `gist-logs` [<options>] <formula>
-
-        Upload logs for a failed build of <formula> to a new Gist.
-
-        <formula> is usually the name of the formula to install, but it can be specified
-        in several different ways.
-
-        If no logs are found, an error message is presented.
+      description <<~EOS
+        Upload logs for a failed build of <formula> to a new Gist. Presents an
+        error message if no logs are found.
       EOS
       switch "--with-hostname",
              description: "Include the hostname in the Gist."
       switch "-n", "--new-issue",
-             description: "Automatically create a new issue in the appropriate GitHub repository as "\
-                          "well as creating the Gist."
+             description: "Automatically create a new issue in the appropriate GitHub repository "\
+                          "after creating the Gist."
       switch "-p", "--private",
              description: "The Gist will be marked private and will not appear in listings but will "\
-                          "be accessible with the link."
-      switch :verbose
-      switch :debug
+                          "be accessible with its link."
+
+      named_args :formula, number: 1
     end
   end
 
-  def gistify_logs(f)
-    gist_logs_args.parse
-
+  def gistify_logs(f, args:)
     files = load_logs(f.logs)
     build_time = f.logs.ctime
     timestamp = build_time.strftime("%Y-%m-%d_%H-%M-%S")
@@ -45,7 +43,7 @@ module Homebrew
     s = StringIO.new
     SystemConfig.dump_verbose_config s
     # Dummy summary file, asciibetically first, to control display title of gist
-    files["# #{f.name} - #{timestamp}.txt"] = { content: brief_build_info(f) }
+    files["# #{f.name} - #{timestamp}.txt"] = { content: brief_build_info(f, with_hostname: args.with_hostname?) }
     files["00.config.out"] = { content: s.string }
     files["00.doctor.out"] = { content: Utils.popen_read("#{HOMEBREW_PREFIX}/bin/brew", "doctor", err: :out) }
     unless f.core_formula?
@@ -57,35 +55,27 @@ module Homebrew
       files["00.tap.out"] = { content: tap }
     end
 
-    if GitHub.api_credentials_type == :none
-      puts <<~EOS
-        You can create a new personal access token:
-          #{GitHub::ALL_SCOPES_URL}
-        #{Utils::Shell.set_variable_in_profile("HOMEBREW_GITHUB_API_TOKEN", "your_token_here")}
-
-      EOS
-      login!
-    end
+    odie "`brew gist-logs` requires HOMEBREW_GITHUB_API_TOKEN to be set!" if GitHub.api_credentials_type == :none
 
     # Description formatted to work well as page title when viewing gist
-    if f.core_formula?
-      descr = "#{f.name} on #{OS_VERSION} - Homebrew build logs"
+    descr = if f.core_formula?
+      "#{f.name} on #{OS_VERSION} - Homebrew build logs"
     else
-      descr = "#{f.name} (#{f.full_name}) on #{OS_VERSION} - Homebrew build logs"
+      "#{f.name} (#{f.full_name}) on #{OS_VERSION} - Homebrew build logs"
     end
-    url = create_gist(files, descr)
+    url = create_gist(files, descr, private: args.private?)
 
     url = create_issue(f.tap, "#{f.name} failed to build on #{MacOS.full_version}", url) if args.new_issue?
 
     puts url if url
   end
 
-  def brief_build_info(f)
+  def brief_build_info(f, with_hostname:)
     build_time_str = f.logs.ctime.strftime("%Y-%m-%d %H:%M:%S")
     s = +<<~EOS
       Homebrew build logs for #{f.full_name} on #{OS_VERSION}
     EOS
-    if args.with_hostname?
+    if with_hostname
       hostname = Socket.gethostname
       s << "Host: #{hostname}\n"
     end
@@ -93,21 +83,13 @@ module Homebrew
     s.freeze
   end
 
-  # Causes some terminals to display secure password entry indicators
+  # Causes some terminals to display secure password entry indicators.
   def noecho_gets
     system "stty -echo"
     result = $stdin.gets
     system "stty echo"
     puts
     result
-  end
-
-  def login!
-    print "GitHub User: "
-    ENV["HOMEBREW_GITHUB_API_USERNAME"] = $stdin.gets.chomp
-    print "Password: "
-    ENV["HOMEBREW_GITHUB_API_PASSWORD"] = noecho_gets.chomp
-    puts
   end
 
   def load_logs(dir)
@@ -121,18 +103,14 @@ module Homebrew
         logs[file.basename.to_s] = { content: contents }
       end
     end
-    raise "No logs." if logs.empty?
+    odie "No logs." if logs.empty?
 
     logs
   end
 
-  def create_private?
-    args.private?
-  end
-
-  def create_gist(files, description)
+  def create_gist(files, description, private:)
     url = "https://api.github.com/gists"
-    data = { "public" => !create_private?, "files" => files, "description" => description }
+    data = { "public" => !private, "files" => files, "description" => description }
     scopes = GitHub::CREATE_GIST_SCOPES
     GitHub.open_api(url, data: data, scopes: scopes)["html_url"]
   end
@@ -145,10 +123,10 @@ module Homebrew
   end
 
   def gist_logs
-    raise FormulaUnspecifiedError if ARGV.resolved_formulae.length != 1
+    args = gist_logs_args.parse
 
     Install.perform_preinstall_checks(all_fatal: true)
     Install.perform_build_from_source_checks(all_fatal: true)
-    gistify_logs(ARGV.resolved_formulae.first)
+    gistify_logs(args.named.to_resolved_formulae.first, args: args)
   end
 end

@@ -1,23 +1,29 @@
+# typed: false
 # frozen_string_literal: true
 
 require "formula"
 require "ostruct"
 require "cli/parser"
+require "cask/caskroom"
+require "dependencies_helpers"
 
 module Homebrew
+  extend T::Sig
+
+  extend DependenciesHelpers
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def deps_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `deps` [<options>] <formula>
-
+      description <<~EOS
         Show dependencies for <formula>. Additional options specific to <formula>
         may be appended to the command. When given multiple formula arguments,
         show the intersection of dependencies for each formula.
       EOS
       switch "-n",
-             description: "Show dependencies in topological order."
+             description: "Sort dependencies in topological order."
       switch "--1",
              description: "Only show dependencies one level down, instead of recursing."
       switch "--union",
@@ -47,74 +53,99 @@ module Homebrew
              description: "List dependencies for all available formulae."
       switch "--for-each",
              description: "Switch into the mode used by the `--all` option, but only list dependencies "\
-                          "for the specified <formula>, one formula per line. This is used for "\
+                          "for each provided <formula>, one formula per line. This is used for "\
                           "debugging the `--installed`/`--all` display mode."
-      switch :verbose
-      switch :debug
+      switch "--formula", "--formulae",
+             depends_on:  "--installed",
+             description: "Treat all named arguments as formulae."
+      switch "--cask", "--casks",
+             depends_on:  "--installed",
+             description: "Treat all named arguments as casks."
+
       conflicts "--installed", "--all"
+      conflicts "--formula", "--cask"
       formula_options
+
+      named_args [:formula, :cask]
     end
   end
 
   def deps
-    deps_args.parse
-    mode = OpenStruct.new(
-      installed?:  args.installed?,
-      tree?:       args.tree?,
-      all?:        args.all?,
-      topo_order?: args.n?,
-      union?:      args.union?,
-      for_each?:   args.for_each?,
-      recursive?:  !args.send("1?"),
-    )
+    args = deps_args.parse
 
-    if mode.tree?
-      if mode.installed?
-        puts_deps_tree Formula.installed.sort, mode.recursive?
+    Formulary.enable_factory_cache!
+
+    recursive = !args.send("1?")
+    installed = args.installed? || dependents(args.named.to_formulae_and_casks).all?(&:any_version_installed?)
+
+    @use_runtime_dependencies = installed && recursive &&
+                                !args.tree? &&
+                                !args.include_build? &&
+                                !args.include_test? &&
+                                !args.include_optional? &&
+                                !args.skip_recommended?
+
+    if args.tree?
+      dependents = if args.named.present?
+        sorted_dependents(args.named.to_formulae_and_casks)
+      elsif args.installed?
+        case args.only_formula_or_cask
+        when :formula
+          sorted_dependents(Formula.installed)
+        when :cask
+          sorted_dependents(Cask::Caskroom.casks(config: Cask::Config.from_args(args)))
+        else
+          sorted_dependents(Formula.installed + Cask::Caskroom.casks(config: Cask::Config.from_args(args)))
+        end
       else
-        raise FormulaUnspecifiedError if args.remaining.empty?
-
-        puts_deps_tree ARGV.formulae, mode.recursive?
+        raise FormulaUnspecifiedError
       end
-      return
-    elsif mode.all?
-      puts_deps Formula.sort, mode.recursive?
-      return
-    elsif !args.remaining.empty? && mode.for_each?
-      puts_deps ARGV.formulae, mode.recursive?
-      return
-    end
 
-    @only_installed_arg = mode.installed? &&
-                          mode.recursive? &&
-                          !args.include_build? &&
-                          !args.include_test? &&
-                          !args.include_optional? &&
-                          !args.skip_recommended?
-
-    if args.remaining.empty?
-      raise FormulaUnspecifiedError unless mode.installed?
-
-      puts_deps Formula.installed.sort, mode.recursive?
+      puts_deps_tree dependents, recursive: recursive, args: args
+      return
+    elsif args.all?
+      puts_deps sorted_dependents(Formula.to_a + Cask::Cask.to_a), recursive: recursive, args: args
+      return
+    elsif !args.no_named? && args.for_each?
+      puts_deps sorted_dependents(args.named.to_formulae_and_casks), recursive: recursive, args: args
       return
     end
 
-    all_deps = deps_for_formulae(ARGV.formulae, mode.recursive?, &(mode.union? ? :| : :&))
-    all_deps = condense_requirements(all_deps)
-    all_deps.select!(&:installed?) if mode.installed?
-    all_deps.map!(&method(:dep_display_name))
+    if args.no_named?
+      raise FormulaUnspecifiedError unless args.installed?
+
+      sorted_dependents_formulae_and_casks = case args.only_formula_or_cask
+      when :formula
+        sorted_dependents(Formula.installed)
+      when :cask
+        sorted_dependents(Cask::Caskroom.casks(config: Cask::Config.from_args(args)))
+      else
+        sorted_dependents(Formula.installed + Cask::Caskroom.casks(config: Cask::Config.from_args(args)))
+      end
+      puts_deps sorted_dependents_formulae_and_casks, recursive: recursive, args: args
+      return
+    end
+
+    dependents = dependents(args.named.to_formulae_and_casks)
+
+    all_deps = deps_for_dependents(dependents, recursive: recursive, args: args, &(args.union? ? :| : :&))
+    condense_requirements(all_deps, args: args)
+    all_deps.map! { |d| dep_display_name(d, args: args) }
     all_deps.uniq!
-    all_deps.sort! unless mode.topo_order?
+    all_deps.sort! unless args.n?
     puts all_deps
   end
 
-  def condense_requirements(deps)
-    return deps if args.include_requirements?
-
-    deps.select { |dep| dep.is_a? Dependency }
+  def sorted_dependents(formulae_or_casks)
+    dependents(formulae_or_casks).sort_by(&:name)
   end
 
-  def dep_display_name(dep)
+  def condense_requirements(deps, args:)
+    deps.select! { |dep| dep.is_a?(Dependency) } unless args.include_requirements?
+    deps.select! { |dep| dep.is_a?(Requirement) || dep.installed? } if args.installed?
+  end
+
+  def dep_display_name(dep, args:)
     str = if dep.is_a? Requirement
       if args.include_requirements?
         ":#{dep.display_s}"
@@ -139,53 +170,52 @@ module Homebrew
     str
   end
 
-  def deps_for_formula(f, recursive = false)
-    includes, ignores = argv_includes_ignores(ARGV)
+  def deps_for_dependent(d, args:, recursive: false)
+    includes, ignores = args_includes_ignores(args)
 
-    deps = f.runtime_dependencies if @only_installed_arg
+    deps = d.runtime_dependencies if @use_runtime_dependencies
 
     if recursive
-      deps ||= recursive_includes(Dependency,  f, includes, ignores)
-      reqs   = recursive_includes(Requirement, f, includes, ignores)
+      deps ||= recursive_includes(Dependency, d, includes, ignores)
+      reqs   = recursive_includes(Requirement, d, includes, ignores)
     else
-      deps ||= reject_ignores(f.deps, ignores, includes)
-      reqs   = reject_ignores(f.requirements, ignores, includes)
+      deps ||= reject_ignores(d.deps, ignores, includes)
+      reqs   = reject_ignores(d.requirements, ignores, includes)
     end
 
     deps + reqs.to_a
   end
 
-  def deps_for_formulae(formulae, recursive = false, &block)
-    formulae.map { |f| deps_for_formula(f, recursive) }.reduce(&block)
+  def deps_for_dependents(dependents, args:, recursive: false, &block)
+    dependents.map { |d| deps_for_dependent(d, recursive: recursive, args: args) }.reduce(&block)
   end
 
-  def puts_deps(formulae, recursive = false)
-    formulae.each do |f|
-      deps = deps_for_formula(f, recursive)
-      deps = condense_requirements(deps)
+  def puts_deps(dependents, args:, recursive: false)
+    dependents.each do |dependent|
+      deps = deps_for_dependent(dependent, recursive: recursive, args: args)
+      condense_requirements(deps, args: args)
       deps.sort_by!(&:name)
-      deps.map!(&method(:dep_display_name))
-      puts "#{f.full_name}: #{deps.join(" ")}"
+      deps.map! { |d| dep_display_name(d, args: args) }
+      puts "#{dependent.full_name}: #{deps.join(" ")}"
     end
   end
 
-  def puts_deps_tree(formulae, recursive = false)
-    formulae.each do |f|
-      puts f.full_name
+  def puts_deps_tree(dependents, args:, recursive: false)
+    dependents.each do |d|
+      puts d.full_name
       @dep_stack = []
-      recursive_deps_tree(f, "", recursive)
+      recursive_deps_tree(d, "", recursive, args: args)
       puts
     end
   end
 
-  def recursive_deps_tree(f, prefix, recursive)
-    reqs = f.requirements
-    deps = f.deps
+  def recursive_deps_tree(f, prefix, recursive, args:)
+    includes, ignores = args_includes_ignores(args)
+    dependables = @use_runtime_dependencies ? f.runtime_dependencies : f.deps
+    deps = reject_ignores(dependables, ignores, includes)
+    reqs = reject_ignores(f.requirements, ignores, includes)
     dependables = reqs + deps
-    dependables.reject!(&:optional?) unless args.include_optional?
-    dependables.reject!(&:build?) unless args.include_build?
-    dependables.reject!(&:test?) unless args.include_test?
-    dependables.reject!(&:recommended?) if args.skip_recommended?
+
     max = dependables.length - 1
     @dep_stack.push f.name
     dependables.each_with_index do |dep, i|
@@ -197,7 +227,7 @@ module Homebrew
         "├──"
       end
 
-      display_s = "#{tree_lines} #{dep_display_name(dep)}"
+      display_s = "#{tree_lines} #{dep_display_name(dep, args: args)}"
       is_circular = @dep_stack.include?(dep.name)
       display_s = "#{display_s} (CIRCULAR DEPENDENCY)" if is_circular
       puts "#{prefix}#{display_s}"
@@ -210,7 +240,9 @@ module Homebrew
         "│   "
       end
 
-      recursive_deps_tree(Formulary.factory(dep.name), prefix + prefix_addition, true) if dep.is_a? Dependency
+      if dep.is_a? Dependency
+        recursive_deps_tree(Formulary.factory(dep.name), prefix + prefix_addition, true, args: args)
+      end
     end
 
     @dep_stack.pop

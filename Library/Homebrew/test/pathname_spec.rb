@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "extend/pathname"
@@ -259,7 +260,7 @@ describe Pathname do
 
   describe InstallRenamed do
     before do
-      dst.extend(InstallRenamed)
+      dst.extend(described_class)
     end
 
     it "renames the installed file if it already exists" do

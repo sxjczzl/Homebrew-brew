@@ -1,7 +1,12 @@
+# typed: false
 # frozen_string_literal: true
 
-describe "brew deps", :integration_test do
-  it "outputs all of a Formula's dependencies and their dependencies on separate lines" do
+require "cmd/shared_examples/args_parse"
+
+describe "brew deps" do
+  it_behaves_like "parseable arguments"
+
+  it "outputs all of a Formula's dependencies and their dependencies on separate lines", :integration_test do
     setup_test_formula "foo"
     setup_test_formula "bar"
     setup_test_formula "baz", <<~RUBY

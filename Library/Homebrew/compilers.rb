@@ -1,9 +1,10 @@
+# typed: true
 # frozen_string_literal: true
 
 # @private
 module CompilerConstants
-  GNU_GCC_VERSIONS = %w[4.9 5 6 7 8 9].freeze
-  GNU_GCC_REGEXP = /^gcc-(4\.9|[5-9])$/.freeze
+  GNU_GCC_VERSIONS = %w[4.9 5 6 7 8 9 10].freeze
+  GNU_GCC_REGEXP = /^gcc-(4\.9|[5-9]|10)$/.freeze
   COMPILER_SYMBOL_MAP = {
     "gcc"        => :gcc,
     "clang"      => :clang,
@@ -14,6 +15,9 @@ module CompilerConstants
                GNU_GCC_VERSIONS.map { |n| "gcc-#{n}" }).freeze
 end
 
+# Class for checking compiler compatibility for a formula.
+#
+# @api private
 class CompilerFailure
   attr_reader :name
 
@@ -23,10 +27,10 @@ class CompilerFailure
   end
 
   # Allows Apple compiler `fails_with` statements to keep using `build`
-  # even though `build` and `version` are the same internally
+  # even though `build` and `version` are the same internally.
   alias build version
 
-  # The cause is no longer used so we need not hold a reference to the string
+  # The cause is no longer used so we need not hold a reference to the string.
   def cause(_); end
 
   def self.for_standard(standard)
@@ -52,7 +56,7 @@ class CompilerFailure
   def initialize(name, version, &block)
     @name = name
     @version = Version.parse(version.to_s)
-    instance_eval(&block) if block_given?
+    instance_eval(&block) if block
   end
 
   def fails_with?(compiler)
@@ -70,7 +74,11 @@ class CompilerFailure
   }.freeze
 end
 
+# Class for selecting a compiler for a formula.
+#
+# @api private
 class CompilerSelector
+  extend T::Sig
   include CompilerConstants
 
   Compiler = Struct.new(:name, :version)
@@ -104,9 +112,14 @@ class CompilerSelector
 
   private
 
+  sig { returns(String) }
+  def preferred_gcc
+    "gcc"
+  end
+
   def gnu_gcc_versions
     # prioritize gcc version provided by gcc formula.
-    v = Formulary.factory("gcc").version.to_s.slice(/\d/)
+    v = Formulary.factory(preferred_gcc).version.to_s.slice(/\d+/)
     GNU_GCC_VERSIONS - [v] + [v] # move the version to the end of the list
   rescue FormulaUnavailableError
     GNU_GCC_VERSIONS
@@ -143,3 +156,5 @@ class CompilerSelector
     end
   end
 end
+
+require "extend/os/compilers"

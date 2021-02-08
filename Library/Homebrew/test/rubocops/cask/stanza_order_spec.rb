@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "rubocops/rubocop-cask"
@@ -202,7 +203,7 @@ describe RuboCop::Cop::Cask::StanzaOrder do
         cask 'foo' do
           name 'Foo'
           url 'https://foo.brew.sh/foo.zip'
-          %{caveats}
+          %<caveats>s
           version :latest
           app 'Foo.app'
           sha256 :no_check
@@ -217,7 +218,7 @@ describe RuboCop::Cop::Cask::StanzaOrder do
           url 'https://foo.brew.sh/foo.zip'
           name 'Foo'
           app 'Foo.app'
-          %{caveats}
+          %<caveats>s
         end
       CASK
     end

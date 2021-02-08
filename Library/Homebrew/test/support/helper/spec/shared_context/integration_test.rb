@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "open3"
@@ -12,7 +13,8 @@ RSpec.shared_context "integration test" do
   matcher :be_a_success do
     match do |actual|
       status = actual.is_a?(Proc) ? actual.call : actual
-      status.respond_to?(:success?) && status.success?
+      expect(status).to respond_to(:success?)
+      status.success?
     end
 
     def supports_block_expectations?
@@ -41,15 +43,12 @@ RSpec.shared_context "integration test" do
   end
 
   around do |example|
-    begin
-      (HOMEBREW_PREFIX/"bin").mkpath
-      FileUtils.touch HOMEBREW_PREFIX/"bin/brew"
+    (HOMEBREW_PREFIX/"bin").mkpath
+    FileUtils.touch HOMEBREW_PREFIX/"bin/brew"
 
-      example.run
-    ensure
-      FileUtils.rm HOMEBREW_PREFIX/"bin/brew"
-      FileUtils.rmdir HOMEBREW_PREFIX/"bin"
-    end
+    example.run
+  ensure
+    FileUtils.rm_rf HOMEBREW_PREFIX/"bin"
   end
 
   # Generate unique ID to be able to
@@ -69,8 +68,10 @@ RSpec.shared_context "integration test" do
     env = args.last.is_a?(Hash) ? args.pop : {}
 
     # Avoid warnings when HOMEBREW_PREFIX/bin is not in PATH.
+    # Also include our extra commands directory.
     path = [
       env["PATH"],
+      (HOMEBREW_LIBRARY_PATH/"test/support/helper/cmd").realpath.to_s,
       (HOMEBREW_PREFIX/"bin").realpath.to_s,
       ENV["PATH"],
     ].compact.join(File::PATH_SEPARATOR)
@@ -87,19 +88,16 @@ RSpec.shared_context "integration test" do
 
     @ruby_args ||= begin
       ruby_args = [
-        "-W0",
+        ENV["HOMEBREW_RUBY_WARNINGS"],
         "-I", $LOAD_PATH.join(File::PATH_SEPARATOR)
       ]
       if ENV["HOMEBREW_TESTS_COVERAGE"]
-        require "rubygems"
         simplecov_spec = Gem.loaded_specs["simplecov"]
         specs = [simplecov_spec]
         simplecov_spec.runtime_dependencies.each do |dep|
-          begin
-            specs += dep.to_specs
-          rescue Gem::LoadError => e
-            onoe e
-          end
+          specs += dep.to_specs
+        rescue Gem::LoadError => e
+          onoe e
         end
         libs = specs.flat_map do |spec|
           full_gem_path = spec.full_gem_path
@@ -125,7 +123,7 @@ RSpec.shared_context "integration test" do
     end
   end
 
-  def setup_test_formula(name, content = nil)
+  def setup_test_formula(name, content = nil, bottle_block: nil)
     case name
     when /^testball/
       tarball = if OS.linux?
@@ -140,7 +138,7 @@ RSpec.shared_context "integration test" do
         sha256 "#{tarball.sha256}"
 
         option "with-foo", "Build with foo"
-
+        #{bottle_block}
         def install
           (prefix/"foo"/"test").write("test") if build.with? "foo"
           prefix.install Dir["*"]
@@ -154,7 +152,7 @@ RSpec.shared_context "integration test" do
 
         # something here
       RUBY
-    when "foo"
+    when "foo", "patchelf"
       content = <<~RUBY
         url "https://brew.sh/#{name}-1.0"
       RUBY
@@ -163,16 +161,17 @@ RSpec.shared_context "integration test" do
         url "https://brew.sh/#{name}-1.0"
         depends_on "foo"
       RUBY
-    when "patchelf"
+    when "package_license"
       content = <<~RUBY
-        url "https://brew.sh/#{name}-1.0"
+        url "https://brew.sh/#patchelf-1.0"
+        license "0BSD"
       RUBY
     end
 
     Formulary.core_path(name).tap do |formula_path|
       formula_path.write <<~RUBY
         class #{Formulary.class_s(name)} < Formula
-          #{content}
+        #{content.indent(2)}
         end
       RUBY
     end
@@ -180,9 +179,9 @@ RSpec.shared_context "integration test" do
 
   def install_test_formula(name, content = nil, build_bottle: false)
     setup_test_formula(name, content)
-    fi = FormulaInstaller.new(Formula[name])
-    fi.build_bottle = build_bottle
+    fi = FormulaInstaller.new(Formula[name], build_bottle: build_bottle)
     fi.prelude
+    fi.fetch
     fi.install
     fi.finish
   end

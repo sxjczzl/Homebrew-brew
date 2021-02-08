@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 class Keg
@@ -38,10 +39,10 @@ class Keg
     end
   end
 
-  # Detects the C++ dynamic libraries in place, scanning the dynamic links
+  # Detects the C++ dynamic libraries in-place, scanning the dynamic links
   # of the files within the keg.
   # Note that this doesn't attempt to distinguish between libstdc++ versions,
-  # for instance between Apple libstdc++ and GNU libstdc++
+  # for instance between Apple libstdc++ and GNU libstdc++.
   def detect_cxx_stdlibs(options = {})
     skip_executables = options.fetch(:skip_executables, false)
     results = Set.new
@@ -76,7 +77,7 @@ class Keg
         # remove all RPATHs from the file.
         if ENV["HOMEBREW_RELOCATE_METAVARS"] &&
            file.dynamically_linked_libraries.none? { |lib| lib.start_with?("@rpath") }
-          # Note: This could probably be made more efficient by reverse-sorting
+          # NOTE: This could probably be made more efficient by reverse-sorting
           # the RPATHs by offset and calling MachOFile#delete_command
           # with repopulate: false.
           file.rpaths.each { |r| file.delete_rpath(r) }
@@ -106,10 +107,12 @@ class Keg
       bad_name.sub(PREFIX_PLACEHOLDER, HOMEBREW_PREFIX)
     elsif bad_name.start_with? CELLAR_PLACEHOLDER
       bad_name.sub(CELLAR_PLACEHOLDER, HOMEBREW_CELLAR)
-    elsif (file.dylib? || file.mach_o_bundle?) && (file.parent + bad_name).exist?
+    elsif (file.dylib? || file.mach_o_bundle?) && (file.dirname/bad_name).exist?
       "@loader_path/#{bad_name}"
-    elsif file.mach_o_executable? && (lib + bad_name).exist?
+    elsif file.mach_o_executable? && (lib/bad_name).exist?
       "#{lib}/#{bad_name}"
+    elsif file.mach_o_executable? && (libexec/"lib"/bad_name).exist?
+      "#{libexec}/lib/#{bad_name}"
     elsif bad_name.start_with?("@rpath") && ENV["HOMEBREW_RELOCATE_METAVARS"]
       expand_rpath file, bad_name
     elsif (abs_name = find_dylib(bad_name)) && abs_name.exist?
@@ -159,7 +162,7 @@ class Keg
     mach_o_files = []
     path.find do |pn|
       next if pn.symlink? || pn.directory?
-      next unless pn.dylib? || pn.mach_o_bundle? || pn.mach_o_executable?
+      next if !pn.dylib? && !pn.mach_o_bundle? && !pn.mach_o_executable?
       # if we've already processed a file, ignore its hardlinks (which have the same dev ID and inode)
       # this prevents relocations from being performed on a binary more than once
       next unless hardlinks.add? [pn.stat.dev, pn.stat.ino]

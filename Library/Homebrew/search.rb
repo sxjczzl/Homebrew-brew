@@ -1,9 +1,13 @@
+# typed: false
 # frozen_string_literal: true
 
 require "searchable"
 require "description_cache_store"
 
 module Homebrew
+  # Helper module for searching formulae or casks.
+  #
+  # @api private
   module Search
     def query_regexp(query)
       if m = query.match(%r{^/(.*)/$})
@@ -30,7 +34,7 @@ module Homebrew
 
       results = { formulae: [], casks: [] }
 
-      return results if ENV["HOMEBREW_NO_GITHUB_API"]
+      return results if Homebrew::EnvConfig.no_github_api?
 
       unless silent
         # Use stderr to avoid breaking parsed output
@@ -46,8 +50,10 @@ module Homebrew
         )
       rescue GitHub::Error => e
         opoo "Error searching on GitHub: #{e}\n"
-        return results
+        nil
       end
+
+      return results if matches.blank?
 
       matches.each do |match|
         name = File.basename(match["path"], ".rb")

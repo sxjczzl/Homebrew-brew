@@ -1,41 +1,41 @@
+# typed: true
 # frozen_string_literal: true
 
 require "migrator"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def migrate_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `migrate` [<options>] <formula>
-
-        Migrate renamed packages to new name, where <formula> are old names of
+      description <<~EOS
+        Migrate renamed packages to new names, where <formula> are old names of
         packages.
       EOS
-      switch :force,
-             description: "Treat installed <formula> and passed <formula> like if they are from "\
-                          "same taps and migrate them anyway."
-      switch :verbose
-      switch :debug
+      switch "-f", "--force",
+             description: "Treat installed <formula> and provided <formula> as if they are from "\
+                          "the same taps and migrate them anyway."
+
+      named_args :installed_formula, min: 1
     end
   end
 
   def migrate
-    migrate_args.parse
+    args = migrate_args.parse
 
-    raise FormulaUnspecifiedError if ARGV.named.empty?
-
-    ARGV.resolved_formulae.each do |f|
+    args.named.to_resolved_formulae.each do |f|
       if f.oldname
-        unless (rack = HOMEBREW_CELLAR/f.oldname).exist? && !rack.subdirs.empty?
-          raise NoSuchKegError, f.oldname
-        end
-        raise "#{rack} is a symlink" if rack.symlink?
+        rack = HOMEBREW_CELLAR/f.oldname
+        raise NoSuchKegError, f.oldname if !rack.exist? || rack.subdirs.empty?
+
+        odie "#{rack} is a symlink" if rack.symlink?
       end
 
-      migrator = Migrator.new(f)
+      migrator = Migrator.new(f, force: args.force?)
       migrator.migrate
     end
   end
