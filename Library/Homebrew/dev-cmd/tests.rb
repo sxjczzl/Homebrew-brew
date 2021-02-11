@@ -9,6 +9,8 @@ module Homebrew
 
   module_function
 
+  RSPEC = (HOMEBREW_LIBRARY_PATH/"utils/rspec.rb").freeze
+
   sig { returns(CLI::Parser) }
   def tests_args
     Homebrew::CLI::Parser.new do
@@ -144,9 +146,13 @@ module Homebrew
       ENV["GEM_PATH"] = "#{ENV["GEM_PATH"]}:#{gem_user_dir}"
 
       if parallel
-        system "bundle", "exec", "parallel_rspec", *parallel_args, "--", *bundle_args, "--", *files
+        require "parallel_tests"
+
+        ENV["PARALLEL_TESTS_EXECUTABLE"] = "bundle exec #{RSPEC}"
+
+        ParallelTests::CLI.new.run(["--type", "rspec", *parallel_args, "--", *bundle_args, "--", *files])
       else
-        system "bundle", "exec", "rspec", *bundle_args, "--", *files
+        system "bundle", "exec", RSPEC, *bundle_args, "--", *files
       end
 
       return if $CHILD_STATUS.success?
