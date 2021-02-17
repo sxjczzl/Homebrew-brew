@@ -323,7 +323,6 @@ In this case deleting `cellar :any` line from the `bottle do` block is enough.
 
 There are some formulae that would fail with an error message like the one provided above, but they are crucial for users of old systems and we should restore the `cellar :any` line after pulling the bottles.
 Those formulae are:
-- `patchelf`
 - `binutils`
 - `gcc`
 - `curl`

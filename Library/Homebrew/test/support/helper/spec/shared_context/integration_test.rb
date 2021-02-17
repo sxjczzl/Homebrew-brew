@@ -152,7 +152,7 @@ RSpec.shared_context "integration test" do
 
         # something here
       RUBY
-    when "foo", "patchelf"
+    when "foo"
       content = <<~RUBY
         url "https://brew.sh/#{name}-1.0"
       RUBY
@@ -163,7 +163,7 @@ RSpec.shared_context "integration test" do
       RUBY
     when "package_license"
       content = <<~RUBY
-        url "https://brew.sh/#patchelf-1.0"
+        url "https://brew.sh/#{name}-1.0"
         license "0BSD"
       RUBY
     end

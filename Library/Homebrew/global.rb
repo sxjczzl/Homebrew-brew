@@ -155,6 +155,3 @@ require "tap"
 require "tap_constants"
 
 require "compat" unless Homebrew::EnvConfig.no_compat?
-
-# Enables `patchelf.rb` write support.
-HOMEBREW_PATCHELF_RB_WRITE = ENV["HOMEBREW_NO_PATCHELF_RB_WRITE"].blank?.freeze

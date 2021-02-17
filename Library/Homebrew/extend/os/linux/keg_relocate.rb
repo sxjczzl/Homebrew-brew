@@ -8,9 +8,6 @@ class Keg
     # Patching the dynamic linker of glibc breaks it.
     return if name == "glibc"
 
-    # Patching patchelf using itself fails with "Text file busy" or SIGBUS.
-    return if name == "patchelf"
-
     elf_files.each do |file|
       file.ensure_writable do
         change_rpath(file, relocation.old_prefix, relocation.new_prefix)
@@ -79,13 +76,9 @@ class Keg
     elf_files
   end
 
-  def self.relocation_formulae
-    ["patchelf"]
-  end
-
   def self.bottle_dependencies
     @bottle_dependencies ||= begin
-      formulae = relocation_formulae
+      formulae = []
       gcc = Formulary.factory(CompilerSelector.preferred_gcc)
       if !Homebrew::EnvConfig.force_homebrew_on_linux? &&
          DevelopmentTools.non_apple_gcc_version("gcc") < gcc.version.to_i
