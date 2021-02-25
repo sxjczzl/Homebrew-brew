@@ -157,22 +157,7 @@ module Homebrew
       puts pinned.map { |f| "#{f.full_specified_name} #{f.pkg_version}" } * ", "
     end
 
-    if formulae_to_install.empty?
-      oh1 "No packages to upgrade"
-    else
-      verb = args.dry_run? ? "Would upgrade" : "Upgrading"
-      oh1 "#{verb} #{formulae_to_install.count} outdated #{"package".pluralize(formulae_to_install.count)}:"
-      formulae_upgrades = formulae_to_install.map do |f|
-        if f.optlinked?
-          "#{f.full_specified_name} #{Keg.new(f.opt_prefix).version} -> #{f.pkg_version}"
-        else
-          "#{f.full_specified_name} #{f.pkg_version}"
-        end
-      end
-      puts formulae_upgrades.join("\n")
-    end
-
-    Upgrade.upgrade_formulae(formulae_to_install, args: args)
+    Upgrade.upgrade_formulae(formulae_to_install, silent: false, args: args)
 
     Upgrade.check_installed_dependents(formulae_to_install, args: args)
 

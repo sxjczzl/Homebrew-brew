@@ -3,7 +3,7 @@
 
 require "tsort"
 
-module Cask
+module Utils
   # Topologically sortable hash map.
   class TopologicalHash < Hash
     include TSort

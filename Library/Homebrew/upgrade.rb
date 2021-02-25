@@ -6,6 +6,7 @@ require "formula_installer"
 require "development_tools"
 require "messages"
 require "cleanup"
+require "utils/install"
 
 module Homebrew
   # Helper functions for upgrading formulae.
@@ -14,9 +15,11 @@ module Homebrew
   module Upgrade
     module_function
 
-    def upgrade_formulae(formulae_to_install, args:)
-      return if formulae_to_install.empty?
-      return if args.dry_run?
+    def upgrade_formulae(formulae_to_install, args:, silent: true)
+      if formulae_to_install.empty?
+        oh1 "No packages to upgrade" unless silent
+        return
+      end
 
       # Sort keg-only before non-keg-only formulae to avoid any needless conflicts
       # with outdated, non-keg-only versions of formulae being upgraded.
@@ -29,6 +32,27 @@ module Homebrew
           0
         end
       end
+
+      graph = nil
+      formulae_to_install.each do |f|
+        graph = Utils::Install.graph_dependencies(f, graph)
+      end
+      formulae_to_install = graph.tsort & formulae_to_install
+
+      unless silent
+        verb = args.dry_run? ? "Would upgrade" : "Upgrading"
+        oh1 "#{verb} #{formulae_to_install.count} outdated #{"package".pluralize(formulae_to_install.count)}:"
+        formulae_upgrades = formulae_to_install.map do |f|
+          if f.optlinked?
+            "#{f.full_specified_name} #{Keg.new(f.opt_prefix).version} -> #{f.pkg_version}"
+          else
+            "#{f.full_specified_name} #{f.pkg_version}"
+          end
+        end
+        puts formulae_upgrades.join("\n")
+      end
+
+      return if args.dry_run?
 
       formulae_to_install.each do |f|
         Migrator.migrate_if_needed(f, force: args.force?)
