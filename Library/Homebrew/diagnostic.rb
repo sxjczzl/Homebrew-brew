@@ -143,6 +143,7 @@ module Homebrew
             With a non-standard origin, Homebrew won't update properly.
             You can solve this by setting the origin remote:
               git -C "#{repository_path}" remote set-url origin #{Formatter.url(desired_origin)}
+              brew update-reset "#{repository_path}"
           EOS
         end
       end
