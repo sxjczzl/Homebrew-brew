@@ -286,7 +286,7 @@ describe Homebrew::Completions do
 
       it "returns appropriate completion for a command with multiple named arg types" do
         completion = described_class.generate_bash_subcommand_completion("upgrade")
-        expect(completion).to match(/__brew_complete_outdated_formulae\n  __brew_complete_outdated_casks\n}$/)
+        expect(completion).to match(/__brew_complete_outdated_formulae\n  __brew_complete_outdated_greedy_casks\n}$/)
       end
     end
 
@@ -345,7 +345,7 @@ describe Homebrew::Completions do
       it "returns appropriate completion for a command with multiple named arg types" do
         completion = described_class.generate_zsh_subcommand_completion("upgrade")
         expect(completion).to match(
-          /'::outdated_formula:__brew_outdated_formulae' \\\n    '::outdated_cask:__brew_outdated_casks'\n}$/,
+          /'::outdated_formula:__brew_outdated_formulae' \\\n    '::outdated_cask:__brew_outdated_greedy_casks'\n}$/,
         )
       end
     end
@@ -402,7 +402,9 @@ describe Homebrew::Completions do
         expect(completion).to match(
           /__fish_brew_complete_arg 'upgrade' -a '\(__fish_brew_suggest_formulae_outdated\)'/,
         )
-        expect(completion).to match(/__fish_brew_complete_arg 'upgrade' -a '\(__fish_brew_suggest_casks_outdated\)'/)
+        expect(completion).to match(
+          /__fish_brew_complete_arg 'upgrade' -a '\(__fish_brew_suggest_casks_outdated_greedy\)'/,
+        )
       end
     end
 

@@ -144,8 +144,8 @@ function __fish_brew_suggest_casks_installed -d "Lists installed casks"
     brew list --cask -1
 end
 
-function __fish_brew_suggest_casks_outdated -d "Lists outdated casks with the information about potential upgrade"
-    brew outdated --cask --verbose \
+function __fish_brew_suggest_casks_outdated_greedy -d "Lists outdated casks (greedy) with the information about potential upgrade"
+    brew outdated --cask --greedy --verbose \
         # replace first space with tab to make the following a description in the completions list:
         | string replace -r '\s' '\t'
 end

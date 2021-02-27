@@ -100,11 +100,11 @@ __brew_installed_casks() {
   _wanted list expl 'installed casks' compadd -a list
 }
 
-__brew_outdated_casks() {
+__brew_outdated_greedy_casks() {
   [[ -prefix '-' ]] && return 0
 
   local -a casks
-  casks=($(brew outdated --cask))
+  casks=($(brew outdated --cask --greedy))
   _describe -t casks 'outdated casks' casks
 }
 

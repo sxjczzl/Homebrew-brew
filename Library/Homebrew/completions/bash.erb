@@ -86,9 +86,9 @@ __brew_complete_outdated_formulae() {
   COMPREPLY+=($(compgen -W "$outdated_formulae" -- "$cur"))
 }
 
-__brew_complete_outdated_casks() {
+__brew_complete_outdated_greedy_casks() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
-  local outdated_casks="$(brew outdated --cask --quiet)"
+  local outdated_casks="$(brew outdated --cask --greedy --quiet)"
   COMPREPLY+=($(compgen -W "$outdated_casks" -- "$cur"))
 }
 
