@@ -13,10 +13,7 @@ it does it too. You have to confirm everything it will do before it starts.
 
 * A 64-bit Intel CPU or Apple Silicon CPU <sup>[1](#1)</sup>
 * macOS Mojave (10.14) (or higher) <sup>[2](#2)</sup>
-* Command Line Tools (CLT) for Xcode: `xcode-select --install`,
-  [developer.apple.com/downloads](https://developer.apple.com/downloads) or
-  [Xcode](https://itunes.apple.com/us/app/xcode/id497799835) <sup>[3](#3)</sup>
-* A Bourne-compatible shell for installation (e.g. `bash` or `zsh`) <sup>[4](#4)</sup>
+* A Bourne-compatible shell for installation (e.g. `bash` or `zsh`) <sup>[3](#3)</sup>
 
 ## Alternative Installs
 
@@ -57,12 +54,6 @@ Uninstallation is documented in the [FAQ](FAQ.md).
 supported on a best-effort basis. For 10.4-10.6 see
 [Tigerbrew](https://github.com/mistydemeo/tigerbrew).
 
-<a name="3"><sup>3</sup></a> Most formulae require a compiler. A handful
-require a full Xcode installation. You can install Xcode, the CLT, or both;
-Homebrew supports all three configurations. Downloading Xcode may require an
-Apple Developer account on older versions of Mac OS X. Sign up for free
-[here](https://developer.apple.com/register/index.action).
-
-<a name="4"><sup>4</sup></a> The one-liner installation method found on
+<a name="3"><sup>4</sup></a> The one-liner installation method found on
 [brew.sh](https://brew.sh) requires a Bourne-compatible shell (e.g. bash or
 zsh). Notably, fish, tcsh and csh will not work.
