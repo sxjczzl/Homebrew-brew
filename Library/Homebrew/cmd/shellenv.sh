@@ -4,6 +4,7 @@
 #:
 #:  The variables `HOMEBREW_PREFIX`, `HOMEBREW_CELLAR` and `HOMEBREW_REPOSITORY` are also exported to avoid querying them multiple times.
 #:  Consider adding evaluation of this command's output to your dotfiles (e.g. `~/.profile`, `~/.bash_profile`, or `~/.zprofile`) with: `eval $(brew shellenv)`
+#:  or for a xonsh shell with: `execx($(/home/linuxbrew/.linuxbrew/bin/brew shellenv))` (or `execx($(~/.linuxbrew/bin/brew shellenv))` depending on the install path)
 
 homebrew-shellenv() {
   case "$(/bin/ps -p $PPID -c -o comm=)" in
@@ -22,6 +23,18 @@ homebrew-shellenv() {
       echo "setenv PATH $HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:\$PATH;"
       echo "setenv MANPATH $HOMEBREW_PREFIX/share/man\`[ \${?MANPATH} == 1 ] && echo \":\${MANPATH}\"\`:;"
       echo "setenv INFOPATH $HOMEBREW_PREFIX/share/info\`[ \${?INFOPATH} == 1 ] && echo \":\${INFOPATH}\"\`;"
+      ;;
+    xonsh|-xonsh)
+      echo "\$HOMEBREW_PREFIX='$HOMEBREW_PREFIX';"
+      echo "\$HOMEBREW_CELLAR='$HOMEBREW_CELLAR';"
+      echo "\$HOMEBREW_REPOSITORY='$HOMEBREW_REPOSITORY';"
+      echo "\$PATH = \$PATH if 'PATH' in \${...} else '';"
+      echo "\$PATH.add('$HOMEBREW_PREFIX/sbin', front=True, replace=True);"
+      echo "\$PATH.add('$HOMEBREW_PREFIX/bin', front=True, replace=True);"
+      echo "\$MANPATH = \$MANPATH if 'MANPATH' in \${...} else '';"
+      echo "\$MANPATH.add('$HOMEBREW_PREFIX/share/man', front=True, replace=True);"
+      echo "\$INFOPATH = \$INFOPATH if 'INFOPATH' in \${...} else '';"
+      echo "\$INFOPATH.add('$HOMEBREW_PREFIX/share/info', front=True, replace=True);"
       ;;
     *)
       echo "export HOMEBREW_PREFIX=\"$HOMEBREW_PREFIX\";"

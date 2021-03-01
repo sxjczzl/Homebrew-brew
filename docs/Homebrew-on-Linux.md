@@ -36,6 +36,12 @@ test -d /home/linuxbrew/.linuxbrew && eval $(/home/linuxbrew/.linuxbrew/bin/brew
 test -r ~/.bash_profile && echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.bash_profile
 echo "eval \$($(brew --prefix)/bin/brew shellenv)" >>~/.profile
 ```
+Similar instructions to add Homebrew to your xonsh shell profile script at `~/.xonshrc` or `~/.config/rc.xsh`:
+```sh
+test -d ~/.linuxbrew && execx($(~/.linuxbrew/bin/brew shellenv))
+test -d /home/linuxbrew/.linuxbrew && execx($(/home/linuxbrew/.linuxbrew/bin/brew shellenv))
+echo @(f'execx($({$(brew --prefix)}/bin/brew shellenv))'.replace('\n','')) >> ~/.xonshrc # or ~/.config/rc.xsh
+```
 
 You're done! Try installing a package:
 
