@@ -110,7 +110,15 @@ module RuboCop
         end
 
         def check_on_os_block_content(component_precedence_list, on_os_block)
-          on_os_allowed_methods = %w[depends_on patch resource deprecate! disable! conflicts_with]
+          on_os_allowed_methods = %w[
+            depends_on
+            patch
+            resource
+            deprecate!
+            disable!
+            conflicts_with
+            keg_only
+          ]
           _, offensive_node = check_order(component_precedence_list, on_os_block.body)
           component_problem(*offensive_node) if offensive_node
           child_nodes = on_os_block.body.begin_type? ? on_os_block.body.child_nodes : [on_os_block.body]
@@ -123,8 +131,19 @@ module RuboCop
 
             valid_node ||= on_os_allowed_methods.include? child.method_name.to_s
 
+            shadowed = false
+            if child.method_name.to_s == "keg_only"
+              shadowed = child.arguments.find do |arg|
+                arg.is_a?(RuboCop::AST::SymbolNode) && arg.value == :shadowed_by_macos
+              end
+            end
+
             @offensive_node = child
-            next if valid_node
+            if child.method_name.to_s == "keg_only"
+              next if shadowed
+            elsif valid_node
+              next
+            end
 
             problem "`#{on_os_block.method_name}` cannot include `#{child.method_name}`. " \
                     "Only #{on_os_allowed_methods.map { |m| "`#{m}`" }.to_sentence} are allowed."
