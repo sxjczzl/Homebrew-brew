@@ -91,12 +91,12 @@ class Dependency
     def expand(dependent, deps = dependent.deps, &block)
       # Keep track dependencies to avoid infinite cyclic dependency recursion.
       @expand_stack ||= []
-      @expand_stack.push dependent.name
+      @expand_stack.push dependent.full_name
 
       expanded_deps = []
 
       deps.each do |dep|
-        next if dependent.name == dep.name
+        next if dependent.full_name == dep.name
 
         case action(dependent, dep, &block)
         when :prune
