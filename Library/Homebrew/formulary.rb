@@ -271,6 +271,7 @@ module Formulary
     def formula_name_path(tapped_name, warn: true)
       user, repo, name = tapped_name.split("/", 3).map(&:downcase)
       @tap = Tap.fetch user, repo
+      @tap.install unless @tap.installed?
       formula_dir = @tap.formula_dir || @tap.path
       path = formula_dir/"#{name}.rb"
 
