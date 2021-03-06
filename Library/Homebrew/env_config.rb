@@ -96,6 +96,10 @@ module Homebrew
                       "Linux: `https://github.com/Homebrew/linuxbrew-core`.",
         default:      HOMEBREW_CORE_DEFAULT_GIT_REMOTE,
       },
+      HOMEBREW_CURL_PATH:                     {
+        description: "Use this executable when invoking `curl`(1).",
+        default:     "curl",
+      },
       HOMEBREW_CURLRC:                        {
         description: "If set, do not pass `--disable` when invoking `curl`(1), which disables the " \
                      "use of `curlrc`.",
@@ -177,6 +181,10 @@ module Homebrew
       },
       HOMEBREW_GIT_NAME:                      {
         description: "Set the Git author and committer name to this value.",
+      },
+      HOMEBREW_GIT_PATH:                      {
+        description: "Use this executable when invoking `git`(1).",
+        default:     "git",
       },
       HOMEBREW_INSTALL_BADGE:                 {
         description:  "Print this text before the installation summary of each successful build.",

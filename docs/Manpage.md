@@ -1772,6 +1772,11 @@ example, run `export HOMEBREW_NO_INSECURE_REDIRECT=1` rather than just
 
   *Default:* macOS: `https://github.com/Homebrew/homebrew-core`, Linux: `https://github.com/Homebrew/linuxbrew-core`.
 
+- `HOMEBREW_CURL_PATH`
+  <br>Use this executable when invoking `curl`(1).
+
+  *Default:* `curl`.
+
 - `HOMEBREW_CURLRC`
   <br>If set, do not pass `--disable` when invoking `curl`(1), which disables the use of `curlrc`.
 
@@ -1834,6 +1839,11 @@ example, run `export HOMEBREW_NO_INSECURE_REDIRECT=1` rather than just
 
 - `HOMEBREW_GIT_NAME`
   <br>Set the Git author and committer name to this value.
+
+- `HOMEBREW_GIT_PATH`
+  <br>Use this executable when invoking `git`(1).
+
+  *Default:* `git`.
 
 - `HOMEBREW_INSTALL_BADGE`
   <br>Print this text before the installation summary of each successful build.
