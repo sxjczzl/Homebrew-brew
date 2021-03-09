@@ -282,24 +282,30 @@ export USER=${USER:-$(id -un)}
 # Higher depths mean this command was invoked by another Homebrew command.
 export HOMEBREW_COMMAND_DEPTH=$((HOMEBREW_COMMAND_DEPTH + 1))
 
-if [[ -n "$HOMEBREW_FORCE_BREWED_CURL" &&
-      -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]] &&
-         "$HOMEBREW_PREFIX/opt/curl/bin/curl" --version >/dev/null
+if [[ -n "$HOMEBREW_FORCE_BREWED_CURL" && -n "$HOMEBREW_CURL_PATH" ]]
+then
+  odie "Environment variables HOMEBREW_FORCE_BREWED_CURL and HOMEBREW_CURL_PATH are incompatible."
+elif [[ -n "$HOMEBREW_FORCE_BREWED_CURL" &&
+        -x "$HOMEBREW_PREFIX/opt/curl/bin/curl" ]] &&
+           "$HOMEBREW_PREFIX/opt/curl/bin/curl" --version >/dev/null
 then
   HOMEBREW_CURL="$HOMEBREW_PREFIX/opt/curl/bin/curl"
-elif [[ -x "$HOMEBREW_CURL_PATH" ]]
+elif [[ -n "$HOMEBREW_CURL_PATH" ]]
 then
   HOMEBREW_CURL="$HOMEBREW_CURL_PATH"
 else
   HOMEBREW_CURL="curl"
 fi
 
-if [[ -n "$HOMEBREW_FORCE_BREWED_GIT" &&
-      -x "$HOMEBREW_PREFIX/opt/git/bin/git" ]] &&
-         "$HOMEBREW_PREFIX/opt/git/bin/git" --version >/dev/null
+if [[ -n "$HOMEBREW_FORCE_BREWED_GIT" && -n "$HOMEBREW_GIT_PATH" ]]
+then
+  odie "Environment variables HOMEBREW_FORCE_BREWED_GIT and HOMEBREW_GIT_PATH are incompatible."
+elif [[ -n "$HOMEBREW_FORCE_BREWED_GIT" &&
+        -x "$HOMEBREW_PREFIX/opt/git/bin/git" ]] &&
+           "$HOMEBREW_PREFIX/opt/git/bin/git" --version >/dev/null
 then
   HOMEBREW_GIT="$HOMEBREW_PREFIX/opt/git/bin/git"
-elif [[ -x "$HOMEBREW_GIT_PATH" ]]
+elif [[ -n "$HOMEBREW_GIT_PATH" ]]
 then
   HOMEBREW_GIT="$HOMEBREW_GIT_PATH"
 else
@@ -362,7 +368,8 @@ then
 
   # The system Git on macOS versions before Sierra is too old for some Homebrew functionality we rely on.
   HOMEBREW_MINIMUM_GIT_VERSION="2.14.3"
-  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101200" ]]
+  if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101200" &&
+     -z "$HOMEBREW_GIT_PATH ]]
   then
     HOMEBREW_FORCE_BREWED_GIT="1"
   fi
@@ -402,15 +409,17 @@ Minimum required version: ${HOMEBREW_MINIMUM_CURL_VERSION}
 Your curl version: ${curl_name_and_version##* }
 Your curl executable: $(type -p $HOMEBREW_CURL)"
 
-    if [[ -z $HOMEBREW_CURL_PATH || -z $HOMEBREW_DEVELOPER ]]; then
+    if [[ -n $HOMEBREW_CURL_PATH && -z $HOMEBREW_DEVELOPER ]]
+    then
+      odie "$message"
+    else
       HOMEBREW_SYSTEM_CURL_TOO_OLD=1
       HOMEBREW_FORCE_BREWED_CURL=1
-      if [[ -z $HOMEBREW_CURL_WARNING ]]; then
+      if [[ -z $HOMEBREW_CURL_WARNING ]]
+      then
         onoe "$message"
         HOMEBREW_CURL_WARNING=1
       fi
-    else
-      odie "$message"
     fi
   fi
 
@@ -427,14 +436,16 @@ Your curl executable: $(type -p $HOMEBREW_CURL)"
 Minimum required version: ${HOMEBREW_MINIMUM_GIT_VERSION}
 Your Git version: $major.$minor.$micro.$build
 Your Git executable: $(unset git && type -p $HOMEBREW_GIT)"
-    if [[ -z $HOMEBREW_GIT_PATH || -z $HOMEBREW_DEVELOPER ]]; then
+
+    if [[ -n $HOMEBREW_GIT_PATH || -z $HOMEBREW_DEVELOPER ]]
+    then
+      odie "$message"
+    else
       HOMEBREW_FORCE_BREWED_GIT="1"
       if [[ -z $HOMEBREW_GIT_WARNING ]]; then
         onoe "$message"
         HOMEBREW_GIT_WARNING=1
       fi
-    else
-      odie "$message"
     fi
   fi
 
