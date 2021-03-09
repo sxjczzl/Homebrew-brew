@@ -23,16 +23,16 @@ describe Language::Python::Virtualenv::Virtualenv, :needs_python do
   describe "#pip_install" do
     it "accepts a string" do
       expect(formula).to receive(:system)
-        .with(dir/"bin/pip", "install", "-v", "--no-deps",
-              "--no-binary", ":all:", "--ignore-installed", "foo")
+        .with(dir/"bin/pip", "install", "-v", "--no-deps", "--no-index",
+              "--no-binary", ":all:", "--no-build-isolation", "--ignore-installed", "foo")
         .and_return(true)
       virtualenv.pip_install "foo"
     end
 
     it "accepts a multi-line strings" do
       expect(formula).to receive(:system)
-        .with(dir/"bin/pip", "install", "-v", "--no-deps",
-              "--no-binary", ":all:", "--ignore-installed", "foo", "bar")
+        .with(dir/"bin/pip", "install", "-v", "--no-deps", "--no-index",
+              "--no-binary", ":all:", "--no-build-isolation", "--ignore-installed", "foo", "bar")
         .and_return(true)
 
       virtualenv.pip_install <<~EOS
@@ -43,13 +43,13 @@ describe Language::Python::Virtualenv::Virtualenv, :needs_python do
 
     it "accepts an array" do
       expect(formula).to receive(:system)
-        .with(dir/"bin/pip", "install", "-v", "--no-deps",
-              "--no-binary", ":all:", "--ignore-installed", "foo")
+        .with(dir/"bin/pip", "install", "-v", "--no-deps", "--no-index",
+              "--no-binary", ":all:", "--no-build-isolation", "--ignore-installed", "foo")
         .and_return(true)
 
       expect(formula).to receive(:system)
-        .with(dir/"bin/pip", "install", "-v", "--no-deps",
-              "--no-binary", ":all:", "--ignore-installed", "bar")
+        .with(dir/"bin/pip", "install", "-v", "--no-deps", "--no-index",
+              "--no-binary", ":all:", "--no-build-isolation", "--ignore-installed", "bar")
         .and_return(true)
 
       virtualenv.pip_install ["foo", "bar"]
@@ -60,8 +60,8 @@ describe Language::Python::Virtualenv::Virtualenv, :needs_python do
 
       expect(res).to receive(:stage).and_yield
       expect(formula).to receive(:system)
-        .with(dir/"bin/pip", "install", "-v", "--no-deps",
-              "--no-binary", ":all:", "--ignore-installed", Pathname.pwd)
+        .with(dir/"bin/pip", "install", "-v", "--no-deps", "--no-index",
+              "--no-binary", ":all:", "--no-build-isolation", "--ignore-installed", Pathname.pwd)
         .and_return(true)
 
       virtualenv.pip_install res
@@ -83,7 +83,7 @@ describe Language::Python::Virtualenv::Virtualenv, :needs_python do
       FileUtils.touch src_bin/"kilroy"
       bin_after = Dir.glob(src_bin/"*")
 
-      expect(virtualenv).to receive(:pip_install).with("foo")
+      expect(virtualenv).to receive(:pip_install).with("foo", {})
       expect(Dir).to receive(:[]).with(src_bin/"*").twice.and_return(bin_before, bin_after)
 
       virtualenv.pip_install_and_link "foo"

@@ -183,8 +183,24 @@ module Language
           python = "python3" if python == "python"
         end
         venv = virtualenv_create(libexec, python.delete("@"))
-        venv.pip_install resources
-        venv.pip_install_and_link buildpath
+
+        build_tools = options[:build_with]
+        passed_build_tools = !build_tools.nil?
+
+        resources.each do |r|
+          next if r.name.start_with? "homebrew-pep517-build-"
+
+          unless passed_build_tools
+            build_tools = resources.select { |dep| dep.name.start_with? "homebrew-pep517-build-#{r.name}-" }
+          end
+          venv.pip_install r, { using: python, build_with: build_tools }
+        end
+
+        unless passed_build_tools
+          build_tools = resources.select { |dep| dep.name.start_with? "homebrew-pep517-build-formula-" }
+        end
+        venv.pip_install_and_link buildpath, { using: python, build_with: build_tools }
+
         venv
       end
 
@@ -252,14 +268,14 @@ module Language
         #   Multiline strings are allowed and treated as though they represent
         #   the contents of a `requirements.txt`.
         # @return [void]
-        def pip_install(targets)
+        def pip_install(targets, options = {})
           targets = Array(targets)
           targets.each do |t|
             if t.respond_to? :stage
-              t.stage { do_install Pathname.pwd }
+              t.stage { do_install Pathname.pwd, options }
             else
               t = t.lines.map(&:strip) if t.respond_to?(:lines) && t.include?("\n")
-              do_install t
+              do_install t, options
             end
           end
         end
@@ -269,10 +285,10 @@ module Language
         #
         # @param (see #pip_install)
         # @return (see #pip_install)
-        def pip_install_and_link(targets)
+        def pip_install_and_link(targets, options = {})
           bin_before = Dir[@venv_root/"bin/*"].to_set
 
-          pip_install(targets)
+          pip_install(targets, options)
 
           bin_after = Dir[@venv_root/"bin/*"].to_set
           bin_to_link = (bin_after - bin_before).to_a
@@ -281,11 +297,93 @@ module Language
 
         private
 
-        def do_install(targets)
+        def do_install(targets, options = {})
           targets = Array(targets)
-          @formula.system @venv_root/"bin/pip", "install",
-                          "-v", "--no-deps", "--no-binary", ":all:",
-                          "--ignore-installed", *targets
+
+          if targets.map(&method(:target_uses_setuptools_build_backend?)).any?
+            options[:build_with] = [wheel_whl_path(@formula)]
+          end
+          targets.map! { |t| substitute_whl(t, options) } if options[:build_with].present?
+
+          @formula.system @venv_root/"bin/pip", "install", "-v",
+                          "--no-deps", "--no-index", "--no-binary", ":all:",
+                          "--no-build-isolation", "--ignore-installed", *targets
+        end
+
+        # Generates a .whl from targets using PEP517-based build backends, which can
+        # then be consumed by `pip install`.
+        #
+        # @param target [String, Pathname] the path to the target
+        # @return target [Pathname] the path to a replacement .whl target
+        def substitute_whl(target, options)
+          python = options[:using]
+          if python.nil?
+            wanted = @formula.python_names.select { |py| @formula.needs_python?(py) }
+            raise FormulaUnknownPythonError, self if wanted.empty?
+            raise FormulaAmbiguousPythonError, self if wanted.size > 1
+
+            python = wanted.first
+            python = "python3" if python == "python"
+          end
+
+          target_dir = Pathname.pwd
+          Mktemp.new("#{@formula.name}-pep517-build").run do |temp_dir_instance|
+            tmpdir = temp_dir_instance.tmpdir
+
+            build_venv = @formula.virtualenv_create(tmpdir, python.delete("@"))
+            build_tools = options[:build_with]
+            build_venv.pip_install build_tools
+
+            Dir.chdir(target_dir) do
+              glob = Pathname.pwd/"*.whl"
+              old_files = Dir.glob(glob).to_set
+              @formula.system tmpdir/"bin/pip", "wheel", "--no-index",
+                              "-v", "--no-deps", "--no-binary", ":all:",
+                              "--no-build-isolation", "--no-index", target
+              new_files = Dir.glob(glob).to_set
+
+              wheels = new_files - old_files
+              if wheels.size != 1
+                raise "Expected exactly 1 .whl file from PEP 517 mode build but got #{wheels.size} files instead."
+              end
+
+              wheels.to_a.first
+            end
+          end
+        end
+
+        # Detect if bdist_wheel installation step will be used by a package.
+        #
+        # @param target [Pathname] the path to the target
+        def target_uses_setuptools_build_backend?(target)
+          return false if target.is_a? String
+          return false unless target.directory?
+
+          pyproject_file = target/"pyproject.toml"
+          return false unless pyproject_file.exist?
+
+          pyproject_contents = pyproject_file.read
+          /build-backend\s*=\s*("|')setuptools\.build_meta("|')/.match? pyproject_contents
+        end
+
+        # Get location of wheel .whl for the Python that a particular formula depends on
+        #
+        # @param formula [Formula] the formula for which to find an appropriate wheel .whl
+        # @return wheel_whl [Pathname] the path to the appropriate wheel .whl
+        def wheel_whl_path(formula)
+          python_deps = formula.deps.map(&:name).grep(/^python(@.*)?$/)
+          raise "Cannot detect Python prefix: formula does not depend on Python." if python_deps.empty?
+          raise "Cannot detect Python prefix: formula has multiple Python dependencies." if python_deps.length > 1
+
+          wheel_whl = Dir.glob(Formula[python_deps.first].opt_libexec/"wheel-*.whl")
+          if wheel_whl.empty?
+            raise "No .whl file available for the wheel package in #{Formula[python_deps.first].opt_libexec}"
+          end
+          if wheel_whl.length > 1
+            raise "Multiple .whl files available for the wheel package in #{Formula[python_deps.first].opt_libexec}"
+          end
+
+          Pathname(wheel_whl.first)
         end
       end
     end
