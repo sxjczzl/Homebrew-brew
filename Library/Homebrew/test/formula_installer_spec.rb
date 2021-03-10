@@ -169,8 +169,47 @@ describe FormulaInstaller do
       expect(formula).to receive(:plist_path).and_call_original
 
       installer = described_class.new(formula)
-
       installer.install_service
+    end
+
+    it "works if service is set" do
+      formula = Testball.new
+      service = Homebrew::Service.new(formula)
+
+      expect(formula).to receive(:plist).and_return(nil)
+      expect(formula).to receive(:service?).twice.and_return(true)
+      expect(formula).to receive(:service).and_return(service)
+      expect(formula).to receive(:plist_path).and_call_original
+
+      expect(service).to receive(:to_plist).and_return("plist")
+
+      installer = described_class.new(formula)
+      installer.install_service
+    end
+
+    it "returns without definition" do
+      formula = Testball.new
+      expect(formula).to receive(:plist).and_return(nil)
+      expect(formula).to receive(:service?).twice.and_return(nil)
+      expect(formula).not_to receive(:plist_path)
+
+      installer = described_class.new(formula)
+      installer.install_service
+    end
+
+    it "errors with duplicate definition" do
+      formula = Testball.new
+      expect(formula).to receive(:plist).and_return("plist")
+      expect(formula).to receive(:service?).and_return(true)
+      expect(formula).not_to receive(:service)
+      expect(formula).not_to receive(:plist_path)
+
+      installer = described_class.new(formula)
+      expect {
+        installer.install_service
+      }.to output("Error: Formula specified both service and plist\n").to_stderr
+
+      expect(Homebrew).to have_failed
     end
   end
 end
