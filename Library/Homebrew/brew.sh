@@ -369,7 +369,7 @@ then
   # The system Git on macOS versions before Sierra is too old for some Homebrew functionality we rely on.
   HOMEBREW_MINIMUM_GIT_VERSION="2.14.3"
   if [[ "$HOMEBREW_MACOS_VERSION_NUMERIC" -lt "101200" &&
-     -z "$HOMEBREW_GIT_PATH ]]
+     -z "$HOMEBREW_GIT_PATH" ]]
   then
     HOMEBREW_FORCE_BREWED_GIT="1"
   fi
