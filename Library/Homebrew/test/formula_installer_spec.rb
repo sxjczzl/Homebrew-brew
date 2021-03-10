@@ -160,4 +160,16 @@ describe FormulaInstaller do
       formula_installer.caveats
     end
   end
+
+  describe "#install_service" do
+    formula = Testball.new
+    subject(:formula_installer) { described_class.new(formula) }
+
+    it "works if plist is set" do
+      expect(formula).to receive(:plist).twice.and_return("PLIST")
+      expect(formula).to receive(:plist_path).and_call_original
+
+      formula_installer.install_service
+    end
+  end
 end
