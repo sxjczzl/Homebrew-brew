@@ -2036,7 +2036,7 @@ class Formula
     pretty_args.each_index do |i|
       pretty_args[i] = "import setuptools..." if pretty_args[i].to_s.start_with? "import setuptools"
     end
-    ohai "#{cmd} #{pretty_args * " "}".strip
+    ohai "#{cmd} #{pretty_args * " "}".strip, truncate: false
 
     @exec_count ||= 0
     @exec_count += 1
