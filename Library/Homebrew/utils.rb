@@ -95,25 +95,25 @@ module Kernel
     raise unless e.message.include?(path)
   end
 
-  def ohai_title(title)
+  def ohai_title(title, truncate: :auto, color: :blue)
     verbose = if respond_to?(:verbose?)
       verbose?
     else
       Context.current.verbose?
     end
 
-    title = Tty.truncate(title) if $stdout.tty? && !verbose
-    Formatter.headline(title, color: :blue)
+    title = Tty.truncate(title) if $stdout.tty? && !verbose && truncate == :auto
+    Formatter.headline(title, color: color)
   end
 
-  def ohai(title, *sput)
-    puts ohai_title(title)
+  def ohai(title, *sput, truncate: :auto)
+    puts ohai_title(title, truncate: truncate)
     puts sput
   end
 
-  def ohai_stdout_or_stderr(message, *sput)
+  def ohai_stdout_or_stderr(message, *sput, truncate: :auto)
     if $stdout.tty?
-      ohai(message, *sput)
+      ohai(message, *sput, truncate: truncate)
     else
       $stderr.puts(ohai_title(message))
       $stderr.puts(sput)
@@ -143,14 +143,7 @@ module Kernel
   end
 
   def oh1(title, truncate: :auto)
-    verbose = if respond_to?(:verbose?)
-      verbose?
-    else
-      Context.current.verbose?
-    end
-
-    title = Tty.truncate(title) if $stdout.tty? && !verbose && truncate == :auto
-    puts Formatter.headline(title, color: :green)
+    puts ohai_title(title, truncate: truncate, color: :green)
   end
 
   # Print a message prefixed with "Warning" (do this rarely).
