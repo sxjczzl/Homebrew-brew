@@ -49,8 +49,20 @@ module Cask
       end
 
       unless pkgutil_bom_dirs.empty?
+        sorted_bom_dirs = deepest_path_first(pkgutil_bom_dirs)
         odebug "Deleting pkg directories"
-        rmdir(deepest_path_first(pkgutil_bom_dirs))
+        # Delete empty directory trees (by ignoring errors rm throws for non-empty directories)
+        @command.run!(
+          "/usr/bin/xargs",
+          args:  [
+            "-0", "--", "/bin/sh", "-c", "/bin/rmdir -- \"$@\" 2>/dev/null || true"
+          ],
+          input: sorted_bom_dirs.join("\0"),
+          sudo:  true,
+        )
+
+        # clean up the remaining directories, searching for .DS_Store files and broken symlinks along the way
+        rmdir(sorted_bom_dirs)
       end
 
       rmdir(root) unless MacOS.undeletable?(root)
