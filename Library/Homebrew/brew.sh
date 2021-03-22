@@ -569,6 +569,14 @@ then
   HOMEBREW_GIT_CONFIG_DEVELOPERMODE="$(git config --file="$HOMEBREW_GIT_CONFIG_FILE" --get homebrew.devcmdrun 2>/dev/null)"
   if [[ "$HOMEBREW_GIT_CONFIG_DEVELOPERMODE" = "true" ]]
   then
+    # Tell users who accidentally enabled developer mode how to get out of it.
+    # Only do this the first time we run the script.
+    if [[ -z "$HOMEBREW_DEV_CMD_RUN" ]]
+    then
+      # shellcheck disable=SC2016 # Don't want to expand this till the user runs the command.
+      ohai 'Homebrew developer mode enabled, to disable run:
+    git -C "$(brew --repo)" config --unset homebrew.devcmdrun'
+    fi
     export HOMEBREW_DEV_CMD_RUN="1"
   fi
 
