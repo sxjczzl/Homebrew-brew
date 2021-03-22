@@ -136,7 +136,6 @@ module Homebrew
         @usage_banner = nil
         @hide_from_man_page = false
         @formula_options = false
-        @cask_options = false
 
         self.class.global_options.each do |short, long, desc|
           switch short, long, description: desc, env: option_to_name(long), method: :on_tail
@@ -329,10 +328,9 @@ module Homebrew
           check_named_args(named_args)
         end
 
-        @args.freeze_named_args!(named_args, cask_options: @cask_options)
+        @args.freeze_named_args!(named_args)
         @args.freeze_remaining_args!(non_options.empty? ? remaining : [*remaining, "--", non_options])
         @args.freeze_processed_options!(@processed_options)
-        @args.freeze
 
         @args_parsed = true
 
@@ -359,7 +357,6 @@ module Homebrew
           send(method, *args, **options)
           conflicts "--formula", args.last
         end
-        @cask_options = true
       end
 
       sig { void }
@@ -521,11 +518,7 @@ module Homebrew
 
       def disable_switch(*names)
         names.each do |name|
-          @args["#{option_to_name(name)}?"] = if name.start_with?("--[no-]")
-            nil
-          else
-            false
-          end
+          @args.delete_field("#{option_to_name(name)}?")
         end
       end
 
@@ -623,14 +616,6 @@ module Homebrew
         option, = @parser.make_switch(args)
         @processed_options.reject! { |existing| existing.second == option.long.first } if option.long.first.present?
         @processed_options << [option.short.first, option.long.first, option.arg, option.desc.first]
-
-        if type == :switch
-          disable_switch(*args)
-        else
-          args.each do |name|
-            @args[option_to_name(name)] = nil
-          end
-        end
 
         return if self.class.global_options.include? [option.short.first, option.long.first, option.desc.first]
 

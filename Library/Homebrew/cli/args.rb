@@ -22,7 +22,6 @@ module Homebrew
         @processed_options = []
         @options_only = []
         @flags_only = []
-        @cask_options = false
 
         # Can set these because they will be overwritten by freeze_named_args!
         # (whereas other values below will only be overwritten if passed).
@@ -34,13 +33,12 @@ module Homebrew
         self[:remaining] = remaining_args.freeze
       end
 
-      def freeze_named_args!(named_args, cask_options:)
+      def freeze_named_args!(named_args)
         self[:named] = NamedArgs.new(
           *named_args.freeze,
           override_spec: spec(nil),
-          force_bottle:  self[:force_bottle?],
+          force_bottle:  force_bottle?,
           flags:         flags_only,
-          cask_options:  cask_options,
           parent:        self,
         )
       end
@@ -66,8 +64,12 @@ module Homebrew
         named.blank?
       end
 
+      def build_stable?
+        !HEAD?
+      end
+
       def build_from_source_formulae
-        if build_from_source? || self[:HEAD?] || self[:build_bottle?]
+        if build_from_source? || HEAD? || build_bottle?
           named.to_formulae_and_casks.select { |f| f.is_a?(Formula) }.map(&:full_name)
         else
           []
@@ -127,27 +129,11 @@ module Homebrew
       end
 
       def spec(default = :stable)
-        if self[:HEAD?]
+        if HEAD?
           :head
         else
           default
         end
-      end
-
-      def respond_to_missing?(*)
-        !frozen?
-      end
-
-      def method_missing(method_name, *args)
-        return_value = super
-
-        # Once we are frozen, verify any arg method calls are already defined in the table.
-        # The default OpenStruct behaviour is to return nil for anything unknown.
-        if frozen? && args.empty? && !@table.key?(method_name)
-          raise NoMethodError, "CLI arg for `#{method_name}` is not declared for this command"
-        end
-
-        return_value
       end
     end
   end

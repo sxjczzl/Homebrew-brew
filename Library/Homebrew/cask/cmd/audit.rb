@@ -13,15 +13,15 @@ module Cask
 
       def self.parser
         super do
-          switch "--[no-]download",
+          switch "--download",
                  description: "Audit the downloaded file"
           switch "--[no-]appcast",
                  description: "Audit the appcast"
-          switch "--[no-]token-conflicts",
+          switch "--token-conflicts",
                  description: "Audit for token conflicts"
-          switch "--[no-]strict",
+          switch "--strict",
                  description: "Run additional, stricter style checks"
-          switch "--[no-]online",
+          switch "--online",
                  description: "Run additional, slower style checks that require a network connection"
           switch "--new-cask",
                  description: "Run various additional style checks to determine if a new cask is eligible " \

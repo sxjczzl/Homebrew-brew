@@ -13,7 +13,7 @@ module Homebrew
     class NamedArgs < Array
       extend T::Sig
 
-      def initialize(*args, parent: Args.new, override_spec: nil, force_bottle: false, flags: [], cask_options: false)
+      def initialize(*args, parent: Args.new, override_spec: nil, force_bottle: false, flags: [])
         require "cask/cask"
         require "cask/cask_loader"
         require "formulary"
@@ -24,7 +24,6 @@ module Homebrew
         @override_spec = override_spec
         @force_bottle = force_bottle
         @flags = flags
-        @cask_options = cask_options
         @parent = parent
 
         super(@args)
@@ -111,8 +110,7 @@ module Homebrew
 
         if only != :formula
           begin
-            config = Cask::Config.from_args(@parent) if @cask_options
-            cask = Cask::CaskLoader.load(name, config: config)
+            cask = Cask::CaskLoader.load(name, config: Cask::Config.from_args(@parent))
 
             if unreadable_error.present?
               onoe <<~EOS
