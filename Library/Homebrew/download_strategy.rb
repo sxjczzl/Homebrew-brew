@@ -515,7 +515,7 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
 
     args += ["-b", meta.fetch(:cookies).map { |k, v| "#{k}=#{v}" }.join(";")] if meta.key?(:cookies)
 
-    args += ["-e", meta.fetch(:referer)] if meta.key?(:referer)
+    args += ["--referer", meta.key?(:referer) ? meta.fetch(:referer) : ""]
 
     args += ["--user", meta.fetch(:user)] if meta.key?(:user)
 

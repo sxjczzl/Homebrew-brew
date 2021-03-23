@@ -12,7 +12,7 @@ describe CurlDownloadStrategy do
   let(:specs) { { user: "download:123456" } }
 
   it "parses the opts and sets the corresponding args" do
-    expect(strategy.send(:_curl_args)).to eq(["--user", "download:123456"])
+    expect(strategy.send(:_curl_args)).to eq(["--referer", "", "--user", "download:123456"])
   end
 
   describe "#fetch" do
@@ -97,7 +97,7 @@ describe CurlDownloadStrategy do
       it "adds the appropriate curl args" do
         expect(strategy).to receive(:system_command).with(
           /curl/,
-          hash_including(args: array_including_cons("-e", "https://somehost/also")),
+          hash_including(args: array_including_cons("--referer", "https://somehost/also")),
         )
         .at_least(:once)
         .and_return(instance_double(SystemCommand::Result, success?: true, stdout: "", assert_success!: nil))
