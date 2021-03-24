@@ -22,7 +22,13 @@ module Cask
     def fetch(quiet: nil, verify_download_integrity: true, timeout: nil)
       downloaded_path = begin
         downloader.shutup! if quiet
-        downloader.fetch(timeout: timeout)
+        begin
+          downloader.fetch(timeout: timeout)
+        rescue ArgumentError
+          odeprecated "`#{downloader.class}#fetch` without a timeout",
+                      "a properly configured `#{downloader.class}#fetch` method"
+          downloader.fetch
+        end
         downloader.cached_location
       rescue => e
         error = CaskError.new("Download failed on Cask '#{cask}' with message: #{e}")
