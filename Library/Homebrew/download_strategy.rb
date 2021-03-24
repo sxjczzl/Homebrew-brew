@@ -388,6 +388,10 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
       else
         begin
           _fetch(url: url, resolved_url: resolved_url, timeout: end_time&.remaining!)
+        rescue ArgumentError
+          odeprecated "`#{self.class}#_fetch` without a timeout",
+                      "a properly configured `#{self.class}#_fetch` method"
+          _fetch(url: url, resolved_url: resolved_url)
         rescue ErrorDuringExecution
           raise CurlDownloadStrategyError, url
         end
