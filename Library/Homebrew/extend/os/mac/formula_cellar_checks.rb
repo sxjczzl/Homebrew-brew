@@ -46,6 +46,8 @@ module FormulaCellarChecks
   end
 
   def check_python_framework_links(lib)
+    return if formula.name.start_with?("llvm")
+
     python_modules = Pathname.glob lib/"python*/site-packages/**/*.so"
     framework_links = python_modules.select do |obj|
       dlls = obj.dynamically_linked_libraries
