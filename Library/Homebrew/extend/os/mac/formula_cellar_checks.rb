@@ -46,7 +46,8 @@ module FormulaCellarChecks
   end
 
   def check_python_framework_links(lib)
-    return if formula.name.start_with?("llvm")
+    # We make a special exception for llvm here in order to build the lldb Python bindings.
+    return if formula.name.match?(/^llvm(@\d+)?$/)
 
     python_modules = Pathname.glob lib/"python*/site-packages/**/*.so"
     framework_links = python_modules.select do |obj|
