@@ -1157,7 +1157,7 @@ class FormulaInstaller
     tab.arch = Hardware::CPU.arch
     tab.source["versions"]["stable"] = formula.stable.version.to_s
     tab.source["path"] = formula.specified_path.to_s
-    tab.source["tap_git_head"] = formula.tap&.git_head
+    tab.source["tap_git_head"] = formula.tap&.git_head if formula.tap.installed?
     tab.tap = formula.tap
     tab.write
   end

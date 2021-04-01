@@ -209,6 +209,7 @@ class Tap
   # True if the remote of this {Tap} is a private repository.
   def private?
     return @private if instance_variable_defined?(:@private)
+    return false unless installed?
 
     @private = read_or_set_private_config
   end

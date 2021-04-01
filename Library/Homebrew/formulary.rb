@@ -266,6 +266,43 @@ module Formulary
     end
   end
 
+  # Loads a formula from GitHub Packages.
+  class GitHubPackagesLoader < FormulaLoader
+    def initialize(url)
+      _, org, repo = *url.match(GitHubPackages::URL_REGEX)
+      basename = File.basename(url)
+      name = basename[/^[^@:]+/, 0]
+      checksum = basename[/sha256:([0-9a-fA-F]{64})$/, 1]&.downcase
+      raise ArgumentError, "Empty checksum: #{url}" if checksum.blank?
+
+      blob_url = "#{GitHubPackages::URL_PREFIX}#{org}/#{repo}/#{name}/blobs/sha256:#{checksum}"
+      resource = Resource.new(name) { url blob_url }
+      resource.specs[:bottle] = true
+      downloader = resource.downloader
+      cached = downloader.cached_location.exist?
+      downloader.fetch
+      ohai "Pouring the cached bottle" if cached
+      @bottle_filename = downloader.cached_location
+      name, full_name = Utils::Bottles.resolve_formula_names @bottle_filename
+      super name, Formulary.path(full_name)
+    end
+
+    def get_formula(spec, force_bottle: false, flags: [], **)
+      contents = Utils::Bottles.formula_contents @bottle_filename, name: name
+      formula = begin
+        Formulary.from_contents(name, path, contents, spec, force_bottle: force_bottle, flags: flags)
+      rescue FormulaUnreadableError => e
+        opoo <<~EOS
+          Unreadable formula in #{@bottle_filename}:
+          #{e}
+        EOS
+        super
+      end
+      formula.local_bottle_path = @bottle_filename
+      formula
+    end
+  end
+
   # Loads tapped formulae.
   class TapLoader < FormulaLoader
     attr_reader :tap
@@ -467,6 +504,8 @@ module Formulary
     case ref
     when HOMEBREW_BOTTLES_EXTNAME_REGEX
       return BottleLoader.new(ref)
+    when GitHubPackages::URL_REGEX
+      return GitHubPackagesLoader.new(ref)
     when URL_START_REGEX
       return FromUrlLoader.new(ref)
     when HOMEBREW_TAP_FORMULA_REGEX
