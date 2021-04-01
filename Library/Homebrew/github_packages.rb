@@ -16,6 +16,7 @@ class GitHubPackages
   URL_PREFIX = "https://#{URL_DOMAIN}/v2/"
   DOCKER_PREFIX = "docker://#{URL_DOMAIN}/"
   URL_REGEX = %r{(?:#{Regexp.escape(URL_PREFIX)}|#{Regexp.escape(DOCKER_PREFIX)})([\w-]+)/([\w-]+)}.freeze
+  URL_SHA256_REGEX = /sha256:([0-9a-fA-F]{64})$/.freeze
   GITHUB_PACKAGE_TYPE = "homebrew_bottle"
 
   # Translate Homebrew tab.arch to OCI platform.architecture

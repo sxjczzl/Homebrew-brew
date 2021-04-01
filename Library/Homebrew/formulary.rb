@@ -272,7 +272,7 @@ module Formulary
       _, org, repo = *url.match(GitHubPackages::URL_REGEX)
       basename = File.basename(url)
       name = basename[/^[^@:]+/, 0]
-      checksum = basename[/sha256:([0-9a-fA-F]{64})$/, 1]&.downcase
+      checksum = basename[GitHubPackages::URL_SHA256_REGEX, 1]&.downcase
       raise ArgumentError, "Empty checksum: #{url}" if checksum.blank?
 
       blob_url = "#{GitHubPackages::URL_PREFIX}#{org}/#{repo}/#{name}/blobs/sha256:#{checksum}"
