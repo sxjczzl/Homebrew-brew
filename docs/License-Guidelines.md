@@ -28,12 +28,6 @@ license :cannot_represent
 
 Some formulae have multiple licenses that need to be combined in different ways. In these cases, a more complex license expression can be used. These expressions are based on the [SPDX License Expression Guidelines](https://spdx.github.io/spdx-spec/appendix-IV-SPDX-license-expressions/).
 
-Add a `+` to indicate that the user can choose a later version of the same license:
-
-```ruby
-license "EPL-1.0+"
-```
-
 GNU licenses (`GPL`, `LGPL`, `AGPL` and `GFDL`) require either the `-only` or the `-or-later` suffix to indicate whether a later version of the license is allowed:
 
 ```ruby
