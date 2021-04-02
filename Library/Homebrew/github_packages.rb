@@ -63,6 +63,9 @@ class GitHubPackages
 
     bottles = index_json["manifests"].map do |manifest|
       platform = manifest["platform"]
+      architecture = TAB_ARCH_TO_PLATFORM_ARCHITECTURE[Hardware::CPU.arch.to_s]
+      next if platform["architecture"] != architecture
+
       os = platform["os"]
       os_version = platform["os.version"]
       next if os != RbConfig::CONFIG["host_os"][/^[a-z]+/]
