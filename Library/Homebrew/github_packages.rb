@@ -61,14 +61,23 @@ class GitHubPackages
     index_json = get_index(repo, name, tag)
     raise "No such tag: #{@github_org}/#{repo}/#{name}:#{tag}" unless index_json
 
-    index_json["manifests"].each do |manifest|
-      annotations = manifest["annotations"]
-      ref_name = annotations["org.opencontainers.image.ref.name"]
-      # TODO: Find the best suitable bottle tag, not the exact bottle tag.
-      return annotations["sh.brew.bottle.checksum"] if ref_name.include? Utils::Bottles.tag.to_s
-    end
-    # Did not find a suitable bottle for this machine.
-    nil
+    bottles = index_json["manifests"].map do |manifest|
+      platform = manifest["platform"]
+      os = platform["os"]
+      os_version = platform["os.version"]
+      next if os != RbConfig::CONFIG["host_os"][/^[a-z]+/]
+
+      checksum = manifest["annotations"]["sh.brew.bottle.checksum"]
+      if os == "darwin"
+        macos_version = OS::Mac::Version.new(os_version[/macOS ([0-9]+\.[0-9]+)/, 1])
+        [macos_version, checksum] if OS::Mac.version >= macos_version
+      else
+        [Version.new(os_version[/[0-9.]+/]), checksum]
+      end
+    end.compact.sort.reverse
+    return if bottles.empty?
+
+    bottles.first[1]
   end
 
   sig { params(bottles_hash: T::Hash[String, T.untyped], dry_run: T::Boolean).void }
