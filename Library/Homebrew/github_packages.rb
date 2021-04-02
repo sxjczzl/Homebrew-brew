@@ -56,8 +56,8 @@ class GitHubPackages
     JSON.parse(out)
   end
 
-  # Return the bottle hash suitable for this machine.
-  def get_bottle_hash(repo, name, tag)
+  # Return the bottle digest suitable for this machine.
+  def get_bottle_digest(repo, name, tag)
     index_json = get_index(repo, name, tag)
     raise "No such tag: #{@github_org}/#{repo}/#{name}:#{tag}" unless index_json
 
@@ -70,7 +70,7 @@ class GitHubPackages
       os_version = platform["os.version"]
       next if os != RbConfig::CONFIG["host_os"][/^[a-z]+/]
 
-      checksum = manifest["annotations"]["sh.brew.bottle.checksum"]
+      checksum = manifest["annotations"]["sh.brew.bottle.digest"]
       if os == "darwin"
         macos_version = OS::Mac::Version.new(os_version[/macOS ([0-9]+\.[0-9]+)/, 1])
         [macos_version, checksum] if OS::Mac.version >= macos_version

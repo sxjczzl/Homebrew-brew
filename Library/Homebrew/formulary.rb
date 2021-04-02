@@ -275,7 +275,7 @@ module Formulary
       checksum = basename[GitHubPackages::URL_SHA256_REGEX, 1]&.downcase
       unless checksum
         tag = basename[/:([^:]+)$/, 1] || "latest"
-        checksum = GitHubPackages.new(org: org).get_bottle_hash(repo, name, tag)
+        checksum = GitHubPackages.new(org: org).get_bottle_digest(repo, name, tag)
       end
       raise ArgumentError, "Empty checksum: #{url}" if checksum.blank?
 
