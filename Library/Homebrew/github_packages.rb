@@ -15,7 +15,8 @@ class GitHubPackages
   URL_DOMAIN = "ghcr.io"
   URL_PREFIX = "https://#{URL_DOMAIN}/v2/"
   DOCKER_PREFIX = "docker://#{URL_DOMAIN}/"
-  URL_REGEX = %r{(?:#{Regexp.escape(URL_PREFIX)}|#{Regexp.escape(DOCKER_PREFIX)})([\w-]+)/([\w-]+)}.freeze
+  URL_REGEX = %r{(?:#{Regexp.escape(URL_PREFIX)}|#{Regexp.escape(DOCKER_PREFIX)}|#{Regexp.escape(URL_DOMAIN)}/)
+    ([\w-]+)/([\w-]+)}x.freeze
   URL_SHA256_REGEX = /sha256:([0-9a-fA-F]{64})$/.freeze
   GITHUB_PACKAGE_TYPE = "homebrew_bottle"
 
@@ -43,6 +44,31 @@ class GitHubPackages
     raise UsageError, "Must set a GitHub organisation!" unless @github_org
 
     ENV["HOMEBREW_FORCE_HOMEBREW_ON_LINUX"] = "1" if @github_org == "homebrew" && !OS.mac?
+  end
+
+  # Return the image index JSON.
+  def get_index(repo, name, tag)
+    out, = curl_output(
+      "--header", "Accept: application/vnd.oci.image.index.v1+json",
+      "--header", "Authorization: Bearer",
+      "#{URL_PREFIX}#{@github_org}/#{repo}/#{name}/manifests/#{tag}"
+    )
+    JSON.parse(out)
+  end
+
+  # Return the bottle hash suitable for this machine.
+  def get_bottle_hash(repo, name, tag)
+    index_json = get_index(repo, name, tag)
+    raise "No such tag: #{@github_org}/#{repo}/#{name}:#{tag}" unless index_json
+
+    index_json["manifests"].each do |manifest|
+      annotations = manifest["annotations"]
+      ref_name = annotations["org.opencontainers.image.ref.name"]
+      # TODO: Find the best suitable bottle tag, not the exact bottle tag.
+      return annotations["sh.brew.bottle.checksum"] if ref_name.include? Utils::Bottles.tag.to_s
+    end
+    # Did not find a suitable bottle for this machine.
+    nil
   end
 
   sig { params(bottles_hash: T::Hash[String, T.untyped], dry_run: T::Boolean).void }

@@ -271,8 +271,12 @@ module Formulary
     def initialize(url)
       _, org, repo = *url.match(GitHubPackages::URL_REGEX)
       basename = File.basename(url)
-      name = basename[/^[^@:]+/, 0]
+      name = basename[/^[^@:]+/]
       checksum = basename[GitHubPackages::URL_SHA256_REGEX, 1]&.downcase
+      unless checksum
+        tag = basename[/:([^:]+)$/, 1] || "latest"
+        checksum = GitHubPackages.new(org: org).get_bottle_hash(repo, name, tag)
+      end
       raise ArgumentError, "Empty checksum: #{url}" if checksum.blank?
 
       blob_url = "#{GitHubPackages::URL_PREFIX}#{org}/#{repo}/#{name}/blobs/sha256:#{checksum}"
