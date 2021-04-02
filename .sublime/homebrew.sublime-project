@@ -1,0 +1,27 @@
+{
+	"folders":
+	[
+		{
+			"path": "..",
+			"folder_exclude_patterns": [
+				"Caskroom",
+				"Cellar",
+				"Frameworks",
+				"bin",
+				"etc",
+				"include",
+				"lib",
+				"opt",
+				"sbin",
+				"share",
+				"var",
+				"Library/Homebrew/LinkedKegs",
+				"Library/Homebrew/Aliases"
+			],
+			"follow_symlinks": true
+		}
+	],
+    "settings": {
+        "tab_size": 2
+    }
+}
