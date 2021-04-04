@@ -46,31 +46,24 @@ class GitHubPackages
     ENV["HOMEBREW_FORCE_HOMEBREW_ON_LINUX"] = "1" if @github_org == "homebrew" && !OS.mac?
   end
 
-  # Return the image index JSON.
-  def get_index(repo, name, tag)
+  # Return the image index or manifest JSON.
+  def get_index_or_manifest(repo, name, ref)
     out, = curl_output(
-      "--header", "Accept: application/vnd.oci.image.index.v1+json",
+      "--header", "Accept: application/vnd.oci.image.index.v1+json,application/vnd.oci.image.manifest.v1+json",
       "--header", "Authorization: Bearer",
-      "#{URL_PREFIX}#{@github_org}/#{repo}/#{name}/manifests/#{tag}"
+      "#{URL_PREFIX}#{@github_org}/#{repo}/#{name}/manifests/#{ref}"
     )
     JSON.parse(out)
   end
 
-  # Return the string representation of a reference
-  def self.ref_to_s(org, repo, name, ref)
-    if ref.start_with? "sha256:"
-      "#{org}/#{repo}/#{name}@#{ref}"
-    else
-      "#{org}/#{repo}/#{name}:#{ref}"
-    end
-  end
-
   # Return the bottle hash suitable for this machine.
   def get_bottle_digest(repo, name, ref)
-    index_json = get_index(repo, name, ref)
-    raise "No such reference: #{ref_to_s(@github_org, repo, name, ref)}" unless index_json
+    json = get_index_or_manifest(repo, name, ref)
+    return if json.key?("errors")
 
-    bottles = index_json["manifests"].map do |manifest|
+    return json["annotations"]["sh.brew.bottle.digest"] || json["layers"].first["digest"] if json.key?("layers")
+
+    bottles = json["manifests"].map do |manifest|
       platform = manifest["platform"]
       architecture = TAB_ARCH_TO_PLATFORM_ARCHITECTURE[Hardware::CPU.arch.to_s]
       next if platform["architecture"] != architecture
@@ -87,7 +80,7 @@ class GitHubPackages
         [Version.new(os_version[/[0-9.]+/]), checksum]
       end
     end.compact.sort.reverse
-    return if bottles.empty?
+    raise "No bottle compatible with this system" if bottles.empty?
 
     bottles.first[1]
   end
