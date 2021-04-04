@@ -355,6 +355,8 @@ class AbstractFileDownloadStrategy < AbstractDownloadStrategy
       return path.basename.to_s[/[^?&]+#{Regexp.escape(ext)}/] if ext
     end
 
+    return File.basename(uri_path).split("?").first if uri_path.include? "/blobs/sha256:"
+
     File.basename(uri_path)
   end
 end

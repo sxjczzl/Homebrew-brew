@@ -56,10 +56,19 @@ class GitHubPackages
     JSON.parse(out)
   end
 
-  # Return the bottle digest suitable for this machine.
-  def get_bottle_digest(repo, name, tag)
-    index_json = get_index(repo, name, tag)
-    raise "No such tag: #{@github_org}/#{repo}/#{name}:#{tag}" unless index_json
+  # Return the string representation of a reference
+  def self.ref_to_s(org, repo, name, ref)
+    if ref.start_with? "sha256:"
+      "#{org}/#{repo}/#{name}@#{ref}"
+    else
+      "#{org}/#{repo}/#{name}:#{ref}"
+    end
+  end
+
+  # Return the bottle hash suitable for this machine.
+  def get_bottle_digest(repo, name, ref)
+    index_json = get_index(repo, name, ref)
+    raise "No such reference: #{ref_to_s(@github_org, repo, name, ref)}" unless index_json
 
     bottles = index_json["manifests"].map do |manifest|
       platform = manifest["platform"]

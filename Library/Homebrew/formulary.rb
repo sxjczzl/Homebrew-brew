@@ -272,14 +272,17 @@ module Formulary
       _, org, repo = *url.match(GitHubPackages::URL_REGEX)
       basename = File.basename(url)
       name = basename[/^[^@:]+/]
-      checksum = basename[GitHubPackages::URL_SHA256_REGEX, 1]&.downcase
-      unless checksum
-        tag = basename[/:([^:]+)$/, 1] || "latest"
-        checksum = GitHubPackages.new(org: org).get_bottle_digest(repo, name, tag)
+      digest = basename[GitHubPackages::URL_SHA256_REGEX, 1]&.downcase
+      blob_digest = if digest
+        ref = "sha256:#{digest}"
+        GitHubPackages.new(org: org).get_bottle_digest(repo, name, ref) || digest
+      else
+        ref = basename[/:([\w.-]+)$/, 1] || "latest"
+        GitHubPackages.new(org: org).get_bottle_digest(repo, name, ref)
       end
-      raise ArgumentError, "Empty checksum: #{url}" if checksum.blank?
+      raise ArgumentError, "No such package: #{url}" if blob_digest.blank?
 
-      blob_url = "#{GitHubPackages::URL_PREFIX}#{org}/#{repo}/#{name}/blobs/sha256:#{checksum}"
+      blob_url = "#{GitHubPackages::URL_PREFIX}#{org}/#{repo}/#{name}/blobs/sha256:#{blob_digest}"
       resource = Resource.new(name) { url blob_url }
       resource.specs[:bottle] = true
       downloader = resource.downloader
