@@ -101,6 +101,18 @@ class GitHubPackages
     "#{prefix}#{org}/#{repo_without_prefix(repo)}"
   end
 
+  def self.sanitize_root_url(url)
+    if url.to_s.start_with? "docker://"
+      _, registry, org, repo = *url.match(%r{docker://([\w.-]+)/([\w-]+)/([\w-]+)})
+      GitHubPackages.root_url(org, repo, "https://#{registry}/v2/")
+    elsif url.to_s.start_with? URL_PREFIX
+      _, org, repo = *url.match(URL_REGEX)
+      GitHubPackages.root_url(org, repo)
+    else
+      url
+    end
+  end
+
   private
 
   IMAGE_CONFIG_SCHEMA_URI = "https://opencontainers.org/schema/image/config"
