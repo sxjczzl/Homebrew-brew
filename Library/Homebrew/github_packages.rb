@@ -135,10 +135,27 @@ class GitHubPackages
     schema_uri("image-manifest-schema", IMAGE_MANIFEST_SCHEMA_URI)
   end
 
+  def schema_with_additional_properties_disabled(old_hash)
+    new_hash = {}
+
+    old_hash.each do |key, value|
+      new_hash["additionalProperties"] = false if key == "properties"
+
+      new_hash[key] = if value.is_a?(Hash)
+        schema_with_additional_properties_disabled(value)
+      else
+        value
+      end
+    end
+
+    new_hash
+  end
+
   def schema_uri(basename, uris)
     url = "https://raw.githubusercontent.com/opencontainers/image-spec/master/schema/#{basename}.json"
     out, = curl_output(url)
     json = JSON.parse(out)
+    json = schema_with_additional_properties_disabled(json)
 
     @schema_json ||= {}
     Array(uris).each do |uri|
@@ -233,13 +250,7 @@ class GitHubPackages
       end
       raise TypeError, "unknown tab['built_on']['os']: #{tab["built_on"]["os"]}" if os.blank?
 
-      os_version = tab["built_on"]["os_version"].presence if tab["built_on"].present?
-      case os
-      when "darwin"
-        os_version ||= "macOS #{MacOS::Version.from_symbol(bottle_tag)}"
-      when "linux"
-        os_version&.delete_suffix!(" LTS")
-        os_version ||= OS::CI_OS_VERSION
+      if os == "linux"
         glibc_version = tab["built_on"]["glibc_version"].presence if tab["built_on"].present?
         glibc_version ||= OS::CI_GLIBC_VERSION
         cpu_variant = tab["oldest_cpu_family"] || Hardware::CPU::INTEL_64BIT_OLDEST_CPU.to_s
@@ -247,8 +258,7 @@ class GitHubPackages
 
       platform_hash = {
         architecture: architecture,
-        os: os,
-        "os.version" => os_version,
+        os:           os,
       }.reject { |_, v| v.blank? }
 
       tar_sha256 = Digest::SHA256.hexdigest(
