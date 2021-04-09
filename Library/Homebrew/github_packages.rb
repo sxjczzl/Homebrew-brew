@@ -105,8 +105,8 @@ class GitHubPackages
     if (matches = url.to_s.match(%r{docker://([\w.-]+)/([\w-]+)/([\w-]+)}))
       _, registry, org, repo = *matches.to_a
       GitHubPackages.root_url(org, repo, "https://#{registry}/v2/")
-    elsif url.to_s.start_with? URL_PREFIX
-      _, org, repo = *url.match(URL_REGEX)
+    elsif (matches = url.to_s.match(URL_REGEX))
+      _, org, repo = *matches.to_a
       GitHubPackages.root_url(org, repo)
     else
       url
