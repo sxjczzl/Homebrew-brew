@@ -102,8 +102,8 @@ class GitHubPackages
   end
 
   def self.sanitize_root_url(url)
-    if url.to_s.start_with? "docker://"
-      _, registry, org, repo = *url.match(%r{docker://([\w.-]+)/([\w-]+)/([\w-]+)})
+    if (matches = url.to_s.match(%r{docker://([\w.-]+)/([\w-]+)/([\w-]+)}))
+      _, registry, org, repo = *matches.to_a
       GitHubPackages.root_url(org, repo, "https://#{registry}/v2/")
     elsif url.to_s.start_with? URL_PREFIX
       _, org, repo = *url.match(URL_REGEX)
