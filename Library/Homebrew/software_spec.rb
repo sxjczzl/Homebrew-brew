@@ -279,7 +279,7 @@ class Bottle
     end
 
     def url_encode
-      ERB::Util.url_encode("#{name}-#{version}#{extname}")
+      ERB::Util.url_encode("#{name}--#{version}#{extname}")
     end
 
     def github_packages
