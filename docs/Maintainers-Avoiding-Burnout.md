@@ -1,3 +1,4 @@
+![9610EEE5-C197-4282-9676-B3845533CDC4](https://user-images.githubusercontent.com/68143690/114793193-865d9c80-9d92-11eb-8dad-ab2a52ae4e2e.jpeg)
 # Maintainers: Avoiding Burnout
 
 **This guide is for maintainers.** These special people have **write
