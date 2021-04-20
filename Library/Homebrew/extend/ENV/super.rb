@@ -89,8 +89,8 @@ module Superenv
     #     make/bsdmake wrappers currently.
     # x - Enable C++11 mode.
     # g - Enable "-stdlib=libc++" for clang.
-    # h - Enable "-stdlib=libstdc++" for clang.
     # K - Don't strip -arch <arch>, -m32, or -m64
+    # P - Don't strip -O[0-9zs]
     # w - Pass -no_weak_imports to the linker
     #
     # These flags will also be present:
@@ -296,6 +296,11 @@ module Superenv
   sig { void }
   def permit_arch_flags
     append_to_cccfg "K"
+  end
+
+  sig { void }
+  def permit_optimization_level
+    append_to_cccfg "P"
   end
 
   sig { void }
