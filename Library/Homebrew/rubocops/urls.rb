@@ -238,6 +238,7 @@ module RuboCop
 
           # Check for binary URLs
           audit_urls(urls, /(darwin|macos|osx)/i) do |match, url|
+            next if url.match?(%r{https://files\.pythonhosted\.org.*tar\.gz})
             next if @formula_name.include?(match.to_s.downcase)
             next if url.match?(/.(patch|diff)(\?full_index=1)?$/)
             next if tap_style_exception? :not_a_binary_url_prefix_allowlist
