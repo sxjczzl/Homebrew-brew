@@ -4,6 +4,8 @@ on:
     branches:
       - master
   pull_request:
+    paths-ignore:
+    - README.md
 env:
   HOMEBREW_DEVELOPER: 1
   HOMEBREW_NO_AUTO_UPDATE: 1
