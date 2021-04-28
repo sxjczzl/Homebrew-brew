@@ -317,7 +317,7 @@ class Bottle
     @resource.version = formula.pkg_version
     @resource.checksum = checksum
 
-    root_url(spec.root_url, spec.root_url_specs)
+    root_url(spec.root_url(tag: tag), spec.root_url_specs)
   end
 
   def fetch(verify_download_integrity: true)
@@ -438,6 +438,8 @@ class Bottle
     path, resolved_basename = Utils::Bottles.path_resolved_basename(val, name, resource.checksum, filename)
     @resource.url("#{val}/#{path}", select_download_strategy(specs))
     @resource.downloader.resolved_basename = resolved_basename if resolved_basename.present?
+
+    @root_url
   end
 end
 
@@ -457,17 +459,18 @@ class BottleSpecification
     @root_url_specs = {}
   end
 
-  def root_url(var = nil, specs = {})
+  def root_url(var = nil, specs = {}, tag: nil)
     if var.nil?
-      @root_url ||= if (github_packages_url = GitHubPackages.root_url_if_match(Homebrew::EnvConfig.bottle_domain))
+      bottle_domain = Homebrew::EnvConfig.bottle_domain
+      @root_url ||= if (github_packages_url = GitHubPackages.root_url_if_match(bottle_domain, tag))
         github_packages_url
       elsif Homebrew::EnvConfig.bottle_domain.match?(::Bintray::URL_REGEX)
-        "#{Homebrew::EnvConfig.bottle_domain}/#{Utils::Bottles::Bintray.repository(tap)}"
+        "#{bottle_domain}/#{Utils::Bottles::Bintray.repository(tap)}"
       else
-        Homebrew::EnvConfig.bottle_domain
+        bottle_domain
       end
     else
-      @root_url = if (github_packages_url = GitHubPackages.root_url_if_match(var))
+      @root_url = if (github_packages_url = GitHubPackages.root_url_if_match(var, tag))
         github_packages_url
       else
         var

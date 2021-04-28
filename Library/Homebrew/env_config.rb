@@ -52,8 +52,8 @@ module Homebrew
                       "download from the prefix `http://localhost:8080/`. " \
                       "If bottles are not available at `HOMEBREW_BOTTLE_DOMAIN` " \
                       "they will be downloaded from the default bottle domain.",
-        default_text: "macOS: `https://ghcr.io/v2/homebrew/core`, " \
-                      "Linux: `https://ghcr.io/v2/linuxbrew/core`.",
+        default_text: "macOS: `#{HOMEBREW_HOMEBREW_BOTTLE_DEFAULT_DOMAIN}`, " \
+                      "Linux: `#{HOMEBREW_LINUXBREW_BOTTLE_DEFAULT_DOMAIN}`.",
         default:      HOMEBREW_BOTTLE_DEFAULT_DOMAIN,
       },
       HOMEBREW_BREW_GIT_REMOTE:               {

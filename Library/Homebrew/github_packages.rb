@@ -112,8 +112,14 @@ class GitHubPackages
     "#{prefix}#{org}/#{repo_without_prefix(repo)}"
   end
 
-  def self.root_url_if_match(url)
+  def self.root_url_if_match(url, tag)
     return if url.blank?
+
+    # Linuxbrew organisation `all:` bottles live on Homebrew organisation.
+    if tag.present? && tag.to_sym == :all &&
+       url.present? && url == HOMEBREW_LINUXBREW_BOTTLE_DEFAULT_DOMAIN
+      url = HOMEBREW_HOMEBREW_BOTTLE_DEFAULT_DOMAIN
+    end
 
     _, org, repo, = *url.to_s.match(URL_REGEX)
     return if org.blank? || repo.blank?
