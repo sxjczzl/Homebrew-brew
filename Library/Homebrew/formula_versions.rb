@@ -15,8 +15,6 @@ class FormulaVersions
     ErrorDuringExecution, LoadError, MethodDeprecatedError
   ].freeze
 
-  MAX_VERSIONS_DEPTH = 1
-
   attr_reader :name, :path, :repository, :entry_name
 
   def initialize(formula)
@@ -58,7 +56,7 @@ class FormulaVersions
     Homebrew.raise_deprecation_exceptions = false
   end
 
-  def bottle_version_map(branch)
+  def bottle_version_map(branch, max_versions_depth: 1)
     map = Hash.new { |h, k| h[k] = [] }
 
     versions_seen = 0
@@ -68,27 +66,11 @@ class FormulaVersions
         map[f.pkg_version] << bottle.rebuild unless bottle.checksums.empty?
         versions_seen = (map.keys + [f.pkg_version]).uniq.length
       end
-      return map if versions_seen > MAX_VERSIONS_DEPTH
+      return map if versions_seen > max_versions_depth
     rescue MacOSVersionError => e
       odebug "#{e} in #{name} at revision #{rev}"
       break
     end
     map
-  end
-
-  def latest_bottle_rebuild(branch, pkg_version)
-    map = Hash.new { |h, k| h[k] = [] }
-
-    rev_list(branch) do |rev|
-      formula_at_revision(rev) do |f|
-        bottle = f.bottle_specification
-        map[f.pkg_version] << bottle.rebuild unless bottle.checksums.empty?
-        return map[pkg_version] if f.pkg_version < pkg_version || !map[f.pkg_version].empty?
-      end
-    rescue MacOSVersionError => e
-      odebug "#{e} in #{name} at revision #{rev}"
-      break
-    end
-    map[pkg_version]
   end
 end
