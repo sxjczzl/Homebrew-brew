@@ -15,7 +15,7 @@ class FormulaVersions
     ErrorDuringExecution, LoadError, MethodDeprecatedError
   ].freeze
 
-  MAX_VERSIONS_DEPTH = 2
+  MAX_VERSIONS_DEPTH = 1
 
   attr_reader :name, :path, :repository, :entry_name
 
