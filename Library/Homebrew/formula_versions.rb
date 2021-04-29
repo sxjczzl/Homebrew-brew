@@ -75,4 +75,20 @@ class FormulaVersions
     end
     map
   end
+
+  def latest_bottle_rebuild(branch, pkg_version)
+    map = Hash.new { |h, k| h[k] = [] }
+
+    rev_list(branch) do |rev|
+      formula_at_revision(rev) do |f|
+        bottle = f.bottle_specification
+        map[f.pkg_version] << bottle.rebuild unless bottle.checksums.empty?
+        return map[pkg_version] if f.pkg_version < pkg_version || !map[f.pkg_version].empty?
+      end
+    rescue MacOSVersionError => e
+      odebug "#{e} in #{name} at revision #{rev}"
+      break
+    end
+    map[pkg_version]
+  end
 end
