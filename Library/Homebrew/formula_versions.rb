@@ -30,7 +30,8 @@ class FormulaVersions
 
   def rev_list(branch)
     repository.cd do
-      Utils.popen_read("git", "rev-list", "--abbrev-commit", "--remove-empty", branch, "--", entry_name) do |io|
+      Utils.popen_read("git", "rev-list", "--abbrev-commit", "--remove-empty", "--first-parent", branch, "--",
+                       entry_name) do |io|
         yield io.readline.chomp until io.eof?
       end
     end
