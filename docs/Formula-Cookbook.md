@@ -662,25 +662,26 @@ Generally we'd rather you were specific about what files or directories need to 
 
 #### Variables for directory locations
 
-| Name                  | Default                                        | Example                                           |
-|-----------------------|------------------------------------------------|---------------------------------------------------|
-| **`HOMEBREW_PREFIX`** | `/usr/local`                                   |                                                   |
-| **`prefix`**          | `#{HOMEBREW_PREFIX}/Cellar/#{name}/#{version}` | `/usr/local/Cellar/foo/0.1`                       |
-| **`opt_prefix`**      | `#{HOMEBREW_PREFIX}/opt/#{name}`               | `/usr/local/opt/foo`                              |
-| **`bin`**             | `#{prefix}/bin`                                | `/usr/local/Cellar/foo/0.1/bin`                   |
-| **`doc`**             | `#{prefix}/share/doc/foo`                      | `/usr/local/Cellar/foo/0.1/share/doc/foo`         |
-| **`include`**         | `#{prefix}/include`                            | `/usr/local/Cellar/foo/0.1/include`               |
-| **`info`**            | `#{prefix}/share/info`                         | `/usr/local/Cellar/foo/0.1/share/info`            |
-| **`lib`**             | `#{prefix}/lib`                                | `/usr/local/Cellar/foo/0.1/lib`                   |
-| **`libexec`**         | `#{prefix}/libexec`                            | `/usr/local/Cellar/foo/0.1/libexec`               |
-| **`man`**             | `#{prefix}/share/man`                          | `/usr/local/Cellar/foo/0.1/share/man`             |
-| **`man[1-8]`**        | `#{prefix}/share/man/man[1-8]`                 | `/usr/local/Cellar/foo/0.1/share/man/man[1-8]`    |
-| **`sbin`**            | `#{prefix}/sbin`                               | `/usr/local/Cellar/foo/0.1/sbin`                  |
-| **`share`**           | `#{prefix}/share`                              | `/usr/local/Cellar/foo/0.1/share`                 |
-| **`pkgshare`**        | `#{prefix}/share/foo`                          | `/usr/local/Cellar/foo/0.1/share/foo`             |
-| **`etc`**             | `#{HOMEBREW_PREFIX}/etc`                       | `/usr/local/etc`                                  |
-| **`var`**             | `#{HOMEBREW_PREFIX}/var`                       | `/usr/local/var`                                  |
-| **`buildpath`**       | A temporary directory somewhere on your system | `/private/tmp/[formula-name]-0q2b/[formula-name]` |
+| Name                  | Default                                                   | Example                                           |
+|-----------------------|-----------------------------------------------------------|---------------------------------------------------|
+| **`HOMEBREW_PREFIX`** | `/usr/local`                                              |                                                   |
+| **`prefix`**          | `#{HOMEBREW_PREFIX}/Cellar/#{name}/#{version}`            | `/usr/local/Cellar/foo/0.1`                       |
+| **`opt_prefix`**      | `#{HOMEBREW_PREFIX}/opt/#{name}`                          | `/usr/local/opt/foo`                              |
+| **`bin`**             | `#{prefix}/bin`                                           | `/usr/local/Cellar/foo/0.1/bin`                   |
+| **`doc`**             | `#{prefix}/share/doc/foo`                                 | `/usr/local/Cellar/foo/0.1/share/doc/foo`         |
+| **`include`**         | `#{prefix}/include`                                       | `/usr/local/Cellar/foo/0.1/include`               |
+| **`info`**            | `#{prefix}/share/info`                                    | `/usr/local/Cellar/foo/0.1/share/info`            |
+| **`lib`**             | `#{prefix}/lib`                                           | `/usr/local/Cellar/foo/0.1/lib`                   |
+| **`libexec`**         | `#{prefix}/libexec`                                       | `/usr/local/Cellar/foo/0.1/libexec`               |
+| **`man`**             | `#{prefix}/share/man`                                     | `/usr/local/Cellar/foo/0.1/share/man`             |
+| **`man[1-8]`**        | `#{prefix}/share/man/man[1-8]`                            | `/usr/local/Cellar/foo/0.1/share/man/man[1-8]`    |
+| **`sbin`**            | `#{prefix}/sbin`                                          | `/usr/local/Cellar/foo/0.1/sbin`                  |
+| **`share`**           | `#{prefix}/share`                                         | `/usr/local/Cellar/foo/0.1/share`                 |
+| **`pkgshare`**        | `#{prefix}/share/foo`                                     | `/usr/local/Cellar/foo/0.1/share/foo`             |
+| **`etc`**             | `#{HOMEBREW_PREFIX}/etc`                                  | `/usr/local/etc`                                  |
+| **`var`**             | `#{HOMEBREW_PREFIX}/var`                                  | `/usr/local/var`                                  |
+| **`buildpath`**       | A temporary directory somewhere on your system            | `/private/tmp/[formula-name]-0q2b/[formula-name]` |
+| **`rpath`**           | `@loader_path/../lib` (macOS)<br>`$ORIGIN/../lib` (Linux) | `/usr/local/Cellar/foo/0.1/lib`                   |
 
 These can be used, for instance, in code such as
 
