@@ -331,7 +331,8 @@ class Bottle
 
   def clear_cache
     @resource.clear_cache
-    github_packages_manifest_resource&.clear_cache
+    docker_bottle_manifest_list_resource&.clear_cache
+    docker_bottle_manifest_resource&.clear_cache
   end
 
   def compatible_locations?
@@ -349,7 +350,8 @@ class Bottle
 
   def fetch_tab
     # a checksum is used later identifying the correct tab but we do not have the checksum for the manifest/tab
-    github_packages_manifest_resource&.fetch(verify_download_integrity: false)
+    docker_bottle_manifest_list_resource&.fetch(verify_download_integrity: false)
+    tab_attributes
   rescue DownloadError
     raise unless fallback_on_error
 
@@ -357,30 +359,39 @@ class Bottle
   end
 
   def tab_attributes
-    return {} unless github_packages_manifest_resource&.downloaded?
+    return {} unless docker_bottle_manifest_list_resource&.downloaded?
 
-    manifest_json = github_packages_manifest_resource.cached_download.read
+    manifest_json = docker_bottle_manifest_list_resource.cached_download.read
 
     json = begin
       JSON.parse(manifest_json)
     rescue JSON::ParserError
-      raise ArgumentError, "Couldn't parse manifest JSON."
+      raise ArgumentError, "Couldn't parse manifest list JSON."
     end
 
     manifests = json["manifests"]
     raise ArgumentError, "Missing 'manifests' section." if manifests.blank?
 
-    manifests_annotations = manifests.map { |m| m["annotations"] }
-    raise ArgumentError, "Missing 'annotations' section." if manifests_annotations.blank?
-
     bottle_digest = @resource.checksum.hexdigest
-    manifest_annotations = manifests_annotations.find do |m|
-      m["sh.brew.bottle.digest"] == bottle_digest
+    manifest = manifests.find do |m|
+      m["annotations"]["sh.brew.bottle.digest"] == bottle_digest
     end
-    raise ArgumentError, "Couldn't find manifest matching bottle checksum." if manifest_annotations.blank?
+    raise ArgumentError, "Couldn't find manifest matching bottle checksum." if manifest.blank?
 
-    tab = manifest_annotations["sh.brew.tab"]
+    tab = manifest["annotations"]["sh.brew.tab"]
     raise ArgumentError, "Couldn't find tab from manifest." if tab.blank?
+
+    bottle_manifest = begin
+      docker_bottle_manifest_resource(manifest)
+    rescue JSON::ParserError
+      raise ArgumentError, "Couldn't parse manifest JSON."
+    end
+    layer = bottle_manifest["layers"].find do |l|
+      l["digest"] == "sha256:#{bottle_digest}"
+    end
+    raise ArgumentError, "Couldn't find layer matching bottle checksum." if layer.blank?
+
+    @resource&.downloader&.mimetype = layer["mediaType"]
 
     begin
       JSON.parse(tab)
@@ -391,23 +402,48 @@ class Bottle
 
   private
 
-  def github_packages_manifest_resource
-    return if @resource.download_strategy != CurlGitHubPackagesDownloadStrategy
+  # Resource for Docker manifests
+  def docker_manifest_resource(resource_name, basename, image_name, digest)
+    resource = Resource.new(resource_name)
+    resource.version(@version_rebuild)
 
-    @github_packages_manifest_resource ||= begin
-      resource = Resource.new("#{name}_bottle_manifest")
+    resource.url("#{root_url}/#{image_name}/manifests/#{digest}", {
+      using: DockerRegistryDownloadStrategy,
+    })
+    resource.downloader.resolved_basename = basename
+    resource
+  end
 
-      version_rebuild = GitHubPackages.version_rebuild(@resource.version, rebuild)
-      resource.version(version_rebuild)
+  # Resource for platform-specific manifest
+  def docker_bottle_manifest_resource(manifest)
+    return if @resource.download_strategy != DockerRegistryDownloadStrategy
 
-      image_name = GitHubPackages.image_formula_name(@name)
-      image_tag = GitHubPackages.image_version_rebuild(version_rebuild)
-      resource.url("#{root_url}/#{image_name}/manifests/#{image_tag}", {
-        using:   CurlGitHubPackagesDownloadStrategy,
-        headers: ["Accept: application/vnd.oci.image.index.v1+json"],
-      })
-      resource.downloader.resolved_basename = "#{name}-#{version_rebuild}.bottle_manifest.json"
-      resource
+    @docker_bottle_manifest_resource ||= begin
+      @version_rebuild ||= GitHubPackages.version_rebuild(@resource.version, @rebuild)
+      @image_name ||= GitHubPackages.image_formula_name(@name)
+      digest = manifest["digest"]
+      manifest_resource = docker_manifest_resource(
+        "#{name}_bottle_manifest",
+        "#{name}-#{@version_rebuild}.bottle_manifest.json",
+        @image_name, digest
+      )
+      manifest_resource&.downloader&.mimetype = manifest["mediaType"]
+      manifest_resource&.fetch(verify_download_integrity: false)
+      JSON.parse(manifest_resource.cached_download.read) if manifest_resource&.downloaded?
+    end
+  end
+
+  # Resource for manifest list
+  def docker_bottle_manifest_list_resource
+    return if @resource.download_strategy != DockerRegistryDownloadStrategy
+
+    @docker_bottle_manifest_list_resource ||= begin
+      @version_rebuild ||= GitHubPackages.version_rebuild(@resource.version, @rebuild)
+      @image_name ||= GitHubPackages.image_formula_name(@name)
+      image_tag = GitHubPackages.image_version_rebuild(@version_rebuild)
+
+      docker_manifest_resource("#{name}_bottle_manifest_list",
+                               "#{name}-#{@version_rebuild}.bottle_manifest_list.json", @image_name, image_tag)
     end
   end
 
@@ -422,7 +458,8 @@ class Bottle
        Homebrew::EnvConfig.bottle_domain != HOMEBREW_BOTTLE_DEFAULT_DOMAIN
       opoo "Bottle missing, falling back to the default domain..."
       root_url(HOMEBREW_BOTTLE_DEFAULT_DOMAIN)
-      @github_packages_manifest_resource = nil
+      @docker_bottle_manifest_list_resource = nil
+      @docker_bottle_manifest_resource = nil
       true
     else
       false

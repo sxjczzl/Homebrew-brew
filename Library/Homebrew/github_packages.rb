@@ -13,13 +13,13 @@ class GitHubPackages
   include Context
 
   URL_DOMAIN = "ghcr.io"
-  URL_PREFIX = "https://#{URL_DOMAIN}/v2/"
-  DOCKER_PREFIX = "docker://#{URL_DOMAIN}/"
+  URL_PREFIX = "https://#{URL_DOMAIN}/v2"
+  DOCKER_PREFIX = "docker://"
   private_constant :URL_DOMAIN
   private_constant :URL_PREFIX
   private_constant :DOCKER_PREFIX
 
-  URL_REGEX = %r{(?:#{Regexp.escape(URL_PREFIX)}|#{Regexp.escape(DOCKER_PREFIX)})([\w-]+)/([\w-]+)}.freeze
+  URL_REGEX = %r{(#{Regexp.escape(URL_PREFIX)}|#{Regexp.escape(DOCKER_PREFIX)}[^/]+)/([\w-]+)/([\w-]+)}.freeze
 
   # Translate Homebrew tab.arch to OCI platform.architecture
   TAB_ARCH_TO_PLATFORM_ARCHITECTURE = {
@@ -109,16 +109,16 @@ class GitHubPackages
     # docker/skopeo insist on lowercase org ("repository name")
     org = org.downcase
 
-    "#{prefix}#{org}/#{repo_without_prefix(repo)}"
+    "#{prefix}/#{org}/#{repo_without_prefix(repo)}"
   end
 
   def self.root_url_if_match(url)
     return if url.blank?
 
-    _, org, repo, = *url.to_s.match(URL_REGEX)
-    return if org.blank? || repo.blank?
+    _, prefix, org, repo, = *url.to_s.match(URL_REGEX)
+    return if prefix.blank? || org.blank? || repo.blank?
 
-    root_url(org, repo)
+    root_url(org, repo, prefix)
   end
 
   def self.image_formula_name(formula_name)

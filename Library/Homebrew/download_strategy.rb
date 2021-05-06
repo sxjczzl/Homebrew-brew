@@ -10,6 +10,8 @@ require "lock_file"
 
 require "mechanize/version"
 require "mechanize/http/content_disposition_parser"
+require "mechanize/http/www_authenticate_parser"
+require "mechanize/http/auth_challenge"
 
 require "utils/curl"
 
@@ -555,23 +557,92 @@ class CurlDownloadStrategy < AbstractFileDownloadStrategy
   end
 end
 
-# Strategy for downloading a file from an GitHub Packages URL.
+# Strategy for downloading a file from a Docker registry.
 #
 # @api public
-class CurlGitHubPackagesDownloadStrategy < CurlDownloadStrategy
-  attr_writer :resolved_basename
+class DockerRegistryDownloadStrategy < CurlDownloadStrategy
+  attr_writer :mimetype, :resolved_basename
+
+  # Will store tokens for re-use
+  @@bearer_tokens = {} # rubocop:disable Style/ClassVars
 
   def initialize(url, name, version, **meta)
+    @auth_parser = Mechanize::HTTP::WWWAuthenticateParser.new
     meta ||= {}
     meta[:headers] ||= []
-    meta[:headers] << ["Authorization: Bearer QQ=="]
-    super(url, name, version, meta)
+    # Default "Accept" header value
+    @mimetype = "application/vnd.oci.image.index.v1+json"
+    uri = URI(url)
+    if uri.scheme == "docker"
+      # Replace docker:// URLs with registry v2 api URLs
+      @base_uri = "https://#{uri.host}"
+      url = "#{@base_uri}/v2#{uri.path}"
+    else
+      @base_uri = "#{uri.scheme}://#{uri.host}"
+      url = "#{@base_uri}#{uri.path}"
+    end
+    @base_uri += ":#{uri.port}" if uri.port
+
+    super
+  end
+
+  # Catches 401 responses to trigger authentication
+  def curl_output(*args, **options)
+    result = super
+    if result.success? && result.stdout.lines[0].include?("401")
+      authenticate(result.stdout)
+      result = super
+    end
+    result
+  end
+
+  def fetch(timeout: nil)
+    @meta[:headers] << ["Accept: #{@mimetype}"]
+    super
   end
 
   private
 
   def resolved_basename
     @resolved_basename.presence || super
+  end
+
+  # Handle 401 responses from registry
+  def authenticate(out)
+    lines = out.lines.map(&:chomp)
+    auth_header =
+      lines.map { |line| line[/^WWW-Authenticate:\s*(.+)/i, 1] }
+           .compact
+           .last
+
+    challenges = @auth_parser.parse auth_header
+    # Handle Bearer auth
+    if (challenge = challenges.find { |c| c.scheme == "Bearer" })
+      realm = challenge["realm"]
+      params = URI.encode_www_form(challenge.params.reject { |key, _| key == "realm" })
+      if @@bearer_tokens.key? "#{realm}?#{params}"
+        # Re-use existing token
+        token = @@bearer_tokens["#{realm}?#{params}"]
+        @meta[:headers] << ["Authorization: Bearer #{token}"]
+        return
+      end
+      # Fetch a new token
+      json, = curl_with_workarounds("--silent", "--location", "#{realm}?#{params}",
+                                    print_stderr: false,
+                                    show_output:  false)
+      result = JSON.parse(json)
+      unless result.key?("token")
+        $stderr.puts "Unable to fetch token from registry"
+        raise CurlDownloadStrategyError, url
+      end
+      @@bearer_tokens["#{realm}?#{params}"] = result["token"]
+      @meta[:headers] << ["Authorization: Bearer #{result["token"]}"]
+      return
+    end
+    # No auth methods left to try
+    supported_methods = challenges.map(&:scheme)
+    $stderr.puts "Registry expects an unsupported authentication format: #{supported_methods}"
+    raise CurlDownloadStrategyError, url
   end
 end
 
@@ -1322,7 +1393,7 @@ class DownloadStrategyDetector
   def self.detect_from_url(url)
     case url
     when GitHubPackages::URL_REGEX
-      CurlGitHubPackagesDownloadStrategy
+      DockerRegistryDownloadStrategy
     when %r{^https?://github\.com/[^/]+/[^/]+\.git$}
       GitHubGitDownloadStrategy
     when %r{^https?://.+\.git$},
