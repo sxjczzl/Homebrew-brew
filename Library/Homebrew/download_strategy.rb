@@ -574,23 +574,20 @@ class DockerRegistryDownloadStrategy < CurlDownloadStrategy
     @mimetype = "application/vnd.oci.image.index.v1+json"
     uri = URI(url)
     if uri.scheme == "docker"
-      # Replace docker:// URLs with registry v2 api URLs
-      @base_uri = "https://#{uri.host}"
-      url = "#{@base_uri}/v2#{uri.path}"
-    else
-      @base_uri = "#{uri.scheme}://#{uri.host}"
-      url = "#{@base_uri}#{uri.path}"
+      # Replace docker:// URLs with registry v2 API URLs
+      base_uri = "https://#{uri.host}"
+      base_uri += ":#{uri.port}" if uri.port
+      url = "#{base_uri}/v2#{uri.path}"
     end
-    @base_uri += ":#{uri.port}" if uri.port
 
     super
   end
 
-  # Catches 401 responses to trigger authentication
+  # Catches 401 (Unauthorized) responses to trigger authorization
   def curl_output(*args, **options)
     result = super
-    if result.success? && result.stdout.lines[0].include?("401")
-      authenticate(result.stdout)
+    if result.success? && result.stdout.lines.first.include?("401")
+      authorize(result.stdout)
       result = super
     end
     result
@@ -607,8 +604,8 @@ class DockerRegistryDownloadStrategy < CurlDownloadStrategy
     @resolved_basename.presence || super
   end
 
-  # Handle 401 responses from registry
-  def authenticate(out)
+  # Handle 401 (Unauthorized) responses from registry
+  def authorize(out)
     lines = out.lines.map(&:chomp)
     auth_header =
       lines.map { |line| line[/^WWW-Authenticate:\s*(.+)/i, 1] }
@@ -641,7 +638,7 @@ class DockerRegistryDownloadStrategy < CurlDownloadStrategy
     end
     # No auth methods left to try
     supported_methods = challenges.map(&:scheme)
-    $stderr.puts "Registry expects an unsupported authentication format: #{supported_methods}"
+    $stderr.puts "Registry expects an unsupported authorization format: #{supported_methods}"
     raise CurlDownloadStrategyError, url
   end
 end

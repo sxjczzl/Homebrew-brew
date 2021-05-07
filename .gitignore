@@ -72,7 +72,7 @@
 **/vendor/bundle/ruby/*/gems/i18n-*/lib/i18n/tests*
 **/vendor/bundle/ruby/*/gems/mechanize-*/lib/*.rb
 **/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/http/agent.rb
-**/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/http/*auth*.rb
+**/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/http/auth_store.rb
 **/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/c*
 **/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/d*
 **/vendor/bundle/ruby/*/gems/mechanize-*/lib/mechanize/e*
