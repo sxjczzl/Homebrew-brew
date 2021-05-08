@@ -188,17 +188,13 @@ module Language
         passed_build_tools = !build_tools.nil?
 
         resources.each do |r|
-          next if r.name.start_with? "homebrew-pep517-build-"
+          next if r.pep517_build_targets.any?
 
-          unless passed_build_tools
-            build_tools = resources.select { |dep| dep.name.start_with? "homebrew-pep517-build-#{r.name}-" }
-          end
+          build_tools = resources.select { |dep| dep.pep517_build_targets.include? r.name } unless passed_build_tools
           venv.pip_install r, { using: python, build_with: build_tools }
         end
 
-        unless passed_build_tools
-          build_tools = resources.select { |dep| dep.name.start_with? "homebrew-pep517-build-formula-" }
-        end
+        build_tools = resources.select { |dep| dep.pep517_build_targets.include? :formula } unless passed_build_tools
         venv.pip_install_and_link buildpath, { using: python, build_with: build_tools }
 
         venv

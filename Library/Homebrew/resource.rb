@@ -19,7 +19,7 @@ class Resource
   include FileUtils
   include OnOS
 
-  attr_reader :mirrors, :specs, :using, :source_modified_time, :patches, :owner
+  attr_reader :mirrors, :specs, :using, :source_modified_time, :patches, :pep517_build_targets, :owner
   attr_writer :version
   attr_accessor :download_strategy, :checksum
 
@@ -36,6 +36,7 @@ class Resource
     @checksum = nil
     @using = nil
     @patches = []
+    @pep517_build_targets = []
     instance_eval(&block) if block
   end
 
@@ -174,6 +175,10 @@ class Resource
     @specs.merge!(specs)
     @using = @specs.delete(:using)
     @download_strategy = DownloadStrategyDetector.detect(url, using)
+  end
+
+  def pep517_build(targets)
+    @pep517_build_targets = Array(targets)
   end
 
   def version(val = nil)
