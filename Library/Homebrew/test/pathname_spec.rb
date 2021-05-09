@@ -42,6 +42,24 @@ describe Pathname do
     end
   end
 
+  describe "#to_opt" do
+    context "when called on a descendant of HOMEBREW_CELLAR" do
+      it "returns the equivalent opt path" do
+        expect((HOMEBREW_CELLAR/"foo/1.2.3/lib/libfoo.so").to_opt).to eq(HOMEBREW_PREFIX/"opt/foo/lib/libfoo.so")
+        expect((HOMEBREW_CELLAR/"foo/1.2.3/lib").to_opt).to eq(HOMEBREW_PREFIX/"opt/foo/lib")
+        expect((HOMEBREW_CELLAR/"foo/1.2.3").to_opt).to eq(HOMEBREW_PREFIX/"opt/foo")
+        expect((HOMEBREW_CELLAR/"foo").to_opt).to eq(HOMEBREW_PREFIX/"opt/foo")
+        expect(HOMEBREW_CELLAR.to_opt).to eq(HOMEBREW_PREFIX/"opt")
+      end
+    end
+
+    context "when called on a path outside of HOMEBREW_CELLAR" do
+      it "returns the path unchanged" do
+        expect(dir.to_opt).to eq(described_class.new(dir))
+      end
+    end
+  end
+
   describe "#rmdir_if_possible" do
     before { mkdir_p dir }
 

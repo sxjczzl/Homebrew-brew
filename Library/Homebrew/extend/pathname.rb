@@ -82,6 +82,19 @@ class Pathname
 
   include DiskUsageExtension
 
+  CELLAR_PATH_REGEX = %r{(?<prefix>#{HOMEBREW_CELLAR}/?(?<name>[^/]+)?)/?(?<version>[^/]+)?(?<suffix>/.*)?}.freeze
+
+  # Converts an absolute Cellar path into the equivalent opt path.
+  # No-op if {Pathname} is not a descendant of HOMEBREW_CELLAR
+  # or if {Pathname} is a relative path.
+  sig { returns(Pathname) }
+  def to_opt
+    return self unless descend.include? HOMEBREW_CELLAR
+    return self if relative?
+
+    sub(CELLAR_PATH_REGEX, "\\k<prefix>\\k<suffix>").sub(HOMEBREW_CELLAR, HOMEBREW_PREFIX/"opt")
+  end
+
   # Moves a file from the original location to the {Pathname}'s.
   sig {
     params(sources: T.any(
@@ -160,7 +173,7 @@ class Pathname
     mkpath
     dstdir = realpath
     src = Pathname(src).expand_path(dstdir)
-    src = src.dirname.realpath/src.basename if src.dirname.exist?
+    src = src.dirname.realpath.to_opt/src.basename if src.dirname.exist?
     FileUtils.ln_sf(src.relative_path_from(dstdir), dstdir/new_basename)
   end
   private :install_symlink_p
