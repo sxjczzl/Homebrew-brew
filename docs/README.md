@@ -69,4 +69,4 @@
 
 ## Governance
 
-- [Homebrew Governance](Homebrew-Governance.md)
+- [Homebrew Governance](Homebrew-Governance.md
