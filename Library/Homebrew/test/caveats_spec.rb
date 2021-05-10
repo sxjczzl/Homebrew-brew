@@ -157,6 +157,11 @@ describe Caveats do
         expect(caveats).to include("keg-only")
       end
 
+      it "tells keg_only for dependencies" do
+        expect(caveats).to include("PATH's were used internally")
+        expect(caveats).to include("FAQ.md#what-does-keg-only-mean")
+      end
+
       it "gives command to be run when f.bin is a directory" do
         Pathname.new(f.bin).mkpath
         expect(caveats).to include(f.opt_bin.to_s)

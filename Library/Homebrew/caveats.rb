@@ -56,6 +56,9 @@ class Caveats
       <<~EOS
         #{f.name} is keg-only, which means it was not symlinked into #{HOMEBREW_PREFIX},
         because #{f.keg_only_reason.to_s.chomp}.
+        If #{f.name} is a dependency library for another package you are
+        installing, the correct PATH's were used internally and no modification is needed.
+        See also https://github.com/Homebrew/brew/blob/master/docs/FAQ.md#what-does-keg-only-mean
       EOS
     end.dup
 
