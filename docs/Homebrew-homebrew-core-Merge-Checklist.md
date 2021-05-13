@@ -1,5 +1,5 @@
 # Homebrew/homebrew-core Merge Checklist
-
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 The following checklist is intended to help maintainers decide on
 whether to merge, request changes or close a PR. It also brings more
 transparency for contributors in addition to
