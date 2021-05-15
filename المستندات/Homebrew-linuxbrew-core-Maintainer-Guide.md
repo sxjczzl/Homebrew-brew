@@ -357,4 +357,4 @@ another change, you should request that they remove the `x86_64_linux`
 bottle SHA line so that CI will build a bottle for the new version
 correctly. If the bottle SHA isn't removed, CI will fail with the
 following error:
-> `--keep-old` was passed but there are changes in `sha256 => x86_64_linux`
+> `--keep-old` was passed but there are changes in `sha256 => x86_64_linux`#
