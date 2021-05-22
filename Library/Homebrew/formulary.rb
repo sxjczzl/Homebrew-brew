@@ -5,6 +5,7 @@ require "digest/md5"
 require "extend/cachable"
 require "tab"
 require "utils/bottles"
+require "formula_manifest"
 
 # The {Formulary} is responsible for creating instances of {Formula}.
 # It is not meant to be used directly from formulae.
@@ -16,6 +17,7 @@ module Formulary
   extend Cachable
 
   URL_START_REGEX = %r{(https?|ftp|file)://}.freeze
+  JSON_URL_REGEX = /#{URL_START_REGEX}.*\.json$/.freeze
 
   sig { void }
   def self.enable_factory_cache!
@@ -196,6 +198,36 @@ module Formulary
     end
   end
 
+  # Loads a formula from a JSON file
+  class JSONManifestLoader < FormulaLoader
+    attr_reader :url
+
+    def initialize(url)
+      @url = url
+      uri = URI(url)
+      formula = File.basename(uri.path, ".json")
+      super formula, HOMEBREW_CACHE_FORMULA/File.basename(uri.path)
+    end
+
+    def get_formula(_spec, alias_path: nil, force_bottle: false, flags: [], ignore_errors: false)
+      load_file(flags: flags, ignore_errors: ignore_errors)
+      @hash = JSON.parse path.read
+      FormulaManifest.new @hash, path
+    end
+
+    def load_file(flags:, ignore_errors:)
+      HOMEBREW_CACHE_FORMULA.mkpath
+      FileUtils.rm_f(path)
+      curl_download url, to: path
+      raise FormulaUnavailableError, name unless path.file?
+    rescue MethodDeprecatedError => e
+      if %r{github.com/(?<user>[\w-]+)/(?<repo>[\w-]+)/} =~ url
+        e.issues_url = "https://github.com/#{user}/#{repo}/issues/new"
+      end
+      raise
+    end
+  end
+
   # Loads a formula from a bottle.
   class BottleLoader < FormulaLoader
     def initialize(bottle_name)
@@ -255,6 +287,21 @@ module Formulary
     def initialize(path)
       path = Pathname.new(path).expand_path
       super path.basename(".rb").to_s, path
+    end
+  end
+
+  # Loads formula from a JSON file on disk using a path
+  class FromJSONPathLoader < FormulaLoader
+    extend T::Sig
+
+    def initialize(path)
+      path = Pathname.new(path).expand_path
+      super path.basename(".json").to_s, path
+    end
+
+    def get_formula(_spec, alias_path: nil, force_bottle: false, flags: [], ignore_errors: false)
+      @hash = JSON.parse path.read
+      FormulaManifest.new @hash, path
     end
   end
 
@@ -502,6 +549,8 @@ module Formulary
     case ref
     when HOMEBREW_BOTTLES_EXTNAME_REGEX
       return BottleLoader.new(ref)
+    when JSON_URL_REGEX
+      return JSONManifestLoader.new(ref)
     when URL_START_REGEX
       return FromUrlLoader.new(ref)
     when HOMEBREW_TAP_FORMULA_REGEX
@@ -509,6 +558,7 @@ module Formulary
     end
 
     return FromPathLoader.new(ref) if File.extname(ref) == ".rb" && Pathname.new(ref).expand_path.exist?
+    return FromJSONPathLoader.new(ref) if File.extname(ref) == ".json" && Pathname.new(ref).expand_path.exist?
 
     formula_with_that_name = core_path(ref)
     return FormulaLoader.new(ref, formula_with_that_name) if formula_with_that_name.file?

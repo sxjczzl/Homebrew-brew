@@ -96,6 +96,8 @@ module Cask
         uri_regex = ::URI::DEFAULT_PARSER.make_regexp
         return false unless ref.to_s.match?(Regexp.new("\\A#{uri_regex.source}\\Z", uri_regex.options))
 
+        raise CaskUnavailableError.new(ref, "Casks cannot be loaded from JSON files") if File.extname(ref) == ".json"
+
         uri = URI(ref)
         return false unless uri
         return false unless uri.path

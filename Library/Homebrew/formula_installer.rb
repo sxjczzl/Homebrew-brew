@@ -133,6 +133,7 @@ class FormulaInstaller
 
   sig { params(output_warning: T::Boolean).returns(T::Boolean) }
   def pour_bottle?(output_warning: false)
+    return true if formula.is_a? FormulaManifest
     return false if !formula.bottle_tag? && !formula.local_bottle_path
     return true  if force_bottle?
     return false if build_from_source? || build_bottle? || interactive?
@@ -547,6 +548,11 @@ class FormulaInstaller
   end
 
   def expand_requirements
+    if formula.is_a? FormulaManifest
+      odie "Don't know what to do with requirements yet" if formula.requirements.any?
+      return {}
+    end
+
     unsatisfied_reqs = Hash.new { |h, k| h[k] = [] }
     formulae = [formula]
     formula_deps_map = formula.recursive_dependencies
@@ -578,6 +584,11 @@ class FormulaInstaller
   end
 
   def expand_dependencies
+    if formula.is_a? FormulaManifest
+      odie "Don't know what to do with dependencies yet" if formula.requirements.any?
+      return {}
+    end
+
     inherited_options = Hash.new { |hash, key| hash[key] = Options.new }
     pour_bottle = pour_bottle?
 
@@ -666,6 +677,7 @@ class FormulaInstaller
 
   sig { params(dep: Dependency).void }
   def fetch_dependency(dep)
+    # TODO: implement for FormulaManifest
     df = dep.to_formula
     fi = FormulaInstaller.new(
       df,
@@ -1067,6 +1079,13 @@ class FormulaInstaller
 
   sig { void }
   def post_install
+    if formula.is_a? FormulaManifest
+      opoo "Unable to run postinstall when installing from a JSON file"
+      puts "You can manually run the postinstall using:"
+      puts "  brew postinstall #{formula.full_name}"
+      return
+    end
+
     args = %W[
       nice #{RUBY_PATH}
       #{ENV["HOMEBREW_RUBY_WARNINGS"]}
