@@ -2935,7 +2935,6 @@ class Formula
             T.cast(self, PourBottleCheck).reason(+<<~EOS)
               The bottle needs the standalone Apple Command Line Tools to be installed.
               The full version of Xcode is not compatible with this bottle.
-              You will need to install the standalone version.
                 You can install them, if desired, with:
                   xcode-select --install
             EOS
