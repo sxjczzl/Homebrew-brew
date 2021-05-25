@@ -2933,8 +2933,9 @@ class Formula
         lambda do |_|
           on_macos do
             T.cast(self, PourBottleCheck).reason(+<<~EOS)
-              The bottle needs the standalone Apple Command Line Tools to be installed.
-              The full version of Xcode is not compatible with this bottle.
+              The bottle needs the standalone Apple Command Line Tools to be installed. #{if MacOS::Xcode.installed?
+          "\nThe full version of Xcode is not compatible with this bottle."
+              end}
                 You can install them, if desired, with:
                   xcode-select --install
             EOS
