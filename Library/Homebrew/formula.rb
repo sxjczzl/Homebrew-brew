@@ -2932,13 +2932,20 @@ class Formula
       when :clt_installed
         lambda do |_|
           on_macos do
-            T.cast(self, PourBottleCheck).reason(+<<~EOS)
-              The bottle needs the standalone Apple Command Line Tools to be installed. #{if MacOS::Xcode.installed?
-          "\nThe full version of Xcode is not compatible with this bottle."
-              end}
-                You can install them, if desired, with:
-                  xcode-select --install
-            EOS
+            if MacOS::Xcode.installed?
+              T.cast(self, PourBottleCheck).reason(+<<~EOS)
+                This bottle requires the standalone Apple Command Line Tools to be installed.
+                You have an Xcode installation, and the Xcode Command Line Tools are not sufficient.
+                  You can install the Apple Command Line Tools in addition to Xcode, if desired, with:
+                    xcode-select --install
+              EOS
+            else
+              T.cast(self, PourBottleCheck).reason(+<<~EOS)
+                The bottle needs the Apple Command Line Tools to be installed.
+                  You can install them, if desired, with:
+                    xcode-select --install
+              EOS
+            end
             T.cast(self, PourBottleCheck).satisfy { MacOS::CLT.installed? }
           end
         end
