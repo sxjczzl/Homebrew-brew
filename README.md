@@ -1,4 +1,5 @@
 # Homebrew
+![Image of Yaktocat](https://github.com/KittyX29/brew/blob/master/banner.png?raw=true)
 
 [![GitHub release](https://img.shields.io/github/release/Homebrew/brew.svg)](https://github.com/Homebrew/brew/releases)
 
