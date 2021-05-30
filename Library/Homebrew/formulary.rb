@@ -5,7 +5,6 @@ require "digest/md5"
 require "extend/cachable"
 require "tab"
 require "utils/bottles"
-require "formula_manifest"
 
 # The {Formulary} is responsible for creating instances of {Formula}.
 # It is not meant to be used directly from formulae.
