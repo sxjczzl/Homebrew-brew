@@ -16,7 +16,6 @@ module Formulary
   extend Cachable
 
   URL_START_REGEX = %r{(https?|ftp|file)://}.freeze
-  JSON_URL_REGEX = /#{URL_START_REGEX}.*\.json$/.freeze
 
   sig { void }
   def self.enable_factory_cache!
@@ -107,6 +106,8 @@ module Formulary
 
   def self.load_formula_from_path(name, path, flags:, ignore_errors:)
     contents = path.open("r") { |f| ensure_utf8_encoding(f).read }
+    contents = formula_from_json contents if path.extname == ".json"
+
     namespace = "FormulaNamespace#{Digest::MD5.hexdigest(path.to_s)}"
     klass = load_formula(name, path, contents, namespace, flags: flags, ignore_errors: ignore_errors)
     cache[path] = klass
@@ -156,6 +157,26 @@ module Formulary
     class_name
   end
 
+  def self.formula_from_json(json)
+    hash = JSON.parse json
+
+    stable = hash["urls"]["stable"]
+    bottle = hash["bottle"]["stable"]["files"]["big_sur"]
+
+    <<~FORMULA
+      class #{class_s hash["name"]} < Formula
+        desc "#{hash["desc"]}"
+        homepage "#{hash["homepage"]}"
+        url "#{stable["url"]}"
+        license "#{hash["license"]}"
+
+        bottle do
+          sha256 cellar: #{bottle["cellar"]}, big_sur: "#{bottle["sha256"]}"
+        end
+      end
+    FORMULA
+  end
+
   # A {FormulaLoader} returns instances of formulae.
   # Subclasses implement loaders for particular sources of formulae.
   class FormulaLoader
@@ -194,36 +215,6 @@ module Formulary
       raise FormulaUnavailableError, name unless path.file?
 
       Formulary.load_formula_from_path(name, path, flags: flags, ignore_errors: ignore_errors)
-    end
-  end
-
-  # Loads a formula from a JSON file
-  class JSONManifestLoader < FormulaLoader
-    attr_reader :url
-
-    def initialize(url)
-      @url = url
-      uri = URI(url)
-      formula = File.basename(uri.path, ".json")
-      super formula, HOMEBREW_CACHE_FORMULA/File.basename(uri.path)
-    end
-
-    def get_formula(_spec, alias_path: nil, force_bottle: false, flags: [], ignore_errors: false)
-      load_file(flags: flags, ignore_errors: ignore_errors)
-      @hash = JSON.parse path.read
-      FormulaManifest.new @hash, path
-    end
-
-    def load_file(flags:, ignore_errors:)
-      HOMEBREW_CACHE_FORMULA.mkpath
-      FileUtils.rm_f(path)
-      curl_download url, to: path
-      raise FormulaUnavailableError, name unless path.file?
-    rescue MethodDeprecatedError => e
-      if %r{github.com/(?<user>[\w-]+)/(?<repo>[\w-]+)/} =~ url
-        e.issues_url = "https://github.com/#{user}/#{repo}/issues/new"
-      end
-      raise
     end
   end
 
@@ -285,22 +276,12 @@ module Formulary
   class FromPathLoader < FormulaLoader
     def initialize(path)
       path = Pathname.new(path).expand_path
-      super path.basename(".rb").to_s, path
-    end
-  end
-
-  # Loads formula from a JSON file on disk using a path
-  class FromJSONPathLoader < FormulaLoader
-    extend T::Sig
-
-    def initialize(path)
-      path = Pathname.new(path).expand_path
-      super path.basename(".json").to_s, path
-    end
-
-    def get_formula(_spec, alias_path: nil, force_bottle: false, flags: [], ignore_errors: false)
-      @hash = JSON.parse path.read
-      FormulaManifest.new @hash, path
+      name = if path.extname == ".json"
+        path.basename(".json").to_s
+      else
+        path.basename(".rb").to_s
+      end
+      super name, path
     end
   end
 
@@ -314,7 +295,11 @@ module Formulary
     def initialize(url)
       @url = url
       uri = URI(url)
-      formula = File.basename(uri.path, ".rb")
+      formula = if File.extname(uri.path) == ".json"
+        File.basename(uri.path, ".json")
+      else
+        File.basename(uri.path, ".rb")
+      end
       super formula, HOMEBREW_CACHE_FORMULA/File.basename(uri.path)
     end
 
@@ -322,7 +307,7 @@ module Formulary
       if %r{githubusercontent.com/[\w-]+/[\w-]+/[a-f0-9]{40}(?:/Formula)?/(?<formula_name>[\w+-.@]+).rb} =~ url
         raise UsageError, "Installation of #{formula_name} from a GitHub commit URL is unsupported! " \
                   "`brew extract #{formula_name}` to a stable tap on GitHub instead."
-      elsif url.match?(%r{^(https?|ftp)://})
+      elsif url.match?(%r{^(https?|ftp)://}) && !url.end_with?(".json")
         raise UsageError, "Non-checksummed download of #{name} formula file from an arbitrary URL is unsupported! ",
               "`brew extract` or `brew create` and `brew tap-new` to create a "\
               "formula file in a tap on GitHub instead."
@@ -548,16 +533,15 @@ module Formulary
     case ref
     when HOMEBREW_BOTTLES_EXTNAME_REGEX
       return BottleLoader.new(ref)
-    when JSON_URL_REGEX
-      return JSONManifestLoader.new(ref)
     when URL_START_REGEX
       return FromUrlLoader.new(ref)
     when HOMEBREW_TAP_FORMULA_REGEX
       return TapLoader.new(ref, from: from)
     end
 
-    return FromPathLoader.new(ref) if File.extname(ref) == ".rb" && Pathname.new(ref).expand_path.exist?
-    return FromJSONPathLoader.new(ref) if File.extname(ref) == ".json" && Pathname.new(ref).expand_path.exist?
+    if %w[.rb .json].include?(File.extname(ref)) && Pathname.new(ref).expand_path.exist?
+      return FromPathLoader.new(ref)
+    end
 
     formula_with_that_name = core_path(ref)
     return FormulaLoader.new(ref, formula_with_that_name) if formula_with_that_name.file?
