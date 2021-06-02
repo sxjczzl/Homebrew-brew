@@ -106,7 +106,7 @@ module Formulary
 
   def self.load_formula_from_path(name, path, flags:, ignore_errors:)
     contents = path.open("r") { |f| ensure_utf8_encoding(f).read }
-    contents = formula_from_json contents if path.extname == ".json"
+    contents = formula_from_json name, contents if path.extname == ".json"
 
     namespace = "FormulaNamespace#{Digest::MD5.hexdigest(path.to_s)}"
     klass = load_formula(name, path, contents, namespace, flags: flags, ignore_errors: ignore_errors)
@@ -157,24 +157,32 @@ module Formulary
     class_name
   end
 
-  def self.formula_from_json(json)
+  def self.formula_from_json(name, json)
     hash = JSON.parse json
+    bottle_tag = MacOS.version.to_sym.to_s
 
-    stable = hash["urls"]["stable"]
-    bottle = hash["bottle"]["stable"]["files"]["big_sur"]
+    unless hash.key? bottle_tag
+      raise FormulaUnreadableError.new(name, "No bottle informtion for this operating system.")
+    end
 
-    <<~FORMULA
-      class #{class_s hash["name"]} < Formula
-        desc "#{hash["desc"]}"
-        homepage "#{hash["homepage"]}"
-        url "#{stable["url"]}"
-        license "#{hash["license"]}"
+    resource = Resource.new name do
+      url hash[bottle_tag]["url"]
+      sha256 hash[bottle_tag]["sha256"]
+    end
 
-        bottle do
-          sha256 cellar: #{bottle["cellar"]}, big_sur: "#{bottle["sha256"]}"
-        end
+    resource.fetch unless resource.downloaded?
+
+    formula_file = "#{name}/*/.brew/#{name}.rb"
+    contents = Utils.popen_read "tar", "--extract", "--to-stdout", "--file", resource.cached_download, formula_file
+
+    # The formula file in the bottle archive doesn't contain bottle information so we need to insert it manually
+    contents.sub!(/(^class .* < Formula$)/, "\\1\n#{<<~BOTTLE_BLOCK}")
+      bottle do
+        sha256 cellar: #{hash[bottle_tag]["cellar"]}, #{bottle_tag}: "#{hash[bottle_tag]["sha256"]}"
       end
-    FORMULA
+    BOTTLE_BLOCK
+
+    contents
   end
 
   # A {FormulaLoader} returns instances of formulae.
