@@ -49,7 +49,7 @@ This must be done before `compinit` is called. Note that if you are using Oh My 
 FPATH=$(brew --prefix)/share/zsh/site-functions:$FPATH
 ```
 
-You may also need to forcibly rebuild `zcompdump`:
+You may also need to forcibly rebuild `zcompdump`: /api/formula/brew-pip.json (JSON API)
 
 ```sh
   rm -f ~/.zcompdump; compinit
