@@ -44,7 +44,7 @@ module Homebrew
       git_log HOMEBREW_REPOSITORY, args: args
     else
       path = Formulary.path(args.named.first)
-      warn "#{path} didn't exist. It was deleted or not in homebrew/homebrew-core originally" unless path.exist?
+      opoo "#{args.named.first} does not currently exist in homebrew/homebrew-core" unless path.exist?
 
       tap = Tap.from_path(path)
       git_log path.dirname, path, tap, args: args
