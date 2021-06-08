@@ -147,6 +147,25 @@ module Homebrew
         end
       end
 
+      def broken_tap(tap)
+        return unless Utils::Git.available?
+        return unless HOMEBREW_REPOSITORY.git?
+
+        message = <<~EOS
+          #{tap.full_name} was not tapped properly! Run:
+            rm -rf "#{tap.path}"
+            brew tap #{tap.name}
+        EOS
+
+        return message if tap.remote.blank?
+
+        tap_head = tap.git_head
+        return message if tap_head.blank?
+        return if tap_head != HOMEBREW_REPOSITORY.git_head
+
+        message
+      end
+
       def check_for_installed_developer_tools
         return if DevelopmentTools.installed?
 
@@ -264,11 +283,11 @@ module Homebrew
         ]
 
         __check_stray_files "/usr/local/lib/pkgconfig", "*.pc", allow_list, <<~EOS
-          Unbrewed .pc files were found in /usr/local/lib/pkgconfig.
+          Unbrewed '.pc' files were found in /usr/local/lib/pkgconfig.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
-          Unexpected .pc files:
+          Unexpected '.pc' files:
         EOS
       end
 
@@ -285,11 +304,11 @@ module Homebrew
         ]
 
         __check_stray_files "/usr/local/lib", "*.la", allow_list, <<~EOS
-          Unbrewed .la files were found in /usr/local/lib.
+          Unbrewed '.la' files were found in /usr/local/lib.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
-          Unexpected .la files:
+          Unexpected '.la' files:
         EOS
       end
 
@@ -335,7 +354,8 @@ module Homebrew
 
         <<~EOS
           #{HOMEBREW_TEMP} is world-writable but does not have the sticky bit set.
-          Please execute `sudo chmod +t #{HOMEBREW_TEMP}` in your Terminal.
+          To set it, run the following command:
+            sudo chmod +t #{HOMEBREW_TEMP}
         EOS
       end
       alias generic_check_tmpdir_sticky_bit check_tmpdir_sticky_bit
@@ -350,7 +370,7 @@ module Homebrew
           The following directories do not exist:
           #{not_exist_dirs.join("\n")}
 
-          You should create these directories and change their ownership to your account.
+          You should create these directories and change their ownership to your user.
             sudo mkdir -p #{not_exist_dirs.join(" ")}
             sudo chown -R $(whoami) #{not_exist_dirs.join(" ")}
         EOS
@@ -404,7 +424,7 @@ module Homebrew
 
               unless conflicts.empty?
                 message = inject_file_list conflicts, <<~EOS
-                  /usr/bin occurs before #{HOMEBREW_PREFIX}/bin
+                  /usr/bin occurs before #{HOMEBREW_PREFIX}/bin in your PATH.
                   This means that system-provided programs will be used instead of those
                   provided by Homebrew. Consider setting your PATH so that
                   #{HOMEBREW_PREFIX}/bin occurs before /usr/bin. Here is a one-liner:
@@ -428,8 +448,8 @@ module Homebrew
         return if @seen_prefix_bin
 
         <<~EOS
-          Homebrew's bin was not found in your PATH.
-          Consider setting the PATH for example like so:
+          Homebrew's "bin" was not found in your PATH.
+          Consider setting your PATH for example like so:
             #{Utils::Shell.prepend_path_in_profile("#{HOMEBREW_PREFIX}/bin")}
         EOS
       end
@@ -444,9 +464,9 @@ module Homebrew
         return if sbin.children.one? && sbin.children.first.basename.to_s == ".keepme"
 
         <<~EOS
-          Homebrew's sbin was not found in your PATH but you have installed
+          Homebrew's "sbin" was not found in your PATH but you have installed
           formulae that put executables in #{HOMEBREW_PREFIX}/sbin.
-          Consider setting the PATH for example like so:
+          Consider setting your PATH for example like so:
             #{Utils::Shell.prepend_path_in_profile("#{HOMEBREW_PREFIX}/sbin")}
         EOS
       end
@@ -557,15 +577,16 @@ module Homebrew
         examine_git_origin(HOMEBREW_REPOSITORY, Homebrew::EnvConfig.brew_git_remote)
       end
 
-      def check_coretap_git_origin
-        examine_git_origin(CoreTap.instance.path, Homebrew::EnvConfig.core_git_remote)
+      def check_coretap_integrity
+        coretap = CoreTap.instance
+        broken_tap(coretap) || examine_git_origin(coretap.path, Homebrew::EnvConfig.core_git_remote)
       end
 
-      def check_casktap_git_origin
+      def check_casktap_integrity
         default_cask_tap = Tap.default_cask_tap
         return unless default_cask_tap.installed?
 
-        examine_git_origin(default_cask_tap.path, default_cask_tap.remote)
+        broken_tap(default_cask_tap) || examine_git_origin(default_cask_tap.path, default_cask_tap.remote)
       end
 
       sig { returns(T.nilable(String)) }
@@ -678,10 +699,17 @@ module Homebrew
 
         message = nil
 
-        {
+        repos = {
           "Homebrew/brew"          => HOMEBREW_REPOSITORY,
           "Homebrew/homebrew-core" => CoreTap.instance.path,
-        }.each do |name, path|
+        }
+
+        %w[cask cask-drivers cask-fonts cask-versions].each do |tap|
+          cask_tap = Tap.fetch "homebrew", tap
+          repos[cask_tap.full_name] = cask_tap.path if cask_tap.installed?
+        end
+
+        repos.each do |name, path|
           status = path.cd do
             `git status --untracked-files=all --porcelain 2>/dev/null`
           end
@@ -715,7 +743,7 @@ module Homebrew
         return if (paths & gnubin).empty?
 
         <<~EOS
-          Putting non-prefixed coreutils in your path can cause gmp builds to fail.
+          Putting non-prefixed coreutils in your path can cause GMP builds to fail.
         EOS
       rescue FormulaUnavailableError
         nil
@@ -725,7 +753,7 @@ module Homebrew
         return unless File.exist? "#{ENV["HOME"]}/.pydistutils.cfg"
 
         <<~EOS
-          A .pydistutils.cfg file was found in $HOME, which may cause Python
+          A '.pydistutils.cfg' file was found in $HOME, which may cause Python
           builds to fail. See:
             #{Formatter.url("https://bugs.python.org/issue6138")}
             #{Formatter.url("https://bugs.python.org/issue4655")}
@@ -767,7 +795,7 @@ module Homebrew
 
         inject_file_list unlinked, <<~EOS
           You have unlinked kegs in your Cellar.
-          Leaving kegs unlinked can lead to build-trouble and cause brews that depend on
+          Leaving kegs unlinked can lead to build-trouble and cause formulae that depend on
           those kegs to fail to run properly once built. Run `brew link` on these:
         EOS
       end
@@ -871,7 +899,6 @@ module Homebrew
             "N/A"
           end
         end
-        add_info "Java", SystemConfig.describe_java
 
         nil
       end
@@ -893,11 +920,12 @@ module Homebrew
 
         add_info "Homebrew Cask Staging Location", user_tilde(path.to_s)
 
-        return unless path.exist? && !path.writable?
+        return if !path.exist? || path.writable?
 
         <<~EOS
           The staging path #{user_tilde(path.to_s)} is not writable by the current user.
-          To fix, run \'sudo chown -R $(whoami):staff #{user_tilde(path.to_s)}'
+          To fix, run:
+            sudo chown -R $(whoami):staff #{user_tilde(path.to_s)}
         EOS
       end
 
@@ -970,16 +998,18 @@ module Homebrew
           if result.include? "Python 2.7"
             <<~EOS
               Your Python installation has a broken version of setuptools.
-              To fix, reinstall macOS or run 'sudo /usr/bin/python -m pip install -I setuptools'.
+              To fix, reinstall macOS or run:
+                sudo /usr/bin/python -m pip install -I setuptools
             EOS
           else
             <<~EOS
               The system Python version is wrong.
-              To fix, run 'defaults write com.apple.versioner.python Version 2.7'.
+              To fix, run:
+                defaults write com.apple.versioner.python Version 2.7
             EOS
           end
         elsif result.stderr.include? "pkg_resources.DistributionNotFound"
-          "Your Python installation is unable to find xattr."
+          "Your Python installation is unable to find `xattr`."
         else
           "unknown xattr error: #{result.stderr.split("\n").last}"
         end
@@ -990,7 +1020,7 @@ module Homebrew
         when :quarantine_available
           nil
         when :xattr_broken
-          "There's not a working version of xattr."
+          "There's no working version of `xattr` on this system."
         when :no_swift
           "Swift is not available on this system."
         when :no_quarantine

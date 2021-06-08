@@ -14,9 +14,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def list_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `list`, `ls` [<options>] [<formula>|<cask>]
-
+      description <<~EOS
         List all installed formulae and casks.
 
         If <formula> is provided, summarise the paths within its current keg.
@@ -47,18 +45,19 @@ module Homebrew
              description: "Force output to be one entry per line. " \
                           "This is the default when output is not to a terminal."
       switch "-l",
-             depends_on:  "--formula",
-             description: "List formulae in long format."
+             description: "List formulae and/or casks in long format. " \
+                          "Has no effect when a formula or cask name is passed as an argument."
       switch "-r",
-             depends_on:  "--formula",
-             description: "Reverse the order of the formulae sort to list the oldest entries first."
+             description: "Reverse the order of the formulae and/or casks sort to list the oldest entries first. " \
+                          "Has no effect when a formula or cask name is passed as an argument."
       switch "-t",
-             depends_on:  "--formula",
-             description: "Sort formulae by time modified, listing most recently modified first."
+             description: "Sort formulae and/or casks by time modified, listing most recently modified first. " \
+                          "Has no effect when a formula or cask name is passed as an argument."
 
       conflicts "--formula", "--cask"
       conflicts "--full-name", "--versions"
       conflicts "--pinned", "--multiple"
+      conflicts "--pinned", "--cask"
       conflicts "--cask", "--multiple"
       ["--formula", "--cask", "--full-name", "--versions", "--pinned"].each do |flag|
         conflicts "--unbrewed", flag
@@ -70,8 +69,9 @@ module Homebrew
       end
       ["--pinned", "-l", "-r", "-t"].each do |flag|
         conflicts "--full-name", flag
-        conflicts "--cask", flag
       end
+
+      named_args [:installed_formula, :installed_cask]
     end
   end
 
@@ -90,7 +90,7 @@ module Homebrew
       unless args.cask?
         formula_names = args.no_named? ? Formula.installed : args.named.to_resolved_formulae
         full_formula_names = formula_names.map(&:full_name).sort(&tap_and_name_comparison)
-        full_formula_names = Formatter.columns(full_formula_names) unless args.public_send(:'1?')
+        full_formula_names = Formatter.columns(full_formula_names) unless args.public_send(:"1?")
         puts full_formula_names if full_formula_names.present?
       end
       if args.cask? || (!args.formula? && args.no_named?)
@@ -100,7 +100,7 @@ module Homebrew
           args.named.to_formulae_and_casks(only: :cask, method: :resolve)
         end
         full_cask_names = cask_names.map(&:full_name).sort(&tap_and_name_comparison)
-        full_cask_names = Formatter.columns(full_cask_names) unless args.public_send(:'1?')
+        full_cask_names = Formatter.columns(full_cask_names) unless args.public_send(:"1?")
         puts full_cask_names if full_cask_names.present?
       end
     elsif args.cask?
@@ -111,21 +111,28 @@ module Homebrew
       ENV["CLICOLOR"] = nil
 
       ls_args = []
-      ls_args << "-1" if args.public_send(:'1?')
+      ls_args << "-1" if args.public_send(:"1?")
       ls_args << "-l" if args.l?
       ls_args << "-r" if args.r?
       ls_args << "-t" if args.t?
 
-      if !$stdout.tty? && !args.formula? && !args.cask?
-        odisabled "`brew list` to only list formulae", "`brew list --formula`"
-      else
-        safe_system "ls", *ls_args, HOMEBREW_CELLAR unless args.cask?
-        list_casks(args: args) unless args.formula?
+      if HOMEBREW_CELLAR.exist? && HOMEBREW_CELLAR.children.any?
+        ohai "Formulae" if $stdout.tty? && !args.formula?
+        safe_system "ls", *ls_args, HOMEBREW_CELLAR
+      end
+
+      if !args.formula? && Cask::Caskroom.casks.any?
+        if $stdout.tty?
+          puts
+          ohai "Casks"
+        end
+        safe_system "ls", *ls_args, Cask::Caskroom.path
       end
     elsif args.verbose? || !$stdout.tty?
-      system_command! "find", args: args.named.to_kegs.map(&:to_s) + %w[-not -type d -print], print_stdout: true
+      system_command! "find", args:         args.named.to_default_kegs.map(&:to_s) + %w[-not -type d -print],
+                              print_stdout: true
     else
-      args.named.to_kegs.each { |keg| PrettyListing.new keg }
+      args.named.to_default_kegs.each { |keg| PrettyListing.new keg }
     end
   end
 
@@ -161,10 +168,9 @@ module Homebrew
   def list_casks(args:)
     Cask::Cmd::List.list_casks(
       *args.named.to_casks,
-      one:       args.public_send(:'1?'),
+      one:       args.public_send(:"1?"),
       full_name: args.full_name?,
       versions:  args.versions?,
-      args:      args,
     )
   end
 end

@@ -13,9 +13,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def bump_cask_pr_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `bump-cask-pr` [<options>] <cask>
-
+      description <<~EOS
         Create a pull request to update <cask> with a new version.
 
         A best effort to determine the <SHA-256> will be made if the value is not
@@ -47,17 +45,24 @@ module Homebrew
              description: "Specify the <URL> for the new download."
       flag   "--sha256=",
              description: "Specify the <SHA-256> checksum of the new download."
+      flag   "--fork-org=",
+             description: "Use the specified GitHub organization for forking."
       switch "-f", "--force",
              description: "Ignore duplicate open PRs."
 
       conflicts "--dry-run", "--write"
       conflicts "--no-audit", "--online"
-      named 1
+
+      named_args :cask, number: 1
     end
   end
 
   def bump_cask_pr
     args = bump_cask_pr_args.parse
+
+    # This will be run by `brew style` later so run it first to not start
+    # spamming during normal output.
+    Homebrew.install_bundler_gems!
 
     # As this command is simplifying user-run commands then let's just use a
     # user path, too.
@@ -67,6 +72,10 @@ module Homebrew
     ENV["BROWSER"] = Homebrew::EnvConfig.browser
 
     cask = args.named.to_casks.first
+
+    odie "This cask is not in a tap!" if cask.tap.blank?
+    odie "This cask's tap is not a Git repository!" unless cask.tap.git?
+
     new_version = args.version
     new_version = :latest if ["latest", ":latest"].include?(new_version)
     new_version = Cask::DSL::Version.new(new_version) if new_version.present?
@@ -81,12 +90,7 @@ module Homebrew
     old_version = cask.version
     old_hash = cask.sha256
 
-    tap_full_name = cask.tap&.full_name
-    default_remote_branch = cask.tap.path.git_origin_branch if cask.tap
-    default_remote_branch ||= "master"
-    previous_branch = "-"
-
-    check_open_pull_requests(cask, tap_full_name, args: args)
+    check_open_pull_requests(cask, args: args)
 
     old_contents = File.read(cask.sourcefile_path)
 
@@ -115,7 +119,7 @@ module Homebrew
 
     if new_version.present?
       if new_version.latest?
-        opoo "Ignoring specified --sha256= argument." if new_hash.present?
+        opoo "Ignoring specified `--sha256=` argument." if new_hash.present?
         new_hash = :no_check
       elsif new_hash.nil? || cask.languages.present?
         tmp_contents = Utils::Inreplace.inreplace_pairs(cask.sourcefile_path,
@@ -127,29 +131,21 @@ module Homebrew
         tmp_config = cask.config
         tmp_url = tmp_cask.url.to_s
 
-        if new_hash.nil? && old_hash != :no_check
-          resource_path = fetch_resource(cask, new_version, tmp_url)
-          Utils::Tar.validate_file(resource_path)
-          new_hash = resource_path.sha256
+        if old_hash != :no_check
+          new_hash = fetch_resource(cask, new_version, tmp_url) if new_hash.nil?
+
+          if tmp_contents.include?("Hardware::CPU.intel?")
+            other_intel = !Hardware::CPU.intel?
+            other_contents = tmp_contents.gsub("Hardware::CPU.intel?", other_intel.to_s)
+            replacement_pairs << fetch_cask(other_contents, new_version)
+          end
         end
 
         cask.languages.each do |language|
           next if language == cask.language
 
           lang_config = tmp_config.merge(Cask::Config.new(explicit: { languages: [language] }))
-          lang_cask = Cask::CaskLoader.load(tmp_contents)
-          lang_cask.config = lang_config
-          lang_url = lang_cask.url.to_s
-          lang_old_hash = lang_cask.sha256.to_s
-
-          resource_path = fetch_resource(cask, new_version, lang_url)
-          Utils::Tar.validate_file(resource_path)
-          lang_new_hash = resource_path.sha256
-
-          replacement_pairs << [
-            lang_old_hash,
-            lang_new_hash,
-          ]
+          replacement_pairs << fetch_cask(tmp_contents, new_version, config: lang_config)
         end
       end
     end
@@ -180,33 +176,40 @@ module Homebrew
     pr_info = {
       sourcefile_path: cask.sourcefile_path,
       old_contents:    old_contents,
-      remote_branch:   default_remote_branch,
       branch_name:     branch_name,
       commit_message:  commit_message,
-      previous_branch: previous_branch,
       tap:             cask.tap,
-      tap_full_name:   tap_full_name,
       pr_message:      "Created with `brew bump-cask-pr`.",
     }
     GitHub.create_bump_pr(pr_info, args: args)
   end
 
-  def fetch_resource(cask, new_version, url, **specs)
+  def fetch_resource(cask, version, url, **specs)
     resource = Resource.new
     resource.url(url, specs)
     resource.owner = Resource.new(cask.token)
-    resource.version = new_version
-    resource.fetch
+    resource.version = version
+
+    resource_path = resource.fetch
+    Utils::Tar.validate_file(resource_path)
+    resource_path.sha256
   end
 
-  def check_open_pull_requests(cask, tap_full_name, args:)
-    GitHub.check_for_duplicate_pull_requests(cask.token, tap_full_name, state: "open", args: args)
+  def fetch_cask(contents, version, config: nil)
+    cask = Cask::CaskLoader.load(contents)
+    cask.config = config if config.present?
+    url = cask.url.to_s
+    old_hash = cask.sha256.to_s
+    new_hash = fetch_resource(cask, version, url)
+    [old_hash, new_hash]
   end
 
-  def check_closed_pull_requests(cask, tap_full_name, version:, args:)
-    # if we haven't already found open requests, try for an exact match across closed requests
-    pr_title = "Update #{cask.token} from #{cask.version} to #{version}"
-    GitHub.check_for_duplicate_pull_requests(pr_title, tap_full_name, state: "closed", args: args)
+  def check_open_pull_requests(cask, args:)
+    tap_remote_repo = cask.tap.remote_repo || cask.tap.full_name
+    GitHub.check_for_duplicate_pull_requests(cask.token, tap_remote_repo,
+                                             state: "open",
+                                             file:  cask.sourcefile_path.relative_path_from(cask.tap.path).to_s,
+                                             args:  args)
   end
 
   def run_cask_audit(cask, old_contents, args:)

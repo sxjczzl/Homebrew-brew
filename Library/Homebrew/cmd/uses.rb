@@ -20,11 +20,9 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def uses_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `uses` [<options>] <formula>
-
-        Show formulae and casks that specify <formula> as a dependency (i.e. show dependents
-        of <formula>). When given multiple formula arguments, show the intersection
+      description <<~EOS
+        Show formulae and casks that specify <formula> as a dependency; that is, show dependents
+        of <formula>. When given multiple formula arguments, show the intersection
         of formulae that use <formula>. By default, `uses` shows all formulae and casks that
         specify <formula> as a required or recommended dependency for their stable builds.
       EOS
@@ -46,7 +44,8 @@ module Homebrew
              description: "Include only casks."
 
       conflicts "--formula", "--cask"
-      min_named :formula
+
+      named_args :formula, min: 1
     end
   end
 
@@ -94,7 +93,7 @@ module Homebrew
       end
       if show_formulae_and_casks || args.cask?
         deps += select_used_dependents(
-          dependents(Cask::Caskroom.casks(config: Cask::Config.from_args(args))),
+          dependents(Cask::Caskroom.casks),
           used_formulae, recursive, includes, ignores
         )
       end
@@ -105,7 +104,7 @@ module Homebrew
         deps += args.installed? ? Formula.installed : Formula.to_a
       end
       if show_formulae_and_casks || args.cask?
-        deps += args.installed? ? Cask::Caskroom.casks(config: Cask::Config.from_args(args)) : Cask::Cask.to_a
+        deps += args.installed? ? Cask::Caskroom.casks : Cask::Cask.to_a
       end
 
       select_used_dependents(dependents(deps), used_formulae, recursive, includes, ignores)

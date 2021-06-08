@@ -13,9 +13,8 @@ module OS
     class Version < ::Version
       extend T::Sig
 
-      attr_reader :arch
-
       SYMBOLS = {
+        monterey:    "12",
         big_sur:     "11",
         catalina:    "10.15",
         mojave:      "10.14",
@@ -25,42 +24,24 @@ module OS
         yosemite:    "10.10",
       }.freeze
 
-      sig { params(sym: Symbol).returns(T.attached_class) }
-      def self.from_symbol(sym)
-        version, arch = version_arch(sym)
-        version ||= sym
-        str = SYMBOLS.fetch(version.to_sym) { raise MacOSVersionError, sym }
-        new(str, arch: arch)
+      sig { params(version: Symbol).returns(T.attached_class) }
+      def self.from_symbol(version)
+        str = SYMBOLS.fetch(version) { raise MacOSVersionError, version }
+        new(str)
       end
 
-      sig { params(value: T.any(String, Symbol)).returns(T::Array[String]) }
-      def self.version_arch(value)
-        @all_archs_regex ||= begin
-          all_archs = Hardware::CPU::ALL_ARCHS.map(&:to_s)
-          /^((#{Regexp.union(all_archs)})_)?([\w.]+)(-(#{Regexp.union(all_archs)}))?$/
-        end
-        match = @all_archs_regex.match(value)
-        return [] unless match
-
-        version = match[3]
-        arch = match[2] || match[5]
-        [version, arch]
-      end
-
-      sig { params(value: T.nilable(String), arch: T.nilable(String)).void }
-      def initialize(value, arch: nil)
-        version, arch = Version.version_arch(value) if value.present? && arch.nil?
+      sig { params(value: T.nilable(String)).void }
+      def initialize(value)
         version ||= value
-        arch    ||= "intel"
 
         raise MacOSVersionError, version unless /\A1\d+(?:\.\d+){0,2}\Z/.match?(version)
 
         super(version)
 
-        @arch = arch.to_sym
         @comparison_cache = {}
       end
 
+      sig { override.params(other: T.untyped).returns(T.nilable(Integer)) }
       def <=>(other)
         @comparison_cache.fetch(other) do
           if SYMBOLS.key?(other) && to_sym == other
@@ -72,17 +53,19 @@ module OS
         end
       end
 
+      sig { returns(T.self_type) }
+      def strip_patch
+        # Big Sur is 11.x but Catalina is 10.15.x.
+        if major >= 11
+          self.class.new(major.to_s)
+        else
+          major_minor
+        end
+      end
+
       sig { returns(Symbol) }
       def to_sym
-        @to_sym ||= begin
-          # Big Sur is 11.x but Catalina is 10.15.
-          major_macos = if major >= 11
-            major
-          else
-            major_minor
-          end.to_s
-          SYMBOLS.invert.fetch(major_macos, :dunno)
-        end
+        @to_sym ||= SYMBOLS.invert.fetch(strip_patch.to_s, :dunno)
       end
 
       sig { returns(String) }

@@ -3,7 +3,6 @@
 
 require "formula"
 require "cli/parser"
-require "utils/ast"
 
 module Homebrew
   extend T::Sig
@@ -13,9 +12,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def bump_revision_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `bump-revision` [<options>] <formula> [<formula> ...]
-
+      description <<~EOS
         Create a commit to increment the revision of <formula>. If no revision is
         present, "revision 1" will be added.
       EOS
@@ -24,7 +21,7 @@ module Homebrew
       flag   "--message=",
              description: "Append <message> to the default commit message."
 
-      min_named :formula
+      named_args :formula, min: 1
     end
   end
 
@@ -50,14 +47,16 @@ module Homebrew
           end
         end
       else
-        Utils::Inreplace.inreplace(formula.path) do |s|
-          s = s.inreplace_string
-          if current_revision.zero?
-            Utils::AST.add_formula_stanza!(s, :revision, new_revision)
-          else
-            Utils::AST.replace_formula_stanza!(s, :revision, new_revision)
-          end
+        Homebrew.install_bundler_gems!
+        require "utils/ast"
+
+        formula_ast = Utils::AST::FormulaAST.new(formula.path.read)
+        if current_revision.zero?
+          formula_ast.add_stanza(:revision, new_revision)
+        else
+          formula_ast.replace_stanza(:revision, new_revision)
         end
+        formula.path.atomic_write(formula_ast.process)
       end
 
       message = "#{formula.name}: revision bump #{args.message}"

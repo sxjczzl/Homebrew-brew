@@ -3,7 +3,7 @@
 
 old_trap = trap("INT") { exit! 130 }
 
-require "global"
+require_relative "global"
 require "extend/ENV"
 require "timeout"
 require "debrew"
@@ -26,8 +26,8 @@ begin
   trap("INT", old_trap)
 
   if Homebrew::EnvConfig.developer? || ENV["CI"].present?
-    raise "cannot find child processes without `pgrep`, please install!" unless which("pgrep")
-    raise "cannot kill child processes without `pkill`, please install!" unless which("pkill")
+    raise "Cannot find child processes without `pgrep`, please install!" unless which("pgrep")
+    raise "Cannot kill child processes without `pkill`, please install!" unless which("pkill")
   end
 
   formula = T.must(args.named.to_resolved_formulae.first)
@@ -39,8 +39,13 @@ begin
   T.cast(ENV, Stdenv).setup_build_environment(formula: formula, testing_formula: true)
 
   # tests can also return false to indicate failure
-  Timeout.timeout TEST_TIMEOUT_SECONDS do
+  run_test = proc do
     raise "test returned false" if formula.run_test(keep_tmp: args.keep_tmp?) == false
+  end
+  if args.debug? # --debug is interactive
+    run_test.call
+  else
+    Timeout.timeout(TEST_TIMEOUT_SECONDS, &run_test)
   end
 rescue Exception => e # rubocop:disable Lint/RescueException
   error_pipe.puts e.to_json

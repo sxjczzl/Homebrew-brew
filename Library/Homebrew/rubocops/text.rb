@@ -10,17 +10,16 @@ module RuboCop
       #
       # @api private
       class Text < FormulaCop
-        def audit_formula(node, _class_node, _parent_class_node, body_node)
-          @full_source_content = source_buffer(node).source
+        extend AutoCorrector
 
-          if match = @full_source_content.match(/^require ['"]formula['"]$/)
-            @offensive_node = node
-            @source_buf = source_buffer(node)
-            @line_no = match.pre_match.count("\n") + 1
-            @column = 0
-            @length = match[0].length
-            @offense_source_range = source_range(@source_buf, @line_no, @column, @length)
-            problem "`#{match}` is now unnecessary"
+        def audit_formula(node, _class_node, _parent_class_node, body_node)
+          full_source_content = source_buffer(node).source
+
+          if (match = full_source_content.match(/^require ['"]formula['"]$/))
+            range = source_range(source_buffer(node), match.pre_match.count("\n") + 1, 0, match[0].length)
+            add_offense(range, message: "`#{match}` is now unnecessary") do |corrector|
+              corrector.remove(range_with_surrounding_space(range: range))
+            end
           end
 
           if !find_node_method_by_name(body_node, :plist_options) &&
@@ -52,12 +51,6 @@ module RuboCop
 
           find_instance_method_call(body_node, "Formula", :factory) do
             problem "\"Formula.factory(name)\" is deprecated in favor of \"Formula[name]\""
-          end
-
-          find_every_method_call_by_name(body_node, :xcodebuild).each do |m|
-            next if parameters_passed?(m, /SYMROOT=/)
-
-            problem 'xcodebuild should be passed an explicit "SYMROOT"'
           end
 
           find_method_with_args(body_node, :system, "xcodebuild") do
@@ -96,7 +89,7 @@ module RuboCop
           end
 
           prefix_path(body_node) do |prefix_node, path|
-            next unless match = path.match(%r{^(bin|include|libexec|lib|sbin|share|Frameworks)(?:/| |$)})
+            next unless (match = path.match(%r{^(bin|include|libexec|lib|sbin|share|Frameworks)(?:/| |$)}))
 
             offending_node(prefix_node)
             problem "Use `#{match[1].downcase}` instead of `prefix + \"#{match[1]}\"`"

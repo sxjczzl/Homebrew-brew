@@ -33,15 +33,16 @@ module SharedEnvExtension
   ].freeze
   private_constant :SANITIZED_VARS
 
-  sig do
+  sig {
     params(
-      formula:      T.nilable(Formula),
-      cc:           T.nilable(String),
-      build_bottle: T.nilable(T::Boolean),
-      bottle_arch:  T.nilable(T::Boolean),
+      formula:         T.nilable(Formula),
+      cc:              T.nilable(String),
+      build_bottle:    T.nilable(T::Boolean),
+      bottle_arch:     T.nilable(String),
+      testing_formula: T::Boolean,
     ).void
-  end
-  def setup_build_environment(formula: nil, cc: nil, build_bottle: false, bottle_arch: nil)
+  }
+  def setup_build_environment(formula: nil, cc: nil, build_bottle: false, bottle_arch: nil, testing_formula: false)
     @formula = formula
     @cc = cc
     @build_bottle = build_bottle
@@ -49,6 +50,7 @@ module SharedEnvExtension
     reset
   end
   private :setup_build_environment
+  alias generic_shared_setup_build_environment setup_build_environment
 
   sig { void }
   def reset
@@ -238,30 +240,15 @@ module SharedEnvExtension
 
   # Snow Leopard defines an NCURSES value the opposite of most distros.
   # @see https://bugs.python.org/issue6848
-  # Currently only used by aalib in core.
   sig { void }
   def ncurses_define
-    append "CPPFLAGS", "-DNCURSES_OPAQUE=0"
+    odisabled "ENV.ncurses_define"
   end
 
   # @private
   sig { void }
   def userpaths!
-    path = PATH.new(self["PATH"]).select do |p|
-      # put Superenv.bin and opt path at the first
-      p.start_with?("#{HOMEBREW_REPOSITORY}/Library/ENV", "#{HOMEBREW_PREFIX}/opt")
-    end
-    path.append(HOMEBREW_PREFIX/"bin") # XXX hot fix to prefer brewed stuff (e.g. python) over /usr/bin.
-    path.append(self["PATH"]) # reset of self["PATH"]
-    path.append(
-      # user paths
-      ORIGINAL_PATHS.map do |p|
-        p.realpath.to_s
-      rescue
-        nil
-      end - %w[/usr/X11/bin /opt/X11/bin],
-    )
-    self["PATH"] = path
+    odisabled "ENV.userpaths!"
   end
 
   sig { void }
@@ -276,14 +263,13 @@ module SharedEnvExtension
     flags = []
 
     if fc
-      ohai "Building with an alternative Fortran compiler"
-      puts "This is unsupported."
+      ohai "Building with an alternative Fortran compiler", "This is unsupported."
       self["F77"] ||= fc
     else
       if (gfortran = which("gfortran", (HOMEBREW_PREFIX/"bin").to_s))
-        ohai "Using Homebrew-provided Fortran compiler."
+        ohai "Using Homebrew-provided Fortran compiler"
       elsif (gfortran = which("gfortran", PATH.new(ORIGINAL_PATHS)))
-        ohai "Using a Fortran compiler found at #{gfortran}."
+        ohai "Using a Fortran compiler found at #{gfortran}"
       end
       if gfortran
         puts "This may be changed by setting the FC environment variable."
@@ -342,9 +328,10 @@ module SharedEnvExtension
   sig { void }
   def permit_arch_flags; end
 
-  # A no-op until we enable this by default again (which we may never do).
   sig { void }
-  def permit_weak_imports; end
+  def permit_weak_imports
+    odisabled "ENV.permit_weak_imports"
+  end
 
   # @private
   sig { params(cc: T.any(Symbol, String)).returns(T::Boolean) }

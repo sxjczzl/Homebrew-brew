@@ -72,11 +72,19 @@ module Homebrew
       end
     end
 
+    RUBOCOP = (HOMEBREW_LIBRARY_PATH/"utils/rubocop.rb").freeze
+
     def run_rubocop(files, output_type,
                     fix: false, except_cops: nil, only_cops: nil, display_cop_names: false, reset_cache: false,
                     debug: false, verbose: false)
       Homebrew.install_bundler_gems!
-      require "rubocop"
+
+      require "warnings"
+
+      Warnings.ignore :parser_syntax do
+        require "rubocop"
+      end
+
       require "rubocops"
 
       args = %w[
@@ -134,12 +142,6 @@ module Homebrew
 
       FileUtils.rm_rf cache_env["XDG_CACHE_HOME"] if reset_cache
 
-      ruby_args = [
-        (ENV["HOMEBREW_RUBY_WARNINGS"] if !debug && !verbose),
-        "-S",
-        "rubocop",
-      ].compact.freeze
-
       case output_type
       when :print
         args << "--debug" if debug
@@ -150,11 +152,11 @@ module Homebrew
 
         args << "--color" if Tty.color?
 
-        system cache_env, RUBY_PATH, *ruby_args, *args
+        system cache_env, RUBY_PATH, RUBOCOP, *args
         $CHILD_STATUS.success?
       when :json
         result = system_command RUBY_PATH,
-                                args: [*ruby_args, "--format", "json", *args],
+                                args: [RUBOCOP, "--format", "json", *args],
                                 env:  cache_env
         json = json_result!(result)
         json["files"]
@@ -174,14 +176,16 @@ module Homebrew
       if files.empty?
         files = [
           HOMEBREW_BREW_FILE,
-          # TODO: HOMEBREW_REPOSITORY/"completions/bash/brew",
-          *Pathname.glob("#{HOMEBREW_LIBRARY}/Homebrew/*.sh"),
-          *Pathname.glob("#{HOMEBREW_LIBRARY}/Homebrew/cmd/*.sh"),
-          *Pathname.glob("#{HOMEBREW_LIBRARY}/Homebrew/utils/*.sh"),
+          HOMEBREW_REPOSITORY/"completions/bash/brew",
+          *HOMEBREW_LIBRARY.glob("Homebrew/*.sh"),
+          *HOMEBREW_LIBRARY.glob("Homebrew/shims/**/*").map(&:realpath).uniq
+                           .reject { |path| path.directory? || path.basename.to_s == "cc" },
+          *HOMEBREW_LIBRARY.glob("Homebrew/{dev-,}cmd/*.sh"),
+          *HOMEBREW_LIBRARY.glob("Homebrew/{cask/,}utils/*.sh"),
         ]
       end
 
-      args = ["--shell=bash", "--", *files] # TODO: Add `--enable=all` to check for more problems.
+      args = ["--shell=bash", "--enable=all", "--external-sources", "--source-path=#{HOMEBREW_LIBRARY}", "--", *files]
 
       case output_type
       when :print

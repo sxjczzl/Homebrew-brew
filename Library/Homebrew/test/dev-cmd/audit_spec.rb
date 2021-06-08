@@ -6,7 +6,7 @@ require "formulary"
 require "cmd/shared_examples/args_parse"
 require "utils/spdx"
 
-describe "Homebrew.audit_args" do
+describe "brew audit" do
   it_behaves_like "parseable arguments"
 end
 
@@ -488,6 +488,93 @@ module Homebrew
       end
     end
 
+    describe "#audit_formula_name" do
+      specify "no issue" do
+        fa = formula_auditor "foo", <<~RUBY, core_tap: true, strict: true
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            homepage "https://brew.sh"
+          end
+        RUBY
+
+        fa.audit_formula_name
+        expect(fa.problems).to be_empty
+      end
+
+      specify "uppercase formula name" do
+        fa = formula_auditor "Foo", <<~RUBY
+          class Foo < Formula
+            url "https://brew.sh/Foo-1.0.tgz"
+            homepage "https://brew.sh"
+          end
+        RUBY
+
+        fa.audit_formula_name
+        expect(fa.problems.first[:message]).to match "must not contain uppercase letters"
+      end
+    end
+
+    describe "#check_service_command" do
+      specify "Not installed" do
+        fa = formula_auditor "foo", <<~RUBY
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            homepage "https://brew.sh"
+
+            service do
+              run []
+            end
+          end
+        RUBY
+
+        expect(fa.check_service_command(fa.formula)).to match nil
+      end
+
+      specify "No service" do
+        fa = formula_auditor "foo", <<~RUBY
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            homepage "https://brew.sh"
+          end
+        RUBY
+
+        mkdir_p fa.formula.prefix
+        expect(fa.check_service_command(fa.formula)).to match nil
+      end
+
+      specify "No command" do
+        fa = formula_auditor "foo", <<~RUBY
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            homepage "https://brew.sh"
+
+            service do
+              run []
+            end
+          end
+        RUBY
+
+        mkdir_p fa.formula.prefix
+        expect(fa.check_service_command(fa.formula)).to match "Service command blank"
+      end
+
+      specify "Invalid command" do
+        fa = formula_auditor "foo", <<~RUBY
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            homepage "https://brew.sh"
+
+            service do
+              run [HOMEBREW_PREFIX/"bin/something"]
+            end
+          end
+        RUBY
+
+        mkdir_p fa.formula.prefix
+        expect(fa.check_service_command(fa.formula)).to match "Service command does not exist"
+      end
+    end
+
     describe "#audit_github_repository" do
       specify "#audit_github_repository when HOMEBREW_NO_GITHUB_API is set" do
         ENV["HOMEBREW_NO_GITHUB_API"] = "1"
@@ -772,6 +859,7 @@ module Homebrew
       let(:formula_path) { tap_path/formula_subpath }
 
       before do
+        origin_formula_path.dirname.mkpath
         origin_formula_path.write <<~RUBY
           class Foo#{foo_version} < Formula
             url "https://brew.sh/foo-1.0.tar.gz"
@@ -817,8 +905,8 @@ module Homebrew
         end
       end
 
-      context "checksums" do
-        context "should not change with the same version" do
+      describe "checksums" do
+        describe "should not change with the same version" do
           before do
             formula_gsub(
               'sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"',
@@ -829,7 +917,7 @@ module Homebrew
           it { is_expected.to match("stable sha256 changed without the url/version also changing") }
         end
 
-        context "should not change with the same version when not the first commit" do
+        describe "should not change with the same version when not the first commit" do
           before do
             formula_gsub_origin_commit(
               'sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"',
@@ -846,7 +934,7 @@ module Homebrew
           it { is_expected.to match("stable sha256 changed without the url/version also changing") }
         end
 
-        context "can change with the different version" do
+        describe "can change with the different version" do
           before do
             formula_gsub_origin_commit(
               'sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"',
@@ -862,7 +950,7 @@ module Homebrew
           it { is_expected.to be_nil }
         end
 
-        context "can be removed when switching schemes" do
+        describe "can be removed when switching schemes" do
           before do
             formula_gsub_origin_commit(
               'url "https://brew.sh/foo-1.0.tar.gz"',
@@ -876,42 +964,42 @@ module Homebrew
         end
       end
 
-      context "revisions" do
-        context "should not be removed when first committed above 0" do
+      describe "revisions" do
+        describe "should not be removed when first committed above 0" do
           it { is_expected.to be_nil }
         end
 
-        context "should not decrease with the same version" do
+        describe "with the same version, should not decrease" do
           before { formula_gsub_origin_commit "revision 2", "revision 1" }
 
           it { is_expected.to match("revision should not decrease (from 2 to 1)") }
         end
 
-        context "should not be removed with the same version" do
+        describe "should not be removed with the same version" do
           before { formula_gsub_origin_commit "revision 2" }
 
           it { is_expected.to match("revision should not decrease (from 2 to 0)") }
         end
 
-        context "should not decrease with the same, uncommitted version" do
+        describe "should not decrease with the same, uncommitted version" do
           before { formula_gsub "revision 2", "revision 1" }
 
           it { is_expected.to match("revision should not decrease (from 2 to 1)") }
         end
 
-        context "should be removed with a newer version" do
+        describe "should be removed with a newer version" do
           before { formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz" }
 
           it { is_expected.to match("'revision 2' should be removed") }
         end
 
-        context "should be removed with a newer local version" do
+        describe "should be removed with a newer local version" do
           before { formula_gsub "foo-1.0.tar.gz", "foo-1.1.tar.gz" }
 
           it { is_expected.to match("'revision 2' should be removed") }
         end
 
-        context "should not warn on an newer version revision removal" do
+        describe "should not warn on an newer version revision removal" do
           before do
             formula_gsub_origin_commit "revision 2", ""
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz"
@@ -920,7 +1008,7 @@ module Homebrew
           it { is_expected.to be_nil }
         end
 
-        context "should not warn when revision from previous version matches current revision" do
+        describe "should not warn when revision from previous version matches current revision" do
           before do
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz"
             formula_gsub_origin_commit "revision 2", "# no revision"
@@ -931,7 +1019,7 @@ module Homebrew
           it { is_expected.to be_nil }
         end
 
-        context "should only increment by 1 with an uncommitted version" do
+        describe "should only increment by 1 with an uncommitted version" do
           before do
             formula_gsub "foo-1.0.tar.gz", "foo-1.1.tar.gz"
             formula_gsub "revision 2", "revision 4"
@@ -940,7 +1028,7 @@ module Homebrew
           it { is_expected.to match("revisions should only increment by 1") }
         end
 
-        context "should not warn on past increment by more than 1" do
+        describe "should not warn on past increment by more than 1" do
           before do
             formula_gsub_origin_commit "revision 2", "# no revision"
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz"
@@ -951,14 +1039,14 @@ module Homebrew
         end
       end
 
-      context "version_schemes" do
-        context "should not decrease with the same version" do
+      describe "version_schemes" do
+        describe "should not decrease with the same version" do
           before { formula_gsub_origin_commit "version_scheme 1" }
 
           it { is_expected.to match("version_scheme should not decrease (from 1 to 0)") }
         end
 
-        context "should not decrease with a new version" do
+        describe "should not decrease with a new version" do
           before do
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz"
             formula_gsub_origin_commit "revision 2", ""
@@ -968,7 +1056,7 @@ module Homebrew
           it { is_expected.to match("version_scheme should not decrease (from 1 to 0)") }
         end
 
-        context "should only increment by 1" do
+        describe "should only increment by 1" do
           before do
             formula_gsub_origin_commit "version_scheme 1", "# no version_scheme"
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-1.1.tar.gz"
@@ -980,14 +1068,14 @@ module Homebrew
         end
       end
 
-      context "versions" do
-        context "uncommitted should not decrease" do
+      describe "versions" do
+        context "when uncommitted should not decrease" do
           before { formula_gsub "foo-1.0.tar.gz", "foo-0.9.tar.gz" }
 
           it { is_expected.to match("stable version should not decrease (from 1.0 to 0.9)") }
         end
 
-        context "committed can decrease" do
+        context "when committed can decrease" do
           before do
             formula_gsub_origin_commit "revision 2"
             formula_gsub_origin_commit "foo-1.0.tar.gz", "foo-0.9.tar.gz"
@@ -996,7 +1084,7 @@ module Homebrew
           it { is_expected.to be_nil }
         end
 
-        context "can decrease with version_scheme increased" do
+        describe "can decrease with version_scheme increased" do
           before do
             formula_gsub "revision 2"
             formula_gsub "foo-1.0.tar.gz", "foo-0.9.tar.gz"

@@ -7,7 +7,7 @@ require "formula_installer"
 
 RSpec::Matchers.define_negated_matcher :be_a_failure, :be_a_success
 
-RSpec.shared_context "integration test" do
+RSpec.shared_context "integration test" do # rubocop:disable RSpec/ContextWording
   extend RSpec::Matchers::DSL
 
   matcher :be_a_success do
@@ -87,17 +87,18 @@ RSpec.shared_context "integration test" do
     )
 
     @ruby_args ||= begin
-      ruby_args = [
-        ENV["HOMEBREW_RUBY_WARNINGS"],
-        "-I", $LOAD_PATH.join(File::PATH_SEPARATOR)
-      ]
+      ruby_args = HOMEBREW_RUBY_EXEC_ARGS.dup
       if ENV["HOMEBREW_TESTS_COVERAGE"]
         simplecov_spec = Gem.loaded_specs["simplecov"]
-        specs = [simplecov_spec]
-        simplecov_spec.runtime_dependencies.each do |dep|
-          specs += dep.to_specs
-        rescue Gem::LoadError => e
-          onoe e
+        parallel_tests_spec = Gem.loaded_specs["parallel_tests"]
+        specs = []
+        [simplecov_spec, parallel_tests_spec].each do |spec|
+          specs << spec
+          spec.runtime_dependencies.each do |dep|
+            specs += dep.to_specs
+          rescue Gem::LoadError => e
+            onoe e
+          end
         end
         libs = specs.flat_map do |spec|
           full_gem_path = spec.full_gem_path
@@ -111,12 +112,21 @@ RSpec.shared_context "integration test" do
         libs.each { |lib| ruby_args << "-I" << lib }
         ruby_args << "-rsimplecov"
       end
-      ruby_args << "-rtest/support/helper/integration_mocks"
+      ruby_args << "-r#{HOMEBREW_LIBRARY_PATH}/test/support/helper/integration_mocks"
       ruby_args << (HOMEBREW_LIBRARY_PATH/"brew.rb").resolved_path.to_s
     end
 
     Bundler.with_clean_env do
-      stdout, stderr, status = Open3.capture3(env, RUBY_PATH, *@ruby_args, *args)
+      stdout, stderr, status = Open3.capture3(env, *@ruby_args, *args)
+      $stdout.print stdout
+      $stderr.print stderr
+      status
+    end
+  end
+
+  def brew_sh(*args)
+    Bundler.with_clean_env do
+      stdout, stderr, status = Open3.capture3("#{ENV["HOMEBREW_PREFIX"]}/bin/brew", *args)
       $stdout.print stdout
       $stderr.print stderr
       status
@@ -152,7 +162,7 @@ RSpec.shared_context "integration test" do
 
         # something here
       RUBY
-    when "foo", "patchelf"
+    when "foo", "gnupg", "patchelf"
       content = <<~RUBY
         url "https://brew.sh/#{name}-1.0"
       RUBY
@@ -210,7 +220,7 @@ RSpec.shared_context "integration test" do
         system "git", "clone", "--shared", system_tap_path, tap.path
         system "git", "-C", tap.path, "checkout", "master"
       else
-        tap.install(full_clone: false, quiet: true)
+        tap.install(quiet: true)
       end
     end
   end
@@ -225,7 +235,7 @@ RSpec.shared_context "integration test" do
       brew "install", old_name
 
       (tap_path/"Formula/#{old_name}.rb").unlink
-      (tap_path/"formula_renames.json").write JSON.generate(old_name => new_name)
+      (tap_path/"formula_renames.json").write JSON.pretty_generate(old_name => new_name)
 
       system "git", "add", "--all"
       system "git", "commit", "-m",

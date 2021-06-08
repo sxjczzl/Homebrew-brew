@@ -1,8 +1,6 @@
 # typed: true
 # frozen_string_literal: true
 
-require "open-uri"
-
 module Homebrew
   module Livecheck
     module Strategy
@@ -77,15 +75,16 @@ module Homebrew
         # @param provided_content [String] page content to use in place of
         #   fetching via Strategy#page_content
         # @return [Hash]
-        sig do
+        sig {
           params(
             url:              String,
             regex:            T.nilable(Regexp),
+            cask:             T.nilable(Cask::Cask),
             provided_content: T.nilable(String),
             block:            T.nilable(T.proc.params(arg0: String).returns(T.any(T::Array[String], String))),
           ).returns(T::Hash[Symbol, T.untyped])
-        end
-        def self.find_versions(url, regex, provided_content = nil, &block)
+        }
+        def self.find_versions(url, regex, cask: nil, provided_content: nil, &block)
           match_data = { matches: {}, regex: regex, url: url }
 
           content = if provided_content.is_a?(String)

@@ -13,9 +13,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def linkage_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `linkage` [<options>] [<formula>]
-
+      description <<~EOS
         Check the library links from the given <formula> kegs. If no <formula> are
         provided, check all kegs. Raises an error if run on uninstalled formulae.
       EOS
@@ -28,6 +26,8 @@ module Homebrew
       switch "--cached",
              description: "Print the cached linkage values stored in `HOMEBREW_CACHE`, set by a previous "\
                           "`brew linkage` run."
+
+      named_args :installed_formula
     end
   end
 
@@ -35,10 +35,10 @@ module Homebrew
     args = linkage_args.parse
 
     CacheStoreDatabase.use(:linkage) do |db|
-      kegs = if args.named.to_kegs.empty?
+      kegs = if args.named.to_default_kegs.empty?
         Formula.installed.map(&:any_installed_keg).reject(&:nil?)
       else
-        args.named.to_kegs
+        args.named.to_default_kegs
       end
       kegs.each do |keg|
         ohai "Checking #{keg.name} linkage" if kegs.size > 1

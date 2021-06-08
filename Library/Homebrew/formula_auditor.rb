@@ -21,7 +21,6 @@ module Homebrew
       @new_formula = options[:new_formula] && !@versioned_formula
       @strict = options[:strict]
       @online = options[:online]
-      @build_stable = options[:build_stable]
       @git = options[:git]
       @display_cop_names = options[:display_cop_names]
       @only = options[:only]
@@ -91,12 +90,6 @@ module Homebrew
           valid_alias_names.map! { |a| "#{formula.tap}/#{a}" }
         end
 
-        # Fix naming based on what people expect.
-        if alias_name_major_minor == "adoptopenjdk@1.8"
-          valid_alias_names << "adoptopenjdk@8"
-          valid_alias_names.delete "adoptopenjdk@1"
-        end
-
         valid_versioned_aliases = versioned_aliases & valid_alias_names
         invalid_versioned_aliases = versioned_aliases - valid_alias_names
 
@@ -127,10 +120,12 @@ module Homebrew
     end
 
     def audit_formula_name
+      name = formula.name
+
+      problem "Formula name '#{name}' must not contain uppercase letters." if name != name.downcase
+
       return unless @strict
       return unless @core_tap
-
-      name = formula.name
 
       problem "'#{name}' is not allowed in homebrew/core." if MissingFormula.disallowed_reason(name)
 
@@ -139,7 +134,7 @@ module Homebrew
         return
       end
 
-      if oldname = CoreTap.instance.formula_renames[name]
+      if (oldname = CoreTap.instance.formula_renames[name])
         problem "'#{name}' is reserved as the old name of #{oldname} in homebrew/core."
         return
       end
@@ -221,13 +216,13 @@ module Homebrew
             # Don't complain about missing cross-tap dependencies
             next
           rescue FormulaUnavailableError
-            problem "Can't find dependency #{dep.name.inspect}."
+            problem "Can't find dependency '#{dep.name.inspect}'."
             next
           rescue TapFormulaAmbiguityError
-            problem "Ambiguous dependency #{dep.name.inspect}."
+            problem "Ambiguous dependency '#{dep.name.inspect}'."
             next
           rescue TapFormulaWithOldnameAmbiguityError
-            problem "Ambiguous oldname dependency #{dep.name.inspect}."
+            problem "Ambiguous oldname dependency '#{dep.name.inspect}'."
             next
           end
 
@@ -240,6 +235,7 @@ module Homebrew
              dep_f.keg_only? &&
              dep_f.keg_only_reason.provided_by_macos? &&
              dep_f.keg_only_reason.applicable? &&
+             formula.requirements.none?(LinuxRequirement) &&
              !tap_audit_exception(:provided_by_macos_depends_on_allowlist, dep.name)
             new_formula_problem(
               "Dependency '#{dep.name}' is provided by macOS; " \
@@ -258,10 +254,10 @@ module Homebrew
               end
             end
 
-            problem "Dependency #{dep} does not define option #{opt.name.inspect}"
+            problem "Dependency '#{dep}' does not define option #{opt.name.inspect}"
           end
 
-          problem "Don't use git as a dependency (it's always available)" if @new_formula && dep.name == "git"
+          problem "Don't use 'git' as a dependency (it's always available)" if @new_formula && dep.name == "git"
 
           problem "Dependency '#{dep.name}' is marked as :run. Remove :run; it is a no-op." if dep.tags.include?(:run)
 
@@ -288,7 +284,7 @@ module Homebrew
 
       # The number of conflicts on Linux is absurd.
       # TODO: remove this and check these there too.
-      return if OS.linux?
+      return if OS.linux? && !Homebrew::EnvConfig.simulate_macos_on_linux?
 
       recursive_runtime_formulae = formula.runtime_formula_dependencies(undeclared: false)
       version_hash = {}
@@ -341,8 +337,31 @@ module Homebrew
         Formula[previous_formula_name]
       rescue FormulaUnavailableError
         problem "Versioned #{previous_formula_name} in homebrew/core must be created for " \
-                "`brew-postgresql-upgrade-database` and `pg_upgrade` to work."
+                "`brew postgresql-upgrade-database` and `pg_upgrade` to work."
       end
+    end
+
+    def audit_glibc
+      return if formula.name != "glibc"
+      return unless @core_tap
+
+      version = formula.version.to_s
+      return if version == OS::CI_GLIBC_VERSION
+
+      problem "The glibc version must be #{version}, as this is the version used by our CI on Linux. " \
+              "Glibc is for users who have a system Glibc with a lower version, " \
+              "which allows them to use our Linux bottles, which were compiled against system Glibc on CI."
+    end
+
+    ELASTICSEARCH_KIBANA_RELICENSED_VERSION = "7.11"
+
+    def audit_elasticsearch_kibana
+      return if formula.name != "elasticsearch" && formula.name != "kibana"
+      return unless @core_tap
+      return if formula.version < Version.new(ELASTICSEARCH_KIBANA_RELICENSED_VERSION)
+
+      problem "Elasticsearch and Kibana were relicensed to a non-open-source license from version 7.11. " \
+              "They must not be upgraded to version 7.11 or newer."
     end
 
     def audit_versioned_keg_only
@@ -373,10 +392,11 @@ module Homebrew
 
       return unless DevelopmentTools.curl_handles_most_https_certificates?
 
-      if http_content_problem = curl_check_http_content(homepage,
-                                                        user_agents:   [:browser, :default],
-                                                        check_content: true,
-                                                        strict:        @strict)
+      if (http_content_problem = curl_check_http_content(homepage,
+                                                         "homepage URL",
+                                                         user_agents:   [:browser, :default],
+                                                         check_content: true,
+                                                         strict:        @strict))
         problem http_content_problem
       end
     end
@@ -405,7 +425,7 @@ module Homebrew
     end
 
     def audit_github_repository_archived
-      return if formula.deprecated?
+      return if formula.deprecated? || formula.disabled?
 
       user, repo = get_repo_data(%r{https?://github\.com/([^/]+)/([^/]+)/?.*}) if @online
       return if user.blank?
@@ -417,7 +437,7 @@ module Homebrew
     end
 
     def audit_gitlab_repository_archived
-      return if formula.deprecated?
+      return if formula.deprecated? || formula.disabled?
 
       user, repo = get_repo_data(%r{https?://gitlab\.com/([^/]+)/([^/]+)/?.*}) if @online
       return if user.blank?
@@ -478,7 +498,7 @@ module Homebrew
 
       %w[Stable HEAD].each do |name|
         spec_name = name.downcase.to_sym
-        next unless spec = formula.send(spec_name)
+        next unless (spec = formula.send(spec_name))
 
         ra = ResourceAuditor.new(spec, spec_name, online: @online, strict: @strict).audit
         ra.problems.each do |message|
@@ -495,7 +515,7 @@ module Homebrew
         end
 
         next if spec.patches.empty?
-        next unless @new_formula
+        next if !@new_formula || !@core_tap
 
         new_formula_problem(
           "Formulae should not require patches to build. " \
@@ -503,7 +523,7 @@ module Homebrew
         )
       end
 
-      if stable = formula.stable
+      if (stable = formula.stable)
         version = stable.version
         problem "Stable: version (#{version}) is set to a string without a digit" if version.to_s !~ /\d/
         if version.to_s.start_with?("HEAD")
@@ -544,6 +564,9 @@ module Homebrew
         version_prefix = stable.version.major_minor
         return if tap_audit_exception :gnome_devel_allowlist, formula.name, version_prefix
         return if stable_url_version < Version.create("1.0")
+        # All minor versions are stable in the new GNOME version scheme (which starts at version 40.0)
+        # https://discourse.gnome.org/t/new-gnome-versioning-scheme/4235
+        return if stable_url_version >= Version.create("40.0")
         return if stable_url_minor_version.even?
 
         problem "#{stable.version} is a development release"

@@ -2,8 +2,10 @@
 # frozen_string_literal: true
 
 require "commands"
+require "completions"
 require "extend/cachable"
 require "description_cache_store"
+require "settings"
 
 # A {Tap} is used to extend the formulae provided by Homebrew core.
 # Usually, it's synced with a remote Git repository. And it's likely
@@ -65,8 +67,8 @@ class Tap
     @default_cask_tap ||= fetch("Homebrew", "cask")
   end
 
-  sig { returns(T::Boolean) }
-  def self.install_default_cask_tap_if_necessary
+  sig { params(force: T::Boolean).returns(T::Boolean) }
+  def self.install_default_cask_tap_if_necessary(force: false)
     false
   end
 
@@ -136,6 +138,18 @@ class Tap
     @remote ||= path.git_origin
   end
 
+  # The remote repository name of this {Tap}.
+  # e.g. `user/homebrew-repo`
+  def remote_repo
+    raise TapUnavailableError, name unless installed?
+
+    return unless remote
+
+    @remote_repo ||= remote.delete_prefix("https://github.com/")
+                           .delete_prefix("git@github.com:")
+                           .delete_suffix(".git")
+  end
+
   # The default remote path to this {Tap}.
   sig { returns(String) }
   def default_remote
@@ -168,13 +182,6 @@ class Tap
     path.git_head
   end
 
-  # git HEAD in short format for this {Tap}.
-  def git_short_head
-    raise TapUnavailableError, name unless installed?
-
-    path.git_short_head
-  end
-
   # Time since last git commit for this {Tap}.
   def git_last_commit
     raise TapUnavailableError, name unless installed?
@@ -182,34 +189,17 @@ class Tap
     path.git_last_commit
   end
 
-  # Last git commit date for this {Tap}.
-  def git_last_commit_date
-    raise TapUnavailableError, name unless installed?
-
-    path.git_last_commit_date
-  end
-
   # The issues URL of this {Tap}.
   # e.g. `https://github.com/user/homebrew-repo/issues`
   sig { returns(T.nilable(String)) }
   def issues_url
-    return unless official? || !custom_remote?
+    return if !official? && custom_remote?
 
     "#{default_remote}/issues"
   end
 
   def to_s
     name
-  end
-
-  sig { returns(String) }
-  def version_string
-    return "N/A" unless installed?
-
-    pretty_revision = git_short_head
-    return "(no git repository)" unless pretty_revision
-
-    "(git revision #{pretty_revision}; last commit #{git_last_commit_date})"
   end
 
   # True if this {Tap} is an official Homebrew tap.
@@ -254,9 +244,8 @@ class Tap
   # @param clone_target [String] If passed, it will be used as the clone remote.
   # @param force_auto_update [Boolean, nil] If present, whether to override the
   #   logic that skips non-GitHub repositories during auto-updates.
-  # @param full_clone [Boolean] If set as true, full clone will be used. If unset/nil, means "no change".
   # @param quiet [Boolean] If set, suppress all output.
-  def install(full_clone: true, quiet: false, clone_target: nil, force_auto_update: nil)
+  def install(quiet: false, clone_target: nil, force_auto_update: nil)
     require "descriptions"
     require "readall"
 
@@ -280,11 +269,13 @@ class Tap
     if installed?
       unless force_auto_update.nil?
         config["forceautoupdate"] = force_auto_update
-        return if !full_clone || !shallow?
+        return
       end
 
-      $stderr.ohai "Unshallowing #{name}" unless quiet
-      args = %w[fetch --unshallow]
+      $stderr.ohai "Unshallowing #{name}" if shallow? && !quiet
+      args = %w[fetch]
+      # Git throws an error when attempting to unshallow a full clone
+      args << "--unshallow" if shallow?
       args << "-q" if quiet
       path.cd { safe_system "git", *args }
       return
@@ -294,8 +285,14 @@ class Tap
 
     $stderr.ohai "Tapping #{name}" unless quiet
     args =  %W[clone #{requested_remote} #{path}]
-    args << "--depth=1" unless full_clone
+
+    # Override possible user configs like:
+    #   git config --global clone.defaultRemoteName notorigin
+    args << "--origin=origin"
     args << "-q" if quiet
+
+    # Override user-set default template
+    args << "--template="
 
     begin
       safe_system "git", *args
@@ -324,6 +321,17 @@ class Tap
                            .update_from_formula_names!(formula_names)
     end
 
+    if official?
+      untapped = self.class.untapped_official_taps
+      untapped -= [name]
+
+      if untapped.empty?
+        Homebrew::Settings.delete :untapped
+      else
+        Homebrew::Settings.write :untapped, untapped.join(";")
+      end
+    end
+
     return if clone_target
     return unless private?
     return if quiet
@@ -340,11 +348,33 @@ class Tap
   def link_completions_and_manpages
     command = "brew tap --repair"
     Utils::Link.link_manpages(path, command)
-    Utils::Link.link_completions(path, command)
+
+    Homebrew::Completions.show_completions_message_if_needed
+    if official? || Homebrew::Completions.link_completions?
+      Utils::Link.link_completions(path, command)
+    else
+      Utils::Link.unlink_completions(path)
+    end
+  end
+
+  def fix_remote_configuration
+    return unless remote.include? "github.com"
+
+    current_upstream_head = path.git_origin_branch
+    return if path.git_origin_has_branch? current_upstream_head
+
+    safe_system "git", "-C", path, "fetch", "origin"
+    path.git_origin_set_head_auto
+
+    new_upstream_head = path.git_origin_branch
+    path.git_rename_branch old: current_upstream_head, new: new_upstream_head
+    path.git_branch_set_upstream local: new_upstream_head, origin: new_upstream_head
+
+    ohai "#{name}: changed default branch name from #{current_upstream_head} to #{new_upstream_head}!"
   end
 
   # Uninstall this {Tap}.
-  def uninstall
+  def uninstall(manual: false)
     require "descriptions"
     raise TapUnavailableError, name unless installed?
 
@@ -366,6 +396,14 @@ class Tap
 
     Commands.rebuild_commands_completion_list
     clear_cache
+
+    return if !manual || !official?
+
+    untapped = self.class.untapped_official_taps
+    return if untapped.include? name
+
+    untapped << name
+    Homebrew::Settings.write :untapped, untapped.join(";")
   end
 
   # True if the {#remote} of {Tap} is customized.
@@ -616,6 +654,12 @@ class Tap
     Pathname.glob TAP_DIRECTORY/"*/*/cmd"
   end
 
+  # An array of official taps that have been manually untapped
+  sig { returns(T::Array[String]) }
+  def self.untapped_official_taps
+    Homebrew::Settings.read(:untapped)&.split(";") || []
+  end
+
   # @private
   def formula_file_to_name(file)
     "#{name}/#{file.basename(".rb")}"
@@ -639,9 +683,9 @@ class Tap
         else
           GitHub.private_repo?(full_name)
         end
-      rescue GitHub::HTTPNotFoundError
+      rescue GitHub::API::HTTPNotFoundError
         true
-      rescue GitHub::Error
+      rescue GitHub::API::Error
         false
       end
     end
@@ -695,14 +739,12 @@ class CoreTap < Tap
   end
 
   # CoreTap never allows shallow clones (on request from GitHub).
-  def install(full_clone: true, quiet: false, clone_target: nil, force_auto_update: nil)
-    raise "Shallow clones are not supported for homebrew-core!" unless full_clone
-
+  def install(quiet: false, clone_target: nil, force_auto_update: nil)
     remote = Homebrew::EnvConfig.core_git_remote
     if remote != default_remote
       $stderr.puts "HOMEBREW_CORE_GIT_REMOTE set: using #{remote} for Homebrew/core Git remote URL."
     end
-    super(full_clone: full_clone, quiet: quiet, clone_target: remote, force_auto_update: force_auto_update)
+    super(quiet: quiet, clone_target: remote, force_auto_update: force_auto_update)
   end
 
   # @private
@@ -814,18 +856,14 @@ class TapConfig
     return unless tap.git?
     return unless Utils::Git.available?
 
-    tap.path.cd do
-      Utils.popen_read("git", "config", "--get", "homebrew.#{key}").chomp.presence
-    end
+    Homebrew::Settings.read key, repo: tap.path
   end
 
   def []=(key, value)
     return unless tap.git?
     return unless Utils::Git.available?
 
-    tap.path.cd do
-      safe_system "git", "config", "--replace-all", "homebrew.#{key}", value.to_s
-    end
+    Homebrew::Settings.write key, value.to_s, repo: tap.path
   end
 end
 

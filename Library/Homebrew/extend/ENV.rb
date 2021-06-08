@@ -31,15 +31,15 @@ module EnvActivation
     end
   end
 
-  sig do
+  sig {
     params(
       env:          T.nilable(String),
       cc:           T.nilable(String),
-      build_bottle: T.nilable(T::Boolean),
+      build_bottle: T::Boolean,
       bottle_arch:  T.nilable(String),
       _block:       T.proc.returns(T.untyped),
     ).returns(T.untyped)
-  end
+  }
   def with_build_environment(env: nil, cc: nil, build_bottle: false, bottle_arch: nil, &_block)
     old_env = to_hash.dup
     tmp_env = to_hash.dup.extend(EnvActivation)
@@ -57,7 +57,7 @@ module EnvActivation
 
   sig { params(key: T.any(String, Symbol)).returns(T::Boolean) }
   def sensitive?(key)
-    key.match?(/(cookie|key|token|password)/i)
+    key.match?(/(cookie|key|token|password|passphrase)/i)
   end
 
   sig { returns(T::Hash[String, String]) }

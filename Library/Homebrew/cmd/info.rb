@@ -24,9 +24,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def info_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `info` [<options>] [<formula>|<cask>]
-
+      description <<~EOS
         Display brief statistics for your Homebrew installation.
 
         If a <formula> or <cask> is provided, show summary of information about it.
@@ -52,6 +50,9 @@ module Homebrew
              description: "Print a JSON representation. Currently the default value for <version> is `v1` for "\
                           "<formula>. For <formula> and <cask> use `v2`. See the docs for examples of using the "\
                           "JSON output: <https://docs.brew.sh/Querying-Brew>"
+      switch "--bottle",
+             depends_on:  "--json",
+             description: "Output information about the bottles for <formula> and its dependencies."
       switch "--installed",
              depends_on:  "--json",
              description: "Print JSON of formulae that are currently installed."
@@ -60,14 +61,19 @@ module Homebrew
              description: "Print JSON of all available formulae."
       switch "-v", "--verbose",
              description: "Show more verbose analytics data for <formula>."
-
       switch "--formula", "--formulae",
              description: "Treat all named arguments as formulae."
       switch "--cask", "--casks",
              description: "Treat all named arguments as casks."
-      conflicts "--formula", "--cask"
 
       conflicts "--installed", "--all"
+      conflicts "--formula", "--cask"
+
+      %w[--cask --analytics --github].each do |conflict|
+        conflicts "--bottle", conflict
+      end
+
+      named_args [:formula, :cask]
     end
   end
 
@@ -185,7 +191,11 @@ module Homebrew
         args.named.to_formulae
       end
 
-      formulae.map(&:to_hash)
+      if args.bottle?
+        formulae.map(&:to_recursive_bottle_hash)
+      else
+        formulae.map(&:to_hash)
+      end
     when :v2
       formulae, casks = if args.all?
         [Formula.sort, Cask::Cask.to_a.sort_by(&:full_name)]
@@ -195,15 +205,19 @@ module Homebrew
         args.named.to_formulae_to_casks
       end
 
-      {
-        "formulae" => formulae.map(&:to_hash),
-        "casks"    => casks.map(&:to_h),
-      }
+      if args.bottle?
+        { "formulae" => formulae.map(&:to_recursive_bottle_hash) }
+      else
+        {
+          "formulae" => formulae.map(&:to_hash),
+          "casks"    => casks.map(&:to_h),
+        }
+      end
     else
       raise
     end
 
-    puts JSON.generate(json)
+    puts JSON.pretty_generate(json)
   end
 
   def github_remote_path(remote, path)
@@ -215,26 +229,20 @@ module Homebrew
   end
 
   def github_info(f)
-    if f.tap
-      if remote = f.tap.remote
-        path = if f.class.superclass == Formula
-          f.path.relative_path_from(f.tap.path)
-        elsif f.is_a?(Cask::Cask)
-          f.sourcefile_path.relative_path_from(f.tap.path)
-        end
-        github_remote_path(remote, path)
-      else
-        f.path
-      end
-    else
-      f.path
+    return f.path if f.tap.blank? || f.tap.remote.blank?
+
+    path = if f.class.superclass == Formula
+      f.path.relative_path_from(f.tap.path)
+    elsif f.is_a?(Cask::Cask)
+      f.sourcefile_path.relative_path_from(f.tap.path)
     end
+    github_remote_path(f.tap.remote, path)
   end
 
   def info_formula(f, args:)
     specs = []
 
-    if stable = f.stable
+    if (stable = f.stable)
       s = "stable #{stable.version}"
       s += " (bottled)" if stable.bottled? && f.pour_bottle?
       specs << s
@@ -345,6 +353,7 @@ module Homebrew
   end
 
   def info_cask(cask, args:)
+    require "cask/cmd"
     require "cask/cmd/info"
 
     Cask::Cmd::Info.info(cask)

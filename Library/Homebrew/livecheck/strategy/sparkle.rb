@@ -32,17 +32,32 @@ module Homebrew
           URL_MATCH_REGEX.match?(url)
         end
 
-        Item = Struct.new(:title, :url, :bundle_version, :short_version, :version, keyword_init: true) do
+        # @api private
+        Item = Struct.new(
+          # @api public
+          :title,
+          # @api private
+          :pub_date,
+          # @api public
+          :url,
+          # @api private
+          :bundle_version,
+          keyword_init: true,
+        ) do
           extend T::Sig
 
           extend Forwardable
 
+          # @api public
           delegate version: :bundle_version
+
+          # @api public
           delegate short_version: :bundle_version
         end
 
         sig { params(content: String).returns(T.nilable(Item)) }
         def self.item_from_content(content)
+          Homebrew.install_bundler_gems!
           require "nokogiri"
 
           xml = Nokogiri::XML(content)
@@ -60,31 +75,40 @@ module Homebrew
             version ||= (item > "version").first&.text&.strip
 
             title = (item > "title").first&.text&.strip
+            pub_date = (item > "pubDate").first&.text&.strip&.yield_self { |d| Time.parse(d) }
 
-            if match = title&.match(/(\d+(?:\.\d+)*)\s*(\([^)]+\))?\Z/)
+            if (match = title&.match(/(\d+(?:\.\d+)*)\s*(\([^)]+\))?\Z/))
               short_version ||= match[1]
               version ||= match[2]
             end
 
             bundle_version = BundleVersion.new(short_version, version) if short_version || version
 
+            next if (os = enclosure&.attr("os")) && os != "osx"
+
             data = {
               title:          title,
+              pub_date:       pub_date,
               url:            url,
               bundle_version: bundle_version,
-              short_version:  bundle_version&.short_version,
-              version:        bundle_version&.version,
             }.compact
 
             Item.new(**data) unless data.empty?
           end.compact
 
-          items.max_by(&:bundle_version)
+          items.max_by { |item| [item.pub_date, item.bundle_version] }
         end
 
         # Checks the content at the URL for new versions.
-        sig { params(url: String, regex: T.nilable(Regexp)).returns(T::Hash[Symbol, T.untyped]) }
-        def self.find_versions(url, regex, &block)
+        sig {
+          params(
+            url:   String,
+            regex: T.nilable(Regexp),
+            cask:  T.nilable(Cask::Cask),
+            block: T.nilable(T.proc.params(arg0: Item).returns(String)),
+          ).returns(T::Hash[Symbol, T.untyped])
+        }
+        def self.find_versions(url, regex, cask: nil, &block)
           raise ArgumentError, "The #{T.must(name).demodulize} strategy does not support a regex." if regex
 
           match_data = { matches: {}, regex: regex, url: url }
@@ -94,7 +118,13 @@ module Homebrew
 
           if (item = item_from_content(content))
             match = if block
-              block.call(item)&.to_s
+              value = block.call(item)
+
+              unless T.unsafe(value).is_a?(String)
+                raise TypeError, "Return value of `strategy :sparkle` block must be a string."
+              end
+
+              value
             else
               item.bundle_version&.nice_version
             end
