@@ -2,7 +2,7 @@
 
 ## Supported Versions
 
-Homebrew is a rolling release package manager. This means:
+Homebrew is a "rolling release" package manager. This means:
 
 - only the latest release and latest commit on the `master` branch of Homebrew/brew are supported
 - only the latest commit on the `master` branch of Homebrew/homebrew-core (and all other Homebrew taps) are supported.
