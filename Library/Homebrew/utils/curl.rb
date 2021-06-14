@@ -63,7 +63,8 @@ module Utils
 
     def curl_with_workarounds(
       *args,
-      secrets: nil, print_stdout: nil, print_stderr: nil, debug: nil, verbose: nil, env: {}, timeout: nil, **options
+      secrets: nil, print_stdout: nil, print_stderr: nil, debug: nil, verbose: nil,
+      env: {}, timeout: nil, override_curl_exe: nil, **options
     )
       end_time = Time.now + timeout if timeout
 
@@ -77,13 +78,13 @@ module Utils
 
       # SSL_CERT_FILE can be incorrectly set by users or portable-ruby and screw
       # with SSL downloads so unset it here.
-      result = system_command curl_executable,
+      result = system_command override_curl_exe || curl_executable,
                               args:    curl_args(*args, **options),
                               env:     { "SSL_CERT_FILE" => nil }.merge(env),
                               timeout: end_time&.remaining,
                               **command_options
 
-      return result if result.success? || !args.exclude?("--http1.1")
+      return result if result.success? || !args.exclude?("--http1.1") || override_curl_exe
 
       raise Timeout::Error, result.stderr.lines.last.chomp if timeout && result.status.exitstatus == 28
 
@@ -92,6 +93,16 @@ module Utils
         return curl_with_workarounds(
           *args, "--http1.1",
           timeout: end_time&.remaining, **command_options, **options
+        )
+      end
+
+      # Unhandled SSL protocol, try homebrew curl
+      if result.status.exitstatus == 35 && curl_executable
+        dep = Dependency.new("curl")
+        Homebrew::Install.install_formula(dep.to_formula) unless dep.installed?
+        return curl_with_workarounds(
+          *args, override_curl_exe: "#{dep.to_formula.opt_bin}/curl",
+                 timeout:           end_time&.remaining, **command_options, **options
         )
       end
 
