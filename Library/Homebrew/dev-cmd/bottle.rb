@@ -101,8 +101,8 @@ module Homebrew
     end
 
     ensure_relocation_formulae_installed! unless args.skip_relocation?
-    args.named.to_resolved_formulae(uniq: false).each do |f|
-      bottle_formula f, args: args
+    args.named.zip(args.named.to_resolved_formulae(uniq: false)).each do |name, f|
+      bottle_formula f, name, args: args
     end
   end
 
@@ -271,8 +271,18 @@ module Homebrew
     ["#{gnu_tar.opt_bin}/gtar", gnutar_args].freeze
   end
 
-  def bottle_formula(f, args:)
-    local_bottle_json = args.json? && f.local_bottle_path.present?
+  def bottle_formula(f, name, args:)
+    # If the file exists, this was called with a bottle path as
+    # the arugment instead of a formula name. The bottle path
+    # specified might be different from the one we'd infer otherwise,
+    # so prefer using the name that was specified.
+    local_bottle_path = if File.exist?(name)
+      Pathname.new(name)
+    else
+      f.local_bottle_path
+    end
+
+    local_bottle_json = args.json? && local_bottle_path.present?
 
     unless local_bottle_json
       return ofail "Formula not installed or up-to-date: #{f.full_name}" unless f.latest_version_installed?
@@ -295,7 +305,7 @@ module Homebrew
     return ofail "Formula has no stable version: #{f.full_name}" unless f.stable
 
     bottle_tag, rebuild = if local_bottle_json
-      _, tag_string, rebuild_string = Utils::Bottles.extname_tag_rebuild(f.local_bottle_path.to_s)
+      _, tag_string, rebuild_string = Utils::Bottles.extname_tag_rebuild(local_bottle_path.to_s)
       [tag_string.to_sym, rebuild_string.to_i]
     end
 
@@ -342,7 +352,7 @@ module Homebrew
     cellar = HOMEBREW_CELLAR.to_s
 
     if local_bottle_json
-      bottle_path = f.local_bottle_path
+      bottle_path = local_bottle_path
       local_filename = bottle_path.basename.to_s
 
       tab_path = Utils::Bottles.receipt_path(bottle_path)
@@ -553,7 +563,7 @@ module Homebrew
           "prefix"   => bottle.prefix,
           "cellar"   => bottle_cellar.to_s,
           "rebuild"  => bottle.rebuild,
-          "date"     => Pathname(filename.to_s).mtime.strftime("%F"),
+          "date"     => Pathname(local_bottle_path).mtime.strftime("%F"),
           "tags"     => {
             bottle_tag.to_s => {
               "filename"              => filename.url_encode,
