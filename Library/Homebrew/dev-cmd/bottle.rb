@@ -273,7 +273,7 @@ module Homebrew
 
   def bottle_formula(f, name, args:)
     # If the file exists, this was called with a bottle path as
-    # the arugment instead of a formula name. The bottle path
+    # the argument instead of a formula name. The bottle path
     # specified might be different from the one we'd infer otherwise,
     # so prefer using the name that was specified.
     local_bottle_path = if File.exist?(name)
