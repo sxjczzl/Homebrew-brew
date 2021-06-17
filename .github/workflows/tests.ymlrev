@@ -1,0 +1,5 @@
+# Create a repository using flags
+~/Projects/my-project$ gh repo create --enable-issues=false --public
+✓ Created repository user/my-project on GitHub
+✓ Added remote https://github.com/user/my-project.git
+~/Projects/my-project$
