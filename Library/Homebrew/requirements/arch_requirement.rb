@@ -14,7 +14,7 @@ class ArchRequirement < Requirement
   attr_reader :arch
 
   def initialize(tags)
-    @arch = Array.new
+    @arch = []
     tags.each do |tag|
       case tag
       when :x86_64, :arm64, :arm, :intel, :ppc
