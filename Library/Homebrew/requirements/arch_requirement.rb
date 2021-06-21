@@ -16,8 +16,7 @@ class ArchRequirement < Requirement
   def initialize(tags)
     @arch = []
     tags.each do |tag|
-      case tag
-      when :x86_64, :arm64, :arm, :intel, :ppc
+      if Hardware::CPU::ALL_ARCHS.include? tag
         @arch.append(tag)
         tags.delete(tag)
       end
