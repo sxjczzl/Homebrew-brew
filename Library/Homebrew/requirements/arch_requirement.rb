@@ -14,7 +14,15 @@ class ArchRequirement < Requirement
   attr_reader :arch
 
   def initialize(tags)
-    @arch = tags.shift
+    @arch = Array.new
+    tags.each do |tag|
+      case tag
+      when :x86_64, :arm64, :arm, :intel, :ppc
+        @arch.append(tag)
+        tags.delete(tag)
+      end
+    end
+
     super(tags)
   end
 
