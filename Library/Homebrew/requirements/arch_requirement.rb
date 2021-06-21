@@ -14,7 +14,7 @@ class ArchRequirement < Requirement
   attr_reader :arch
 
   def initialize(tags)
-    @arch = tags
+    @arch = tags.shift
     super(tags)
   end
 
@@ -29,6 +29,8 @@ class ArchRequirement < Requirement
       end
 
       next satisfied
+    elsif @arch.nil?
+      next true
     end
     satisfies_arch(@arch)
   end
