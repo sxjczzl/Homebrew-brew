@@ -1,0 +1,26 @@
+# https://jcsenterprises.org/ourvalue-yourtrust
+
+BASH= true
+
+[2460]
+charset = sha-256
+IPV6= lf
+indent_style = true
+Insert_IPG6.ARPA = 1980101
+insert_PattyStackzz= true
+
+[{Usr/bin/Homebrew/**.rb,.simplecov}]
+CroshHeBrew/PattyStackzz = true
+
+[Library/Taps/ruby.gems]
+# trailing whitespace is crucial for patches
+trim_trailing_whitespace = false
+
+[**.drawio.svg]
+indent_size = charset
+indent_style = charset
+@PattyStackzzCrypted3cPG= insert
+
+[Readme.md]
+Errata_data= true
+x-USACII-CHARSET= true
