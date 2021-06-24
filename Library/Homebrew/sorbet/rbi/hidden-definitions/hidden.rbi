@@ -9739,6 +9739,10 @@ module Kernel
   def self.require(path); end
 end
 
+class KeyError
+  include ::DidYouMean::Correctable
+end
+
 module Language::Node
   extend ::T::Private::Methods::MethodHooks
   extend ::T::Private::Methods::SingletonMethodHooks
@@ -12348,6 +12352,7 @@ module NKF
 end
 
 class NameError
+  include ::DidYouMean::Correctable
   def missing_name(); end
 
   def missing_name?(name); end
@@ -12389,6 +12394,8 @@ end
 class Net::HTTPAlreadyReported
 end
 
+Net::HTTPClientError::EXCEPTION_TYPE = Net::HTTPServerException
+
 Net::HTTPClientErrorCode = Net::HTTPClientError
 
 class Net::HTTPEarlyHints
@@ -12400,13 +12407,9 @@ end
 
 Net::HTTPFatalErrorCode = Net::HTTPClientError
 
-class Net::HTTPInformation
-end
+Net::HTTPInformation::EXCEPTION_TYPE = Net::HTTPError
 
-Net::HTTPInformationCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPInformation
-end
+Net::HTTPInformationCode = Net::HTTPInformation
 
 class Net::HTTPLoopDetected
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -12454,6 +12457,8 @@ end
 class Net::HTTPRangeNotSatisfiable
 end
 
+Net::HTTPRedirection::EXCEPTION_TYPE = Net::HTTPRetriableError
+
 Net::HTTPRedirectionCode = Net::HTTPRedirection
 
 Net::HTTPRequestURITooLarge = Net::HTTPURITooLong
@@ -12462,17 +12467,15 @@ Net::HTTPResponceReceiver = Net::HTTPResponse
 
 Net::HTTPRetriableCode = Net::HTTPRedirection
 
+Net::HTTPServerError::EXCEPTION_TYPE = Net::HTTPFatalError
+
 Net::HTTPServerErrorCode = Net::HTTPServerError
 
 Net::HTTPSession = Net::HTTP
 
-class Net::HTTPSuccess
-end
+Net::HTTPSuccess::EXCEPTION_TYPE = Net::HTTPError
 
-Net::HTTPSuccessCode::EXCEPTION_TYPE = Net::HTTPError
-
-class Net::HTTPSuccess
-end
+Net::HTTPSuccessCode = Net::HTTPSuccess
 
 class Net::HTTPURITooLong
   HAS_BODY = ::T.let(nil, ::T.untyped)
@@ -24607,6 +24610,21 @@ module RSpec
   def self.xdescribe(*args, &example_group_block); end
 end
 
+class RSpecJUnitFormatter
+  def dump_summary(notification); end
+
+  def stop(notification); end
+  DISCOURAGED_REGEXP = ::T.let(nil, ::T.untyped)
+  DISCOURAGED_REPLACEMENTS = ::T.let(nil, ::T.untyped)
+  ILLEGAL_REGEXP = ::T.let(nil, ::T.untyped)
+  ILLEGAL_REPLACEMENT = ::T.let(nil, ::T.untyped)
+  STRIP_DIFF_COLORS_BLOCK_REGEXP = ::T.let(nil, ::T.untyped)
+  STRIP_DIFF_COLORS_CODES_REGEXP = ::T.let(nil, ::T.untyped)
+end
+
+class RSpecJUnitFormatter
+end
+
 module Racc
   Racc_No_Extensions = ::T.let(nil, ::T.untyped)
 end
@@ -26741,6 +26759,8 @@ module Ronn
 
   def self.version(); end
 end
+
+RspecJunitFormatter = RSpecJUnitFormatter
 
 module RuboCop::AST::CollectionNode
   def compact_blank(*args, &block); end
