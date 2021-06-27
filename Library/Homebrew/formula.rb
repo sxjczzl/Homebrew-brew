@@ -2,6 +2,7 @@
 # frozen_string_literal: true
 
 require "cache_store"
+require "did_you_mean"
 require "formula_support"
 require "lock_file"
 require "formula_pin"
@@ -1268,7 +1269,18 @@ class Formula
         staging.retain! if interactive || debug?
         raise
       ensure
-        cp Dir["config.log", "CMakeCache.txt"], logs
+        %w[
+          config.log
+          CMakeCache.txt
+          CMakeOutput.log
+          CMakeError.log
+        ].each do |logfile|
+          Dir["**/#{logfile}"].each do |logpath|
+            destdir = logs/File.dirname(logpath)
+            mkdir_p destdir
+            cp logpath, destdir
+          end
+        end
       end
     end
   ensure
@@ -1669,6 +1681,13 @@ class Formula
   # @private
   def self.core_alias_reverse_table
     CoreTap.instance.alias_reverse_table
+  end
+
+  # Returns a list of approximately matching formula names, but not the complete match
+  # @private
+  def self.fuzzy_search(name)
+    @spell_checker ||= DidYouMean::SpellChecker.new(dictionary: Set.new(names + full_names).to_a)
+    @spell_checker.correct(name)
   end
 
   def self.[](name)
@@ -2973,22 +2992,18 @@ class Formula
       @pour_bottle_check.instance_eval(&block)
     end
 
-    # Deprecates a {Formula} (on a given date, if provided) so a warning is
+    # Deprecates a {Formula} (on the given date) so a warning is
     # shown on each installation. If the date has not yet passed the formula
     # will not be deprecated.
     # <pre>deprecate! date: "2020-08-27", because: :unmaintained</pre>
     # <pre>deprecate! date: "2020-08-27", because: "has been replaced by foo"</pre>
     # @see https://docs.brew.sh/Deprecating-Disabling-and-Removing-Formulae
     # @see DeprecateDisable::DEPRECATE_DISABLE_REASONS
-    def deprecate!(date: nil, because: nil)
-      odisabled "`deprecate!` without a reason", "`deprecate! because: \"reason\"`" if because.blank?
-      odisabled "`deprecate!` without a date", "`deprecate! date: \"#{Date.today}\"`" if date.blank?
+    def deprecate!(date:, because:)
+      @deprecation_date = Date.parse(date)
+      return if @deprecation_date > Date.today
 
-      @deprecation_date = Date.parse(date) if date.present?
-
-      return if date.present? && Date.parse(date) > Date.today
-
-      @deprecation_reason = because if because.present?
+      @deprecation_reason = because
       @deprecated = true
     end
 
@@ -3012,26 +3027,23 @@ class Formula
     # @see .deprecate!
     attr_reader :deprecation_reason
 
-    # Disables a {Formula} (on a given date, if provided) so it cannot be
+    # Disables a {Formula} (on the given date) so it cannot be
     # installed. If the date has not yet passed the formula
     # will be deprecated instead of disabled.
     # <pre>disable! date: "2020-08-27", because: :does_not_build</pre>
     # <pre>disable! date: "2020-08-27", because: "has been replaced by foo"</pre>
     # @see https://docs.brew.sh/Deprecating-Disabling-and-Removing-Formulae
     # @see DeprecateDisable::DEPRECATE_DISABLE_REASONS
-    def disable!(date: nil, because: nil)
-      odisabled "`disable!` without a reason", "`disable! because: \"reason\"`" if because.blank?
-      odisabled "`disable!` without a date", "`disable! date: \"#{Date.today}\"`" if date.blank?
+    def disable!(date:, because:)
+      @disable_date = Date.parse(date)
 
-      @disable_date = Date.parse(date) if date.present?
-
-      if @disable_date && @disable_date > Date.today
-        @deprecation_reason = because if because.present?
+      if @disable_date > Date.today
+        @deprecation_reason = because
         @deprecated = true
         return
       end
 
-      @disable_reason = because if because.present?
+      @disable_reason = because
       @disabled = true
     end
 

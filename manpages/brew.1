@@ -706,7 +706,7 @@ Disable/enable quarantining of downloads (default: enabled)\.
 \fB\-\-skip\-cask\-deps\fR
 Skip installing cask dependencies\.
 .
-.SS "\fBsearch\fR, \fB\-S\fR [\fIoptions\fR] [\fItext\fR|\fB/\fR\fIregex\fR\fB/\fR \.\.\.]"
+.SS "\fBsearch\fR, \fB\-S\fR [\fIoptions\fR] \fItext\fR|\fB/\fR\fIregex\fR\fB/\fR [\.\.\.]"
 Perform a substring search of cask tokens and formula names for \fItext\fR\. If \fItext\fR is flanked by slashes, it is interpreted as a regular expression\. The search for \fItext\fR is extended online to \fBhomebrew/core\fR and \fBhomebrew/cask\fR\.
 .
 .TP
@@ -1506,6 +1506,14 @@ Upload built bottles\.
 .TP
 \fB\-\-linux\fR
 Dispatch bottle for Linux (using GitHub runners)\.
+.
+.TP
+\fB\-\-linux\-self\-hosted\fR
+Dispatch bottle for Linux (using self\-hosted runner)\.
+.
+.TP
+\fB\-\-wheezy\fR
+Use Debian Wheezy container for building the bottle on Linux\.
 .
 .SS "\fBedit\fR [\fI\-\-formula\fR] [\fI\-\-cask\fR] [\fIformula\fR|\fIcask\fR \.\.\.]"
 Open a \fIformula\fR or \fIcask\fR in the editor set by \fBEDITOR\fR or \fBHOMEBREW_EDITOR\fR, or open the Homebrew repository for editing if no formula is provided\.
@@ -2416,10 +2424,6 @@ Print test step output in real time\. Has the side effect of passing output as r
 Use a default testing formula when not building a tap and no other formulae are specified\.
 .
 .TP
-\fB\-\-bintray\-org\fR
-Upload bottles to the given Bintray organisation\.
-.
-.TP
 \fB\-\-root\-url\fR
 Use the specified \fIURL\fR as the root of the bottle\'s URL instead of Homebrew\'s default\.
 .
@@ -2430,10 +2434,6 @@ Set the Git author/committer names to the given name\.
 .TP
 \fB\-\-git\-email\fR
 Set the Git author/committer email to the given email\.
-.
-.TP
-\fB\-\-ci\-upload\fR
-Use the Homebrew CI bottle upload options\.
 .
 .TP
 \fB\-\-publish\fR
@@ -2890,6 +2890,12 @@ If set, forbid redirects from secure HTTPS to insecure HTTP\.
 If set, \fBbrew install\fR, \fBbrew upgrade\fR and \fBbrew reinstall\fR will never automatically cleanup installed/upgraded/reinstalled formulae or all formulae every \fBHOMEBREW_CLEANUP_PERIODIC_FULL_DAYS\fR days\.
 .
 .TP
+\fBHOMEBREW_NO_INSTALL_UPGRADE\fR
+.
+.br
+If set, \fBbrew install\fR will not automatically upgrade installed but outdated formulae
+.
+.TP
 \fBHOMEBREW_PRY\fR
 .
 .br
@@ -3050,7 +3056,7 @@ Homebrew\'s Technical Steering Committee is Bo Anderson, FX Coudert, Michka Popo
 Homebrew\'s Linux maintainers are Daniel Nachun, Dawid Dziurla, Issy Long, Jonathan Chang, Michka Popoff and Shaun Jackman\.
 .
 .P
-Homebrew\'s other current maintainers are Alexander Bayandin, Caleb Xu, Carlo Cabrera, Claudia Pellegrino, Dustin Rodrigues, Eric Knibbe, Maxim Belkin, Miccal Matthews, Michael Cho, Nanda H Krishna, Randall, Sam Ford, Steve Peters, Thierry Moisan, Tom Schoonjans, Vitor Galvao and rui\.
+Homebrew\'s other current maintainers are Alexander Bayandin, Bevan Kay, Caleb Xu, Carlo Cabrera, Claudia Pellegrino, Connor Mann, Dustin Rodrigues, Eric Knibbe, Maxim Belkin, Miccal Matthews, Michael Cho, Nanda H Krishna, Randall, Sam Ford, Steve Peters, Thierry Moisan, Tom Schoonjans, Vitor Galvao and rui\.
 .
 .P
 Former maintainers with significant contributions include Jan Viljanen, JCount, commitay, Dominyk Tiller, Tim Smith, Baptiste Fontaine, Xu Cheng, Martin Afanasjew, Brett Koonce, Charlie Sharpsteen, Jack Nagel, Adam Vandenberg, Andrew Janke, Alex Dunn, neutric, Tomasz Pajor, Uladzislau Shablinski, Alyssa Ross, ilovezfs, Chongyu Zhu and Homebrew\'s creator: Max Howell\.

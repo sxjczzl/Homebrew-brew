@@ -582,11 +582,13 @@ __fish_brew_complete_arg 'dispatch-build-bottle' -l debug -d 'Display any debugg
 __fish_brew_complete_arg 'dispatch-build-bottle' -l help -d 'Show this message'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l issue -d 'If specified, post a comment to this issue number if the job fails'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l linux -d 'Dispatch bottle for Linux (using GitHub runners)'
+__fish_brew_complete_arg 'dispatch-build-bottle' -l linux-self-hosted -d 'Dispatch bottle for Linux (using self-hosted runner)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l macos -d 'Version of macOS the bottle should be built for'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l quiet -d 'Make some output more quiet'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l tap -d 'Target tap repository (default: `homebrew/core`)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l upload -d 'Upload built bottles'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l verbose -d 'Make some output more verbose'
+__fish_brew_complete_arg 'dispatch-build-bottle' -l wheezy -d 'Use Debian Wheezy container for building the bottle on Linux'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l workflow -d 'Dispatch specified workflow (default: `dispatch-build-bottle.yml`)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -a '(__fish_brew_suggest_formulae_all)'
 
@@ -972,13 +974,6 @@ __fish_brew_complete_arg 'migrate' -l verbose -d 'Make some output more verbose'
 __fish_brew_complete_arg 'migrate' -a '(__fish_brew_suggest_formulae_installed)'
 
 
-__fish_brew_complete_cmd 'mirror' 'Reupload the stable URL of a formula for use as a mirror'
-__fish_brew_complete_arg 'mirror' -l debug -d 'Display any debugging information'
-__fish_brew_complete_arg 'mirror' -l help -d 'Show this message'
-__fish_brew_complete_arg 'mirror' -l quiet -d 'Make some output more quiet'
-__fish_brew_complete_arg 'mirror' -l verbose -d 'Make some output more verbose'
-
-
 __fish_brew_complete_cmd 'missing' 'Check the given formula kegs for missing dependencies'
 __fish_brew_complete_arg 'missing' -l debug -d 'Display any debugging information'
 __fish_brew_complete_arg 'missing' -l help -d 'Show this message'
@@ -1161,14 +1156,6 @@ __fish_brew_complete_arg 'release' -l major -d 'Create a major release'
 __fish_brew_complete_arg 'release' -l minor -d 'Create a minor release'
 __fish_brew_complete_arg 'release' -l quiet -d 'Make some output more quiet'
 __fish_brew_complete_arg 'release' -l verbose -d 'Make some output more verbose'
-
-
-__fish_brew_complete_cmd 'release-notes' 'Print the merged pull requests on Homebrew/brew between two Git refs'
-__fish_brew_complete_arg 'release-notes' -l debug -d 'Display any debugging information'
-__fish_brew_complete_arg 'release-notes' -l help -d 'Show this message'
-__fish_brew_complete_arg 'release-notes' -l markdown -d 'Print as a Markdown list'
-__fish_brew_complete_arg 'release-notes' -l quiet -d 'Make some output more quiet'
-__fish_brew_complete_arg 'release-notes' -l verbose -d 'Make some output more verbose'
 
 
 __fish_brew_complete_cmd 'remove' 'Uninstall a formula or cask'
