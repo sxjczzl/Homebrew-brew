@@ -183,7 +183,7 @@ Use `brew log <formula>` to find out! Likely because it had [unresolved issues](
 For disabled and deprecated formulae, running `brew info <formula>` will also provide an explanation.
 
 ## Homebrew is a poor name, it's too generic, why was it chosen?
-Homebrew's creator @mxcl was too concerned with the beer theme and didn't consider that the project may actually prove popular. By the time Max realised that it was popular, it was too late. However, today, the first Google hit for "homebrew" is not beer related 😉
+Homebrew's creator @mxcl wasn't too concerned with the beer theme and didn't consider that the project may actually prove popular. By the time Max realised that it was popular, it was too late. However, today, the first Google hit for "homebrew" is not beer related 😉
 
 ## What does "keg-only" mean?
 It means the formula is installed only into the Cellar and is not linked into `/usr/local`. This means most tools will not find it. You can see why a formula was installed as keg-only, and instructions to include it in your `PATH`, by running `brew info <formula>`.
