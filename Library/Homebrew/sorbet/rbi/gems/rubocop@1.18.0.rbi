@@ -1075,6 +1075,7 @@ class RuboCop::Cop::Bundler::GemVersion < ::RuboCop::Cop::Base
   include ::RuboCop::Cop::ConfigurableEnforcedStyle
   include ::RuboCop::Cop::GemDeclaration
 
+  def includes_commit_reference?(param0 = T.unsafe(nil)); end
   def includes_version_specification?(param0 = T.unsafe(nil)); end
   def on_send(node); end
 
@@ -1082,9 +1083,11 @@ class RuboCop::Cop::Bundler::GemVersion < ::RuboCop::Cop::Base
 
   def allowed_gem?(node); end
   def allowed_gems; end
+  def forbidden_offense?(node); end
   def forbidden_style?; end
   def message(range); end
   def offense?(node); end
+  def required_offense?(node); end
   def required_style?; end
   def version_specification?(expression); end
 end
@@ -1153,6 +1156,7 @@ module RuboCop::Cop::CheckLineBreakable
   def contained_by_multiline_collection_that_could_be_broken_up?(node); end
   def extract_breakable_node_from_elements(node, elements, max); end
   def extract_first_element_over_column_limit(node, elements, max); end
+  def first_argument_is_heredoc?(node); end
   def process_args(args); end
   def safe_to_ignore?(node); end
   def shift_elements_for_heredoc_arg(node, elements, index); end
@@ -3176,6 +3180,28 @@ class RuboCop::Cop::Layout::LeadingEmptyLines < ::RuboCop::Cop::Base
 end
 
 RuboCop::Cop::Layout::LeadingEmptyLines::MSG = T.let(T.unsafe(nil), String)
+
+class RuboCop::Cop::Layout::LineEndStringConcatenationIndentation < ::RuboCop::Cop::Base
+  include ::RuboCop::Cop::ConfigurableEnforcedStyle
+  include ::RuboCop::Cop::Alignment
+  extend ::RuboCop::Cop::AutoCorrector
+
+  def autocorrect(corrector, node); end
+  def on_dstr(node); end
+
+  private
+
+  def add_offense_and_correction(node, message); end
+  def always_aligned?(dstr_node); end
+  def always_indented?(dstr_node); end
+  def check_aligned(children, start_index); end
+  def check_indented(children); end
+  def strings_concatenated_with_backslash?(dstr_node); end
+end
+
+RuboCop::Cop::Layout::LineEndStringConcatenationIndentation::MSG_ALIGN = T.let(T.unsafe(nil), String)
+RuboCop::Cop::Layout::LineEndStringConcatenationIndentation::MSG_INDENT = T.let(T.unsafe(nil), String)
+RuboCop::Cop::Layout::LineEndStringConcatenationIndentation::PARENT_TYPES_FOR_INDENTED = T.let(T.unsafe(nil), Array)
 
 class RuboCop::Cop::Layout::LineLength < ::RuboCop::Cop::Base
   include ::RuboCop::Cop::CheckLineBreakable
@@ -6571,6 +6597,53 @@ end
 
 RuboCop::Cop::Naming::HeredocDelimiterNaming::MSG = T.let(T.unsafe(nil), String)
 
+class RuboCop::Cop::Naming::InclusiveLanguage < ::RuboCop::Cop::Base
+  include ::RuboCop::Cop::RangeHelp
+
+  def initialize(config = T.unsafe(nil), options = T.unsafe(nil)); end
+
+  def on_new_investigation; end
+
+  private
+
+  def add_offenses_for_token(token, word_locations); end
+  def add_to_flagged_term_hash(regex_string, term, term_definition); end
+  def array_to_ignorecase_regex(strings); end
+  def check_token?(type); end
+  def create_message(word); end
+  def create_message_for_file(word); end
+  def create_multiple_word_message_for_file(words); end
+  def create_single_word_message_for_file(word); end
+  def ensure_regex_string(regex); end
+  def find_flagged_term(word); end
+  def format_suggestions(suggestions); end
+  def investigate_filepath; end
+  def investigate_tokens; end
+  def mask_input(str); end
+  def preprocess_check_config; end
+  def preprocess_flagged_terms; end
+  def preprocess_suggestions(suggestions); end
+  def process_allowed_regex(allowed); end
+  def scan_for_words(input); end
+  def set_regexes(flagged_term_strings, allowed_strings); end
+end
+
+RuboCop::Cop::Naming::InclusiveLanguage::EMPTY_ARRAY = T.let(T.unsafe(nil), Array)
+
+class RuboCop::Cop::Naming::InclusiveLanguage::WordLocation < ::Struct
+  def position; end
+  def position=(_); end
+  def word; end
+  def word=(_); end
+
+  class << self
+    def [](*_arg0); end
+    def inspect; end
+    def members; end
+    def new(*_arg0); end
+  end
+end
+
 class RuboCop::Cop::Naming::MemoizedInstanceVariableName < ::RuboCop::Cop::Base
   include ::RuboCop::Cop::ConfigurableEnforcedStyle
 
@@ -7625,6 +7698,7 @@ class RuboCop::Cop::Style::ClassAndModuleChildren < ::RuboCop::Cop::Base
   def compact_node(corrector, node); end
   def compact_node_name?(node); end
   def compact_replacement(node); end
+  def configured_indentation_width; end
   def indent_width; end
   def leading_spaces(node); end
   def needs_compacting?(body); end
@@ -7633,6 +7707,7 @@ class RuboCop::Cop::Style::ClassAndModuleChildren < ::RuboCop::Cop::Base
   def remove_end(corrector, body); end
   def replace_namespace_keyword(corrector, node); end
   def split_on_double_colon(corrector, node, padding); end
+  def unindent(corrector, node); end
 end
 
 RuboCop::Cop::Style::ClassAndModuleChildren::COMPACT_MSG = T.let(T.unsafe(nil), String)
@@ -10577,6 +10652,7 @@ class RuboCop::Cop::Style::RegexpLiteral < ::RuboCop::Cop::Base
   def allow_inner_slashes?; end
   def allowed_mixed_percent_r?(node); end
   def allowed_mixed_slash?(node); end
+  def allowed_omit_parentheses_with_percent_r_literal?(node); end
   def allowed_percent_r_literal?(node); end
   def allowed_slash_literal?(node); end
   def calculate_replacement(node); end
@@ -10589,7 +10665,6 @@ class RuboCop::Cop::Style::RegexpLiteral < ::RuboCop::Cop::Base
   def inner_slash_for(opening_delimiter); end
   def inner_slash_indices(node); end
   def node_body(node, include_begin_nodes: T.unsafe(nil)); end
-  def omit_parentheses_style?(node); end
   def preferred_delimiters; end
   def slash_literal?(node); end
 end
@@ -10981,12 +11056,14 @@ class RuboCop::Cop::Style::StringConcatenation < ::RuboCop::Cop::Base
 
   private
 
-  def collect_parts(node, parts); end
+  def collect_parts(node, parts = T.unsafe(nil)); end
   def corrected_ancestor?(node); end
   def find_topmost_plus_node(node); end
   def handle_quotes(parts); end
   def line_end_concatenation?(node); end
+  def offensive_for_mode?(receiver_node); end
   def plus_node?(node); end
+  def register_offense(topmost_plus_node, parts); end
   def replacement(parts); end
   def single_quoted?(str_node); end
   def uncorrectable?(part); end
