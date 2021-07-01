@@ -500,6 +500,8 @@ reinstalled formulae or, every 30 days, for all formulae.
   Retain the temporary files created during installation.
 * `--display-times`:
   Print install times for each formula at the end of the run.
+* `-g`, `--git`:
+  Create a Git repository, useful for creating patches to the software.
 * `--cask`:
   Treat all named arguments as casks.
 * `--[no-]binaries`:
@@ -1705,6 +1707,8 @@ Only supports GitHub Actions as a CI provider. This is because Homebrew uses Git
   Don't check if the local system is set up correctly.
 * `--build-from-source`:
   Build from source rather than building bottles.
+* `--junit`:
+  generate a JUnit XML test results file.
 * `--keep-old`:
   Run `brew bottle --keep-old` to build new bottles for a single platform.
 * `--skip-relocation`:
