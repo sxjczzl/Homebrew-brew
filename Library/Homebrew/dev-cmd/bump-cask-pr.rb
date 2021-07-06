@@ -127,7 +127,7 @@ module Homebrew
                                                         read_only_run: true,
                                                         silent:        true)
 
-        tmp_cask = Cask::CaskLoader.load(tmp_contents)
+        tmp_cask = Cask::CaskLoader.load(cask)
         tmp_config = cask.config
         tmp_url = tmp_cask.url.to_s
 
