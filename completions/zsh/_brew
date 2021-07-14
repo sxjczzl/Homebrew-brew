@@ -717,12 +717,12 @@ _brew_dispatch_build_bottle() {
     '--issue[If specified, post a comment to this issue number if the job fails]' \
     '(--macos --linux-self-hosted)--linux[Dispatch bottle for Linux (using GitHub runners)]' \
     '(--macos --linux)--linux-self-hosted[Dispatch bottle for Linux (using self-hosted runner)]' \
+    '--linux-wheezy[Use Debian Wheezy container for building the bottle on Linux]' \
     '(--linux --linux-self-hosted)--macos[Version of macOS the bottle should be built for]' \
     '--quiet[Make some output more quiet]' \
     '--tap[Target tap repository (default: `homebrew/core`)]' \
     '--upload[Upload built bottles]' \
     '--verbose[Make some output more verbose]' \
-    '--wheezy[Use Debian Wheezy container for building the bottle on Linux]' \
     '--workflow[Dispatch specified workflow (default: `dispatch-build-bottle.yml`)]' \
     - formula \
     '*::formula:__brew_formulae'
@@ -801,12 +801,13 @@ _brew_extract() {
 _brew_fetch() {
   _arguments \
     '(--cask)--HEAD[Fetch HEAD version instead of stable version]' \
-    '(--build-from-source --force-bottle --cask)--build-bottle[Download source packages (for eventual bottling) rather than a bottle]' \
-    '(--build-bottle --force-bottle)--build-from-source[Download source packages rather than a bottle]' \
+    '(--build-from-source --build-bottle --force-bottle --cask)--bottle-tag[Download a bottle for given tag]' \
+    '(--build-from-source --force-bottle --bottle-tag --cask)--build-bottle[Download source packages (for eventual bottling) rather than a bottle]' \
+    '(--build-bottle --force-bottle --bottle-tag)--build-from-source[Download source packages rather than a bottle]' \
     '--debug[Display any debugging information]' \
     '(--cask)--deps[Also download dependencies for any listed formula]' \
     '--force[Remove a previously cached version and re-fetch]' \
-    '(--build-from-source --build-bottle --cask)--force-bottle[Download a bottle if it exists for the current or newest version of macOS, even if it would not be used during installation]' \
+    '(--build-from-source --build-bottle --bottle-tag --cask)--force-bottle[Download a bottle if it exists for the current or newest version of macOS, even if it would not be used during installation]' \
     '--help[Show this message]' \
     '--no-quarantine[Disable/enable quarantining of downloads (default: enabled)]' \
     '--quarantine[Disable/enable quarantining of downloads (default: enabled)]' \
@@ -817,7 +818,7 @@ _brew_fetch() {
     '(--cask)--formula[Treat all named arguments as formulae]' \
     '*::formula:__brew_formulae' \
     - cask \
-    '(--HEAD --deps --s --build-bottle --force-bottle --formula)--cask[Treat all named arguments as casks]' \
+    '(--HEAD --deps --s --build-bottle --force-bottle --bottle-tag --formula)--cask[Treat all named arguments as casks]' \
     '*::cask:__brew_casks'
 }
 
@@ -911,7 +912,7 @@ _brew_info() {
 # brew instal
 _brew_instal() {
   _arguments \
-    '(--cask)--HEAD[If formula defines it, install the HEAD version, aka. master, trunk, unstable]' \
+    '(--cask)--HEAD[If formula defines it, install the HEAD version, aka. main, trunk, unstable, master]' \
     '(--formula)--appdir[Target location for Applications (default: `/Applications`)]' \
     '(--formula)--audio-unit-plugindir[Target location for Audio Unit Plugins (default: `~/Library/Audio/Plug-Ins/Components`)]' \
     '(--formula)--binaries[Disable/enable linking of helper executables (default: enabled)]' \
@@ -963,7 +964,7 @@ _brew_instal() {
 # brew install
 _brew_install() {
   _arguments \
-    '(--cask)--HEAD[If formula defines it, install the HEAD version, aka. master, trunk, unstable]' \
+    '(--cask)--HEAD[If formula defines it, install the HEAD version, aka. main, trunk, unstable, master]' \
     '(--formula)--appdir[Target location for Applications (default: `/Applications`)]' \
     '(--formula)--audio-unit-plugindir[Target location for Audio Unit Plugins (default: `~/Library/Audio/Plug-Ins/Components`)]' \
     '(--formula)--binaries[Disable/enable linking of helper executables (default: enabled)]' \

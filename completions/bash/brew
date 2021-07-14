@@ -755,12 +755,12 @@ _brew_dispatch_build_bottle() {
       --issue
       --linux
       --linux-self-hosted
+      --linux-wheezy
       --macos
       --quiet
       --tap
       --upload
       --verbose
-      --wheezy
       --workflow
       "
       return
@@ -873,6 +873,7 @@ _brew_fetch() {
     -*)
       __brewcomp "
       --HEAD
+      --bottle-tag
       --build-bottle
       --build-from-source
       --cask

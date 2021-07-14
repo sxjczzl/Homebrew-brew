@@ -149,7 +149,7 @@ function __fish_brew_suggest_commands -d "Lists all commands names, including al
     end
 end
 
-function __fish_brew_suggest_diagnostic_check -d "List available diagnostic checks"
+function __fish_brew_suggest_diagnostic_checks -d "List available diagnostic checks"
     brew doctor --list-checks
 end
 
@@ -583,12 +583,12 @@ __fish_brew_complete_arg 'dispatch-build-bottle' -l help -d 'Show this message'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l issue -d 'If specified, post a comment to this issue number if the job fails'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l linux -d 'Dispatch bottle for Linux (using GitHub runners)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l linux-self-hosted -d 'Dispatch bottle for Linux (using self-hosted runner)'
+__fish_brew_complete_arg 'dispatch-build-bottle' -l linux-wheezy -d 'Use Debian Wheezy container for building the bottle on Linux'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l macos -d 'Version of macOS the bottle should be built for'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l quiet -d 'Make some output more quiet'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l tap -d 'Target tap repository (default: `homebrew/core`)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l upload -d 'Upload built bottles'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l verbose -d 'Make some output more verbose'
-__fish_brew_complete_arg 'dispatch-build-bottle' -l wheezy -d 'Use Debian Wheezy container for building the bottle on Linux'
 __fish_brew_complete_arg 'dispatch-build-bottle' -l workflow -d 'Dispatch specified workflow (default: `dispatch-build-bottle.yml`)'
 __fish_brew_complete_arg 'dispatch-build-bottle' -a '(__fish_brew_suggest_formulae_all)'
 
@@ -647,6 +647,7 @@ __fish_brew_complete_arg 'extract' -a '(__fish_brew_suggest_taps_installed)'
 
 __fish_brew_complete_cmd 'fetch' 'Download a bottle (if available) or source packages for formulae and binaries for casks'
 __fish_brew_complete_arg 'fetch' -l HEAD -d 'Fetch HEAD version instead of stable version'
+__fish_brew_complete_arg 'fetch' -l bottle-tag -d 'Download a bottle for given tag'
 __fish_brew_complete_arg 'fetch' -l build-bottle -d 'Download source packages (for eventual bottling) rather than a bottle'
 __fish_brew_complete_arg 'fetch' -l build-from-source -d 'Download source packages rather than a bottle'
 __fish_brew_complete_arg 'fetch' -l cask -d 'Treat all named arguments as casks'
@@ -733,7 +734,7 @@ __fish_brew_complete_arg 'info; and not __fish_seen_argument -l formula -l formu
 
 
 __fish_brew_complete_cmd 'instal' 'Install a formula or cask'
-__fish_brew_complete_arg 'instal' -l HEAD -d 'If formula defines it, install the HEAD version, aka. master, trunk, unstable'
+__fish_brew_complete_arg 'instal' -l HEAD -d 'If formula defines it, install the HEAD version, aka. main, trunk, unstable, master'
 __fish_brew_complete_arg 'instal' -l appdir -d 'Target location for Applications (default: `/Applications`)'
 __fish_brew_complete_arg 'instal' -l audio-unit-plugindir -d 'Target location for Audio Unit Plugins (default: `~/Library/Audio/Plug-Ins/Components`)'
 __fish_brew_complete_arg 'instal' -l binaries -d 'Disable/enable linking of helper executables (default: enabled)'
@@ -781,7 +782,7 @@ __fish_brew_complete_arg 'instal; and not __fish_seen_argument -l formula -l for
 
 
 __fish_brew_complete_cmd 'install' 'Install a formula or cask'
-__fish_brew_complete_arg 'install' -l HEAD -d 'If formula defines it, install the HEAD version, aka. master, trunk, unstable'
+__fish_brew_complete_arg 'install' -l HEAD -d 'If formula defines it, install the HEAD version, aka. main, trunk, unstable, master'
 __fish_brew_complete_arg 'install' -l appdir -d 'Target location for Applications (default: `/Applications`)'
 __fish_brew_complete_arg 'install' -l audio-unit-plugindir -d 'Target location for Audio Unit Plugins (default: `~/Library/Audio/Plug-Ins/Components`)'
 __fish_brew_complete_arg 'install' -l binaries -d 'Disable/enable linking of helper executables (default: enabled)'
