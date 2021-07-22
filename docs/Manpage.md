@@ -184,6 +184,18 @@ first search, making that search slower than subsequent ones.
 * `-d`, `--description`:
   Search just descriptions for *`text`*. If *`text`* is flanked by slashes, it is interpreted as a regular expression.
 
+### `developer` [*`subcommand`*]
+
+Control Homebrew's developer mode. When developer mode is enabled,
+`brew update` will update Homebrew to the latest commit on the `master`
+branch instead of the latest stable version along with some other behaviour changes.
+
+`brew developer` [`state`]
+<br>Display the current state of Homebrew's developer mode.
+
+`brew developer` (`on`|`off`)
+<br>Turn Homebrew's developer mode on or off respectively.
+
 ### `doctor`, `dr` [*`--list-checks`*] [*`--audit-debug`*] [*`diagnostic_check`* ...]
 
 Check your system for potential problems. Will exit with a non-zero status
@@ -533,18 +545,20 @@ The search for *`text`* is extended online to `homebrew/core` and `homebrew/cask
   Search for only open GitHub pull requests.
 * `--closed`:
   Search for only closed GitHub pull requests.
+* `--repology`:
+  Search for *`text`* in the given database.
 * `--macports`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--fink`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--opensuse`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--fedora`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--debian`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 * `--ubuntu`:
-  Search for *`text`* in the given package manager's list.
+  Search for *`text`* in the given database.
 
 ### `shellenv`
 
@@ -1131,7 +1145,7 @@ provided, check all kegs. Raises an error if run on uninstalled formulae.
 * `--cached`:
   Print the cached linkage values stored in `HOMEBREW_CACHE`, set by a previous `brew linkage` run.
 
-### `livecheck` [*`options`*] [*`formula`*|*`cask`* ...]
+### `livecheck`, `lc` [*`options`*] [*`formula`*|*`cask`* ...]
 
 Check for newer versions of formulae and/or casks from upstream.
 
@@ -1174,6 +1188,8 @@ Find pull requests that can be automatically merged using `brew pr-publish`.
   Run `brew pr-publish` on matching pull requests.
 * `--autosquash`:
   Instruct `brew pr-publish` to automatically reformat and reword commits in the pull request to our preferred format.
+* `--no-autosquash`:
+  Instruct `brew pr-publish` to skip automatically reformatting and rewording commits in the pull request to the preferred format.
 * `--ignore-failures`:
   Include pull requests that have failing status checks.
 
@@ -1184,6 +1200,8 @@ Requires write access to the repository.
 
 * `--autosquash`:
   If supported on the target tap, automatically reformat and reword commits in the pull request to our preferred format.
+* `--no-autosquash`:
+  Skip automatically reformatting and rewording commits in the pull request to the preferred format, even if supported on the target tap.
 * `--branch`:
   Branch to publish to (default: `master`).
 * `--message`:

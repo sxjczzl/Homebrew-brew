@@ -520,7 +520,13 @@ class Formula
   # exists and is not empty.
   # @private
   def latest_version_installed?
-    (dir = latest_installed_prefix).directory? && !dir.children.empty?
+    latest_prefix = if ENV["HOMEBREW_JSON_CORE"].present? && (latest_pkg_version = BottleAPI.latest_pkg_version(name))
+      prefix latest_pkg_version
+    else
+      latest_installed_prefix
+    end
+
+    (dir = latest_prefix).directory? && !dir.children.empty?
   end
 
   # If at least one version of {Formula} is installed.
@@ -1473,9 +1479,9 @@ class Formula
   end
 
   # Standard parameters for cargo builds.
-  sig { returns(T::Array[T.any(String, Pathname)]) }
-  def std_cargo_args
-    ["--locked", "--root", prefix, "--path", "."]
+  sig { params(root: String, path: String).returns(T::Array[T.any(String, Pathname)]) }
+  def std_cargo_args(root: prefix, path: ".")
+    ["--locked", "--root", root, "--path", path]
   end
 
   # Standard parameters for CMake builds.
@@ -3009,6 +3015,13 @@ class Formula
             EOS
             T.cast(self, PourBottleCheck).satisfy { MacOS::CLT.installed? }
           end
+        end
+      when :default_prefix
+        lambda do |_|
+          T.cast(self, PourBottleCheck).reason(+<<~EOS)
+            The bottle needs to be installed into #{Homebrew::DEFAULT_PREFIX}.
+          EOS
+          T.cast(self, PourBottleCheck).satisfy { HOMEBREW_PREFIX.to_s == Homebrew::DEFAULT_PREFIX }
         end
       else
         raise ArgumentError, "Invalid preset `pour_bottle?` condition" if only_if.present?

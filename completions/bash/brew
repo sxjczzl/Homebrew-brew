@@ -282,6 +282,7 @@ _brew__s() {
       --opensuse
       --pull-request
       --quiet
+      --repology
       --ubuntu
       --verbose
       "
@@ -745,6 +746,23 @@ _brew_desc() {
   __brew_complete_formulae
 }
 
+_brew_developer() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  case "${cur}" in
+    -*)
+      __brewcomp "
+      --debug
+      --help
+      --quiet
+      --verbose
+      "
+      return
+      ;;
+    *)
+  esac
+  __brewcomp "state on off"
+}
+
 _brew_dispatch_build_bottle() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "${cur}" in
@@ -1167,6 +1185,32 @@ _brew_irb() {
   esac
 }
 
+_brew_lc() {
+  local cur="${COMP_WORDS[COMP_CWORD]}"
+  case "${cur}" in
+    -*)
+      __brewcomp "
+      --all
+      --cask
+      --debug
+      --formula
+      --full-name
+      --help
+      --installed
+      --json
+      --newer-only
+      --quiet
+      --tap
+      --verbose
+      "
+      return
+      ;;
+    *)
+  esac
+  __brew_complete_formulae
+  __brew_complete_casks
+}
+
 _brew_leaves() {
   local cur="${COMP_WORDS[COMP_CWORD]}"
   case "${cur}" in
@@ -1491,6 +1535,7 @@ _brew_pr_automerge() {
       --debug
       --help
       --ignore-failures
+      --no-autosquash
       --publish
       --quiet
       --tap
@@ -1515,6 +1560,7 @@ _brew_pr_publish() {
       --debug
       --help
       --message
+      --no-autosquash
       --quiet
       --tap
       --verbose
@@ -1772,6 +1818,7 @@ _brew_search() {
       --opensuse
       --pull-request
       --quiet
+      --repology
       --ubuntu
       --verbose
       "
@@ -2416,6 +2463,7 @@ _brew() {
     create) _brew_create ;;
     deps) _brew_deps ;;
     desc) _brew_desc ;;
+    developer) _brew_developer ;;
     dispatch-build-bottle) _brew_dispatch_build_bottle ;;
     doctor) _brew_doctor ;;
     dr) _brew_dr ;;
@@ -2433,6 +2481,7 @@ _brew() {
     install) _brew_install ;;
     install-bundler-gems) _brew_install_bundler_gems ;;
     irb) _brew_irb ;;
+    lc) _brew_lc ;;
     leaves) _brew_leaves ;;
     link) _brew_link ;;
     linkage) _brew_linkage ;;

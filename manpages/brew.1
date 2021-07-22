@@ -229,6 +229,17 @@ Search just names for \fItext\fR\. If \fItext\fR is flanked by slashes, it is in
 \fB\-d\fR, \fB\-\-description\fR
 Search just descriptions for \fItext\fR\. If \fItext\fR is flanked by slashes, it is interpreted as a regular expression\.
 .
+.SS "\fBdeveloper\fR [\fIsubcommand\fR]"
+Control Homebrew\'s developer mode\. When developer mode is enabled, \fBbrew update\fR will update Homebrew to the latest commit on the \fBmaster\fR branch instead of the latest stable version along with some other behaviour changes\.
+.
+.P
+\fBbrew developer\fR [\fBstate\fR]
+    Display the current state of Homebrew\'s developer mode\.
+.
+.P
+\fBbrew developer\fR (\fBon\fR|\fBoff\fR)
+    Turn Homebrew\'s developer mode on or off respectively\.
+.
 .SS "\fBdoctor\fR, \fBdr\fR [\fI\-\-list\-checks\fR] [\fI\-\-audit\-debug\fR] [\fIdiagnostic_check\fR \.\.\.]"
 Check your system for potential problems\. Will exit with a non\-zero status if any potential problems are found\. Please note that these warnings are just used to help the Homebrew maintainers with debugging if you file an issue\. If everything you use Homebrew for is working fine: please don\'t worry or file an issue; just ignore this\.
 .
@@ -742,28 +753,32 @@ Search for only open GitHub pull requests\.
 Search for only closed GitHub pull requests\.
 .
 .TP
+\fB\-\-repology\fR
+Search for \fItext\fR in the given database\.
+.
+.TP
 \fB\-\-macports\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .TP
 \fB\-\-fink\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .TP
 \fB\-\-opensuse\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .TP
 \fB\-\-fedora\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .TP
 \fB\-\-debian\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .TP
 \fB\-\-ubuntu\fR
-Search for \fItext\fR in the given package manager\'s list\.
+Search for \fItext\fR in the given database\.
 .
 .SS "\fBshellenv\fR"
 Print export statements\. When run in a shell, this installation of Homebrew will be added to your \fBPATH\fR, \fBMANPATH\fR, and \fBINFOPATH\fR\.
@@ -1588,7 +1603,7 @@ For every library that a keg references, print its dylib path followed by the bi
 \fB\-\-cached\fR
 Print the cached linkage values stored in \fBHOMEBREW_CACHE\fR, set by a previous \fBbrew linkage\fR run\.
 .
-.SS "\fBlivecheck\fR [\fIoptions\fR] [\fIformula\fR|\fIcask\fR \.\.\.]"
+.SS "\fBlivecheck\fR, \fBlc\fR [\fIoptions\fR] [\fIformula\fR|\fIcask\fR \.\.\.]"
 Check for newer versions of formulae and/or casks from upstream\.
 .
 .P
@@ -1658,6 +1673,10 @@ Run \fBbrew pr\-publish\fR on matching pull requests\.
 Instruct \fBbrew pr\-publish\fR to automatically reformat and reword commits in the pull request to our preferred format\.
 .
 .TP
+\fB\-\-no\-autosquash\fR
+Instruct \fBbrew pr\-publish\fR to skip automatically reformatting and rewording commits in the pull request to the preferred format\.
+.
+.TP
 \fB\-\-ignore\-failures\fR
 Include pull requests that have failing status checks\.
 .
@@ -1667,6 +1686,10 @@ Publish bottles for a pull request with GitHub Actions\. Requires write access t
 .TP
 \fB\-\-autosquash\fR
 If supported on the target tap, automatically reformat and reword commits in the pull request to our preferred format\.
+.
+.TP
+\fB\-\-no\-autosquash\fR
+Skip automatically reformatting and rewording commits in the pull request to the preferred format, even if supported on the target tap\.
 .
 .TP
 \fB\-\-branch\fR
