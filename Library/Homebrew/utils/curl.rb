@@ -173,7 +173,7 @@ module Utils
     end
 
     def curl_check_http_content(url, url_type, specs: {}, user_agents: [:default],
-                                check_content: false, strict: false)
+                                check_content: false, strict: false, curl_args: [])
       return unless url.start_with? "http"
 
       secure_url = url.sub(/\Ahttp:/, "https:")
@@ -183,7 +183,7 @@ module Utils
         user_agents.each do |user_agent|
           secure_details = begin
             curl_http_content_headers_and_checksum(secure_url, specs: specs, hash_needed: true,
-                                                   user_agent: user_agent)
+                                                   user_agent: user_agent, curl_args: curl_args)
           rescue Timeout::Error
             next
           end
@@ -199,7 +199,8 @@ module Utils
       details = nil
       user_agents.each do |user_agent|
         details =
-          curl_http_content_headers_and_checksum(url, specs: specs, hash_needed: hash_needed, user_agent: user_agent)
+          curl_http_content_headers_and_checksum(url, specs: specs, hash_needed: hash_needed,
+                                                 user_agent: user_agent, curl_args: curl_args)
         break if http_status_ok?(details[:status])
       end
 
@@ -264,13 +265,14 @@ module Utils
       "The #{url_type} #{url} may be able to use HTTPS rather than HTTP. Please verify it in a browser."
     end
 
-    def curl_http_content_headers_and_checksum(url, specs: {}, hash_needed: false, user_agent: :default)
+    def curl_http_content_headers_and_checksum(url, specs: {}, hash_needed: false,
+                                               user_agent: :default, curl_args: [])
       file = Tempfile.new.tap(&:close)
 
       specs = specs.flat_map { |option, argument| ["--#{option.to_s.tr("_", "-")}", argument] }
       max_time = hash_needed ? "600" : "25"
       output, _, status = curl_output(
-        *specs, "--dump-header", "-", "--output", file.path, "--location",
+        *specs, *curl_args, "--dump-header", "-", "--output", file.path, "--location",
         "--connect-timeout", "15", "--max-time", max_time, "--retry-max-time", max_time, url,
         user_agent: user_agent
       )

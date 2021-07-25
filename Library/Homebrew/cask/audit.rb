@@ -737,6 +737,7 @@ module Cask
 
       if cask.url && !cask.url.using
         check_url_for_https_availability(cask.url, "binary URL",
+                                         curl_args:   download.downloader.send(:_curl_args),
                                          user_agents: [cask.url.user_agent])
       end
 
