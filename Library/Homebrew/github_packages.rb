@@ -263,7 +263,9 @@ class GitHubPackages
     root.mkpath
 
     if keep_old
-      download(user, token, skopeo, image_uri, root, dry_run: dry_run)
+      # Always pass false to dry_run because we'll need this metadata
+      # for later parts of the keep_old workflow to succeed.
+      download(user, token, skopeo, image_uri, root, dry_run: false)
     else
       write_image_layout(root)
     end
