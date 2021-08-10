@@ -51,7 +51,7 @@ module Homebrew
   end
 
   def setup_gem_environment!(gem_home: nil, gem_bindir: nil, setup_path: true)
-    library_path = if ENV["HOMEBREW_LIBRARY"].present?
+    library_path = if !ENV["HOMEBREW_LIBRARY"].to_s.empty?
       "#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"
     else
       HOMEBREW_LIBRARY_PATH
