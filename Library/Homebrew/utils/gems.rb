@@ -51,9 +51,11 @@ module Homebrew
   end
 
   def setup_gem_environment!(gem_home: nil, gem_bindir: nil, setup_path: true)
-    raise "HOMEBREW_LIBRARY was not exported!" unless ENV["HOMEBREW_LIBRARY"]
-
-    library_path = "#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"
+    library_path = if ENV["HOMEBREW_LIBRARY"].present?
+      "#{ENV["HOMEBREW_LIBRARY"]}/Homebrew"
+    else
+      HOMEBREW_LIBRARY_PATH
+    end
     # Match where our bundler gems are.
     gem_home ||= "#{library_path}/vendor/bundle/ruby/#{RbConfig::CONFIG["ruby_version"]}"
     Gem.paths = {
