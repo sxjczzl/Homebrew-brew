@@ -66,7 +66,7 @@ module Stdenv
     else
       MacOS.sdk(version)
     end
-    return if !MacOS.sdk_root_needed? && sdk&.source != :xcode
+    return unless (MacOS.sdk_root_needed? || sdk&.source == :xcode) && sdk
 
     Homebrew::Diagnostic.checks(:fatal_setup_build_environment_checks)
     sdk = sdk.path

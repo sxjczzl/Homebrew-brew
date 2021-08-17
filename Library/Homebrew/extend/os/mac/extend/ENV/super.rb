@@ -106,7 +106,7 @@ module Superenv
   # @private
   def setup_build_environment(formula: nil, cc: nil, build_bottle: false, bottle_arch: nil, testing_formula: false)
     sdk = formula ? MacOS.sdk_for_formula(formula) : MacOS.sdk
-    if MacOS.sdk_root_needed? || sdk&.source == :xcode
+    if (MacOS.sdk_root_needed? || sdk&.source == :xcode) && sdk
       Homebrew::Diagnostic.checks(:fatal_setup_build_environment_checks)
       self["HOMEBREW_SDKROOT"] = sdk.path
 
