@@ -180,20 +180,7 @@ module Homebrew
       end
     end
 
-    def check_installed_dependents(
-      formulae,
-      flags:,
-      dry_run: false,
-      installed_on_request: false,
-      force_bottle: false,
-      build_from_source_formulae: [],
-      interactive: false,
-      keep_tmp: false,
-      force: false,
-      debug: false,
-      quiet: false,
-      verbose: false
-    )
+    def upgradeable_dependents(formulae, dry_run: false)
       return if Homebrew::EnvConfig.no_installed_dependents_check?
 
       installed_formulae = dry_run ? formulae : FormulaInstaller.installed.to_a
@@ -241,6 +228,26 @@ module Homebrew
         end
         puts formulae_upgrades.join(", ")
       end
+
+      upgradeable_dependents
+    end
+
+    def check_installed_dependents(
+      formulae,
+      flags:,
+      dry_run: false,
+      installed_on_request: false,
+      force_bottle: false,
+      build_from_source_formulae: [],
+      interactive: false,
+      keep_tmp: false,
+      force: false,
+      debug: false,
+      quiet: false,
+      verbose: false,
+      upgradeable_dependents: upgradeable_dependents(formulae, dry_run: dry_run)
+    )
+      return if upgradeable_dependents.blank?
 
       unless dry_run
         upgrade_formulae(

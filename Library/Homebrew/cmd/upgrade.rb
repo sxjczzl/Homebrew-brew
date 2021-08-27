@@ -69,6 +69,9 @@ module Homebrew
           env:         :display_install_times,
           description: "Print install times for each formula at the end of the run.",
         }],
+        [:switch, "--fetch-before-install", {
+          description: "Fetch all bottles of upgradeable formulae before installing.",
+        }],
       ].each do |options|
         send(*options)
         conflicts "--cask", options[-2]
@@ -187,7 +190,14 @@ module Homebrew
       puts formulae_upgrades.join("\n")
     end
 
+    upgradeable_dependents = Upgrade.upgradeable_dependents(formulae_to_install, dry_run: args.dry_run?)
+
     unless args.dry_run?
+      if args.fetch_before_install?
+        formulae_to_install.each { |f| f.bottle&.fetch }
+        upgradeable_dependents&.each { |f| f.bottle&.fetch }
+      end
+
       Upgrade.upgrade_formulae(
         formulae_to_install,
         flags:                      args.flags_only,
@@ -216,6 +226,7 @@ module Homebrew
       debug:                      args.debug?,
       quiet:                      args.quiet?,
       verbose:                    args.verbose?,
+      upgradeable_dependents:     upgradeable_dependents,
     )
 
     true
