@@ -234,6 +234,30 @@ module OS
       def default_prefix?
         prefix.to_s == "/Applications/Xcode.app/Contents/Developer"
       end
+
+      sig { params(swift_version: String).returns(String) }
+      def minimum_version_for_swift(swift_version)
+        # https://swiftversion.net
+        case swift_version
+        when "5.4" then "12.5"
+        when "5.3" then "12.0"
+        when "5.2" then "11.4"
+        when "5.1" then "11.0"
+        when "5.0" then "10.2"
+        when "4.2" then "10.0"
+        when "4.1" then "9.3"
+        when "4.0" then "9.0"
+        when "3.1" then "8.3"
+        when "3.0" then "8.0"
+        when "2.2" then "7.3"
+        when "2.1" then "7.1"
+        when "2.0" then "7.0"
+        when "1.2" then "6.3"
+        when "1.1" then "6.1"
+        when "1.0" then "6.0.1"
+        else raise "Unknown Swift version #{swift_version}"
+        end
+      end
     end
 
     # Helper module for querying macOS Command Line Tools information.

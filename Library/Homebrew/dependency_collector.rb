@@ -127,10 +127,16 @@ class DependencyCollector
     when :linux         then LinuxRequirement.new(tags)
     when :macos         then MacOSRequirement.new(tags)
     when :maximum_macos then MacOSRequirement.new(tags, comparator: "<=")
+    when :swift         then parse_swift_spec(tags)
     when :xcode         then XcodeRequirement.new(tags)
     else
       raise ArgumentError, "Unsupported special dependency #{spec.inspect}"
     end
+  end
+
+  def parse_swift_spec(tags)
+    tags.delete(:build_if_macos)
+    Dependency.new("swift", tags)
   end
 
   def parse_class_spec(spec, tags)
