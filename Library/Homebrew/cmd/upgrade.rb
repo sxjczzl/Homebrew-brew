@@ -104,15 +104,53 @@ module Homebrew
     only_upgrade_formulae = formulae.present? && casks.blank?
     only_upgrade_casks = casks.present? && formulae.blank?
 
-    upgrade_outdated_formulae(formulae, args: args) unless only_upgrade_casks
-    upgrade_outdated_casks(casks, args: args) unless only_upgrade_formulae
+    formula_installers = if only_upgrade_casks
+      []
+    else
+      create_formula_installers(formulae, args: args)
+    end
+
+    cask_installers = if only_upgrade_formulae
+      []
+    else
+      create_cask_installers(casks, args: args)
+    end
+
+    display_outdated_packages(formula_installers, cask_installers, args: args)
+    fetch_outdated_formulae(formula_installers, args: args)
+    fetch_outdated_casks(cask_installers, args: args)
+    upgrade_outdated_formulae(formula_installers, args: args)
+    upgrade_outdated_casks(cask_installers, args: args)
 
     Homebrew.messages.display_messages(display_times: args.display_times?)
   end
 
-  sig { params(formulae: T::Array[Formula], args: CLI::Args).returns(T::Boolean) }
-  def upgrade_outdated_formulae(formulae, args:)
-    return false if args.cask?
+  def display_outdated_packages(formula_installers, cask_installers, args:)
+    if formula_installers.empty? && cask_installers.empty?
+      oh1 "No packages to upgrade"
+      return
+    end
+    verb = args.dry_run? ? "Would upgrade" : "Upgrading"
+    count = formula_installers.count + cask_installers.count
+    oh1 "#{verb} #{count} outdated #{"package".pluralize(count)}:"
+    formula_installers.each do |fi|
+      f = fi.formula
+      if f.optlinked?
+        puts "#{f.full_specified_name} #{Keg.new(f.opt_prefix).version} -> #{f.pkg_version}"
+      else
+        puts "#{f.full_specified_name} #{f.pkg_version}"
+      end
+    end
+    cask_installers.each do |(old_cask_installer, new_cask_installer)|
+      old_cask = old_cask_installer.cask
+      new_cask = new_cask_installer.cask
+      puts "#{new_cask.full_name} #{old_cask.version} -> #{new_cask.version}"
+    end
+  end
+
+  sig { params(formulae: T::Array[Formula], args: CLI::Args).returns(T::Array[FormulaInstaller]) }
+  def create_formula_installers(formulae, args:)
+    return [] if args.cask?
 
     if args.build_from_source? && !DevelopmentTools.installed?
       raise BuildFlagsError.new(["--build-from-source"], bottled: formulae.all?(&:bottled?))
@@ -140,7 +178,7 @@ module Homebrew
       end
     end
 
-    return false if outdated.blank?
+    return [] if outdated.blank?
 
     pinned = outdated.select(&:pinned?)
     outdated -= pinned
@@ -170,22 +208,7 @@ module Homebrew
       end
     end
 
-    if formulae_to_install.empty?
-      oh1 "No packages to upgrade"
-    else
-      verb = args.dry_run? ? "Would upgrade" : "Upgrading"
-      oh1 "#{verb} #{formulae_to_install.count} outdated #{"package".pluralize(formulae_to_install.count)}:"
-      formulae_upgrades = formulae_to_install.map do |f|
-        if f.optlinked?
-          "#{f.full_specified_name} #{Keg.new(f.opt_prefix).version} -> #{f.pkg_version}"
-        else
-          "#{f.full_specified_name} #{f.pkg_version}"
-        end
-      end
-      puts formulae_upgrades.join("\n")
-    end
-
-    Upgrade.upgrade_formulae(
+    Upgrade.create_formula_installers(
       formulae_to_install,
       flags:                      args.flags_only,
       dry_run:                    args.dry_run?,
@@ -199,28 +222,36 @@ module Homebrew
       quiet:                      args.quiet?,
       verbose:                    args.verbose?,
     )
-
-    Upgrade.check_installed_dependents(
-      formulae_to_install,
-      flags:                      args.flags_only,
-      dry_run:                    args.dry_run?,
-      installed_on_request:       args.named.present?,
-      force_bottle:               args.force_bottle?,
-      build_from_source_formulae: args.build_from_source_formulae,
-      interactive:                args.interactive?,
-      keep_tmp:                   args.keep_tmp?,
-      force:                      args.force?,
-      debug:                      args.debug?,
-      quiet:                      args.quiet?,
-      verbose:                    args.verbose?,
-    )
-
-    true
   end
 
-  sig { params(casks: T::Array[Cask::Cask], args: CLI::Args).returns(T::Boolean) }
-  def upgrade_outdated_casks(casks, args:)
-    return false if args.formula?
+  def fetch_outdated_formulae(formula_installers, args:)
+    return if args.dry_run?
+
+    Upgrade.fetch_formulae(formula_installers)
+  end
+
+  def upgrade_outdated_formulae(formula_installers, args:)
+    Upgrade.upgrade_formulae(formula_installers, dry_run: args.dry_run?, verbose: args.verbose?)
+
+    Upgrade.check_installed_dependents(
+      formula_installers.map(&:formula),
+      flags:                      args.flags_only,
+      dry_run:                    args.dry_run?,
+      installed_on_request:       args.named.present?,
+      force_bottle:               args.force_bottle?,
+      build_from_source_formulae: args.build_from_source_formulae,
+      interactive:                args.interactive?,
+      keep_tmp:                   args.keep_tmp?,
+      force:                      args.force?,
+      debug:                      args.debug?,
+      quiet:                      args.quiet?,
+      verbose:                    args.verbose?,
+    )
+  end
+
+  sig { params(casks: T::Array[Cask::Cask], args: CLI::Args).returns(T::Array[T::Array[Cask::Installer]]) }
+  def create_cask_installers(casks, args:)
+    return [] if args.formula?
 
     if ENV["HOMEBREW_INSTALL_FROM_API"].present?
       casks = casks.map do |cask|
@@ -231,7 +262,7 @@ module Homebrew
       end
     end
 
-    Cask::Cmd::Upgrade.upgrade_casks(
+    Cask::Cmd::Upgrade.create_cask_installers(
       *casks,
       force:          args.force?,
       greedy:         args.greedy?,
@@ -242,6 +273,24 @@ module Homebrew
       skip_cask_deps: args.skip_cask_deps?,
       verbose:        args.verbose?,
       args:           args,
-    )
+    ) do |exception|
+      ofail exception.message
+    end
+  end
+
+  def fetch_outdated_casks(cask_installers, args:)
+    return if args.dry_run?
+
+    Cask::Cmd::Upgrade.fetch_casks(cask_installers) do |exception|
+      ofail exception.message
+    end
+  end
+
+  def upgrade_outdated_casks(cask_installers, args:)
+    return if args.dry_run?
+
+    Cask::Cmd::Upgrade.upgrade_casks(cask_installers) do |exception|
+      ofail exception.message
+    end
   end
 end
