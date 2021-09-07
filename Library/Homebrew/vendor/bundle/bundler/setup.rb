@@ -3,6 +3,7 @@ require 'rbconfig'
 ruby_engine = defined?(RUBY_ENGINE) ? RUBY_ENGINE : 'ruby'
 ruby_version = RbConfig::CONFIG["ruby_version"]
 path = File.expand_path('..', __FILE__)
+$:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/rake-13.0.6/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/concurrent-ruby-1.1.9/lib/concurrent-ruby"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/i18n-1.8.10/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/minitest-5.14.4/lib"
@@ -60,6 +61,8 @@ $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/patchelf-1.3.0/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/plist-3.6.0/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/pry-0.14.1/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/rack-2.2.3/lib"
+$:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/unparser-0.6.0/lib"
+$:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/rbi-0.0.3/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/extensions/x86_64-darwin-14/2.6.0-static/rdiscount-2.2.0.2"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/rdiscount-2.2.0.2/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/regexp_parser-2.1.1/lib"
@@ -94,5 +97,5 @@ $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/simplecov-cobertura-1
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/sorbet-runtime-stub-0.2.0/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/thor-1.1.0/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/spoom-1.1.2/lib"
-$:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/tapioca-0.4.26/lib"
+$:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/tapioca-0.5.0/lib"
 $:.unshift "#{path}/../#{ruby_engine}/#{ruby_version}/gems/warning-1.2.0/lib"
