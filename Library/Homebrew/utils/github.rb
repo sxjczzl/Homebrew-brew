@@ -251,12 +251,29 @@ module GitHub
   def get_workflow_run(user, repo, pr, workflow_id: "tests.yml", artifact_name: "bottles")
     scopes = CREATE_ISSUE_FORK_OR_PR_SCOPES
     base_url = "#{API_URL}/repos/#{user}/#{repo}"
+    parameters = {
+      event: "pull_request",
+    }
+
     pr_payload = API.open_rest("#{base_url}/pulls/#{pr}", scopes: scopes)
+    pr_author = pr_payload["user"]["login"]
+    pr_created_dt = DateTime.parse(pr_payload["created_at"])
     pr_sha = pr_payload["head"]["sha"]
     pr_branch = URI.encode_www_form_component(pr_payload["head"]["ref"])
-    parameters = "event=pull_request&branch=#{pr_branch}"
+    parameters[:branch] = pr_branch
 
-    workflow = API.open_rest("#{base_url}/actions/workflows/#{workflow_id}/runs?#{parameters}", scopes: scopes)
+    commits_payload = API.open_rest("#{base_url}/pulls/#{pr}/commits", scopes: scopes)
+    last_commit = commits_payload.last
+    last_committer = last_commit["committer"]["login"]
+    last_commit_dt = DateTime.parse(last_commit["committer"]["date"])
+    parameters[:actor] = if last_commit_dt > pr_created_dt
+      pr_author
+    else
+      last_committer
+    end
+
+    query_parameters = parameters.to_query
+    workflow = API.open_rest("#{base_url}/actions/workflows/#{workflow_id}/runs?#{query_parameters}", scopes: scopes)
     workflow_run = workflow["workflow_runs"].select do |run|
       run["head_sha"] == pr_sha
     end
