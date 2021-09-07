@@ -1,4 +1,7 @@
+# typed: true
 # frozen_string_literal: true
+
+require "cask/installer"
 
 module InstallHelper
   module_function

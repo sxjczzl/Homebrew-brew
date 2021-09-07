@@ -1,16 +1,19 @@
+# typed: false
 # frozen_string_literal: true
 
 require "diagnostic"
 require "cli/parser"
+require "cask/caskroom"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def doctor_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `doctor` [<options>]
-
+      description <<~EOS
         Check your system for potential problems. Will exit with a non-zero status
         if any potential problems are found. Please note that these warnings are just
         used to help the Homebrew maintainers with debugging if you file an issue. If
@@ -22,21 +25,21 @@ module Homebrew
                           "if provided as arguments."
       switch "-D", "--audit-debug",
              description: "Enable debugging and profiling of audit methods."
-      switch :verbose
-      switch :debug
+
+      named_args :diagnostic_check
     end
   end
 
   def doctor
-    doctor_args.parse
+    args = doctor_args.parse
 
     inject_dump_stats!(Diagnostic::Checks, /^check_*/) if args.audit_debug?
 
-    checks = Diagnostic::Checks.new
+    checks = Diagnostic::Checks.new(verbose: args.verbose?)
 
     if args.list_checks?
-      puts checks.all.sort
-      exit
+      puts checks.all
+      return
     end
 
     if args.no_named?
@@ -44,7 +47,8 @@ module Homebrew
         check_for_broken_symlinks
         check_missing_deps
       ]
-      methods = (checks.all.sort - slow_checks) + slow_checks
+      methods = (checks.all - slow_checks) + slow_checks
+      methods -= checks.cask_checks if Cask::Caskroom.casks.blank?
     else
       methods = args.named
     end
@@ -53,13 +57,12 @@ module Homebrew
     methods.each do |method|
       $stderr.puts Formatter.headline("Checking #{method}", color: :magenta) if args.debug?
       unless checks.respond_to?(method)
-        Homebrew.failed = true
-        puts "No check available by the name: #{method}"
+        ofail "No check available by the name: #{method}"
         next
       end
 
       out = checks.send(method)
-      next if out.nil? || out.empty?
+      next if out.blank?
 
       if first_warning
         $stderr.puts <<~EOS

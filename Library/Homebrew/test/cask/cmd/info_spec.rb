@@ -1,25 +1,23 @@
+# typed: false
 # frozen_string_literal: true
 
-require_relative "shared_examples/requires_cask_token"
-require_relative "shared_examples/invalid_option"
 require "utils"
 
 describe Cask::Cmd::Info, :cask do
-  it_behaves_like "a command that requires a Cask token"
-  it_behaves_like "a command that handles invalid options"
-
   it "displays some nice info about the specified Cask" do
     expect {
-      described_class.run("local-caffeine")
+      described_class.run("local-transmission")
     }.to output(<<~EOS).to_stdout
-      local-caffeine: 1.2.3
-      https://brew.sh/
+      local-transmission: 2.61
+      https://transmissionbt.com/
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/local-caffeine.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/local-transmission.rb
       ==> Name
-      None
+      Transmission
+      ==> Description
+      BitTorrent client
       ==> Artifacts
-      Caffeine.app (App)
+      Transmission.app (App)
     EOS
   end
 
@@ -30,9 +28,11 @@ describe Cask::Cmd::Info, :cask do
       with-auto-updates: 1.0 (auto_updates)
       https://brew.sh/autoupdates
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/with-auto-updates.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/with-auto-updates.rb
       ==> Name
       AutoUpdates
+      ==> Description
+      None
       ==> Artifacts
       AutoUpdates.app (App)
     EOS
@@ -44,18 +44,22 @@ describe Cask::Cmd::Info, :cask do
         local-caffeine: 1.2.3
         https://brew.sh/
         Not installed
-        From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/local-caffeine.rb
+        From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/local-caffeine.rb
         ==> Name
+        None
+        ==> Description
         None
         ==> Artifacts
         Caffeine.app (App)
 
         local-transmission: 2.61
-        https://brew.sh/
+        https://transmissionbt.com/
         Not installed
-        From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/local-transmission.rb
+        From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/local-transmission.rb
         ==> Name
         Transmission
+        ==> Description
+        BitTorrent client
         ==> Artifacts
         Transmission.app (App)
       EOS
@@ -75,8 +79,10 @@ describe Cask::Cmd::Info, :cask do
       with-caveats: 1.2.3
       https://brew.sh/
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/with-caveats.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/with-caveats.rb
       ==> Name
+      None
+      ==> Description
       None
       ==> Artifacts
       Caffeine.app (App)
@@ -87,7 +93,7 @@ describe Cask::Cmd::Info, :cask do
 
       Custom text via puts followed by DSL-generated text:
       To use with-caveats, you may need to add the /custom/path/bin directory
-      to your PATH environment variable, e.g. (for bash shell):
+      to your PATH environment variable, e.g. (for Bash shell):
         export PATH=/custom/path/bin:"$PATH"
 
     EOS
@@ -100,8 +106,10 @@ describe Cask::Cmd::Info, :cask do
       with-conditional-caveats: 1.2.3
       https://brew.sh/
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/with-conditional-caveats.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/with-conditional-caveats.rb
       ==> Name
+      None
+      ==> Description
       None
       ==> Artifacts
       Caffeine.app (App)
@@ -115,8 +123,10 @@ describe Cask::Cmd::Info, :cask do
       with-languages: 1.2.3
       https://brew.sh/
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/with-languages.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/with-languages.rb
       ==> Name
+      None
+      ==> Description
       None
       ==> Languages
       zh, en-US
@@ -132,52 +142,13 @@ describe Cask::Cmd::Info, :cask do
       without-languages: 1.2.3
       https://brew.sh/
       Not installed
-      From: https://github.com/Homebrew/homebrew-cask/blob/master/Casks/without-languages.rb
+      From: https://github.com/Homebrew/homebrew-cask/blob/HEAD/Casks/without-languages.rb
       ==> Name
+      None
+      ==> Description
       None
       ==> Artifacts
       Caffeine.app (App)
-    EOS
-  end
-
-  it "can run be run with a url twice and returns analytics", :needs_network do
-    analytics = {
-      "analytics" => {
-        "install" => {
-          "30d" => { "docker" => 1000 }, "90d" => { "docker" => 2000 }, "365d" => { "docker" => 3000 }
-        },
-      },
-    }
-    expect(Utils::Analytics).to receive(:formulae_brew_sh_json).twice.with("cask/docker.json")
-    .and_return(analytics)
-    expect {
-      described_class.run("https://raw.githubusercontent.com/Homebrew/homebrew-cask" \
-                          "/d0b2c58652ae5eff20a7a4ac93292a08b250912b/Casks/docker.rb")
-      described_class.run("https://raw.githubusercontent.com/Homebrew/homebrew-cask" \
-                          "/d0b2c58652ae5eff20a7a4ac93292a08b250912b/Casks/docker.rb")
-    }.to output(<<~EOS).to_stdout
-      ==> Downloading https://raw.githubusercontent.com/Homebrew/homebrew-cask/d0b2c58652ae5eff20a7a4ac93292a08b250912b/Casks/docker.rb.
-      docker: 2.0.0.2-ce-mac81,30215 (auto_updates)
-      https://www.docker.com/community-edition
-      Not installed
-      ==> Names
-      Docker Community Edition
-      Docker CE
-      ==> Artifacts
-      Docker.app (App)
-      ==> Analytics
-      install: 1,000 (30 days), 2,000 (90 days), 3,000 (365 days)
-      ==> Downloading https://raw.githubusercontent.com/Homebrew/homebrew-cask/d0b2c58652ae5eff20a7a4ac93292a08b250912b/Casks/docker.rb.
-      docker: 2.0.0.2-ce-mac81,30215 (auto_updates)
-      https://www.docker.com/community-edition
-      Not installed
-      ==> Names
-      Docker Community Edition
-      Docker CE
-      ==> Artifacts
-      Docker.app (App)
-      ==> Analytics
-      install: 1,000 (30 days), 2,000 (90 days), 3,000 (365 days)
     EOS
   end
 end

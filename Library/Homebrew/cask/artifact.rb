@@ -1,3 +1,4 @@
+# typed: strict
 # frozen_string_literal: true
 
 require "cask/artifact/app"
@@ -27,6 +28,9 @@ require "cask/artifact/uninstall"
 require "cask/artifact/zap"
 
 module Cask
+  # Module containing all cask artifact classes.
+  #
+  # @api private
   module Artifact
   end
 end

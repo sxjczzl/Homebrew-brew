@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "utils/user"
@@ -8,7 +9,12 @@ require "stringio"
 BUG_REPORTS_URL = "https://github.com/Homebrew/homebrew-cask#reporting-bugs"
 
 module Cask
+  # Helper functions for various cask operations.
+  #
+  # @api private
   module Utils
+    extend T::Sig
+
     def self.gain_permissions_remove(path, command: SystemCommand)
       if path.respond_to?(:rmtree) && path.exist?
         gain_permissions(path, ["-R"], command) do |p|
@@ -68,10 +74,24 @@ module Cask
       end
     end
 
+    sig { params(path: Pathname).returns(T::Boolean) }
     def self.path_occupied?(path)
-      File.exist?(path) || File.symlink?(path)
+      path.exist? || path.symlink?
     end
 
+    sig { params(name: String).returns(String) }
+    def self.token_from(name)
+      name.downcase
+          .gsub("+", "-plus-")
+          .gsub("@", "-at-")
+          .gsub(/[ _·•]/, "-")
+          .gsub(/[^\w-]/, "")
+          .gsub(/--+/, "-")
+          .delete_prefix("-")
+          .delete_suffix("-")
+    end
+
+    sig { returns(String) }
     def self.error_message_with_suggestions
       <<~EOS
         Follow the instructions here:
@@ -80,12 +100,11 @@ module Cask
     end
 
     def self.method_missing_message(method, token, section = nil)
-      poo = []
-      poo << "Unexpected method '#{method}' called"
-      poo << "during #{section}" if section
-      poo << "on Cask #{token}."
+      message = +"Unexpected method '#{method}' called "
+      message << "during #{section} " if section
+      message << "on Cask #{token}."
 
-      opoo(poo.join(" ") + "\n" + error_message_with_suggestions)
+      opoo "#{message}\n#{error_message_with_suggestions}"
     end
   end
 end

@@ -1,8 +1,10 @@
+# typed: false
 # frozen_string_literal: true
 
 require "cli/parser"
 require "utils/git"
 require "formulary"
+require "software_spec"
 require "tap"
 
 def with_monkey_patch
@@ -74,37 +76,41 @@ ensure
 end
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
+  sig { returns(CLI::Parser) }
   def extract_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `extract` [<options>] <formula> <tap>
-
+      usage_banner "`extract` [<--version>`=`] [<--force>] <formula> <tap>"
+      description <<~EOS
         Look through repository history to find the most recent version of <formula> and
-        create a copy in <tap>`/Formula/`<formula>`@`<version>`.rb`. If the tap is not
+        create a copy in <tap>. Specifically, the command will create the new
+        formula file at <tap>`/Formula/`<formula>`@`<version>`.rb`. If the tap is not
         installed yet, attempt to install/clone the tap before continuing. To extract
         a formula from a tap that is not `homebrew/core` use its fully-qualified form of
         <user>`/`<repo>`/`<formula>.
       EOS
       flag   "--version=",
              description: "Extract the specified <version> of <formula> instead of the most recent."
-      switch :force
-      switch :debug
-      named 2
+      switch "-f", "--force",
+             description: "Overwrite the destination formula if it already exists."
+
+      named_args [:formula, :tap], number: 2
     end
   end
 
   def extract
-    extract_args.parse
+    args = extract_args.parse
 
-    if args.named.first !~ HOMEBREW_TAP_FORMULA_REGEX
+    if (match = args.named.first.match(HOMEBREW_TAP_FORMULA_REGEX))
+      name = match[3].downcase
+      source_tap = Tap.fetch(match[1], match[2])
+      raise TapFormulaUnavailableError.new(source_tap, name) unless source_tap.installed?
+    else
       name = args.named.first.downcase
       source_tap = CoreTap.instance
-    else
-      name = Regexp.last_match(3).downcase
-      source_tap = Tap.fetch(Regexp.last_match(1), Regexp.last_match(2))
-      raise TapFormulaUnavailableError.new(source_tap, name) unless source_tap.installed?
     end
 
     destination_tap = Tap.fetch(args.named.second)
@@ -131,7 +137,7 @@ module Homebrew
       result = ""
       loop do
         rev = rev.nil? ? "HEAD" : "#{rev}~1"
-        rev, (path,) = Git.last_revision_commit_of_files(repo, pattern, before_commit: rev)
+        rev, (path,) = Utils::Git.last_revision_commit_of_files(repo, pattern, before_commit: rev)
         if rev.nil? && source_tap.shallow?
           odie <<~EOS
             Could not find #{name} but #{source_tap} is a shallow clone!
@@ -143,7 +149,7 @@ module Homebrew
         end
 
         file = repo/path
-        result = Git.last_revision_of_file(repo, file, before_commit: rev)
+        result = Utils::Git.last_revision_of_file(repo, file, before_commit: rev)
         if result.empty?
           odebug "Skipping revision #{rev} - file is empty at this revision"
           next
@@ -155,7 +161,7 @@ module Homebrew
         if version_segments && Gem::Version.correct?(test_formula.version)
           test_formula_version_segments = Gem::Version.new(test_formula.version).segments
           if version_segments.length < test_formula_version_segments.length
-            odebug "Apply semantic versioning with #{test_formual_version_segments}"
+            odebug "Apply semantic versioning with #{test_formula_version_segments}"
             break if version_segments == test_formula_version_segments.first(version_segments.length)
           end
         end
@@ -171,11 +177,11 @@ module Homebrew
 
       if files.empty?
         ohai "Searching repository history"
-        rev, (path,) = Git.last_revision_commit_of_files(repo, pattern)
+        rev, (path,) = Utils::Git.last_revision_commit_of_files(repo, pattern)
         odie "Could not find #{name}! The formula or version may not have existed." if rev.nil?
         file = repo/path
         version = formula_at_revision(repo, name, file, rev).version
-        result = Git.last_revision_of_file(repo, file)
+        result = Utils::Git.last_revision_of_file(repo, file)
       else
         file = files.first.realpath
         rev = "HEAD"
@@ -191,9 +197,12 @@ module Homebrew
     # Remove any existing version suffixes, as a new one will be added later
     name.sub!(/\b@(.*)\z\b/i, "")
     versioned_name = Formulary.class_s("#{name}@#{version}")
-    result.gsub!("class #{class_name} < Formula", "class #{versioned_name} < Formula")
+    result.sub!("class #{class_name} < Formula", "class #{versioned_name} < Formula")
 
-    path = destination_tap.path/"Formula/#{name}@#{version}.rb"
+    # Remove bottle blocks, they won't work.
+    result.sub!(/  bottle do.+?end\n\n/m, "") if destination_tap != source_tap
+
+    path = destination_tap.path/"Formula/#{name}@#{version.to_s.downcase}.rb"
     if path.exist?
       unless args.force?
         odie <<~EOS
@@ -205,7 +214,8 @@ module Homebrew
       odebug "Overwriting existing formula at #{path}"
       path.delete
     end
-    ohai "Writing formula for #{name} from revision #{rev} to #{path}"
+    ohai "Writing formula for #{name} from revision #{rev} to:", path
+    path.dirname.mkpath
     path.write result
   end
 
@@ -213,9 +223,9 @@ module Homebrew
   def formula_at_revision(repo, name, file, rev)
     return if rev.empty?
 
-    contents = Git.last_revision_of_file(repo, file, before_commit: rev)
+    contents = Utils::Git.last_revision_of_file(repo, file, before_commit: rev)
     contents.gsub!("@url=", "url ")
     contents.gsub!("require 'brewkit'", "require 'formula'")
-    with_monkey_patch { Formulary.from_contents(name, file, contents) }
+    with_monkey_patch { Formulary.from_contents(name, file, contents, ignore_errors: true) }
   end
 end

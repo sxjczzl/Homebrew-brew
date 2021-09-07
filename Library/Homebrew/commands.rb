@@ -1,5 +1,11 @@
+# typed: false
 # frozen_string_literal: true
 
+require "completions"
+
+# Helper functions for commands.
+#
+# @api private
 module Commands
   module_function
 
@@ -15,13 +21,14 @@ module Commands
     "uninstal"    => "uninstall",
     "rm"          => "uninstall",
     "remove"      => "uninstall",
-    "configure"   => "diy",
     "abv"         => "info",
     "dr"          => "doctor",
     "--repo"      => "--repository",
     "environment" => "--env",
     "--config"    => "config",
     "-v"          => "--version",
+    "lc"          => "livecheck",
+    "tc"          => "typecheck",
   }.freeze
 
   def valid_internal_cmd?(cmd)
@@ -84,10 +91,10 @@ module Commands
     path
   end
 
-  def commands(aliases: false)
+  def commands(external: true, aliases: false)
     cmds = internal_commands
     cmds += internal_developer_commands
-    cmds += external_commands
+    cmds += external_commands if external
     cmds += internal_commands_aliases if aliases
     cmds.sort
   end
@@ -100,11 +107,11 @@ module Commands
     find_commands HOMEBREW_DEV_CMD_PATH
   end
 
-  def official_external_commands_paths
-    %w[bundle services test-bot].map do |cmd|
-      tap = Tap.fetch("Homebrew/#{cmd}")
-      tap.install unless tap.installed?
-      external_ruby_v2_cmd_path(cmd)
+  def official_external_commands_paths(quiet:)
+    OFFICIAL_CMD_TAPS.flat_map do |tap_name, cmds|
+      tap = Tap.fetch(tap_name)
+      tap.install(quiet: quiet) unless tap.installed?
+      cmds.map(&method(:external_ruby_v2_cmd_path)).compact
     end
   end
 
@@ -129,7 +136,7 @@ module Commands
     Tap.cmd_directories.flat_map do |path|
       find_commands(path).select(&:executable?)
                          .map(&method(:basename_without_extension))
-                         .map { |p| p.to_s.sub(/^brew(cask)?-/, '\1 ').strip }
+                         .map { |p| p.to_s.delete_prefix("brew-").strip }
     end.map(&:to_s)
        .sort
   end
@@ -142,5 +149,98 @@ module Commands
     Pathname.glob("#{path}/*")
             .select(&:file?)
             .sort
+  end
+
+  def rebuild_internal_commands_completion_list
+    cmds = internal_commands + internal_developer_commands + internal_commands_aliases
+    cmds.reject! { |cmd| Homebrew::Completions::COMPLETIONS_EXCLUSION_LIST.include? cmd }
+
+    file = HOMEBREW_REPOSITORY/"completions/internal_commands_list.txt"
+    file.atomic_write("#{cmds.sort.join("\n")}\n")
+  end
+
+  def rebuild_commands_completion_list
+    # Ensure that the cache exists so we can build the commands list
+    HOMEBREW_CACHE.mkpath
+
+    cmds = commands(aliases: true) - Homebrew::Completions::COMPLETIONS_EXCLUSION_LIST
+
+    all_commands_file = HOMEBREW_CACHE/"all_commands_list.txt"
+    external_commands_file = HOMEBREW_CACHE/"external_commands_list.txt"
+    all_commands_file.atomic_write("#{cmds.sort.join("\n")}\n")
+    external_commands_file.atomic_write("#{external_commands.sort.join("\n")}\n")
+  end
+
+  def command_options(command)
+    path = self.path(command)
+    return if path.blank?
+
+    if (cmd_parser = Homebrew::CLI::Parser.from_cmd_path(path))
+      cmd_parser.processed_options.map do |short, long, _, desc, hidden|
+        next if hidden
+
+        [long || short, desc]
+      end.compact
+    else
+      options = []
+      comment_lines = path.read.lines.grep(/^#:/)
+      return options if comment_lines.empty?
+
+      # skip the comment's initial usage summary lines
+      comment_lines.slice(2..-1).each do |line|
+        if / (?<option>-[-\w]+) +(?<desc>.*)$/ =~ line
+          options << [option, desc]
+        end
+      end
+      options
+    end
+  end
+
+  def command_description(command, short: false)
+    path = self.path(command)
+    return if path.blank?
+
+    if (cmd_parser = Homebrew::CLI::Parser.from_cmd_path(path))
+      if short
+        cmd_parser.description.split(".").first
+      else
+        cmd_parser.description
+      end
+    else
+      comment_lines = path.read.lines.grep(/^#:/)
+
+      # skip the comment's initial usage summary lines
+      comment_lines.slice(2..-1)&.each do |line|
+        if /^#:  (?<desc>\w.*+)$/ =~ line
+          return desc.split(".").first if short
+
+          return desc
+        end
+      end
+    end
+  end
+
+  def named_args_type(command)
+    path = self.path(command)
+    return if path.blank?
+
+    cmd_parser = Homebrew::CLI::Parser.from_cmd_path(path)
+    return if cmd_parser.blank?
+
+    Array(cmd_parser.named_args_type)
+  end
+
+  # Returns the conflicts of a given `option` for `command`.
+  def option_conflicts(command, option)
+    path = self.path(command)
+    return if path.blank?
+
+    cmd_parser = Homebrew::CLI::Parser.from_cmd_path(path)
+    return if cmd_parser.blank?
+
+    cmd_parser.conflicts.map do |set|
+      set.map! { |s| s.tr "_", "-" }
+      set - [option] if set.include? option
+    end.flatten.compact
   end
 end

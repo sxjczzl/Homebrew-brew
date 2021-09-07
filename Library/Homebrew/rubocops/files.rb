@@ -1,3 +1,4 @@
+# typed: true
 # frozen_string_literal: true
 
 require "rubocops/extend/formula"
@@ -5,6 +6,9 @@ require "rubocops/extend/formula"
 module RuboCop
   module Cop
     module FormulaAudit
+      # This cop makes sure that a formula's file permissions are correct.
+      #
+      # @api private
       class Files < FormulaCop
         def audit_formula(node, _class_node, _parent_class_node, _body_node)
           return unless file_path

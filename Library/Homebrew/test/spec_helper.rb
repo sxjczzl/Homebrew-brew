@@ -1,51 +1,46 @@
+# typed: false
 # frozen_string_literal: true
 
 if ENV["HOMEBREW_TESTS_COVERAGE"]
   require "simplecov"
+  require "simplecov-cobertura"
 
-  formatters = [SimpleCov::Formatter::HTMLFormatter]
-  if ENV["HOMEBREW_COVERALLS_REPO_TOKEN"] && RUBY_PLATFORM[/darwin/]
-    require "coveralls"
-
-    Coveralls::Output.no_color if !ENV["HOMEBREW_COLOR"] && (ENV["HOMEBREW_NO_COLOR"] || !$stdout.tty?)
-
-    formatters << Coveralls::SimpleCov::Formatter
-
-    if ENV["TEST_ENV_NUMBER"]
-      SimpleCov.at_exit do
-        result = SimpleCov.result
-        result.format! if ParallelTests.number_of_running_processes <= 1
-      end
-    end
-
-    ENV["CI_NAME"] = ENV["HOMEBREW_CI_NAME"]
-    ENV["COVERALLS_REPO_TOKEN"] = ENV["HOMEBREW_COVERALLS_REPO_TOKEN"]
-
-    ENV["CI_BUILD_NUMBER"] = ENV["HOMEBREW_CI_BUILD_NUMBER"]
-    ENV["CI_BRANCH"] = ENV["HOMEBREW_CI_BRANCH"]
-    %r{refs/pull/(?<pr>\d+)/merge} =~ ENV["HOMEBREW_CI_BUILD_NUMBER"]
-    ENV["CI_PULL_REQUEST"] = pr
-    ENV["CI_BUILD_URL"] = "https://github.com/#{ENV["HOMEBREW_GITHUB_REPOSITORY"]}/pull/#{pr}/checks"
-
-    ENV["CI_JOB_ID"] = ENV["TEST_ENV_NUMBER"] || "1"
-  end
-
+  formatters = [
+    SimpleCov::Formatter::HTMLFormatter,
+    SimpleCov::Formatter::CoberturaFormatter,
+  ]
   SimpleCov.formatters = SimpleCov::Formatter::MultiFormatter.new(formatters)
+
+  if RUBY_PLATFORM[/darwin/] && ENV["TEST_ENV_NUMBER"]
+    SimpleCov.at_exit do
+      result = SimpleCov.result
+      result.format! if ParallelTests.number_of_running_processes <= 1
+    end
+  end
+end
+
+require_relative "../warnings"
+
+Warnings.ignore :parser_syntax do
+  require "rubocop"
 end
 
 require "rspec/its"
+require "rspec/github"
 require "rspec/wait"
 require "rspec/retry"
-require "rubocop"
+require "rspec/sorbet"
 require "rubocop/rspec/support"
 require "find"
 require "byebug"
+require "timeout"
 
 $LOAD_PATH.push(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/support/lib"))
 
 require_relative "../global"
 
 require "test/support/no_seed_progress_formatter"
+require "test/support/helper/cask"
 require "test/support/helper/fixtures"
 require "test/support/helper/formula"
 require "test/support/helper/mktmpdir"
@@ -65,6 +60,10 @@ TEST_DIRECTORIES = [
   HOMEBREW_TEMP,
 ].freeze
 
+# Make `instance_double` and `class_double`
+# work when type-checking is active.
+RSpec::Sorbet.allow_doubles!
+
 RSpec.configure do |config|
   config.order = :random
 
@@ -78,6 +77,37 @@ RSpec.configure do |config|
     c.max_formatted_output_length = 200
   end
 
+  # Use rspec-retry to handle flaky tests.
+  config.default_sleep_interval = 1
+
+  # Don't make retries as noisy unless in CI.
+  if ENV["CI"]
+    config.verbose_retry = true
+    config.display_try_failure_messages = true
+  end
+
+  # Don't want the nicer default retry behaviour when using BuildPulse to
+  # identify flaky tests.
+  config.default_retry_count = 2 unless ENV["BUILDPULSE"]
+
+  # Increase timeouts for integration tests (as we expect them to take longer).
+  config.around(:each, :integration_test) do |example|
+    example.metadata[:timeout] ||= 120
+    example.run
+  end
+
+  config.around(:each, :needs_network) do |example|
+    example.metadata[:timeout] ||= 120
+
+    # Don't want the nicer default retry behaviour when using BuildPulse to
+    # identify flaky tests.
+    example.metadata[:retry] ||= 4 unless ENV["BUILDPULSE"]
+
+    example.metadata[:retry_wait] ||= 2
+    example.metadata[:exponential_backoff] ||= true
+    example.run
+  end
+
   # Never truncate output objects.
   RSpec::Support::ObjectFormatter.default_instance.max_formatted_output_length = nil
 
@@ -85,59 +115,54 @@ RSpec.configure do |config|
 
   config.include(RuboCop::RSpec::ExpectOffense)
 
+  config.include(Test::Helper::Cask)
   config.include(Test::Helper::Fixtures)
   config.include(Test::Helper::Formula)
   config.include(Test::Helper::MkTmpDir)
   config.include(Test::Helper::OutputAsTTY)
 
   config.before(:each, :needs_compat) do
-    skip "Requires compatibility layer." if ENV["HOMEBREW_NO_COMPAT"]
-  end
-
-  config.before(:each, :needs_official_cmd_taps) do
-    skip "Needs official command Taps." unless ENV["HOMEBREW_TEST_OFFICIAL_CMD_TAPS"]
+    skip "Requires the compatibility layer." if ENV["HOMEBREW_NO_COMPAT"]
   end
 
   config.before(:each, :needs_linux) do
-    skip "Not on Linux." unless OS.linux?
+    skip "Not running on Linux." unless OS.linux?
   end
 
   config.before(:each, :needs_macos) do
-    skip "Not on macOS." unless OS.mac?
+    skip "Not running on macOS." unless OS.mac?
   end
 
   config.before(:each, :needs_java) do
-    java_installed = if OS.mac?
-      Utils.popen_read("/usr/libexec/java_home", "--failfast")
-      $CHILD_STATUS.success?
-    else
-      which("java")
-    end
-    skip "Java not installed." unless java_installed
+    skip "Java is not installed." unless which("java")
   end
 
   config.before(:each, :needs_python) do
-    skip "Python not installed." unless which("python")
+    skip "Python is not installed." unless which("python")
   end
 
   config.before(:each, :needs_network) do
     skip "Requires network connection." unless ENV["HOMEBREW_TEST_ONLINE"]
   end
 
-  config.around(:each, :needs_network) do |example|
-    example.run_with_retry retry: 3, retry_wait: 1
-  end
-
   config.before(:each, :needs_svn) do
+    svn_shim = HOMEBREW_SHIMS_PATH/"scm/svn"
+    skip "Subversion is not installed." unless quiet_system svn_shim, "--version"
+
+    svn_shim_path = Pathname(Utils.popen_read(svn_shim, "--homebrew=print-path").chomp.presence)
     svn_paths = PATH.new(ENV["PATH"])
+    svn_paths.prepend(svn_shim_path.dirname)
+
     if OS.mac?
       xcrun_svn = Utils.popen_read("xcrun", "-f", "svn")
       svn_paths.append(File.dirname(xcrun_svn)) if $CHILD_STATUS.success? && xcrun_svn.present?
     end
 
     svn = which("svn", svn_paths)
+    skip "svn is not installed." unless svn
+
     svnadmin = which("svnadmin", svn_paths)
-    skip "subversion not installed." if !svn || !svnadmin
+    skip "svnadmin is not installed." unless svnadmin
 
     ENV["PATH"] = PATH.new(ENV["PATH"])
                       .append(svn.dirname)
@@ -145,46 +170,59 @@ RSpec.configure do |config|
   end
 
   config.before(:each, :needs_unzip) do
-    skip "unzip not installed." unless which("unzip")
+    skip "Unzip is not installed." unless which("unzip")
   end
 
   config.around do |example|
     def find_files
+      return [] unless File.exist?(TEST_TMPDIR)
+
       Find.find(TEST_TMPDIR)
           .reject { |f| File.basename(f) == ".DS_Store" }
+          .reject { |f| TEST_DIRECTORIES.include?(Pathname(f)) }
           .map { |f| f.sub(TEST_TMPDIR, "") }
     end
 
+    Homebrew.raise_deprecation_exceptions = true
+
+    Formulary.clear_cache
+    Tap.clear_cache
+    DependencyCollector.clear_cache
+    Formula.clear_cache
+    Keg.clear_cache
+    Tab.clear_cache
+    Dependency.clear_cache
+    Requirement.clear_cache
+    FormulaInstaller.clear_attempted
+    FormulaInstaller.clear_installed
+
+    TEST_DIRECTORIES.each(&:mkpath)
+
+    @__homebrew_failed = Homebrew.failed?
+
+    @__files_before_test = find_files
+
+    @__env = ENV.to_hash # dup doesn't work on ENV
+
+    @__stdout = $stdout.clone
+    @__stderr = $stderr.clone
+
     begin
-      Homebrew.raise_deprecation_exceptions = true
-
-      Formulary.clear_cache
-      Tap.clear_cache
-      DependencyCollector.clear_cache
-      Formula.clear_cache
-      Keg.clear_cache
-      Tab.clear_cache
-      FormulaInstaller.clear_attempted
-
-      TEST_DIRECTORIES.each(&:mkpath)
-
-      @__homebrew_failed = Homebrew.failed?
-
-      @__files_before_test = find_files
-
-      @__env = ENV.to_hash # dup doesn't work on ENV
-
-      @__stdout = $stdout.clone
-      @__stderr = $stderr.clone
-
-      if (example.metadata.keys & [:focus, :byebug]).empty? && !ENV.key?("VERBOSE_TESTS")
+      if (example.metadata.keys & [:focus, :byebug]).empty? && !ENV.key?("HOMEBREW_VERBOSE_TESTS")
         $stdout.reopen(File::NULL)
         $stderr.reopen(File::NULL)
       end
 
-      example.run
+      begin
+        timeout = example.metadata.fetch(:timeout, 60)
+        Timeout.timeout(timeout) do
+          example.run
+        end
+      rescue Timeout::Error => e
+        example.example.set_exception(e)
+      end
     rescue SystemExit => e
-      raise "Unexpected exit with status #{e.status}."
+      example.example.set_exception(e)
     ensure
       ENV.replace(@__env)
 
@@ -199,9 +237,11 @@ RSpec.configure do |config|
       Formula.clear_cache
       Keg.clear_cache
       Tab.clear_cache
+      Dependency.clear_cache
+      Requirement.clear_cache
 
       FileUtils.rm_rf [
-        TEST_DIRECTORIES.map(&:children),
+        *TEST_DIRECTORIES,
         *Keg::MUST_EXIST_SUBDIRECTORIES,
         HOMEBREW_LINKED_KEGS,
         HOMEBREW_PINNED_KEGS,
@@ -219,6 +259,10 @@ RSpec.configure do |config|
         CoreTap.instance.path/".git",
         CoreTap.instance.alias_dir,
         CoreTap.instance.path/"formula_renames.json",
+        CoreTap.instance.path/"tap_migrations.json",
+        CoreTap.instance.path/"audit_exceptions",
+        CoreTap.instance.path/"style_exceptions",
+        CoreTap.instance.path/"pypi_formula_mappings.json",
         *Pathname.glob("#{HOMEBREW_CELLAR}/*/"),
       ]
 
@@ -245,5 +289,12 @@ RSpec::Matchers.define :a_json_string do
     true
   rescue JSON::ParserError
     false
+  end
+end
+
+# Match consecutive elements in an array.
+RSpec::Matchers.define :array_including_cons do |*cons|
+  match do |actual|
+    expect(actual.each_cons(cons.size)).to include(cons)
   end
 end

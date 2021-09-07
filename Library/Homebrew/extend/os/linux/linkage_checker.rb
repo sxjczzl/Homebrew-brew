@@ -1,10 +1,14 @@
+# typed: true
 # frozen_string_literal: true
+
+require "compilers"
 
 class LinkageChecker
   # Libraries provided by glibc and gcc.
-  SYSTEM_LIBRARY_WHITELIST = %w[
+  SYSTEM_LIBRARY_ALLOWLIST = %w[
     ld-linux-x86-64.so.2
     libanl.so.1
+    libatomic.so.1
     libc.so.6
     libcrypt.so.1
     libdl.so.2
@@ -16,7 +20,6 @@ class LinkageChecker
     librt.so.1
     libthread_db.so.1
     libutil.so.1
-
     libgcc_s.so.1
     libgomp.so.1
     libstdc++.so.6
@@ -28,8 +31,8 @@ class LinkageChecker
     # glibc and gcc are implicit dependencies.
     # No other linkage to system libraries is expected or desired.
     @unwanted_system_dylibs = @system_dylibs.reject do |s|
-      SYSTEM_LIBRARY_WHITELIST.include? File.basename(s)
+      SYSTEM_LIBRARY_ALLOWLIST.include? File.basename(s)
     end
-    @undeclared_deps -= ["gcc", "glibc"]
+    @undeclared_deps -= [CompilerSelector.preferred_gcc, "glibc"]
   end
 end

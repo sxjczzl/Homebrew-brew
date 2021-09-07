@@ -1,8 +1,12 @@
+# typed: false
 # frozen_string_literal: true
 
 require "resource"
 require "erb"
 
+# Helper module for creating patches.
+#
+# @api private
 module Patch
   def self.create(strip, src, &block)
     case strip
@@ -25,34 +29,14 @@ module Patch
       raise ArgumentError, "unexpected value #{strip.inspect} for strip"
     end
   end
-
-  def self.normalize_legacy_patches(list)
-    patches = []
-
-    case list
-    when Hash
-      list
-    when Array, String, :DATA
-      { p1: list }
-    else
-      {}
-    end.each_pair do |strip, urls|
-      Array(urls).each do |url|
-        patch = case url
-        when :DATA
-          DATAPatch.new(strip)
-        else
-          LegacyPatch.new(strip, url)
-        end
-        patches << patch
-      end
-    end
-
-    patches
-  end
 end
 
+# An abstract class representing a patch embedded into a formula.
+#
+# @api private
 class EmbeddedPatch
+  extend T::Sig
+
   attr_writer :owner
   attr_reader :strip
 
@@ -60,6 +44,7 @@ class EmbeddedPatch
     @strip = strip
   end
 
+  sig { returns(T::Boolean) }
   def external?
     false
   end
@@ -72,12 +57,18 @@ class EmbeddedPatch
     Utils.safe_popen_write("patch", *args) { |p| p.write(data) }
   end
 
+  sig { returns(String) }
   def inspect
     "#<#{self.class.name}: #{strip.inspect}>"
   end
 end
 
+# A patch at the `__END__` of a formula file.
+#
+# @api private
 class DATAPatch < EmbeddedPatch
+  extend T::Sig
+
   attr_accessor :path
 
   def initialize(strip)
@@ -85,6 +76,7 @@ class DATAPatch < EmbeddedPatch
     @path = nil
   end
 
+  sig { returns(String) }
   def contents
     data = +""
     path.open("rb") do |f|
@@ -92,7 +84,7 @@ class DATAPatch < EmbeddedPatch
         line = f.gets
         break if line.nil? || line =~ /^__END__$/
       end
-      while line = f.gets
+      while (line = f.gets)
         data << line
       end
     end
@@ -100,6 +92,9 @@ class DATAPatch < EmbeddedPatch
   end
 end
 
+# A string containing a patch.
+#
+# @api private
 class StringPatch < EmbeddedPatch
   def initialize(strip, str)
     super(strip)
@@ -111,7 +106,12 @@ class StringPatch < EmbeddedPatch
   end
 end
 
+# A string containing a patch.
+#
+# @api private
 class ExternalPatch
+  extend T::Sig
+
   extend Forwardable
 
   attr_reader :resource, :strip
@@ -125,6 +125,7 @@ class ExternalPatch
     @resource = Resource::PatchResource.new(&block)
   end
 
+  sig { returns(T::Boolean) }
   def external?
     true
   end
@@ -159,34 +160,14 @@ class ExternalPatch
         end
       end
     end
+  rescue ErrorDuringExecution => e
+    f = resource.owner.owner
+    cmd, *args = e.cmd
+    raise BuildError.new(f, cmd, args, ENV.to_hash)
   end
 
+  sig { returns(String) }
   def inspect
     "#<#{self.class.name}: #{strip.inspect} #{url.inspect}>"
-  end
-end
-
-# Legacy patches have no checksum and are not cached.
-class LegacyPatch < ExternalPatch
-  def initialize(strip, url)
-    odeprecated "legacy patches", "'patch do' blocks"
-    super(strip)
-    resource.url(url)
-    resource.download_strategy = CurlDownloadStrategy
-  end
-
-  def fetch
-    clear_cache
-    super
-  end
-
-  def verify_download_integrity(_fn)
-    # no-op
-  end
-
-  def apply
-    super
-  ensure
-    clear_cache
   end
 end

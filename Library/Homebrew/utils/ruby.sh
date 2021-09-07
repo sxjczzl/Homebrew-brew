@@ -1,94 +1,119 @@
-test-ruby () {
-  [[ ! -x $1 ]] && { echo "false"; return 1; }
-  "$1" --enable-frozen-string-literal --disable=gems,did_you_mean,rubyopt -rrubygems -e \
-    "puts Gem::Version.new(RUBY_VERSION.to_s.dup).to_s.split('.').first(2) == \
-          Gem::Version.new('$required_ruby_version').to_s.split('.').first(2)" 2>/dev/null
+export HOMEBREW_REQUIRED_RUBY_VERSION=2.6.3
+
+# HOMEBREW_LIBRARY is from the user environment
+# shellcheck disable=SC2154
+test_ruby() {
+  if [[ ! -x $1 ]]
+  then
+    return 1
+  fi
+
+  "$1" --enable-frozen-string-literal --disable=gems,did_you_mean,rubyopt \
+    "${HOMEBREW_LIBRARY}/Homebrew/utils/ruby_check_version_script.rb" \
+    "${HOMEBREW_REQUIRED_RUBY_VERSION}" 2>/dev/null
 }
 
+# HOMEBREW_MACOS is set by brew.sh
+# HOMEBREW_PATH is set by global.rb
+# SC2230 falsely flags `which -a`
+# shellcheck disable=SC2154,SC2230
+find_ruby() {
+  if [[ -n "${HOMEBREW_MACOS}" ]]
+  then
+    echo "/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
+  else
+    IFS=$'\n' # Do word splitting on new lines only
+    for ruby_exec in $(which -a ruby 2>/dev/null) $(PATH=${HOMEBREW_PATH} which -a ruby 2>/dev/null)
+    do
+      if test_ruby "${ruby_exec}"; then
+        echo "${ruby_exec}"
+        break
+      fi
+    done
+    IFS=$' \t\n' # Restore IFS to its default value
+  fi
+}
+
+# HOMEBREW_FORCE_VENDOR_RUBY is from the user environment
+# HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH are set by brew.sh
+# shellcheck disable=SC2154
+need_vendored_ruby() {
+  if [[ -n "${HOMEBREW_FORCE_VENDOR_RUBY}" ]]
+  then
+    return 0
+  elif [[ -n "${HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH}" ]]
+  then
+    return 1
+  elif [[ -z "${HOMEBREW_MACOS}" ]] && test_ruby "${HOMEBREW_RUBY_PATH}"
+  then
+    return 1
+  else
+    return 0
+  fi
+}
+
+# HOMEBREW_LINUX is set by brew.sh
+# shellcheck disable=SC2154
 setup-ruby-path() {
   local vendor_dir
+  local vendor_ruby_root
   local vendor_ruby_path
+  local vendor_ruby_terminfo
   local vendor_ruby_latest_version
   local vendor_ruby_current_version
-  local usable_ruby_version
   # When bumping check if HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH (in brew.sh)
   # also needs to be changed.
-  local required_ruby_version="2.6"
   local ruby_exec
-  local advice="
+  local upgrade_fail
+  local install_fail
+
+  if [[ -n ${HOMEBREW_MACOS} ]]
+  then
+    upgrade_fail="Failed to upgrade Homebrew Portable Ruby!"
+    install_fail="Failed to install Homebrew Portable Ruby (and your system version is too old)!"
+  else
+    local advice="
 If there's no Homebrew Portable Ruby available for your processor:
-- install Ruby $required_ruby_version with your system package manager (or rbenv/ruby-build)
+- install Ruby ${HOMEBREW_REQUIRED_RUBY_VERSION} with your system package manager (or rbenv/ruby-build)
 - make it first in your PATH
 - try again
 "
+    upgrade_fail="Failed to upgrade Homebrew Portable Ruby!${advice}"
+    install_fail="Failed to install Homebrew Portable Ruby and cannot find another Ruby ${HOMEBREW_REQUIRED_RUBY_VERSION}!${advice}"
+  fi
 
-  vendor_dir="$HOMEBREW_LIBRARY/Homebrew/vendor"
-  vendor_ruby_path="$vendor_dir/portable-ruby/current/bin/ruby"
-  vendor_ruby_latest_version=$(<"$vendor_dir/portable-ruby-version")
-  vendor_ruby_current_version=$(readlink "$vendor_dir/portable-ruby/current")
+  vendor_dir="${HOMEBREW_LIBRARY}/Homebrew/vendor"
+  vendor_ruby_root="${vendor_dir}/portable-ruby/current"
+  vendor_ruby_path="${vendor_ruby_root}/bin/ruby"
+  vendor_ruby_terminfo="${vendor_ruby_root}/share/terminfo"
+  vendor_ruby_latest_version=$(<"${vendor_dir}/portable-ruby-version")
+  vendor_ruby_current_version=$(readlink "${vendor_ruby_root}")
 
   unset HOMEBREW_RUBY_PATH
 
-  if [[ "$HOMEBREW_COMMAND" == "vendor-install" ]]
+  if [[ "${HOMEBREW_COMMAND}" == "vendor-install" ]]
   then
     return 0
   fi
 
-  if [[ -x "$vendor_ruby_path" ]]
+  if [[ -x "${vendor_ruby_path}" ]]
   then
-    HOMEBREW_RUBY_PATH="$vendor_ruby_path"
-    if [[ $vendor_ruby_current_version != $vendor_ruby_latest_version ]]
+    HOMEBREW_RUBY_PATH="${vendor_ruby_path}"
+    TERMINFO_DIRS="${vendor_ruby_terminfo}"
+    if [[ ${vendor_ruby_current_version} != "${vendor_ruby_latest_version}" ]]
     then
-      if ! brew vendor-install ruby
-      then
-        if [[ -n "$HOMEBREW_MACOS" ]]
-        then
-          odie "Failed to upgrade Homebrew Portable Ruby!"
-        else
-          odie "Failed to upgrade Homebrew Portable Ruby!$advice"
-        fi
-      fi
+      brew vendor-install ruby || odie "${upgrade_fail}"
     fi
   else
-    if [[ -n "$HOMEBREW_MACOS" ]]
+    HOMEBREW_RUBY_PATH=$(find_ruby)
+    if need_vendored_ruby
     then
-      HOMEBREW_RUBY_PATH="/System/Library/Frameworks/Ruby.framework/Versions/Current/usr/bin/ruby"
-    else
-      IFS=$'\n' # Do word splitting on new lines only
-      for ruby_exec in $(which -a ruby) $(PATH=$HOMEBREW_PATH which -a ruby)
-      do
-        if [[ $(test-ruby "$ruby_exec") == "true" ]]; then
-          HOMEBREW_RUBY_PATH=$ruby_exec
-          break
-        fi
-      done
-      IFS=$' \t\n' # Restore IFS to its default value
-      [[ -z $HOMEBREW_RUBY_PATH ]] && onoe "Failed to find usable Ruby $required_ruby_version!"
-    fi
-
-    if [[ -n "$HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH" ]]
-    then
-      usable_ruby_version="true"
-    elif [[ -n "$HOMEBREW_RUBY_PATH" && -z "$HOMEBREW_FORCE_VENDOR_RUBY" ]]
-    then
-      usable_ruby_version=$(test-ruby "$HOMEBREW_RUBY_PATH")
-    fi
-
-    if [[ -z "$HOMEBREW_RUBY_PATH" || -n "$HOMEBREW_FORCE_VENDOR_RUBY" || "$usable_ruby_version" != "true" ]]
-    then
-      brew vendor-install ruby
-      if [[ ! -x "$vendor_ruby_path" ]]
-      then
-        if [[ -n "$HOMEBREW_MACOS" ]]
-        then
-          odie "Failed to install Homebrew Portable Ruby (and your system version is too old)!"
-        else
-          odie "Failed to install Homebrew Portable Ruby and cannot find another Ruby $required_ruby_version!$advice"
-        fi
-      fi
-      HOMEBREW_RUBY_PATH="$vendor_ruby_path"
+      brew vendor-install ruby || odie "${install_fail}"
+      HOMEBREW_RUBY_PATH="${vendor_ruby_path}"
+      TERMINFO_DIRS="${vendor_ruby_terminfo}"
     fi
   fi
 
   export HOMEBREW_RUBY_PATH
+  [[ -n "${HOMEBREW_LINUX}" && -n "${TERMINFO_DIRS}" ]] && export TERMINFO_DIRS
 }

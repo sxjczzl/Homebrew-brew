@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "descriptions"
@@ -6,15 +7,16 @@ require "description_cache_store"
 require "cli/parser"
 
 module Homebrew
+  extend T::Sig
+
   module_function
 
   extend Search
 
+  sig { returns(CLI::Parser) }
   def desc_args
     Homebrew::CLI::Parser.new do
-      usage_banner <<~EOS
-        `desc` [<options>] (<text>|`/`<text>`/`|<formula>)
-
+      description <<~EOS
         Display <formula>'s name and one-line description.
         Formula descriptions are cached; the cache is created on the
         first search, making that search slower than subsequent ones.
@@ -28,14 +30,15 @@ module Homebrew
       switch "-d", "--description",
              description: "Search just descriptions for <text>. If <text> is flanked by slashes, "\
                           "it is interpreted as a regular expression."
-      switch :verbose
+
       conflicts "--search", "--name", "--description"
-      min_named 1
+
+      named_args [:formula, :text_or_regex], min: 1
     end
   end
 
   def desc
-    desc_args.parse
+    args = desc_args.parse
 
     search_type = if args.search?
       :either
@@ -47,7 +50,7 @@ module Homebrew
 
     results = if search_type.nil?
       desc = {}
-      args.formulae.each { |f| desc[f.full_name] = f.desc }
+      args.named.to_formulae.each { |f| desc[f.full_name] = f.desc }
       Descriptions.new(desc)
     else
       query = args.named.join(" ")

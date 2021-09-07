@@ -1,5 +1,7 @@
+# typed: false
 # frozen_string_literal: true
 
+require "test/support/fixtures/testball"
 require "formula"
 
 describe Formula do
@@ -16,7 +18,6 @@ describe Formula do
       end
 
       expect(f.class.stable.deps.first.name).to eq("foo")
-      expect(f.class.devel.deps.first.name).to eq("foo")
       expect(f.class.head.deps.first.name).to eq("foo")
     end
 
@@ -28,28 +29,7 @@ describe Formula do
       end
 
       expect(f.class.stable.deps.first.name).to eq("foo")
-      expect(f.class.devel.deps.first.name).to eq("foo")
       expect(f.class.head.deps.first.name).to eq("foo")
-    end
-  end
-
-  describe "#on_linux" do
-    it "defines an url on Linux only" do
-      f = formula do
-        homepage "https://brew.sh"
-
-        on_macos do
-          url "https://brew.sh/test-macos-0.1.tbz"
-          sha256 TEST_SHA256
-        end
-
-        on_linux do
-          url "https://brew.sh/test-linux-0.1.tbz"
-          sha256 TEST_SHA256
-        end
-      end
-
-      expect(f.stable.url).to eq("https://brew.sh/test-linux-0.1.tbz")
     end
   end
 
@@ -76,9 +56,7 @@ describe Formula do
       expect(f.class.stable.deps[1].name).to eq("hello_linux")
       expect(f.class.stable.deps[2]).to eq(nil)
     end
-  end
 
-  describe "#on_linux" do
     it "adds a patch on Linux only" do
       f = formula do
         homepage "https://brew.sh"
@@ -87,27 +65,50 @@ describe Formula do
         sha256 TEST_SHA256
 
         patch do
-          url "patch_both"
-        end
-
-        on_macos do
-          patch do
+          on_macos do
             url "patch_macos"
           end
-        end
 
-        on_linux do
-          patch do
+          on_linux do
             url "patch_linux"
           end
         end
       end
 
-      expect(f.patchlist.length).to eq(2)
+      expect(f.patchlist.length).to eq(1)
       expect(f.patchlist.first.strip).to eq(:p1)
-      expect(f.patchlist.first.url).to eq("patch_both")
-      expect(f.patchlist.second.strip).to eq(:p1)
-      expect(f.patchlist.second.url).to eq("patch_linux")
+      expect(f.patchlist.first.url).to eq("patch_linux")
+    end
+
+    it "uses on_linux within a resource block" do
+      f = formula do
+        homepage "https://brew.sh"
+
+        url "https://brew.sh/test-0.1.tbz"
+        sha256 TEST_SHA256
+
+        resource "test_resource" do
+          on_linux do
+            url "on_linux"
+          end
+        end
+      end
+      expect(f.resources.length).to eq(1)
+      expect(f.resources.first.url).to eq("on_linux")
+    end
+  end
+
+  describe "#shared_library" do
+    it "generates a shared library string" do
+      f = Testball.new
+      expect(f.shared_library("foobar")).to eq("foobar.so")
+      expect(f.shared_library("foobar", 2)).to eq("foobar.so.2")
+      expect(f.shared_library("foobar", nil)).to eq("foobar.so")
+      expect(f.shared_library("foobar", "*")).to eq("foobar.so{,.*}")
+      expect(f.shared_library("*")).to eq("*.so{,.*}")
+      expect(f.shared_library("*", 2)).to eq("*.so.2")
+      expect(f.shared_library("*", nil)).to eq("*.so{,.*}")
+      expect(f.shared_library("*", "*")).to eq("*.so{,.*}")
     end
   end
 end

@@ -1,3 +1,4 @@
+# typed: false
 # frozen_string_literal: true
 
 require "software_spec"
@@ -7,10 +8,8 @@ describe SoftwareSpec do
 
   describe "#uses_from_macos" do
     before do
-      sierra_os_version = OS::Mac::Version.from_symbol(:sierra)
-
       allow(OS).to receive(:mac?).and_return(true)
-      allow(OS::Mac).to receive(:version).and_return(OS::Mac::Version.new(sierra_os_version))
+      allow(OS::Mac).to receive(:version).and_return(OS::Mac::Version.from_symbol(:sierra))
     end
 
     it "adds a macOS dependency if the OS version meets requirements" do
@@ -46,7 +45,7 @@ describe SoftwareSpec do
     it "raises an error if passing invalid OS versions" do
       expect {
         spec.uses_from_macos("foo", since: :bar)
-      }.to raise_error(ArgumentError, "unknown version :bar")
+      }.to raise_error(MacOSVersionError, "unknown or unsupported macOS version: :bar")
     end
   end
 end

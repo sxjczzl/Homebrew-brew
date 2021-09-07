@@ -1,4 +1,7 @@
+# typed: true
 # frozen_string_literal: true
+
+require "compilers"
 
 class Keg
   def relocate_dynamic_linkage(relocation)
@@ -8,9 +11,11 @@ class Keg
     # Patching patchelf using itself fails with "Text file busy" or SIGBUS.
     return if name == "patchelf"
 
+    old_prefix, new_prefix = relocation.replacement_pair_for(:prefix)
+
     elf_files.each do |file|
       file.ensure_writable do
-        change_rpath(file, relocation.old_prefix, relocation.new_prefix)
+        change_rpath(file, old_prefix, new_prefix)
       end
     end
   end
@@ -18,42 +23,31 @@ class Keg
   def change_rpath(file, old_prefix, new_prefix)
     return if !file.elf? || !file.dynamic_elf?
 
-    patchelf = DevelopmentTools.locate "patchelf"
-    odie "Could not locate patchelf, please: brew install patchelf." if patchelf.nil?
+    updated = {}
+    old_rpath = file.rpath
+    new_rpath = if old_rpath
+      rpath = old_rpath.split(":")
+                       .map { |x| x.sub(old_prefix, new_prefix) }
+                       .select { |x| x.start_with?(new_prefix, "$ORIGIN") }
 
-    cmd_rpath = [patchelf, "--print-rpath", file]
-    old_rpath = Utils.popen_read(*cmd_rpath, err: :out).strip
+      lib_path = "#{new_prefix}/lib"
+      rpath << lib_path unless rpath.include? lib_path
 
-    # patchelf requires that the ELF file have a .dynstr section.
-    # Skip ELF files that do not have a .dynstr section.
-    return if ["cannot find section .dynstr", "strange: no string table"].include?(old_rpath)
-    unless $CHILD_STATUS.success?
-      raise ErrorDuringExecution.new(cmd_rpath, status: $CHILD_STATUS, output: [[:stderr, old_rpath]])
+      rpath.join(":")
     end
+    updated[:rpath] = new_rpath if old_rpath != new_rpath
 
-    rpath = old_rpath
-            .split(":")
-            .map { |x| x.sub(old_prefix, new_prefix) }
-            .select { |x| x.start_with?(new_prefix, "$ORIGIN") }
-
-    lib_path = "#{new_prefix}/lib"
-    rpath << lib_path unless rpath.include? lib_path
-    new_rpath = rpath.join(":")
-    cmd = [patchelf, "--force-rpath", "--set-rpath", new_rpath]
-
-    if file.with_interpreter?
-      old_interpreter = Utils.safe_popen_read(patchelf, "--print-interpreter", file).strip
-      new_interpreter = if File.readable? "#{new_prefix}/lib/ld.so"
-        "#{new_prefix}/lib/ld.so"
-      else
-        old_interpreter.sub old_prefix, new_prefix
-      end
-      cmd << "--set-interpreter" << new_interpreter if old_interpreter != new_interpreter
+    old_interpreter = file.interpreter
+    new_interpreter = if old_interpreter.nil?
+      nil
+    elsif File.readable? "#{new_prefix}/lib/ld.so"
+      "#{new_prefix}/lib/ld.so"
+    else
+      old_interpreter.sub old_prefix, new_prefix
     end
+    updated[:interpreter] = new_interpreter if old_interpreter != new_interpreter
 
-    return if old_rpath == new_rpath && old_interpreter == new_interpreter
-
-    safe_system(*cmd, file)
+    file.patch!(interpreter: updated[:interpreter], rpath: updated[:rpath])
   end
 
   def detect_cxx_stdlibs(options = {})
@@ -88,14 +82,18 @@ class Keg
   end
 
   def self.relocation_formulae
-    ["patchelf"]
+    @relocation_formulae ||= if HOMEBREW_PATCHELF_RB_WRITE
+      []
+    else
+      ["patchelf"]
+    end.freeze
   end
 
   def self.bottle_dependencies
     @bottle_dependencies ||= begin
       formulae = relocation_formulae
-      gcc = Formula["gcc"]
-      if !Homebrew::EnvConfig.force_homebrew_on_linux? &&
+      gcc = Formulary.factory(CompilerSelector.preferred_gcc)
+      if !Homebrew::EnvConfig.simulate_macos_on_linux? &&
          DevelopmentTools.non_apple_gcc_version("gcc") < gcc.version.to_i
         formulae += gcc.recursive_dependencies.map(&:name)
         formulae << gcc.name

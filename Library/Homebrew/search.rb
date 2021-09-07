@@ -1,12 +1,16 @@
+# typed: false
 # frozen_string_literal: true
 
 require "searchable"
 require "description_cache_store"
 
 module Homebrew
+  # Helper module for searching formulae or casks.
+  #
+  # @api private
   module Search
     def query_regexp(query)
-      if m = query.match(%r{^/(.*)/$})
+      if (m = query.match(%r{^/(.*)/$}))
         Regexp.new(m[1])
       else
         query
@@ -15,7 +19,9 @@ module Homebrew
       raise "#{query} is not a valid regex."
     end
 
-    def search_descriptions(string_or_regex)
+    def search_descriptions(string_or_regex, args)
+      return if args.cask?
+
       ohai "Formulae"
       CacheStoreDatabase.use(:descriptions) do |db|
         cache_store = DescriptionCacheStore.new(db)
@@ -44,10 +50,12 @@ module Homebrew
           filename:  query,
           extension: "rb",
         )
-      rescue GitHub::Error => e
+      rescue GitHub::API::Error => e
         opoo "Error searching on GitHub: #{e}\n"
-        return results
+        nil
       end
+
+      return results if matches.blank?
 
       matches.each do |match|
         name = File.basename(match["path"], ".rb")
@@ -80,6 +88,8 @@ module Homebrew
                 .extend(Searchable)
                 .search(string_or_regex)
                 .sort
+
+      results |= Formula.fuzzy_search(string_or_regex)
 
       results.map do |name|
         formula, canonical_full_name = begin
