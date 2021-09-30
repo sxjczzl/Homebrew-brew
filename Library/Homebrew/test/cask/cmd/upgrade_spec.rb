@@ -322,7 +322,7 @@ describe Cask::Cmd::Upgrade, :cask do
 
       expect {
         described_class.run("will-fail-if-upgraded")
-      }.to raise_error(Cask::CaskError).and output(output_reverted).to_stderr
+      }.to not_raise_error.and output(output_reverted).to_stderr
 
       expect(will_fail_if_upgraded).to be_installed
       expect(will_fail_if_upgraded_path).to be_a_file
@@ -340,7 +340,7 @@ describe Cask::Cmd::Upgrade, :cask do
 
       expect {
         described_class.run("bad-checksum")
-      }.to raise_error(ChecksumMismatchError).and(not_to_output(output_reverted).to_stderr)
+      }.to not_raise_error.and(not_to_output(output_reverted).to_stderr)
 
       expect(bad_checksum).to be_installed
       expect(bad_checksum_path).to be_a_directory
@@ -385,7 +385,7 @@ describe Cask::Cmd::Upgrade, :cask do
 
       expect {
         described_class.run
-      }.to raise_error(Cask::MultipleCaskErrors)
+      }.to not_raise_error
 
       expect(bad_checksum).to be_installed
       expect(bad_checksum_path).to be_a_directory

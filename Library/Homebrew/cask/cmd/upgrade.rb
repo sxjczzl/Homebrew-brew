@@ -74,7 +74,7 @@ module Cask
           binaries:            T.nilable(T::Boolean),
           quarantine:          T.nilable(T::Boolean),
           require_sha:         T.nilable(T::Boolean),
-        ).returns(T::Boolean)
+        ).void
       }
       def self.upgrade_casks(
         *casks,
@@ -117,7 +117,7 @@ module Cask
           outdated_casks -= manual_installer_casks
         end
 
-        return false if outdated_casks.empty?
+        return if outdated_casks.empty?
 
         if casks.empty? && !greedy
           if !greedy_auto_updates && !greedy_latest
@@ -135,14 +135,12 @@ module Cask
         verb = dry_run ? "Would upgrade" : "Upgrading"
         oh1 "#{verb} #{outdated_casks.count} outdated #{"package".pluralize(outdated_casks.count)}:"
 
-        caught_exceptions = []
-
         upgradable_casks = outdated_casks.map { |c| [CaskLoader.load(c.installed_caskfile), c] }
 
         puts upgradable_casks
           .map { |(old_cask, new_cask)| "#{new_cask.full_name} #{old_cask.version} -> #{new_cask.version}" }
           .join("\n")
-        return true if dry_run
+        return if dry_run
 
         upgradable_casks.each do |(old_cask, new_cask)|
           upgrade_cask(
@@ -151,13 +149,8 @@ module Cask
             quarantine: quarantine, require_sha: require_sha
           )
         rescue => e
-          caught_exceptions << e.exception("#{new_cask.full_name}: #{e}")
-          next
+          ofail "#{new_cask.full_name}: #{e}"
         end
-
-        return true if caught_exceptions.empty?
-        raise MultipleCaskErrors, caught_exceptions if caught_exceptions.count > 1
-        raise caught_exceptions.first if caught_exceptions.count == 1
       end
 
       def self.upgrade_cask(
