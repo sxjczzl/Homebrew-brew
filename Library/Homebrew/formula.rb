@@ -1594,7 +1594,7 @@ class Formula
     if ENV["SOURCE_DATE_EPOCH"].present?
       Time.at(ENV["SOURCE_DATE_EPOCH"].to_i).utc
     else
-      Time.now.utc
+      Time.at(path.mtime).utc
     end
   end
 
