@@ -10822,6 +10822,7 @@ class RuboCop::Cop::Style::SelectByRegexp < ::RuboCop::Cop::Base
   extend ::RuboCop::Cop::AutoCorrector
 
   def calls_lvar?(param0 = T.unsafe(nil), param1); end
+  def creates_hash?(param0 = T.unsafe(nil)); end
   def on_send(node); end
   def regexp_match?(param0 = T.unsafe(nil)); end
 
@@ -10829,6 +10830,7 @@ class RuboCop::Cop::Style::SelectByRegexp < ::RuboCop::Cop::Base
 
   def extract_send_node(block_node); end
   def find_regexp(node); end
+  def receiver_allowed?(node); end
   def register_offense(node, block_node, regexp); end
 end
 
