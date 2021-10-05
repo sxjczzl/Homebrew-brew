@@ -320,7 +320,7 @@ module Formulary
           name = new_name
           new_name = @tap.core_tap? ? name : "#{@tap}/#{name}"
         elsif (new_name = @tap.cask_renames[name]) &&
-            (new_path = formula_dir/"#{new_name}.rb").file?
+              (new_path = formula_dir/"#{new_name}.rb").file?
           old_name = name
           path = new_path
           name = new_name

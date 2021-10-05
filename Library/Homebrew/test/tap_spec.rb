@@ -42,7 +42,7 @@ describe Tap do
     JSON
 
     (path/"cask_renames.json").write <<~JSON
-      { "oldname": "foo" }
+      { "oldcask": "newcask" }
     JSON
 
     %w[audit_exceptions style_exceptions].each do |exceptions_directory|
@@ -176,6 +176,7 @@ describe Tap do
     expect(homebrew_foo_tap.alias_reverse_table).to eq("homebrew/foo/foo" => ["homebrew/foo/bar"])
     expect(homebrew_foo_tap.formula_renames).to eq("oldname" => "foo")
     expect(homebrew_foo_tap.tap_migrations).to eq("removed-formula" => "homebrew/foo")
+    expect(homebrew_foo_tap.cask_renames).to eq("oldcask" => "newcask")
     expect(homebrew_foo_tap.command_files).to eq([cmd_file])
     expect(homebrew_foo_tap.to_hash).to be_kind_of(Hash)
     expect(homebrew_foo_tap).to have_formula_file(formula_file)
@@ -456,6 +457,15 @@ describe Tap do
 
         expected_result = { "removed-formula" => "homebrew/foo" }
         expect(homebrew_foo_tap.tap_migrations).to eq expected_result
+      end
+    end
+
+    describe "#cask_renames" do
+      it "returns the cask_renames hash" do
+        setup_tap_files
+
+        expected_result = { "oldcask" => "newcask" }
+        expect(homebrew_foo_tap.cask_renames).to eq expected_result
       end
     end
 
