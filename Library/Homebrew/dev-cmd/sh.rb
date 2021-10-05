@@ -2,7 +2,6 @@
 # frozen_string_literal: true
 
 require "extend/ENV"
-require "formula"
 require "cli/parser"
 
 module Homebrew
@@ -33,8 +32,10 @@ module Homebrew
     args = sh_args.parse
 
     ENV.activate_extensions!(env: args.env)
-
-    ENV.deps = Formula.installed.select { |f| f.keg_only? && f.opt_prefix.directory? } if superenv?(args.env)
+    if superenv?(args.env)
+      require "formula"
+      ENV.deps = Formula.installed.select { |f| f.keg_only? && f.opt_prefix.directory? }
+    end
     ENV.setup_build_environment
     if superenv?(args.env)
       # superenv stopped adding brew's bin but generally users will want it

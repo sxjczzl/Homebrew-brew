@@ -1,7 +1,6 @@
 # typed: true
 # frozen_string_literal: true
 
-require "formula"
 require "tab"
 require "diagnostic"
 require "cli/parser"
@@ -33,6 +32,7 @@ module Homebrew
     return unless HOMEBREW_CELLAR.exist?
 
     ff = if args.no_named?
+      require "formula"
       Formula.installed.sort
     else
       args.named.to_resolved_formulae.sort
