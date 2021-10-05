@@ -22,6 +22,7 @@ class Tap
 
   HOMEBREW_TAP_FORMULA_RENAMES_FILE = "formula_renames.json"
   HOMEBREW_TAP_MIGRATIONS_FILE = "tap_migrations.json"
+  HOMEBREW_TAP_CASK_RENAMES_FILE = "cask_renames.json"
   HOMEBREW_TAP_AUDIT_EXCEPTIONS_DIR = "audit_exceptions"
   HOMEBREW_TAP_STYLE_EXCEPTIONS_DIR = "style_exceptions"
   HOMEBREW_TAP_PYPI_FORMULA_MAPPINGS = "pypi_formula_mappings.json"
@@ -29,6 +30,7 @@ class Tap
   HOMEBREW_TAP_JSON_FILES = %W[
     #{HOMEBREW_TAP_FORMULA_RENAMES_FILE}
     #{HOMEBREW_TAP_MIGRATIONS_FILE}
+    #{HOMEBREW_TAP_CASK_RENAMES_FILE}
     #{HOMEBREW_TAP_AUDIT_EXCEPTIONS_DIR}/*.json
     #{HOMEBREW_TAP_STYLE_EXCEPTIONS_DIR}/*.json
     #{HOMEBREW_TAP_PYPI_FORMULA_MAPPINGS}
@@ -123,6 +125,7 @@ class Tap
     @command_files = nil
     @formula_renames = nil
     @tap_migrations = nil
+    @cask_renames = nil
     @audit_exceptions = nil
     @style_exceptions = nil
     @pypi_formula_mappings = nil
@@ -609,6 +612,15 @@ class Tap
     end
   end
 
+  # Hash with tap cask renames.
+  def cask_renames
+    @cask_renames ||= if (rename_file = path/HOMEBREW_TAP_CASK_RENAMES_FILE).file?
+      JSON.parse(rename_file.read)
+    else
+      {}
+    end
+  end
+
   # Hash with audit exceptions
   sig { returns(Hash) }
   def audit_exceptions
@@ -808,6 +820,14 @@ class CoreTap < Tap
   # @private
   def tap_migrations
     @tap_migrations ||= begin
+      self.class.ensure_installed!
+      super
+    end
+  end
+
+  # @private
+  def cask_renames
+    @cask_renames ||= begin
       self.class.ensure_installed!
       super
     end

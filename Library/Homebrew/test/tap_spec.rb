@@ -41,6 +41,10 @@ describe Tap do
       { "removed-formula": "homebrew/foo" }
     JSON
 
+    (path/"cask_renames.json").write <<~JSON
+      { "oldname": "foo" }
+    JSON
+
     %w[audit_exceptions style_exceptions].each do |exceptions_directory|
       (path/exceptions_directory).mkpath
 
@@ -531,6 +535,7 @@ describe Tap do
       %w[
         formula_renames.json
         tap_migrations.json
+        cask_renames.json
         audit_exceptions/formula_list.json
         style_exceptions/formula_hash.json
         pypi_formula_mappings.json
@@ -552,6 +557,7 @@ describe Tap do
 
       expect(core_tap.formula_renames).to eq formula_list_file_contents
       expect(core_tap.tap_migrations).to eq formula_list_file_contents
+      expect(core_tap.cask_migrations).to eq formula_list_file_contents
       expect(core_tap.audit_exceptions).to eq({ formula_list: formula_list_file_contents })
       expect(core_tap.style_exceptions).to eq({ formula_hash: formula_list_file_contents })
       expect(core_tap.pypi_formula_mappings).to eq formula_list_file_contents
