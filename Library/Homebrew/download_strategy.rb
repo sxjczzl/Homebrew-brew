@@ -695,6 +695,7 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
 
   def initialize(url, name, version, **meta)
     super
+    opoo "svn is installed? #{svn_installed?}"
     @url = @url.sub("svn+http://", "")
   end
 
@@ -803,6 +804,12 @@ class SubversionDownloadStrategy < VCSDownloadStrategy
     end
   end
   alias update clone_repo
+
+  def svn_installed?
+    Cask::Cask.new("svn").installed?
+    #Formula.new("svn").installed?
+    #Formulary::TapLoader.new("homebrew-core/svn").installed?
+  end
 end
 
 # Strategy for downloading a Git repository.
