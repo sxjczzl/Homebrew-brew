@@ -231,11 +231,14 @@ class Resource
 
   # A resource containing a patch.
   class PatchResource < Resource
+    extend T::Sig
+
     attr_reader :patch_files
 
     def initialize(&block)
       @patch_files = []
       @directory = nil
+      @reference = nil
       super "patch", &block
     end
 
@@ -245,10 +248,18 @@ class Resource
       @patch_files.uniq!
     end
 
+    sig { params(val: T.nilable(String)).returns(T.nilable(String)) }
     def directory(val = nil)
       return @directory if val.nil?
 
       @directory = val
+    end
+
+    sig { params(val: T.nilable(String)).returns(T.nilable(String)) }
+    def reference(val = nil)
+      return @reference if val.nil?
+
+      @reference = val
     end
   end
 end
