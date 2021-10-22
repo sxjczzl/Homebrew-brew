@@ -7513,7 +7513,9 @@ module RuboCop::AST::NodePattern::Sets
   SET_BUILD_RECOMMENDED_TEST_OPTIONAL = ::T.let(nil, ::T.untyped)
   SET_DEPENDS_ON_USES_FROM_MACOS = ::T.let(nil, ::T.untyped)
   SET_INCLUDE_WITH_WITHOUT = ::T.let(nil, ::T.untyped)
+  SET_NEW_ = ::T.let(nil, ::T.untyped)
   SET_SYSTEM_SHELL_OUTPUT_PIPE_OUTPUT = ::T.let(nil, ::T.untyped)
+  SET_TO_H_TO_HASH = ::T.let(nil, ::T.untyped)
   SET_WITH_WITHOUT = ::T.let(nil, ::T.untyped)
 end
 
@@ -7756,6 +7758,13 @@ class RuboCop::RSpec::ExpectOffense::AnnotatedSource
 end
 
 module RuboCop::RSpec::ExpectOffense
+end
+
+class RuboCop::RSpec::ParallelFormatter
+  def dump_pending(*arg); end
+end
+
+class RuboCop::RSpec::ParallelFormatter
 end
 
 class RubyLex
