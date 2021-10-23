@@ -20,6 +20,13 @@ module Homebrew
       # are ignored.
       DEFAULT_PRIORITY = 5
 
+      DEFAULT_SYSTEM_COMMAND_OPTIONS = {
+        print_stdout: false,
+        print_stderr: false,
+        debug:        false,
+        verbose:      false,
+      }.freeze
+
       # cURL's default `--connect-timeout` value can be up to two minutes, so
       # we need to use a more reasonable duration (in seconds) to avoid a
       # lengthy wait when a connection can't be established.
@@ -59,16 +66,12 @@ module Homebrew
       ] + DEFAULT_CURL_ARGS).freeze
 
       # Baseline `curl` options used in {Strategy} methods.
-      DEFAULT_CURL_OPTIONS = {
-        print_stdout:    false,
-        print_stderr:    false,
-        debug:           false,
-        verbose:         false,
+      DEFAULT_CURL_OPTIONS = DEFAULT_SYSTEM_COMMAND_OPTIONS.merge({
         timeout:         CURL_PROCESS_TIMEOUT,
         connect_timeout: CURL_CONNECT_TIMEOUT,
         max_time:        CURL_MAX_TIME,
         retries:         0,
-      }.freeze
+      }).freeze
 
       # HTTP response head(s) and body are typically separated by a double
       # `CRLF` (whereas HTTP header lines are separated by a single `CRLF`).

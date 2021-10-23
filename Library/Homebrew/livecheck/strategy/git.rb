@@ -1,7 +1,7 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
-require "open3"
+require "utils/git"
 
 module Homebrew
   module Livecheck
@@ -52,27 +52,18 @@ module Homebrew
         # @return [Hash]
         sig { params(url: String, regex: T.nilable(Regexp)).returns(T::Hash[Symbol, T.untyped]) }
         def self.tag_info(url, regex = nil)
-          # Open3#capture3 is used here because we need to capture stderr
-          # output and handle it in an appropriate manner. Alternatives like
-          # SystemCommand always print errors (as well as debug output) and
-          # don't meet the same goals.
-          stdout_str, stderr_str, _status = Open3.capture3(
-            { "GIT_TERMINAL_PROMPT" => "0" }, "git", "ls-remote", "--tags", url
+          remote_info = Utils::Git.remote_tags(
+            url,
+            env: { "GIT_TERMINAL_PROMPT" => "0" },
+            **DEFAULT_SYSTEM_COMMAND_OPTIONS,
           )
+          return remote_info if remote_info[:errors].present?
+          return {} if remote_info[:tags].blank?
 
-          tags_data = { tags: [] }
-          tags_data[:messages] = stderr_str.split("\n") if stderr_str.present?
-          return tags_data if stdout_str.blank?
+          tags = remote_info[:tags].keys.map { |tag| tag.delete_suffix("^{}") }.uniq.sort
+          tags.select! { |tag| tag =~ regex } if regex
 
-          # Isolate tag strings by removing leading/trailing text
-          stdout_str.gsub!(%r{^.*\trefs/tags/}, "")
-          stdout_str.gsub!("^{}", "")
-
-          tags = stdout_str.split("\n").uniq.sort
-          tags.select! { |t| t =~ regex } if regex
-          tags_data[:tags] = tags
-
-          tags_data
+          { tags: tags }
         end
 
         # Identify versions from tag strings using a provided regex or the
@@ -136,11 +127,8 @@ module Homebrew
 
           tags_data = tag_info(url, regex)
           tags = tags_data[:tags]
-
-          if tags_data.key?(:messages)
-            match_data[:messages] = tags_data[:messages]
-            return match_data if tags.blank?
-          end
+          match_data[:messages] = tags_data[:errors] if tags_data[:errors].present?
+          return match_data if tags.blank?
 
           versions_from_tags(tags, regex, &block).each do |version_text|
             match_data[:matches][version_text] = Version.new(version_text)
