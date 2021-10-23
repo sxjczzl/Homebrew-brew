@@ -1,6 +1,8 @@
 # typed: true
 # frozen_string_literal: true
 
+require "utils/git"
+
 module Homebrew
   # Auditor for checking common violations in {Resource}s.
   #
@@ -142,12 +144,11 @@ module Homebrew
       return unless @online
       return unless @strict
       return if spec_name != :head
-      return unless Utils::Git.remote_exists?(url)
       return if specs[:tag].present?
 
-      branch = Utils.popen_read("git", "ls-remote", "--symref", url, "HEAD")
-                    .match(%r{ref: refs/heads/(.*?)\s+HEAD})[1]
-
+      remote_info = Utils::Git.remote_head(url)
+      branch = remote_info[:branch]
+      return if remote_info[:errors].present? || branch.blank?
       return if branch == specs[:branch]
 
       problem "Use `branch: \"#{branch}\"` to specify the default branch"
