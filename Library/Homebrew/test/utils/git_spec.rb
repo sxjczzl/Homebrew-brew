@@ -44,6 +44,8 @@ describe Utils::Git do
     end
   end
 
+  let(:head_branch) { "master" }
+  let(:remote_url) { "https://github.com/Homebrew/brew" }
   let(:file) { "README.md" }
   let(:file_hash1) { @h1[0..6] }
   let(:file_hash2) { @h2[0..6] }
@@ -193,30 +195,85 @@ describe Utils::Git do
     end
   end
 
+  describe "::ls_remote" do
+    it "returns a hash with an error when git is not available" do
+      stub_const("HOMEBREW_SHIMS_PATH", HOMEBREW_PREFIX/"bin/shim")
+      expect(described_class.ls_remote(remote_url)).to eq({ errors: ["Git is not available"] })
+    end
+
+    it "returns a hash with text output when git remote exists", :needs_network do
+      remote_info = described_class.ls_remote(remote_url)
+      expect(remote_info[:output].present?).to be true
+      expect(remote_info[:errors].present?).to be false
+    end
+
+    it "returns a hash with an error when git remote does not exist" do
+      remote_info = described_class.ls_remote("not-a-repo")
+      expect(remote_info[:errors].present?).to be true
+    end
+  end
+
   describe "::remote_exists?" do
     it "returns true when git is not available" do
       stub_const("HOMEBREW_SHIMS_PATH", HOMEBREW_PREFIX/"bin/shim")
-      expect(described_class).to be_remote_exists("blah")
+      expect(described_class).to be_remote_exists("not-a-repo")
     end
 
     context "when git is available" do
       it "returns true when git remote exists", :needs_network do
         git = HOMEBREW_SHIMS_PATH/"shared/git"
-        url = "https://github.com/Homebrew/homebrew.github.io"
-        repo = HOMEBREW_CACHE/"hey"
+        repo = HOMEBREW_CACHE/"remote_exists-test"
         repo.mkpath
 
         repo.cd do
           system git, "init"
-          system git, "remote", "add", "origin", url
+          system git, "remote", "add", "origin", remote_url
         end
 
-        expect(described_class).to be_remote_exists(url)
+        expect(described_class).to be_remote_exists(remote_url)
       end
 
       it "returns false when git remote does not exist" do
         expect(described_class).not_to be_remote_exists("blah")
       end
+    end
+  end
+
+  describe "::remote_head" do
+    it "returns a hash with an error when git is not available" do
+      stub_const("HOMEBREW_SHIMS_PATH", HOMEBREW_PREFIX/"bin/shim")
+      expect(described_class.remote_head(remote_url)).to eq({ errors: ["Git is not available"] })
+    end
+
+    it "returns a hash of HEAD information when git remote exists", :needs_network do
+      remote_info = described_class.remote_head(remote_url)
+      expect(remote_info[:branch]).to eq(head_branch)
+      expect(remote_info[:commit]).to match(/^[a-f0-9]+$/i)
+      expect(remote_info[:errors].present?).to be false
+    end
+
+    it "returns a hash with an error when git remote does not exist" do
+      remote_info = described_class.remote_head("not-a-repo")
+      expect(remote_info[:errors].present?).to be true
+    end
+  end
+
+  describe "::remote_tags" do
+    it "returns a hash with an error when git is not available" do
+      stub_const("HOMEBREW_SHIMS_PATH", HOMEBREW_PREFIX/"bin/shim")
+      expect(described_class.remote_tags(remote_url)).to eq({ errors: ["Git is not available"] })
+    end
+
+    it "returns a hash of tag/commit info when git remote exists", :needs_network do
+      remote_info = described_class.remote_tags(remote_url)
+      expect(remote_info[:tags].present?).to be true
+      expect(remote_info[:tags].all? { |_tag, commit| commit.match?(/^[a-f0-9]+$/i) }).to be true
+      expect(remote_info[:errors].present?).to be false
+    end
+
+    it "returns a hash with an error when git remote does not exist" do
+      remote_info = described_class.remote_tags("not-a-repo")
+      expect(remote_info[:errors].present?).to be true
     end
   end
 end

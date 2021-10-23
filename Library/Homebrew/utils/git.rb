@@ -1,22 +1,42 @@
 # typed: false
 # frozen_string_literal: true
 
+require "system_command"
+
 module Utils
   # Helper functions for querying Git information.
   #
   # @see GitRepositoryExtension
   # @api private
   module Git
+    extend T::Sig
+
+    include SystemCommand::Mixin
+
     module_function
 
-    def available?
-      version.present?
+    # Used to identify the HEAD branch in `git ls-remote --symref` output.
+    LS_REMOTE_HEAD_BRANCH_REGEX = %r{^ref:\s*refs/heads/(?<branch>[^\s]+?)\s+?HEAD\s*$}.freeze
+
+    # Used to identify the HEAD commit in `git ls-remote` output.
+    LS_REMOTE_HEAD_COMMIT_REGEX = /^(?<commit>[a-f0-9]+?)\s+?HEAD\s*$/.freeze
+
+    # Used to identify the commit hash and tag name from a line of
+    # `git ls-remote` output.
+    LS_REMOTE_TAG_REGEX = %r{^(?<commit>[a-f0-9]+?)\s+?refs/tags/(?<tag>\S+)\s*$}.freeze
+
+    def available?(**options)
+      version(**options).present?
     end
 
-    def version
+    def version(**options)
       return @version if defined?(@version)
 
-      stdout, _, status = system_command(git, args: ["--version"], verbose: false, print_stderr: false)
+      syscommand_options = options
+      syscommand_options[:print_stderr] = false if options[:print_stderr].blank?
+      syscommand_options[:verbose] = false if options[:verbose].blank?
+
+      stdout, _, status = system_command(git, args: ["--version"], **syscommand_options)
       @version = status.success? ? stdout.chomp[/git version (\d+(?:\.\d+)*)/, 1] : nil
     end
 
@@ -37,6 +57,56 @@ module Utils
       return true unless available?
 
       quiet_system "git", "ls-remote", url
+    end
+
+    sig { params(args: String, options: T.untyped).returns(T::Hash[Symbol, T.untyped]) }
+    def ls_remote(*args, **options)
+      return { errors: ["Git is not available"] } unless available?(**options)
+
+      stdout, stderr, _status = system_command(
+        git,
+        args: ["ls-remote"].union(args),
+        **options,
+      )
+      return { errors: stderr.split("\n") } if stderr.present?
+
+      stdout.present? ? { output: stdout } : {}
+    end
+
+    sig { params(url: String, options: T.untyped).returns(T::Hash[Symbol, T.untyped]) }
+    def remote_head(url, **options)
+      remote_info = ls_remote("--symref", url, "HEAD", **options)
+      return remote_info if remote_info[:errors].present?
+      return {} if remote_info[:output].blank?
+
+      data = {}
+
+      if (branch_match = remote_info[:output].match(LS_REMOTE_HEAD_BRANCH_REGEX))
+        data[:branch] = branch_match[:branch]
+      end
+
+      if (commit_match = remote_info[:output].match(LS_REMOTE_HEAD_COMMIT_REGEX))
+        data[:commit] = commit_match[:commit]
+      end
+
+      data
+    end
+
+    sig { params(url: String, options: T.untyped).returns(T::Hash[Symbol, T.untyped]) }
+    def remote_tags(url, **options)
+      remote_info = ls_remote("--tags", url, **options)
+      return remote_info if remote_info[:errors].present?
+      return {} if remote_info[:output].blank?
+
+      data = { tags: {} }
+      remote_info[:output].split("\n").each do |line|
+        matches = line.match(LS_REMOTE_TAG_REGEX)
+        next if matches.blank? || matches[:tag].blank? || matches[:commit].blank?
+
+        data[:tags][matches[:tag]] = matches[:commit]
+      end
+
+      data
     end
 
     def clear_available_cache
