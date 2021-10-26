@@ -17,7 +17,8 @@ module Homebrew
         Show the unbottled dependents of formulae.
       EOS
       flag   "--tag=",
-             description: "Use the specified bottle tag (e.g. `big_sur`) instead of the current OS."
+             description: "Use the specified bottle tag(s) (e.g. `big_sur` or `monterey,catalina`) instead " \
+                          "of the current OS."
       switch "--dependents",
              description: "Skip getting analytics data and sort by number of dependents instead."
       switch "--total",
@@ -35,44 +36,48 @@ module Homebrew
 
     Formulary.enable_factory_cache!
 
-    @bottle_tag = if (tag = args.tag)
-      Utils::Bottles::Tag.from_symbol(tag.to_sym)
+    tags = if (tags = args.tag&.split(","))
+      tags.map { |tag| Utils::Bottles::Tag.from_symbol(tag.to_sym) }
     else
-      Utils::Bottles.tag
+      [Utils::Bottles.tag]
     end
 
-    if args.named.blank?
-      ohai "Getting formulae..."
-    elsif args.total?
-      raise UsageError, "cannot specify `<formula>` and `--total`."
+    tags.each do |tag|
+      @bottle_tag = tag
+
+      if args.named.blank?
+        ohai "Getting formulae..."
+      elsif args.total?
+        raise UsageError, "cannot specify `<formula>` and `--total`."
+      end
+
+      formulae, all_formulae, formula_installs =
+        formulae_all_installs_from_args(args)
+      deps_hash, uses_hash = deps_uses_from_formulae(all_formulae)
+
+      if args.dependents?
+        formula_dependents = {}
+        formulae = formulae.sort_by do |f|
+          dependents = uses_hash[f.name]&.length || 0
+          formula_dependents[f.name] ||= dependents
+        end.reverse
+      end
+
+      if args.total?
+        output_total(formulae)
+        next
+      end
+
+      noun, hash = if args.named.present?
+        [nil, {}]
+      elsif args.dependents?
+        ["dependents", formula_dependents]
+      else
+        ["installs", formula_installs]
+      end
+
+      output_unbottled(formulae, deps_hash, noun, hash, args.named.present?)
     end
-
-    formulae, all_formulae, formula_installs =
-      formulae_all_installs_from_args(args)
-    deps_hash, uses_hash = deps_uses_from_formulae(all_formulae)
-
-    if args.dependents?
-      formula_dependents = {}
-      formulae = formulae.sort_by do |f|
-        dependents = uses_hash[f.name]&.length || 0
-        formula_dependents[f.name] ||= dependents
-      end.reverse
-    end
-
-    if args.total?
-      output_total(formulae)
-      return
-    end
-
-    noun, hash = if args.named.present?
-      [nil, {}]
-    elsif args.dependents?
-      ["dependents", formula_dependents]
-    else
-      ["installs", formula_installs]
-    end
-
-    output_unbottled(formulae, deps_hash, noun, hash, args.named.present?)
   end
 
   def formulae_all_installs_from_args(args)
