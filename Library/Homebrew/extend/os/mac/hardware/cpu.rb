@@ -55,12 +55,15 @@ module Hardware
         sysctl_int("machdep.cpu.extmodel")
       end
 
-      def aes?
-        sysctl_bool("hw.optional.aes")
-      end
-
-      def altivec?
-        sysctl_bool("hw.optional.altivec")
+      %w[
+        aes
+        altivec
+        avx512f
+        neon
+        sse3
+        sse4_2
+      ].each do |flag|
+        define_method("#{flag}?") { sysctl_bool("hw.optional.#{flag}") }
       end
 
       def avx?
@@ -71,16 +74,8 @@ module Hardware
         sysctl_bool("hw.optional.avx2_0")
       end
 
-      def sse3?
-        sysctl_bool("hw.optional.sse3")
-      end
-
       def ssse3?
         sysctl_bool("hw.optional.supplementalsse3")
-      end
-
-      def sse4_2?
-        sysctl_bool("hw.optional.sse4_2")
       end
 
       # NOTE: this is more reliable than checking uname.

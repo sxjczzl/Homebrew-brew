@@ -110,8 +110,21 @@ module Hardware
         @features ||= flags[1..].map(&:intern)
       end
 
-      %w[aes altivec avx avx2 lm ssse3 sse4_2].each do |flag|
+      %w[
+        aes
+        altivec
+        avx
+        avx2
+        avx512f
+        lm
+        ssse3
+        sse4_2
+      ].each do |flag|
         define_method("#{flag}?") { flags.include? flag }
+      end
+
+      def neon?
+        flags.include?("neon") || flags.include?("asimd")
       end
 
       def sse3?
