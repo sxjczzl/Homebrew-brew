@@ -263,7 +263,7 @@ class FormulaInstaller
           You can try to install from source with:
             brew install --build-from-source #{formula}
           Please note building from source is unsupported. You will encounter build
-          failures with some formulae. If you experience any issues please create pull
+          failures with some formulas. If you experience any issues please create pull
           requests instead of asking for help on Homebrew's GitHub, Twitter or any other
           official channels.
         EOS
