@@ -61,6 +61,14 @@ module Homebrew
         [:switch, "-g", "--git", {
           description: "Create a Git repository, useful for creating patches to the software.",
         }],
+        [:switch, "--HEAD", {
+          description: "If <formula> defines it, install the HEAD version, aka. main, trunk, unstable, master.",
+        }],
+        [:switch, "--fetch-HEAD", {
+          description: "Fetch the upstream repository to detect if the HEAD installation of the " \
+                       "formula is outdated. Otherwise, the repository's HEAD will only be checked for " \
+                       "updates when a new stable or development version has been released.",
+        }],
       ].each do |options|
         send(*options)
         conflicts "--cask", options[-2]
@@ -118,6 +126,8 @@ module Homebrew
       Migrator.migrate_if_needed(formula, force: args.force?)
       reinstall_formula(
         formula,
+        head:                       args.HEAD?,
+        fetch_head:                 args.fetch_HEAD?,
         flags:                      args.flags_only,
         installed_on_request:       args.named.present?,
         force_bottle:               args.force_bottle?,

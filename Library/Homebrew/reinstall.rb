@@ -11,6 +11,8 @@ module Homebrew
   def reinstall_formula(
     formula,
     flags:,
+    head: false,
+    fetch_head: false,
     installed_on_request: false,
     force_bottle: false,
     build_from_source_formulae: [],
