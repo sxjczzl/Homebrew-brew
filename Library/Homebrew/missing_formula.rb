@@ -9,9 +9,9 @@ module Homebrew
   # @api private
   module MissingFormula
     class << self
-      def reason(name, silent: false, show_info: false)
+      def reason(name, silent: false, show_info: false, deleted: nil)
         cask_reason(name, silent: silent, show_info: show_info) || disallowed_reason(name) ||
-          tap_migration_reason(name) || deleted_reason(name, silent: silent)
+          tap_migration_reason(name) || deleted_reason(name, silent: silent, since: deleted)
       end
 
       def disallowed_reason(name)
@@ -127,13 +127,14 @@ module Homebrew
         message
       end
 
-      def deleted_reason(name, silent: false)
+      def deleted_reason(name, silent: false, since: nil)
         path = Formulary.path name
         return if File.exist? path
 
         tap = Tap.from_path(path)
         return if tap.nil? || !File.exist?(tap.path)
 
+        since ||= "1 month ago"
         relative_path = path.relative_path_from tap.path
 
         tap.path.cd do
@@ -148,7 +149,7 @@ module Homebrew
             end
           end
 
-          log_command = "git log --since='1 month ago' --diff-filter=D " \
+          log_command = "git log --since='#{since}' --diff-filter=D " \
                         "--name-only --max-count=1 " \
                         "--format=%H\\\\n%h\\\\n%B -- #{relative_path}"
           hash, short_hash, *commit_message, relative_path =

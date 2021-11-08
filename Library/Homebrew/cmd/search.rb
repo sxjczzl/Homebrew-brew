@@ -41,6 +41,8 @@ module Homebrew
              description: "Search online and locally for formulae."
       switch "--cask", "--casks",
              description: "Search online and locally for casks."
+      flag "--deleted=",
+           description: "Search for a formula deleted after a given date (default: `1 month ago`)."
       switch "--desc",
              description: "Search for formulae with a description matching <text> and casks with "\
                           "a name matching <text>."
@@ -58,6 +60,8 @@ module Homebrew
                description: "Search for <text> in the given database."
       end
 
+      conflicts "--deleted", "--desc"
+      conflicts "--deleted", "--pull-request"
       conflicts "--desc", "--pull-request"
       conflicts "--open", "--closed"
       conflicts(*package_manager_switches)
@@ -111,7 +115,9 @@ module Homebrew
 
       count = all_formulae.count + all_casks.count
 
-      if $stdout.tty? && (reason = MissingFormula.reason(query, silent: true)) && local_casks.exclude?(query)
+      if $stdout.tty? &&
+         (reason = MissingFormula.reason(query, silent: true, deleted: args.deleted)) &&
+         local_casks.exclude?(query)
         if count.positive?
           puts
           puts "If you meant #{query.inspect} specifically:"
