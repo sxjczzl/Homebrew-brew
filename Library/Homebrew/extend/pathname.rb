@@ -379,9 +379,12 @@ class Pathname
     env_export = +""
     env.each { |key, value| env_export << "#{key}=\"#{value}\" " }
     dirname.mkpath
+
+    # We pass -a here to "trick" the target program into not seeing
+    # the env script at all.
     write <<~SH
       #!/bin/bash
-      #{env_export}exec "#{target}" #{args} "$@"
+      #{env_export}exec -a "#{self}" #{target}" #{args} "$@"
     SH
   end
 
@@ -391,9 +394,37 @@ class Pathname
     Pathname.glob("#{self}/*") do |file|
       next if file.directory?
 
-      dst.install(file)
-      new_file = dst.join(file.basename)
-      file.write_env_script(new_file, env)
+      # things like meson get mighty confused by the env scripts because
+      # it obscures the original binary name, which meson uses to calculate
+      # internal python paths. So if the target is already using a #!, we
+      # simply enhance it rather than creating the env script.
+      #
+      # The usage of -S to env is the only somewhat exotic thing here. It's
+      # in all env binaries that homebrew runs on.
+
+      used_env = false
+
+      if file.read(2) == "#!"
+        lines = file.readlines
+
+        unless lines.empty?
+          first = lines[0]
+          if first
+            env_export = +""
+            env.each { |key, value| env_export << "#{key}=\"#{value}\" " }
+            lines[0] = "#!/usr/bin/env -S #{env_export}#{first[2..]}"
+
+            file.write lines.join
+            used_env = true
+          end
+        end
+      end
+
+      unless used_env
+        dst.install(file)
+        new_file = dst.join(file.basename)
+        file.write_env_script(new_file, env)
+      end
     end
   end
 
