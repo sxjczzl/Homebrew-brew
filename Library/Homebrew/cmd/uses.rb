@@ -85,7 +85,7 @@ module Homebrew
   def intersection_of_dependents(use_runtime_dependents, used_formulae, args:)
     recursive = args.recursive?
     show_formulae_and_casks = !args.formula? && !args.cask?
-    includes, ignores = args_includes_ignores(args, uses: true)
+    includes, ignores = args_includes_ignores(args)
 
     deps = []
     if use_runtime_dependents
@@ -97,7 +97,8 @@ module Homebrew
       if show_formulae_and_casks || args.cask?
         deps += select_used_dependents(
           dependents(Cask::Caskroom.casks),
-          used_formulae, recursive, includes, ignores
+          used_formulae, recursive, includes, ignores,
+          skip_recursive_build_dependents: false
         )
       end
 
@@ -110,14 +111,30 @@ module Homebrew
         deps += args.installed? ? Cask::Caskroom.casks : Cask::Cask.to_a
       end
 
-      select_used_dependents(dependents(deps), used_formulae, recursive, includes, ignores)
+      select_used_dependents(
+        dependents(deps),
+        used_formulae,
+        recursive,
+        includes,
+        ignores,
+        skip_recursive_build_dependents: args.skip_recursive_build_dependents?,
+      )
     end
   end
 
-  def select_used_dependents(dependents, used_formulae, recursive, includes, ignores)
+  def select_used_dependents(
+    dependents, used_formulae, recursive, includes, ignores, skip_recursive_build_dependents:
+  )
     dependents.select do |d|
       deps = if recursive
-        recursive_includes(Dependency, d, includes, ignores, used_formulae)
+        recursive_includes(
+          Dependency,
+          d,
+          includes,
+          ignores,
+          used_formulae,
+          skip_recursive_build_dependents: skip_recursive_build_dependents,
+        )
       else
         reject_ignores(d.deps, ignores, includes)
       end

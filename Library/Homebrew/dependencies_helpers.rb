@@ -7,7 +7,7 @@ require "cask_dependent"
 #
 # @api private
 module DependenciesHelpers
-  def args_includes_ignores(args, uses: false)
+  def args_includes_ignores(args)
     includes = []
     ignores = []
 
@@ -30,15 +30,21 @@ module DependenciesHelpers
     end
 
     ignores << "recommended?" if args.skip_recommended?
-    ignores << "recursive-build?" if uses && args.skip_recursive_build_dependents?
 
     [includes, ignores]
   end
 
-  def recursive_includes(klass, root_dependent, includes, ignores, used_formulae = [])
+  def recursive_includes(
+    klass,
+    root_dependent,
+    includes,
+    ignores,
+    used_formulae = [],
+    skip_recursive_build_dependents: false
+  )
     raise ArgumentError, "Invalid class argument: #{klass}" if klass != Dependency && klass != Requirement
 
-    cache_key = "recursive_includes_#{includes}_#{ignores}"
+    cache_key = "recursive_includes_#{includes}_#{ignores}#{"_no_recursive_build" if skip_recursive_build_dependents}"
 
     klass.expand(root_dependent, cache_key: cache_key) do |dependent, dep|
       if dep.recommended?
@@ -49,7 +55,7 @@ module DependenciesHelpers
         keep = false
         keep ||= dep.test? && includes.include?("test?") && dependent == root_dependent
         keep ||= dep.build? && includes.include?("build?") &&
-                 (ignores.exclude?("recursive-build?") || used_formulae.include?(dep.to_formula))
+                 (!skip_recursive_build_dependents || used_formulae.include?(dep.to_formula))
         klass.prune unless keep
       end
 
