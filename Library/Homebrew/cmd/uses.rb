@@ -38,6 +38,9 @@ module Homebrew
              description: "Include all formulae that specify <formula> as `:optional` type dependency."
       switch "--skip-recommended",
              description: "Skip all formulae that specify <formula> as `:recommended` type dependency."
+      switch "--skip-recursive-build-dependents",
+             depends_on:  "--recursive",
+             description: "Skip dependents of a build dependent."
       switch "--formula", "--formulae",
              description: "Include only formulae."
       switch "--cask", "--casks",
@@ -82,7 +85,7 @@ module Homebrew
   def intersection_of_dependents(use_runtime_dependents, used_formulae, args:)
     recursive = args.recursive?
     show_formulae_and_casks = !args.formula? && !args.cask?
-    includes, ignores = args_includes_ignores(args)
+    includes, ignores = args_includes_ignores(args, uses: true)
 
     deps = []
     if use_runtime_dependents
@@ -114,7 +117,7 @@ module Homebrew
   def select_used_dependents(dependents, used_formulae, recursive, includes, ignores)
     dependents.select do |d|
       deps = if recursive
-        recursive_includes(Dependency, d, includes, ignores)
+        recursive_includes(Dependency, d, includes, ignores, used_formulae)
       else
         reject_ignores(d.deps, ignores, includes)
       end
