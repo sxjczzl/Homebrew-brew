@@ -54,9 +54,14 @@ module DependenciesHelpers
       elsif dep.build? || dep.test?
         keep = false
         keep ||= dep.test? && includes.include?("test?") && dependent == root_dependent
-        keep ||= dep.build? && includes.include?("build?") &&
-                 (!skip_recursive_build_dependents || used_formulae.include?(dep.to_formula))
+        keep ||= dep.build? && includes.include?("build?")
         klass.prune unless keep
+
+        next unless skip_recursive_build_dependents
+        next unless dep.build?
+        next if dependent == root_dependent && used_formulae.include?(dep.to_formula)
+
+        klass.prune
       end
 
       # If a tap isn't installed, we can't find the dependencies of one of
