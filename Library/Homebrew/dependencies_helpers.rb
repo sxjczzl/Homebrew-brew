@@ -44,8 +44,9 @@ module DependenciesHelpers
   )
     raise ArgumentError, "Invalid class argument: #{klass}" if klass != Dependency && klass != Requirement
 
-    cache_key = +"recursive_includes_#{includes}_#{ignores}"
-    cache_key << "_no_recursive_build_#{used_formulae.join("_")}" if skip_recursive_build_dependents
+    cache_key = +"recursive_includes_#{includes.join("_")}_#{ignores.join("_")}"
+    cache_key << "_#{root_dependent}" if includes.include?("test?")
+    cache_key << "_#{root_dependent}_no_recursive_build_#{used_formulae.join("_")}" if skip_recursive_build_dependents
     cache_key.freeze
 
     klass.expand(root_dependent, cache_key: cache_key) do |dependent, dep|
