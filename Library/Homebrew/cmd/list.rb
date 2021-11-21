@@ -40,6 +40,12 @@ module Homebrew
       switch "--pinned",
              description: "List only pinned formulae, or only the specified (pinned) "\
                           "formulae if <formula> are provided. See also `pin`, `unpin`."
+      switch "--installed-on-request",
+             depends_on:  "--formula",
+             description: "List only formulae that were installed on request."
+      switch "--installed-as-dependency",
+             depends_on:  "--formula",
+             description: "List formulae that were installed only to satisfy dependencies."
       # passed through to ls
       switch "-1",
              description: "Force output to be one entry per line. " \
@@ -55,20 +61,25 @@ module Homebrew
                           "Has no effect when a formula or cask name is passed as an argument."
 
       conflicts "--formula", "--cask"
+      conflicts "--full-name", "--pinned"
       conflicts "--full-name", "--versions"
       conflicts "--pinned", "--multiple"
       conflicts "--pinned", "--cask"
       conflicts "--cask", "--multiple"
+      conflicts "--installed-on-request", "--installed-as-dependency"
       ["--formula", "--cask", "--full-name", "--versions", "--pinned"].each do |flag|
         conflicts "--unbrewed", flag
       end
-      ["-1", "-l", "-r", "-t"].each do |flag|
+      ["-l", "-r", "-t"].each do |flag|
         conflicts "--unbrewed", flag
         conflicts "--versions", flag
         conflicts "--pinned", flag
-      end
-      ["--pinned", "-l", "-r", "-t"].each do |flag|
         conflicts "--full-name", flag
+        conflicts "--installed-on-request", flag
+        conflicts "--installed-as-dependency", flag
+      end
+      ["--unbrewed", "--versions", "--pinned"].each do |flag|
+        conflicts "-1", flag
       end
 
       named_args [:installed_formula, :installed_cask]
@@ -86,12 +97,19 @@ module Homebrew
       return
     end
 
-    if args.full_name?
+    if args.pinned? || args.versions?
+      filtered_list args: args
+    elsif args.full_name? || args.installed_on_request? || args.installed_as_dependency?
       unless args.cask?
-        formula_names = args.no_named? ? Formula.installed : args.named.to_resolved_formulae
-        full_formula_names = formula_names.map(&:full_name).sort(&tap_and_name_comparison)
-        full_formula_names = Formatter.columns(full_formula_names) unless args.public_send(:"1?")
-        puts full_formula_names if full_formula_names.present?
+        formulae = args.no_named? ? Formula.installed : args.named.to_resolved_formulae
+        formulae = formulae.select { |f| select_formula?(f, args) }
+        formula_names = if args.full_name?
+          formulae.map(&:full_name).sort(&tap_and_name_comparison)
+        else
+          formulae.map(&:name).sort
+        end
+        formula_names = Formatter.columns(formula_names) unless args.public_send(:"1?")
+        puts formula_names if formula_names.present?
       end
       if args.cask? || (!args.formula? && args.no_named?)
         cask_names = if args.no_named?
@@ -105,8 +123,6 @@ module Homebrew
       end
     elsif args.cask?
       list_casks(args.named.to_casks, args: args)
-    elsif args.pinned? || args.versions?
-      filtered_list args: args
     elsif args.no_named?
       ENV["CLICOLOR"] = nil
 
@@ -153,19 +169,39 @@ module Homebrew
       pinned_versions = {}
       names.sort.each do |d|
         keg_pin = (HOMEBREW_PINNED_KEGS/d.basename.to_s)
-        pinned_versions[d] = keg_pin.readlink.basename.to_s if keg_pin.exist? || keg_pin.symlink?
+        next if !keg_pin.exist? && !keg_pin.symlink?
+
+        keg = keg_pin.realpath
+        next unless select_keg?(keg, args)
+
+        pinned_versions[d] = keg.basename.to_s
       end
       pinned_versions.each do |d, version|
         puts d.basename.to_s.concat(args.versions? ? " #{version}" : "")
       end
     else # --versions without --pinned
       names.sort.each do |d|
-        versions = d.subdirs.map { |pn| pn.basename.to_s }
+        versions = d.subdirs.map { |pn| pn.basename.to_s if select_keg?(pn, args) }.compact
+        next if versions.empty?
         next if args.multiple? && versions.length < 2
 
         puts "#{d.basename} #{versions * " "}"
       end
     end
+  end
+
+  def select_formula?(formula, args)
+    select_tab?(args) { Tab.for_formula(formula) }
+  end
+
+  def select_keg?(keg, args)
+    select_tab?(args) { Tab.for_keg(keg) }
+  end
+
+  def select_tab?(args)
+    return true if !args.installed_on_request? && !args.installed_as_dependency?
+
+    [args.installed_on_request?, !args.installed_as_dependency?].include?(yield.installed_on_request.present?)
   end
 
   def list_casks(casks, args:)
