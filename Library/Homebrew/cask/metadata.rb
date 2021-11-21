@@ -10,7 +10,7 @@ module Cask
     TIMESTAMP_FORMAT = "%Y%m%d%H%M%S.%L"
 
     def metadata_main_container_path
-      @metadata_main_container_path ||= caskroom_path.join(METADATA_SUBDIR)
+      caskroom_path.join(METADATA_SUBDIR)
     end
 
     def metadata_versioned_path(version: self.version)

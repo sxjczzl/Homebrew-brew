@@ -58,6 +58,7 @@ module Cask
       check_missing_verified
       check_no_match
       check_generic_artifacts
+      check_token_rename
       check_token_valid
       check_token_bad_words
       check_token_conflicts
@@ -474,6 +475,13 @@ module Cask
       rescue Locale::ParserError
         add_error "Locale '#{language}' is invalid."
       end
+    end
+
+    def check_token_rename
+      return unless cask.tap
+      return unless (new_token = cask.tap.cask_renames[cask.token])
+
+      add_error "#{cask.token} is reserved as the old token of #{new_token}"
     end
 
     def check_token_conflicts

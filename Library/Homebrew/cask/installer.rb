@@ -88,8 +88,7 @@ module Cask
       raise e
     end
 
-    def install
-      start_time = Time.now
+    def install(print_heading: true, start_time: Time.now)
       odebug "Cask::Installer#install"
 
       old_config = @cask.config
@@ -107,7 +106,7 @@ module Cask
 
       backup if force? && @cask.staged_path.exist? && @cask.metadata_versioned_path.exist?
 
-      oh1 "Installing Cask #{Formatter.identifier(@cask)}"
+      oh1 "Installing Cask #{Formatter.identifier(@cask)}" if print_heading
       opoo "macOS's Gatekeeper has been disabled for this Cask" unless quarantine?
       stage
 
@@ -388,8 +387,8 @@ module Cask
       @cask.config_path.atomic_write(@cask.config.to_json)
     end
 
-    def uninstall
-      oh1 "Uninstalling Cask #{Formatter.identifier(@cask)}"
+    def uninstall(print_heading: true)
+      oh1 "Uninstalling Cask #{Formatter.identifier(@cask)}" if print_heading
       uninstall_artifacts(clear: true)
       remove_config_file if !reinstall? && !upgrade?
       purge_versioned_files

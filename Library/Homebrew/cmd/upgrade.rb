@@ -65,15 +65,17 @@ module Homebrew
         [:switch, "--keep-tmp", {
           description: "Retain the temporary files created during installation.",
         }],
-        [:switch, "--display-times", {
-          env:         :display_install_times,
-          description: "Print install times for each package at the end of the run.",
-        }],
       ].each do |options|
         send(*options)
         conflicts "--cask", options[-2]
       end
+
+      switch "--display-times",
+             env:         :display_install_times,
+             description: "Print install times for each package at the end of the run."
+
       formula_options
+
       [
         [:switch, "--cask", "--casks", {
           description: "Treat all named arguments as casks. If no named arguments " \

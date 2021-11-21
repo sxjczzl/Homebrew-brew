@@ -167,14 +167,15 @@ module Cask
         require "cask/installer"
 
         start_time = Time.now
-        odebug "Started upgrade process for Cask #{old_cask}"
+        odebug "Started upgrade process for Cask #{new_cask}"
         old_config = old_cask.config
+        upgrade = old_cask.token == new_cask.token
 
         old_options = {
           binaries: binaries,
           verbose:  verbose,
           force:    force,
-          upgrade:  true,
+          upgrade:  upgrade,
         }.compact
 
         old_cask_installer =
@@ -188,19 +189,25 @@ module Cask
           force:          force,
           skip_cask_deps: skip_cask_deps,
           require_sha:    require_sha,
-          upgrade:        true,
+          upgrade:        upgrade,
           quarantine:     quarantine,
         }.compact
 
         new_cask_installer =
           Installer.new(new_cask, **new_options)
 
+        oh1 "Upgrading #{Formatter.identifier(new_cask)}"
+
+        unless upgrade
+          old_cask_installer.uninstall(print_heading: false)
+          new_cask_installer.install(print_heading: false, start_time: start_time)
+          return
+        end
+
         started_upgrade = false
         new_artifacts_installed = false
 
         begin
-          oh1 "Upgrading #{Formatter.identifier(old_cask)}"
-
           # Start new cask's installation steps
           new_cask_installer.check_conflicts
 

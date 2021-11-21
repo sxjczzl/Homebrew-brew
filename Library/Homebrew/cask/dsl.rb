@@ -259,10 +259,8 @@ module Cask
 
     # @api public
     def staged_path
-      return @staged_path if @staged_path
-
       cask_version = version || :unknown
-      @staged_path = caskroom_path.join(cask_version.to_s)
+      caskroom_path.join(cask_version.to_s)
     end
 
     # @api public

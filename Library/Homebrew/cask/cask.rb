@@ -102,7 +102,7 @@ module Cask
 
     def full_name
       return token if tap.nil?
-      return token if tap.user == "Homebrew"
+      return token if tap.official?
 
       "#{tap.name}/#{token}"
     end
@@ -121,7 +121,7 @@ module Cask
 
     def installed_caskfile
       installed_version = timestamped_versions.last
-      metadata_main_container_path.join(*installed_version, "Casks", "#{token}.rb")
+      metadata_main_container_path.join(*installed_version, "Casks").glob("*.rb").first
     end
 
     def config_path
@@ -129,7 +129,7 @@ module Cask
     end
 
     def caskroom_path
-      @caskroom_path ||= Caskroom.path.join(token)
+      Caskroom.path.join(installed_token || token)
     end
 
     def outdated?(greedy: false, greedy_latest: false, greedy_auto_updates: false)
@@ -183,6 +183,17 @@ module Cask
       end
     end
 
+    def installed_token
+      return token if Caskroom.path.join(token, ".metadata").glob("*").any?(&:directory?)
+
+      old_tokens.find { |token| Caskroom.path.join(token, ".metadata").glob("*").any?(&:directory?) }
+    end
+
+    def old_tokens
+      @old_tokens ||= tap.cask_renames.rassoc(token) if tap
+      @old_tokens ||= []
+    end
+
     def to_s
       @token
     end
@@ -201,6 +212,7 @@ module Cask
         "token"          => token,
         "full_token"     => full_name,
         "tap"            => tap&.name,
+        "old_tokens"     => old_tokens,
         "name"           => name,
         "desc"           => desc,
         "homepage"       => homepage,

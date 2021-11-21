@@ -151,15 +151,33 @@ module Cask
         ref.to_s.match?(HOMEBREW_TAP_CASK_REGEX)
       end
 
-      def initialize(tapped_name)
-        user, repo, token = tapped_name.split("/", 3)
-        super Tap.fetch(user, repo).cask_dir/"#{token}.rb"
+      def initialize(tapped_name, warn_renamed: true)
+        super cask_path(tapped_name, warn_renamed)
       end
 
       def load(config:)
         raise TapCaskUnavailableError.new(tap, token) unless tap.installed?
 
         super
+      end
+
+      private
+
+      def cask_path(tapped_name, warn_renamed)
+        user, repo, token = tapped_name.split("/", 3)
+        tap = Tap.fetch(user, repo)
+        cask_dir = tap.cask_dir
+        path = cask_dir/"#{token}.rb"
+
+        return path if path.file?
+        return path unless (new_token = tap.cask_renames[token])
+
+        new_path = cask_dir/"#{new_token}.rb"
+        return path unless new_path.file?
+
+        new_token = "#{tap}/#{new_token}" unless tap.official?
+        opoo "Use #{new_token} instead of deprecated #{token}" if warn_renamed
+        new_path
       end
     end
 
@@ -201,11 +219,11 @@ module Cask
       self.for(ref).path
     end
 
-    def self.load(ref, config: nil)
-      self.for(ref).load(config: config)
+    def self.load(ref, warn_renamed: true, config: nil)
+      self.for(ref, warn_renamed: warn_renamed).load(config: config)
     end
 
-    def self.for(ref)
+    def self.for(ref, warn_renamed: true)
       [
         FromInstanceLoader,
         FromContentLoader,
@@ -229,6 +247,23 @@ module Cask
           Cask #{ref} exists in multiple taps:
           #{loaders.map { |loader| "  #{loader.tap}/#{loader.token}" }.join("\n")}
         EOS
+      end
+
+      if Tap.default_cask_tap.cask_renames.key?(ref)
+        return FromTapLoader.new("#{Tap.default_cask_tap}/#{ref}", warn_renamed: warn_renamed)
+      end
+
+      possible_taps = Tap.select { |tap| tap.cask_renames.key?(ref) }
+
+      if possible_taps.size > 1
+        raise CaskError, <<~EOS
+          Cask #{ref} was renamed in multiple taps:
+          #{possible_taps.map { |tap| "  #{tap}/#{tap.cask_renames[ref]}" }.join("\n")}
+        EOS
+      end
+
+      unless possible_taps.empty?
+        return FromTapLoader.new("#{possible_taps.first}/#{ref}", warn_renamed: warn_renamed)
       end
 
       possible_installed_cask = Cask.new(ref)
