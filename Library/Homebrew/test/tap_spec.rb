@@ -37,6 +37,10 @@ describe Tap do
       { "oldname": "foo" }
     JSON
 
+    (path/"cask_renames.json").write <<~JSON
+      { "oldcask": "newcask" }
+    JSON
+
     (path/"tap_migrations.json").write <<~JSON
       { "removed-formula": "homebrew/foo" }
     JSON
@@ -171,6 +175,7 @@ describe Tap do
     expect(homebrew_foo_tap.alias_table).to eq("homebrew/foo/bar" => "homebrew/foo/foo")
     expect(homebrew_foo_tap.alias_reverse_table).to eq("homebrew/foo/foo" => ["homebrew/foo/bar"])
     expect(homebrew_foo_tap.formula_renames).to eq("oldname" => "foo")
+    expect(homebrew_foo_tap.cask_renames).to eq("oldcask" => "newcask")
     expect(homebrew_foo_tap.tap_migrations).to eq("removed-formula" => "homebrew/foo")
     expect(homebrew_foo_tap.command_files).to eq([cmd_file])
     expect(homebrew_foo_tap.to_hash).to be_kind_of(Hash)
@@ -523,6 +528,17 @@ describe Tap do
     end
   end
 
+  describe "Cask Lists" do
+    describe "#cask_renames" do
+      it "returns the cask_renames hash" do
+        setup_tap_files
+
+        expected_result = { "oldcask" => "newcask" }
+        expect(homebrew_foo_tap.cask_renames).to eq expected_result
+      end
+    end
+  end
+
   describe CoreTap do
     subject(:core_tap) { described_class.new }
 
@@ -566,6 +582,15 @@ describe Tap do
         (path/file).write formula_list_file_json
       end
 
+      cask_list_file_json = '{ "foocask": "foocask1", "barcask": "barcask1" }'
+      cask_list_file_contents = { "foocask" => "foocask1", "barcask" => "barcask1" }
+      %w[
+        cask_renames.json
+      ].each do |file|
+        (path/file).dirname.mkpath
+        (path/file).write cask_list_file_json
+      end
+
       alias_file = core_tap.alias_dir/"bar"
       alias_file.parent.mkpath
       ln_s formula_file, alias_file
@@ -582,6 +607,8 @@ describe Tap do
       expect(core_tap.audit_exceptions).to eq({ formula_list: formula_list_file_contents })
       expect(core_tap.style_exceptions).to eq({ formula_hash: formula_list_file_contents })
       expect(core_tap.pypi_formula_mappings).to eq formula_list_file_contents
+
+      expect(core_tap.cask_renames).to eq cask_list_file_contents
     end
   end
 end

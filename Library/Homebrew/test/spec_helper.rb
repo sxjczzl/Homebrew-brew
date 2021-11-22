@@ -269,6 +269,7 @@ RSpec.configure do |config|
         CoreTap.instance.path/".git",
         CoreTap.instance.alias_dir,
         CoreTap.instance.path/"formula_renames.json",
+        CoreTap.instance.path/"cask_renames.json",
         CoreTap.instance.path/"tap_migrations.json",
         CoreTap.instance.path/"audit_exceptions",
         CoreTap.instance.path/"style_exceptions",
