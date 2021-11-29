@@ -47,13 +47,13 @@ class DescriptionCacheStore < CacheStore
     return populate_if_empty! if database.empty?
     return if report.empty?
 
-    renamings   = report.select_formula(:R)
-    alterations = report.select_formula(:A) +
-                  report.select_formula(:M) +
+    renamings   = report.select_package(:renamed, :formulae)
+    alterations = report.select_package(:added, :formulae) +
+                  report.select_package(:modified, :formulae) +
                   renamings.map(&:last)
 
     update_from_formula_names!(alterations)
-    delete_from_formula_names!(report.select_formula(:D) +
+    delete_from_formula_names!(report.select_package(:deleted, :formulae) +
                                renamings.map(&:first))
   end
 

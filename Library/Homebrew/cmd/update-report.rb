@@ -104,9 +104,9 @@ module Homebrew
 
     if updated
       if hub.empty?
-        puts "No changes to formulae." unless args.quiet?
+        puts "No changes to packages." unless args.quiet?
       else
-        hub.dump(updated_formula_report: !args.preinstall?) unless args.quiet?
+        hub.dump(updated_package_report: !args.preinstall?) unless args.quiet?
         hub.reporters.each(&:migrate_tap_migration)
         hub.reporters.each { |r| r.migrate_formula_rename(force: args.force?, verbose: args.verbose?) }
         CacheStoreDatabase.use(:descriptions) do |db|
@@ -356,7 +356,7 @@ class Reporter
   def report(preinstall: false)
     return @report if @report
 
-    @report = Hash.new { |h, k| h[k] = [] }
+    @report = Hash.new { |h, k| h[k] = { formulae: [], casks: [] } }
     return @report unless updated?
 
     diff.each_line do |line|
@@ -366,34 +366,39 @@ class Reporter
 
       next unless dst.extname == ".rb"
 
-      if paths.any? { |p| tap.cask_file?(p) }
-        case status
-        when "A"
-          # Have a dedicated report array for new casks.
-          @report[:AC] << tap.formula_file_to_name(src)
-        when "D"
-          # Have a dedicated report array for deleted casks.
-          @report[:DC] << tap.formula_file_to_name(src)
-        when "M"
-          # Report updated casks
-          @report[:MC] << tap.formula_file_to_name(src)
+      package_type =
+        if paths.any? { |p| tap.cask_file?(p) }
+          :casks
+        elsif paths.any? { |p| tap.formula_file?(p) }
+          :formulae
+        else
+          next
         end
-      end
-
-      next unless paths.any? { |p| tap.formula_file?(p) }
 
       case status
       when "A", "D"
         full_name = tap.formula_file_to_name(src)
         name = full_name.split("/").last
         new_tap = tap.tap_migrations[name]
-        @report[status.to_sym] << full_name unless new_tap
+        unless new_tap
+          key =
+            case status
+            when "A" then :added
+            when "D" then :deleted
+            end
+          @report[key][package_type] << full_name
+        end
       when "M"
         name = tap.formula_file_to_name(src)
 
+        if package_type == :casks
+          @report[:modified][:casks] << name
+          next
+        end
+
         # Skip reporting updated formulae to speed up automatic updates.
         if preinstall
-          @report[:M] << name
+          @report[:modified][:formulae] << name
           next
         end
 
@@ -409,20 +414,20 @@ class Reporter
           onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
         end
 
-        @report[:M] << name
+        @report[:modified][:formulae] << name
       when /^R\d{0,3}/
         src_full_name = tap.formula_file_to_name(src)
         dst_full_name = tap.formula_file_to_name(dst)
-        # Don't report formulae that are moved within a tap but not renamed
+        # Don't report packages that are moved within a tap but not renamed
         next if src_full_name == dst_full_name
 
-        @report[:D] << src_full_name
-        @report[:A] << dst_full_name
+        @report[:deleted][package_type] << src_full_name
+        @report[:added][package_type] << dst_full_name
       end
     end
 
     renamed_formulae = Set.new
-    @report[:D].each do |old_full_name|
+    @report[:deleted][:formulae].each do |old_full_name|
       old_name = old_full_name.split("/").last
       new_name = tap.formula_renames[old_name]
       next unless new_name
@@ -433,10 +438,10 @@ class Reporter
         "#{tap}/#{new_name}"
       end
 
-      renamed_formulae << [old_full_name, new_full_name] if @report[:A].include? new_full_name
+      renamed_formulae << [old_full_name, new_full_name] if @report[:added][:formulae].include? new_full_name
     end
 
-    @report[:A].each do |new_full_name|
+    @report[:added][:formulae].each do |new_full_name|
       new_name = new_full_name.split("/").last
       old_name = tap.formula_renames.key(new_name)
       next unless old_name
@@ -451,9 +456,9 @@ class Reporter
     end
 
     unless renamed_formulae.empty?
-      @report[:A] -= renamed_formulae.map(&:last)
-      @report[:D] -= renamed_formulae.map(&:first)
-      @report[:R] = renamed_formulae.to_a
+      @report[:added][:formulae] -= renamed_formulae.map(&:last)
+      @report[:deleted][:formulae] -= renamed_formulae.map(&:first)
+      @report[:renamed][:formulae] = renamed_formulae.to_a
     end
 
     @report
@@ -464,7 +469,12 @@ class Reporter
   end
 
   def migrate_tap_migration
-    (report[:D] + report[:DC]).each do |full_name|
+    migrate_casks
+    migrate_formulae
+  end
+
+  def migrate_packages(packages)
+    packages.each do |full_name|
       name = full_name.split("/").last
       new_tap_name = tap.tap_migrations[name]
       next if new_tap_name.nil? # skip if not in tap_migrations list.
@@ -478,31 +488,38 @@ class Reporter
         new_full_name = "#{new_tap_name}/#{name}"
         name
       end
+      yield name, new_tap_name, new_name, new_full_name
+    end
+  end
+  private :migrate_packages
 
-      # This means it is a cask
-      if report[:DC].include? full_name
-        next unless (HOMEBREW_PREFIX/"Caskroom"/new_name).exist?
+  def migrate_casks
+    migrate_packages(report[:deleted][:casks]) do |name, new_tap_name, new_name, new_full_name|
+      next unless (HOMEBREW_PREFIX/"Caskroom"/new_name).exist?
 
-        new_tap = Tap.fetch(new_tap_name)
-        new_tap.install unless new_tap.installed?
-        ohai "#{name} has been moved to Homebrew.", <<~EOS
-          To uninstall the cask, run:
-            brew uninstall --cask --force #{name}
-        EOS
-        next if (HOMEBREW_CELLAR/new_name.split("/").last).directory?
+      new_tap = Tap.fetch(new_tap_name)
+      new_tap.install unless new_tap.installed?
+      ohai "#{name} has been moved to homebrew/core.", <<~EOS
+        To uninstall the cask, run:
+          brew uninstall --cask --force #{name}
+      EOS
+      next if (HOMEBREW_CELLAR/new_name.split("/").last).directory?
 
-        ohai "Installing #{new_name}..."
-        system HOMEBREW_BREW_FILE, "install", new_full_name
-        begin
-          unless Formulary.factory(new_full_name).keg_only?
-            system HOMEBREW_BREW_FILE, "link", new_full_name, "--overwrite"
-          end
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
+      ohai "Installing #{new_name}..."
+      system HOMEBREW_BREW_FILE, "install", new_full_name
+      begin
+        unless Formulary.factory(new_full_name).keg_only?
+          system HOMEBREW_BREW_FILE, "link", new_full_name, "--overwrite"
         end
-        next
+      rescue Exception => e # rubocop:disable Lint/RescueException
+        onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
       end
+    end
+  end
+  private :migrate_casks
 
+  def migrate_formulae
+    migrate_packages(report[:deleted][:formulae]) do |name, new_tap_name, new_name, _|
       next unless (dir = HOMEBREW_CELLAR/name).exist? # skip if formula is not installed.
 
       tabs = dir.subdirs.map { |d| Tab.for_keg(Keg.new(d)) }
@@ -512,7 +529,7 @@ class Reporter
       # For formulae migrated to cask: Auto-install cask or provide install instructions.
       if new_tap_name.start_with?("homebrew/cask")
         if new_tap.installed? && (HOMEBREW_PREFIX/"Caskroom").directory?
-          ohai "#{name} has been moved to Homebrew Cask."
+          ohai "#{name} has been moved to homebrew/cask."
           ohai "brew unlink #{name}"
           system HOMEBREW_BREW_FILE, "unlink", name
           ohai "brew cleanup"
@@ -520,13 +537,13 @@ class Reporter
           ohai "brew install --cask #{new_name}"
           system HOMEBREW_BREW_FILE, "install", "--cask", new_name
           ohai <<~EOS
-            #{name} has been moved to Homebrew Cask.
+            #{name} has been moved to homebrew/cask.
             The existing keg has been unlinked.
             Please uninstall the formula when convenient by running:
               brew uninstall --force #{name}
           EOS
         else
-          ohai "#{name} has been moved to Homebrew Cask.", <<~EOS
+          ohai "#{name} has been moved to homebrew/cask.", <<~EOS
             To uninstall the formula and install the cask, run:
               brew uninstall --force #{name}
               brew tap #{new_tap_name}
@@ -541,6 +558,7 @@ class Reporter
       end
     end
   end
+  private :migrate_formulae
 
   def migrate_formula_rename(force:, verbose:)
     Formula.installed.each do |formula|
@@ -593,65 +611,68 @@ class ReporterHub
     @reporters = []
   end
 
-  def select_formula(key)
-    @hash.fetch(key, [])
+  def select_package(key, package_type)
+    @hash.fetch(key, {}).fetch(package_type, [])
   end
 
   def add(reporter, preinstall: false)
     @reporters << reporter
-    report = reporter.report(preinstall: preinstall).delete_if { |_k, v| v.empty? }
-    @hash.update(report) { |_key, oldval, newval| oldval.concat(newval) }
+    report = reporter.report(preinstall: preinstall).delete_if { |_k, v| v[:formulae].empty? && v[:casks].empty? }
+    @hash.update(report) do |_key, oldval, newval|
+      oldval[:formulae].concat(newval[:formulae])
+      oldval[:casks].concat(newval[:casks])
+      oldval
+    end
   end
 
-  delegate empty?: :@hash
+  def empty?
+    @hash.values.all? { |v| v[:formulae].empty? && v[:casks].empty? }
+  end
 
-  def dump(updated_formula_report: true)
-    # Key Legend: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R)
-
-    dump_formula_report :A, "New Formulae"
-    if updated_formula_report
-      dump_formula_report :M, "Updated Formulae"
+  def dump(updated_package_report: true)
+    dump_package_report :added, :formulae, "New Formulae"
+    if updated_package_report
+      dump_package_report :modified, :formulae, "Updated Formulae"
     else
-      updated = select_formula(:M).count
+      updated = select_package(:modified, :formulae).count
       ohai "Updated Formulae", "Updated #{updated} #{"formula".pluralize(updated)}." if updated.positive?
     end
-    dump_formula_report :R, "Renamed Formulae"
-    dump_formula_report :D, "Deleted Formulae"
-    dump_formula_report :AC, "New Casks"
-    if updated_formula_report
-      dump_formula_report :MC, "Updated Casks"
+    dump_package_report :renamed, :formulae, "Renamed Formulae"
+    dump_package_report :deleted, :formulae, "Deleted Formulae"
+    dump_package_report :added, :casks, "New Casks"
+    if updated_package_report
+      dump_package_report :modified, :casks, "Updated Casks"
     else
-      updated = select_formula(:MC).count
+      updated = select_package(:modified, :casks).count
       ohai "Updated Casks", "Updated #{updated} #{"cask".pluralize(updated)}." if updated.positive?
     end
-    dump_formula_report :DC, "Deleted Casks"
+    dump_package_report :deleted, :casks, "Deleted Casks"
   end
 
   private
 
-  def dump_formula_report(key, title)
+  def dump_package_report(key, package_type, title)
     only_installed = Homebrew::EnvConfig.update_report_only_installed?
 
-    formulae = select_formula(key).sort.map do |name, new_name|
+    packages = select_package(key, package_type).sort.map do |name, new_name|
       # Format list items of renamed formulae
-      case key
-      when :R
-        name = pretty_installed(name) if installed?(name)
-        new_name = pretty_installed(new_name) if installed?(new_name)
+      if key == :renamed && package_type == :formulae
+        name = pretty_installed(name) if formula_installed?(name)
+        new_name = pretty_installed(new_name) if formula_installed?(new_name)
         "#{name} -> #{new_name}" unless only_installed
-      when :A
-        name if !installed?(name) && !only_installed
-      when :AC
+      elsif key == :added && package_type == :formulae
+        name if !formula_installed?(name) && !only_installed
+      elsif key == :added && package_type == :casks
         name.split("/").last if !cask_installed?(name) && !only_installed
-      when :MC, :DC
+      elsif package_type == :casks
         name = name.split("/").last
         if cask_installed?(name)
           pretty_installed(name)
         elsif !only_installed
           name
         end
-      else
-        if installed?(name)
+      elsif package_type == :formulae
+        if formula_installed?(name)
           pretty_installed(name)
         elsif !only_installed
           name
@@ -659,13 +680,13 @@ class ReporterHub
       end
     end.compact
 
-    return if formulae.empty?
+    return if packages.empty?
 
     # Dump formula list.
-    ohai title, Formatter.columns(formulae.sort)
+    ohai title, Formatter.columns(packages.sort)
   end
 
-  def installed?(formula)
+  def formula_installed?(formula)
     (HOMEBREW_CELLAR/formula.split("/").last).directory?
   end
 
