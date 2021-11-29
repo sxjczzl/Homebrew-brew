@@ -50,81 +50,16 @@ module Homebrew
   def output_update_report
     args = update_report_args.parse
 
-    # Run `brew update` (again) if we've got a linuxbrew-core CoreTap
-    if CoreTap.instance.installed? && CoreTap.instance.linuxbrew_core? &&
-       ENV["HOMEBREW_LINUXBREW_CORE_MIGRATION"].blank?
-      ohai "Re-running `brew update` for linuxbrew-core migration"
-
-      if ENV["HOMEBREW_CORE_DEFAULT_GIT_REMOTE"] != ENV["HOMEBREW_CORE_GIT_REMOTE"]
-        opoo <<~EOS
-          HOMEBREW_CORE_GIT_REMOTE was set: #{ENV["HOMEBREW_CORE_GIT_REMOTE"]}.
-          It has been unset for the migration.
-          You may need to change this from a linuxbrew-core mirror to a homebrew-core one.
-
-        EOS
-      end
-      ENV.delete("HOMEBREW_CORE_GIT_REMOTE")
-
-      if ENV["HOMEBREW_BOTTLE_DEFAULT_DOMAIN"] != ENV["HOMEBREW_BOTTLE_DOMAIN"]
-        opoo <<~EOS
-          HOMEBREW_BOTTLE_DOMAIN was set: #{ENV["HOMEBREW_BOTTLE_DOMAIN"]}.
-          It has been unset for the migration.
-          You may need to change this from a Linuxbrew package mirror to a Homebrew one.
-
-        EOS
-      end
-      ENV.delete("HOMEBREW_BOTTLE_DOMAIN")
-
-      ENV["HOMEBREW_LINUXBREW_CORE_MIGRATION"] = "1"
-      FileUtils.rm_f HOMEBREW_LOCKS/"update"
-
-      update_args = []
-      update_args << "--preinstall" if args.preinstall?
-      update_args << "--force" if args.force?
-      exec HOMEBREW_BREW_FILE, "update", *update_args
-    end
-
-    if !Utils::Analytics.messages_displayed? &&
-       !Utils::Analytics.disabled? &&
-       !Utils::Analytics.no_message_output?
-
-      ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] = "1"
-      # Use the shell's audible bell.
-      print "\a"
-
-      # Use an extra newline and bold to avoid this being missed.
-      ohai "Homebrew has enabled anonymous aggregate formula and cask analytics."
-      puts <<~EOS
-        #{Tty.bold}Read the analytics documentation (and how to opt-out) here:
-          #{Formatter.url("https://docs.brew.sh/Analytics")}#{Tty.reset}
-        No analytics have been recorded yet (nor will be during this `brew` run).
-
-      EOS
-
-      # Consider the messages possibly missed if not a TTY.
-      Utils::Analytics.messages_displayed! if $stdout.tty?
-    end
-
-    if Settings.read("donationmessage") != "true" && !args.quiet?
-      ohai "Homebrew is run entirely by unpaid volunteers. Please consider donating:"
-      puts "  #{Formatter.url("https://github.com/Homebrew/brew#donations")}\n"
-
-      # Consider the message possibly missed if not a TTY.
-      Settings.write "donationmessage", true if $stdout.tty?
-    end
+    run_brew_update_again_if_linuxbrew_core(args)
+    display_analytics_messages
+    display_donation_message(args)
 
     install_core_tap_if_necessary
 
     updated = false
     new_repository_version = nil
 
-    initial_revision = ENV["HOMEBREW_UPDATE_BEFORE"].to_s
-    current_revision = ENV["HOMEBREW_UPDATE_AFTER"].to_s
-    odie "update-report should not be called directly!" if initial_revision.empty? || current_revision.empty?
-
-    if initial_revision != current_revision
-      update_preinstall_header args: args
-      puts "Updated Homebrew from #{shorten_revision(initial_revision)} to #{shorten_revision(current_revision)}."
+    if report_homebrew_update(args)
       updated = true
 
       old_tag = Settings.read "latesttag"
@@ -144,29 +79,10 @@ module Homebrew
     updated_taps = []
     Tap.each do |tap|
       next unless tap.git?
-      next if (tap.core_tap? || tap == "homebrew/cask") && Homebrew::EnvConfig.install_from_api? && args.preinstall?
-
-      if ENV["HOMEBREW_MIGRATE_LINUXBREW_FORMULAE"].present? && tap.core_tap? &&
-         Settings.read("linuxbrewmigrated") != "true"
-        ohai "Migrating formulae from linuxbrew-core to homebrew-core"
-
-        LINUXBREW_CORE_MIGRATION_LIST.each do |name|
-          begin
-            formula = Formula[name]
-          rescue FormulaUnavailableError
-            next
-          end
-          next unless formula.any_version_installed?
-
-          keg = formula.installed_kegs.last
-          tab = Tab.for_keg(keg)
-          # force a `brew upgrade` from the linuxbrew-core version to the homebrew-core version (even if lower)
-          tab.source["versions"]["version_scheme"] = -1
-          tab.write
-        end
-
-        Settings.write "linuxbrewmigrated", true
-      end
+      next if (tap.core_tap? || tap == Tap.default_cask_tap) &&
+              Homebrew::EnvConfig.install_from_api? &&
+              args.preinstall?
+      next unless migrate_if_linuxbrew_core(tap)
 
       begin
         reporter = Reporter.new(tap)
@@ -198,31 +114,7 @@ module Homebrew
                                .update_from_report!(hub)
         end
 
-        if !args.preinstall? && !args.quiet?
-          outdated_formulae = Formula.installed.count(&:outdated?)
-          outdated_casks = Cask::Caskroom.casks.count(&:outdated?)
-          update_pronoun = if (outdated_formulae + outdated_casks) == 1
-            "it"
-          else
-            "them"
-          end
-          msg = ""
-          if outdated_formulae.positive?
-            msg += "#{Tty.bold}#{outdated_formulae}#{Tty.reset} outdated #{"formula".pluralize(outdated_formulae)}"
-          end
-          if outdated_casks.positive?
-            msg += " and " if msg.present?
-            msg += "#{Tty.bold}#{outdated_casks}#{Tty.reset} outdated #{"cask".pluralize(outdated_casks)}"
-          end
-          if msg.present?
-            puts
-            puts <<~EOS
-              You have #{msg} installed.
-              You can upgrade #{update_pronoun} with #{Tty.bold}brew upgrade#{Tty.reset}
-              or list #{update_pronoun} with #{Tty.bold}brew outdated#{Tty.reset}.
-            EOS
-          end
-        end
+        display_outdated_packages_message(args)
       end
       puts if args.preinstall?
     elsif !args.preinstall? && !ENV["HOMEBREW_UPDATE_FAILED"] && !ENV["HOMEBREW_MIGRATE_LINUXBREW_FORMULAE"]
@@ -233,19 +125,25 @@ module Homebrew
     link_completions_manpages_and_docs
     Tap.each(&:link_completions_and_manpages)
 
+    report_failed_fetch_taps
+    report_new_homebrew_version(new_repository_version, args)
+  end
+
+  def report_failed_fetch_taps
     failed_fetch_dirs = ENV["HOMEBREW_MISSING_REMOTE_REF_DIRS"]&.split("\n")
-    if failed_fetch_dirs.present?
-      failed_fetch_taps = failed_fetch_dirs.map { |dir| Tap.from_path(dir) }
+    return if failed_fetch_dirs.blank?
 
-      ofail <<~EOS
-        Some taps failed to update!
-        The following taps can not read their remote branches:
-          #{failed_fetch_taps.join("\n  ")}
-        This is happening because the remote branch was renamed or deleted.
-        Reset taps to point to the correct remote branches by running `brew tap --repair`
-      EOS
-    end
+    failed_fetch_taps = failed_fetch_dirs.map { |dir| Tap.from_path(dir) }
+    ofail <<~EOS
+      Some taps failed to update!
+      The following taps can not read their remote branches:
+        #{failed_fetch_taps.join("\n  ")}
+      This is happening because the remote branch was renamed or deleted.
+      Reset taps to point to the correct remote branches by running `brew tap --repair`
+    EOS
+  end
 
+  def report_new_homebrew_version(new_repository_version, args)
     return if new_repository_version.blank?
 
     puts
@@ -291,6 +189,145 @@ module Homebrew
     ofail <<~EOS
       Failed to link all completions, docs and manpages:
         #{e}
+    EOS
+  end
+
+  def run_brew_update_again_if_linuxbrew_core(args)
+    return unless CoreTap.instance.installed?
+    return unless CoreTap.instance.linuxbrew_core?
+    return if ENV["HOMEBREW_LINUXBREW_CORE_MIGRATION"].present?
+
+    ohai "Re-running `brew update` for linuxbrew-core migration"
+
+    if ENV["HOMEBREW_CORE_DEFAULT_GIT_REMOTE"] != ENV["HOMEBREW_CORE_GIT_REMOTE"]
+      opoo <<~EOS
+        HOMEBREW_CORE_GIT_REMOTE was set: #{ENV["HOMEBREW_CORE_GIT_REMOTE"]}.
+        It has been unset for the migration.
+        You may need to change this from a linuxbrew-core mirror to a homebrew-core one.
+
+      EOS
+    end
+    ENV.delete("HOMEBREW_CORE_GIT_REMOTE")
+
+    if ENV["HOMEBREW_BOTTLE_DEFAULT_DOMAIN"] != ENV["HOMEBREW_BOTTLE_DOMAIN"]
+      opoo <<~EOS
+        HOMEBREW_BOTTLE_DOMAIN was set: #{ENV["HOMEBREW_BOTTLE_DOMAIN"]}.
+        It has been unset for the migration.
+        You may need to change this from a Linuxbrew package mirror to a Homebrew one.
+
+      EOS
+    end
+    ENV.delete("HOMEBREW_BOTTLE_DOMAIN")
+
+    ENV["HOMEBREW_LINUXBREW_CORE_MIGRATION"] = "1"
+    FileUtils.rm_f HOMEBREW_LOCKS/"update"
+
+    update_args = []
+    update_args << "--preinstall" if args.preinstall?
+    update_args << "--force" if args.force?
+    exec HOMEBREW_BREW_FILE, "update", *update_args
+  end
+
+  def display_analytics_messages
+    return if Utils::Analytics.messages_displayed?
+    return if Utils::Analytics.disabled?
+    return if Utils::Analytics.no_message_output?
+
+    ENV["HOMEBREW_NO_ANALYTICS_THIS_RUN"] = "1"
+    # Use the shell's audible bell.
+    print "\a"
+
+    # Use an extra newline and bold to avoid this being missed.
+    ohai "Homebrew has enabled anonymous aggregate formula and cask analytics."
+    puts <<~EOS
+      #{Tty.bold}Read the analytics documentation (and how to opt-out) here:
+        #{Formatter.url("https://docs.brew.sh/Analytics")}#{Tty.reset}
+      No analytics have been recorded yet (nor will be during this `brew` run).
+
+    EOS
+
+    # Consider the messages possibly missed if not a TTY.
+    return unless $stdout.tty?
+
+    Utils::Analytics.messages_displayed!
+  end
+
+  def display_donation_message(args)
+    return if Settings.read("donationmessage") == "true"
+    return if args.quiet?
+
+    ohai "Homebrew is run entirely by unpaid volunteers. Please consider donating:"
+    puts "  #{Formatter.url("https://github.com/Homebrew/brew#donations")}\n"
+
+    # Consider the message possibly missed if not a TTY.
+    return unless $stdout.tty?
+
+    Settings.write "donationmessage", true
+  end
+
+  def report_homebrew_update(args)
+    initial_revision = ENV["HOMEBREW_UPDATE_BEFORE"].to_s
+    current_revision = ENV["HOMEBREW_UPDATE_AFTER"].to_s
+    odie "update-report should not be called directly!" if initial_revision.empty? || current_revision.empty?
+
+    return false if initial_revision == current_revision
+
+    update_preinstall_header args: args
+    puts "Updated Homebrew from #{shorten_revision(initial_revision)} to #{shorten_revision(current_revision)}."
+    true
+  end
+
+  def migrate_if_linuxbrew_core(tap)
+    return true if ENV["HOMEBREW_MIGRATE_LINUXBREW_FORMULAE"].blank?
+    return true unless tap.core_tap?
+    return true if Settings.read("linuxbrewmigrated") == "true"
+
+    ohai "Migrating formulae from linuxbrew-core to homebrew-core"
+
+    LINUXBREW_CORE_MIGRATION_LIST.each do |name|
+      begin
+        formula = Formula[name]
+      rescue FormulaUnavailableError
+        return false
+      end
+      return false unless formula.any_version_installed?
+
+      keg = formula.installed_kegs.last
+      tab = Tab.for_keg(keg)
+      # force a `brew upgrade` from the linuxbrew-core version to the homebrew-core version (even if lower)
+      tab.source["versions"]["version_scheme"] = -1
+      tab.write
+    end
+
+    Settings.write "linuxbrewmigrated", true
+    true
+  end
+
+  def display_outdated_packages_message(args)
+    return if args.preinstall? || args.quiet?
+
+    outdated_formulae = Formula.installed.count(&:outdated?)
+    outdated_casks = Cask::Caskroom.casks.count(&:outdated?)
+    update_pronoun = if (outdated_formulae + outdated_casks) == 1
+      "it"
+    else
+      "them"
+    end
+    msg = ""
+    if outdated_formulae.positive?
+      msg += "#{Tty.bold}#{outdated_formulae}#{Tty.reset} outdated #{"formula".pluralize(outdated_formulae)}"
+    end
+    if outdated_casks.positive?
+      msg += " and " if msg.present?
+      msg += "#{Tty.bold}#{outdated_casks}#{Tty.reset} outdated #{"cask".pluralize(outdated_casks)}"
+    end
+    return if msg.blank?
+
+    puts
+    puts <<~EOS
+      You have #{msg} installed.
+      You can upgrade #{update_pronoun} with #{Tty.bold}brew upgrade#{Tty.reset}
+      or list #{update_pronoun} with #{Tty.bold}brew outdated#{Tty.reset}.
     EOS
   end
 end
