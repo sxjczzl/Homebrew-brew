@@ -25,53 +25,94 @@ then
   exec /usr/bin/xcrun "$@"
 fi
 
-# shellcheck disable=SC2249
-case "$1" in
-  -*) exec /usr/bin/xcrun "$@" ;;
-esac
+allargs=("$@")
+mode="run"
+log=0
+while [[ $# -gt 0 ]]
+do
+  case "$1" in
+    -show-* | --show-* | -version | --version | -h | --h | -help | --help)
+      mode="show"
+      break 2
+      ;;
+    -f | --f | -find | --find)
+      mode="find"
+      shift
+      ;;
+    -r | --r | -run | --run)
+      mode="run"
+      shift
+      ;;
+    -l | --l | -log | --log)
+      log=1
+      shift
+      ;;
+    -sdk | --sdk | -toolchain | --toolchain)
+      shift
+      shift
+      ;;
+    -*)
+      shift
+      ;;
+    *)
+      program="$1"
+      shift
+      postargs=("$@")
+      break 2
+      ;;
+  esac
+done
 
-arg0="$1"
-shift
-
-exe="/usr/bin/${arg0}"
-if [[ -x "${exe}" ]]
+if [[ "${mode}" == "show" ]]
 then
-  if [[ -n "${HOMEBREW_PREFER_CLT_PROXIES}" ]]
+  exec /usr/bin/xcrun "${allargs[@]}"
+fi
+
+if [[ -z "${program}" ]]
+then
+  echo "Program name not passed." >&2
+  exit 1
+fi
+
+try_exe() {
+  if [[ -x "$1" ]]
   then
-    exec "${exe}" "$@"
-  elif [[ -z "${HOMEBREW_SDKROOT}" || ! -d "${HOMEBREW_SDKROOT}" ]]
-  then
-    exec "${exe}" "$@"
+    if [[ "${mode}" == "find" ]]
+    then
+      echo "$1"
+      exit 0
+    else
+      if [[ "${log}" == "1" ]]
+      then
+        echo "env" "SDKROOT=${SDKROOT}" "$1" "${postargs[@]}"
+      fi
+      exec "$1" "${postargs[@]}"
+    fi
   fi
-fi
+}
 
-SUPERBIN="$(cd "${0%/*}" && pwd -P)"
+superbin="$(cd "${0%/*}" && pwd -P)"
+try_exe "${superbin}/${program}"
 
-exe="$(/usr/bin/xcrun --find "${arg0}" 2>/dev/null)"
-if [[ -x "${exe}" && "${exe%/*}" != "${SUPERBIN}" ]]
-then
-  exec "${exe}" "$@"
-fi
+try_exe "/usr/bin/${program}"
+
+try_exe "$(/usr/bin/xcrun --find "${program}" 2>/dev/null)"
 
 old_IFS="${IFS}"
 IFS=':'
 for path in ${PATH}
 do
-  if [[ "${path}" == "${SUPERBIN}" ]]
+  if [[ "${path}" == "${superbin}" ]]
   then
     continue
   fi
 
-  exe="${path}/${arg0}"
-  if [[ -x "${exe}" ]]
-  then
-    exec "${exe}" "$@"
-  fi
+  try_exe "${path}/${program}"
 done
 IFS="${old_IFS}"
 
 echo >&2 "
-Failed to execute ${arg0} ${*}
+Failed to find ${program} ${*}
 
 Xcode and/or the CLT appear to be misconfigured. Try one or both of the following:
   xcodebuild -license
