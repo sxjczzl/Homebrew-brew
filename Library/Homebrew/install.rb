@@ -31,18 +31,8 @@ module Homebrew
     end
 
     def check_prefix
-      if (Hardware::CPU.intel? || Hardware::CPU.in_rosetta2?) &&
-         HOMEBREW_PREFIX.to_s == HOMEBREW_MACOS_ARM_DEFAULT_PREFIX
-        if Hardware::CPU.in_rosetta2?
-          odie <<~EOS
-            Cannot install under Rosetta 2 in ARM default prefix (#{HOMEBREW_PREFIX})!
-            To rerun under ARM use:
-                arch -arm64 brew install ...
-            To install under x86_64, install Homebrew into #{HOMEBREW_DEFAULT_PREFIX}.
-          EOS
-        else
-          odie "Cannot install on Intel processor in ARM default prefix (#{HOMEBREW_PREFIX})!"
-        end
+      if Hardware::CPU.intel? && HOMEBREW_PREFIX.to_s == HOMEBREW_MACOS_ARM_DEFAULT_PREFIX
+        odie "Cannot install on Intel processor in ARM default prefix (#{HOMEBREW_PREFIX})!"
       elsif Hardware::CPU.arm? && HOMEBREW_PREFIX.to_s == HOMEBREW_DEFAULT_PREFIX
         odie <<~EOS
           Cannot install in Homebrew on ARM processor in Intel default prefix (#{HOMEBREW_PREFIX})!

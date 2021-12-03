@@ -13,7 +13,7 @@ module Hardware
       def type
         case sysctl_int("hw.cputype")
         when MachO::Headers::CPU_TYPE_I386
-          :intel
+          in_rosetta2? ? :arm : :intel
         when MachO::Headers::CPU_TYPE_ARM64
           :arm
         else
