@@ -123,10 +123,6 @@ module Superenv
       ENV["ac_have_clock_syscall"] = "no"
     end
 
-    # The tools in /usr/bin proxy to the active developer directory.
-    # This means we can use them for any combination of CLT and Xcode.
-    self["HOMEBREW_PREFER_CLT_PROXIES"] = "1"
-
     # Deterministic timestamping.
     # This can work on older Xcode versions, but they contain some bugs.
     # Notably, Xcode 10.2 fixes issues where ZERO_AR_DATE affected file mtimes.
