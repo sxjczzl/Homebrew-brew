@@ -315,6 +315,8 @@ module Homebrew
 
     puts "From: #{Formatter.url(github_info(f))}"
 
+    puts "Also known as: #{f.aliases.join(", ")}" unless f.aliases.empty?
+
     puts "License: #{SPDX.license_expression_to_string f.license}" if f.license.present?
 
     unless f.deps.empty?
