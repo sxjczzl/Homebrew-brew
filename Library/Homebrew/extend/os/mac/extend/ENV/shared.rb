@@ -12,6 +12,9 @@ module SharedEnvExtension
 
     # Normalise the system Perl version used, where multiple may be available
     self["VERSIONER_PERL_VERSION"] = MacOS.preferred_perl_version
+
+    #Colin's hack: correctly set the DEVELOPER_DIR before building
+    self["DEVELOPER_DIR"] = MacOS.active_developer_dir
   end
 
   sig { returns(T::Boolean) }

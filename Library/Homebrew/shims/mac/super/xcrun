@@ -4,16 +4,18 @@
 # work at all (e.g. CLT-only in the Xcode 4.3 era). This script emulates
 # it and attempts to avoid these issues.
 
-# These could be used in conjunction with `--sdk` which ignores SDKROOT.
-# HOMEBREW_DEVELOPER_DIR, HOMEBREW_SDKROOT and HOMEBREW_PREFER_CLT_PROXIES are set by extend/ENV/super.rb
-# shellcheck disable=SC2154
-if [[ "$*" =~ (^| )-?-show-sdk-(path|version|build) && -n "${HOMEBREW_DEVELOPER_DIR}" ]]
-then
-  export DEVELOPER_DIR="${HOMEBREW_DEVELOPER_DIR}"
-else
-  # Some build tools set DEVELOPER_DIR, so discard it
-  unset DEVELOPER_DIR
-fi
+### Colin's hack: DEVELOPER_DIR is actually right where I want it, no need to mess it up by unsetting or resetting it
+###
+## These could be used in conjunction with `--sdk` which ignores SDKROOT.
+## HOMEBREW_DEVELOPER_DIR, HOMEBREW_SDKROOT and HOMEBREW_PREFER_CLT_PROXIES are set by extend/ENV/super.rb
+## shellcheck disable=SC2154
+#if [[ "$*" =~ (^| )-?-show-sdk-(path|version|build) && -n "${HOMEBREW_DEVELOPER_DIR}" ]]
+#then
+#  export DEVELOPER_DIR="${HOMEBREW_DEVELOPER_DIR}"
+#else
+#  # Some build tools set DEVELOPER_DIR, so discard it
+#  unset DEVELOPER_DIR
+#fi
 
 if [[ -z "${SDKROOT}" && -n "${HOMEBREW_SDKROOT}" ]]
 then
