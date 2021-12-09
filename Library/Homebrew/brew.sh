@@ -232,7 +232,7 @@ update-preinstall-timer() {
   sleep 3
   # Outputting a command but don't want to run it, hence single quotes.
   # shellcheck disable=SC2016
-  ohai 'Running `brew update --preinstall`...' >&2
+  ohai 'Running `brew update --preinstall`...'
   if [[ -z "${HOMEBREW_NO_ENV_HINTS}" && -z "${HOMEBREW_AUTO_UPDATE_SECS}" ]]
   then
     # shellcheck disable=SC2016
