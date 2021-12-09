@@ -70,10 +70,9 @@ module Cask
       odebug "Cask::Installer#fetch"
 
       verify_has_sha if require_sha? && !force?
+      satisfy_dependencies
 
       download(quiet: quiet, timeout: timeout)
-
-      satisfy_dependencies
     end
 
     def stage
