@@ -86,7 +86,7 @@ module Utils
 
       args << "--retry-max-time" << retry_max_time.round if retry_max_time.present?
 
-      args + extra_args
+      (args + extra_args).uniq
     end
 
     def curl_with_workarounds(
