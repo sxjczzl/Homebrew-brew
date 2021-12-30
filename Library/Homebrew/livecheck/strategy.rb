@@ -39,6 +39,9 @@ module Homebrew
       DEFAULT_CURL_ARGS = [
         # Follow redirections to handle mirrors, relocations, etc.
         "--location",
+        # Avoid progress bar text, so we can reliably identify `curl` error
+        # messages in output
+        "--silent",
       ].freeze
 
       # `curl` arguments used in `Strategy#page_headers` method.
@@ -47,7 +50,6 @@ module Homebrew
         "--head",
         # Some servers may not allow a HEAD request, so we use GET
         "--request", "GET",
-        "--silent"
       ] + DEFAULT_CURL_ARGS).freeze
 
       # `curl` arguments used in `Strategy#page_content` method.
