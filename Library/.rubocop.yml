@@ -217,7 +217,7 @@ Rails/Blank:
 Rails/CompactBlank:
   Enabled: true
 Rails/Delegate:
-  Enabled: false # TODO
+  Enabled: true
 Rails/DelegateAllowBlank:
   Enabled: true
 Rails/DurationArithmetic:
