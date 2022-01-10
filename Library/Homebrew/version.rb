@@ -13,6 +13,8 @@ class Version
 
   include Comparable
 
+  extend Forwardable
+
   sig { params(name: T.any(String, Symbol), full: T::Boolean).returns(Regexp) }
   def self.formula_optionally_versioned_regex(name, full: true)
     /#{"^" if full}#{Regexp.escape(name)}(@\d[\d.]*)?#{"$" if full}/
@@ -25,6 +27,8 @@ class Version
     abstract!
 
     include Comparable
+
+    extend Forwardable
 
     sig { params(val: String).returns(Token) }
     def self.create(val)
@@ -70,25 +74,13 @@ class Version
       "#<#{self.class.name} #{value.inspect}>"
     end
 
-    sig { returns(Integer) }
-    def hash
-      value.hash
-    end
+    def_delegator :value, :hash, :hash
 
-    sig { returns(Float) }
-    def to_f
-      value.to_f
-    end
+    def_delegator :value, :to_f, :to_f
 
-    sig { returns(Integer) }
-    def to_i
-      value.to_i
-    end
+    def_delegator :value, :to_i, :to_i
 
-    sig { returns(String) }
-    def to_s
-      value.to_s
-    end
+    def_delegator :value, :to_s, :to_s
     alias to_str to_s
 
     sig { returns(T::Boolean) }
@@ -609,25 +601,13 @@ class Version
     self.class.new([major, minor, patch].compact.join("."))
   end
 
-  sig { returns(T::Boolean) }
-  def empty?
-    version.empty?
-  end
+  def_delegator :version, :empty?, :empty?
 
-  sig { returns(Integer) }
-  def hash
-    version.hash
-  end
+  def_delegator :version, :hash, :hash
 
-  sig { returns(Float) }
-  def to_f
-    version.to_f
-  end
+  def_delegator :version, :to_f, :to_f
 
-  sig { returns(Integer) }
-  def to_i
-    version.to_i
-  end
+  def_delegator :version, :to_i, :to_i
 
   sig { returns(String) }
   def to_s

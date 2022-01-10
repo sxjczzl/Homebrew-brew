@@ -51,9 +51,7 @@ module Cask
         end
       end
 
-      def to_h
-        directives.to_h
-      end
+      def_delegator :directives, :to_h, :to_h
 
       sig { returns(String) }
       def summarize

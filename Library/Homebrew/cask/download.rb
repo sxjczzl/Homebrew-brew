@@ -12,6 +12,8 @@ module Cask
   class Download
     include Context
 
+    extend Forwardable
+
     attr_reader :cask
 
     def initialize(cask, quarantine: nil)
@@ -45,17 +47,13 @@ module Cask
       downloader.resolved_time_file_size(timeout: timeout)
     end
 
-    def clear_cache
-      downloader.clear_cache
-    end
+    def_delegator :downloader, :clear_cache, :clear_cache
 
     def cached_download
       downloader.cached_location
     end
 
-    def basename
-      downloader.basename
-    end
+    def_delegator :downloader, :basename, :basename
 
     def verify_download_integrity(fn)
       if @cask.sha256 == :no_check

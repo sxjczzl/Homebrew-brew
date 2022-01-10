@@ -13,6 +13,7 @@ require "extend/on_os"
 #
 # @api private
 class Resource
+  extend Forwardable
   extend T::Sig
 
   include Context
@@ -76,9 +77,7 @@ class Resource
     downloader.cached_location
   end
 
-  def clear_cache
-    downloader.clear_cache
-  end
+  def_delegator :downloader, :clear_cache, :clear_cache
 
   # Verifies download and unpacks it.
   # The block may call `|resource, staging| staging.retain!` to retain the staging

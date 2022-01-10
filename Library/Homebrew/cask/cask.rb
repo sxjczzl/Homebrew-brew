@@ -186,9 +186,7 @@ module Cask
       @token
     end
 
-    def hash
-      token.hash
-    end
+    def_delegator :token, :hash, :hash
 
     def eql?(other)
       instance_of?(other.class) && token == other.token

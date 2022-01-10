@@ -190,9 +190,7 @@ class SoftwareSpec
     uses_from_macos_elements.flat_map { |e| e.is_a?(Hash) ? e.keys : e }
   end
 
-  def deps
-    dependency_collector.deps
-  end
+  def_delegator :dependency_collector, :deps, :deps
 
   def recursive_dependencies
     deps_f = []
@@ -211,9 +209,7 @@ class SoftwareSpec
     recursive_dependencies
   end
 
-  def requirements
-    dependency_collector.requirements
-  end
+  def_delegator :dependency_collector, :requirements, :requirements
 
   def recursive_requirements
     Requirement.expand(self)

@@ -30,6 +30,7 @@ module Cask
   #
   # @api private
   class DSL
+    extend Forwardable
     ORDINARY_ARTIFACT_CLASSES = [
       Artifact::Installer,
       Artifact::App,
@@ -253,9 +254,7 @@ module Cask
       @artifacts ||= SortedSet.new
     end
 
-    def caskroom_path
-      cask.caskroom_path
-    end
+    def_delegator :cask, :caskroom_path, :caskroom_path
 
     # @api public
     def staged_path

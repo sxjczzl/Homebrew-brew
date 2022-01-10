@@ -77,12 +77,12 @@ class Version
       self
     end
 
-    sig { override.returns(Float) }
+    sig { returns(Float) }
     def to_f
       Float::NAN
     end
 
-    sig { override.returns(Integer) }
+    sig { returns(Integer) }
     def to_i
       0
     end

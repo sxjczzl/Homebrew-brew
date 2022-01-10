@@ -11,6 +11,7 @@ module Cask
 
       include Comparable
       extend Predicable
+      extend Forwardable
 
       def self.english_name
         @english_name ||= name.sub(/^.*:/, "").gsub(/(.)([A-Z])/, '\1 \2')
@@ -131,9 +132,7 @@ module Cask
         @cask = cask
       end
 
-      def config
-        cask.config
-      end
+      def_delegator :cask, :config, :config
 
       sig { returns(String) }
       def to_s

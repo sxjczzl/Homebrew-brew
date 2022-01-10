@@ -136,9 +136,7 @@ class AbstractDownloadStrategy
     rm_rf(cached_location)
   end
 
-  def basename
-    cached_location.basename
-  end
+  def_delegator :cached_location, :basename, :basename
 
   private
 

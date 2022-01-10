@@ -8,6 +8,7 @@ require "json"
 # residing in the `HOMEBREW_CACHE`.
 #
 class CacheStoreDatabase
+  extend Forwardable
   # Yields the cache store database.
   # Closes the database after use if it has been loaded.
   #
@@ -102,9 +103,7 @@ class CacheStoreDatabase
   # Returns `true` if the cache is empty.
   #
   # @return [Boolean]
-  def empty?
-    db.empty?
-  end
+  def_delegator :db, :empty?, :empty?
 
   # Performs a `each_key` on the underlying database.
   #

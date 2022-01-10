@@ -7,6 +7,7 @@ module Cask
     #
     # @api private
     class Appcast
+      extend Forwardable
       attr_reader :uri, :parameters, :must_contain
 
       def initialize(uri, **parameters)
@@ -19,9 +20,7 @@ module Cask
         [uri, parameters].to_yaml
       end
 
-      def to_s
-        uri.to_s
-      end
+      def_delegator :uri, :to_s, :to_s
     end
   end
 end

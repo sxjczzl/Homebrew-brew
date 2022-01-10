@@ -240,9 +240,11 @@ class Tab < OpenStruct
     !with?(val)
   end
 
+  # rubocop:disable Rails/Delegate
   def include?(opt)
     used_options.include? opt
   end
+  # rubocop:enable Rails/Delegate
 
   def head?
     spec == :head

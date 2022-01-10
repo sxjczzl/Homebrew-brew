@@ -17,6 +17,7 @@ class Tap
   extend T::Sig
 
   extend Cachable
+  extend Forwardable
 
   TAP_DIRECTORY = (HOMEBREW_LIBRARY/"Taps").freeze
 
@@ -165,9 +166,7 @@ class Tap
   end
 
   # True if this {Tap} is a Git repository.
-  def git?
-    path.git?
-  end
+  def_delegator :path, :git?, :git?
 
   # git branch for this {Tap}.
   def git_branch

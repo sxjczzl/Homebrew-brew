@@ -5,6 +5,7 @@
 #
 # @api private
 class Option
+  extend Forwardable
   extend T::Sig
 
   attr_reader :name, :description, :flag
@@ -30,9 +31,7 @@ class Option
   end
   alias eql? ==
 
-  def hash
-    name.hash
-  end
+  def_delegator :name, :hash, :hash
 
   sig { returns(String) }
   def inspect

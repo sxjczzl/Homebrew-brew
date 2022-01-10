@@ -28,9 +28,7 @@ class PkgVersion
     @revision = revision
   end
 
-  def head?
-    version.head?
-  end
+  def_delegator :version, :head?, :head?
 
   def to_s
     if revision.positive?
