@@ -15,6 +15,7 @@ class Tab < OpenStruct
   extend T::Sig
 
   extend Cachable
+  extend Forwardable
 
   FILENAME = "INSTALL_RECEIPT.json"
 
@@ -240,11 +241,7 @@ class Tab < OpenStruct
     !with?(val)
   end
 
-  # rubocop:disable Rails/Delegate
-  def include?(opt)
-    used_options.include? opt
-  end
-  # rubocop:enable Rails/Delegate
+  def_delegator :used_options, :include?, :include?
 
   def head?
     spec == :head

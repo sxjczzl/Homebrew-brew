@@ -246,7 +246,8 @@ module Homebrew
       end
     end
 
-    delegate [:bin, :etc, :libexec, :opt_bin, :opt_libexec, :opt_pkgshare, :opt_prefix, :opt_sbin, :var] => :@formula
+    def_delegators :@formula, :bin, :etc, :libexec, :opt_bin,
+                   :opt_libexec, :opt_pkgshare, :opt_prefix, :opt_sbin, :var
 
     sig { returns(String) }
     def std_service_path_env

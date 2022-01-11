@@ -566,7 +566,7 @@ class ReporterHub
     @hash.update(report) { |_key, oldval, newval| oldval.concat(newval) }
   end
 
-  delegate empty?: :@hash
+  def_delegator :@hash, :empty?
 
   def dump(updated_formula_report: true)
     # Key Legend: Added (A), Copied (C), Deleted (D), Modified (M), Renamed (R)

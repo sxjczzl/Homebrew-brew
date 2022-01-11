@@ -45,7 +45,7 @@ class Caveats
     caveats.compact.join("\n")
   end
 
-  delegate [:empty?, :to_s] => :caveats
+  def_delegators :caveats, :empty?, :to_s
 
   def keg_only_text(skip_reason: false)
     return unless f.keg_only?

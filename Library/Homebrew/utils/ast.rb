@@ -83,7 +83,7 @@ module Utils
       extend Forwardable
       include AST
 
-      delegate process: :tree_rewriter
+      def_delegator :tree_rewriter, :process
 
       sig { params(formula_contents: String).void }
       def initialize(formula_contents)

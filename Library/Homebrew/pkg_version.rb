@@ -15,7 +15,7 @@ class PkgVersion
 
   attr_reader :version, :revision
 
-  delegate [:major, :minor, :patch, :major_minor, :major_minor_patch] => :version
+  def_delegators :version, :major, :minor, :patch, :major_minor, :major_minor_patch
 
   def self.parse(path)
     _, version, revision = *path.match(REGEX)

@@ -356,16 +356,8 @@ class Formula
     head && !stable
   end
 
-  delegate [ # rubocop:disable Layout/HashAlignment
-    :bottle_unneeded?,
-    :bottle_disabled?,
-    :bottle_disable_reason,
-    :bottle_defined?,
-    :bottle_tag?,
-    :bottled?,
-    :bottle_specification,
-    :downloader,
-  ] => :active_spec
+  def_delegators :active_spec, :bottle_unneeded?, :bottle_disabled?, :bottle_disable_reason, :bottle_defined?,
+                 :bottle_tag?, :bottled?, :bottle_specification, :downloader, :version
 
   # The Bottle object for the currently active {SoftwareSpec}.
   # @private
@@ -381,42 +373,7 @@ class Formula
     Bottle.new(self, bottle_specification, tag) if bottled?(tag)
   end
 
-  # The description of the software.
-  # @!method desc
-  # @see .desc=
-  delegate desc: :"self.class"
-
-  # The SPDX ID of the software license.
-  # @!method license
-  # @see .license=
-  delegate license: :"self.class"
-
-  # The homepage for the software.
-  # @!method homepage
-  # @see .homepage=
-  delegate homepage: :"self.class"
-
-  # The livecheck specification for the software.
-  # @!method livecheck
-  # @see .livecheck=
-  delegate livecheck: :"self.class"
-
-  # Is a livecheck specification defined for the software?
-  # @!method livecheckable?
-  # @see .livecheckable?
-  delegate livecheckable?: :"self.class"
-
-  # Is a service specification defined for the software?
-  # @!method service?
-  # @see .service?
-  delegate service?: :"self.class"
-
-  # The version for the currently active {SoftwareSpec}.
-  # The version is autodetected from the URL and/or tag so only needs to be
-  # declared if it cannot be autodetected correctly.
-  # @!method version
-  # @see .version
-  delegate version: :active_spec
+  def_delegators :"self.class", :desc, :license, :homepage, :livecheck, :livecheckable?, :service?
 
   def update_head_version
     return unless head?
@@ -456,12 +413,9 @@ class Formula
     end.compact.sort_by(&:version).reverse
   end
 
-  # A named {Resource} for the currently active {SoftwareSpec}.
-  # Additional downloads can be defined as {#resource}s.
-  # {Resource#stage} will create a temporary directory and yield to a block.
-  # <pre>resource("additional_files").stage { bin.install "my/extra/tool" }</pre>
-  # @!method resource
-  delegate resource: :active_spec
+  def_delegators :active_spec, :resource, :deps, :uses_from_macos_elements, :uses_from_macos_names, :requirements,
+                 :cached_download, :clear_cache, :options, :deprecated_options, :deprecated_flags,
+                 :option_defined?, :compiler_failures
 
   # An old name for the formula.
   def oldname
@@ -486,42 +440,8 @@ class Formula
   # @!method resources
   def_delegator :"active_spec.resources", :values, :resources
 
-  # The {Dependency}s for the currently active {SoftwareSpec}.
-  delegate deps: :active_spec
-
-  # Dependencies provided by macOS for the currently active {SoftwareSpec}.
-  delegate uses_from_macos_elements: :active_spec
-
-  # Dependency names provided by macOS for the currently active {SoftwareSpec}.
-  delegate uses_from_macos_names: :active_spec
-
-  # The {Requirement}s for the currently active {SoftwareSpec}.
-  delegate requirements: :active_spec
-
-  # The cached download for the currently active {SoftwareSpec}.
-  delegate cached_download: :active_spec
-
-  # Deletes the download for the currently active {SoftwareSpec}.
-  delegate clear_cache: :active_spec
-
   # The list of patches for the currently active {SoftwareSpec}.
   def_delegator :active_spec, :patches, :patchlist
-
-  # The options for the currently active {SoftwareSpec}.
-  delegate options: :active_spec
-
-  # The deprecated options for the currently active {SoftwareSpec}.
-  delegate deprecated_options: :active_spec
-
-  # The deprecated option flags for the currently active {SoftwareSpec}.
-  delegate deprecated_flags: :active_spec
-
-  # If a named option is defined for the currently active {SoftwareSpec}.
-  # @!method option_defined?
-  delegate option_defined?: :active_spec
-
-  # All the {.fails_with} for the currently active {SoftwareSpec}.
-  delegate compiler_failures: :active_spec
 
   # If this {Formula} is installed.
   # This is actually just a check for if the {#latest_installed_prefix} directory
@@ -1017,11 +937,9 @@ class Formula
     Homebrew::Service.new(self, &self.class.service)
   end
 
-  # @private
-  delegate plist_manual: :"self.class"
-
-  # @private
-  delegate plist_startup: :"self.class"
+  def_delegators :"self.class", :plist_manual, :plist_startup, :pour_bottle_check_unsatisfied_reason,
+                 :pour_bottle_check_unsatisfied_reason, :keg_only_reason, :deprecated?,
+                 :deprecation_date, :deprecation_reason, :disabled?, :disable_date, :disable_reason
 
   # A stable path for this formula, when installed. Contains the formula name
   # but no version number. Only the active version will be linked here if
@@ -1090,9 +1008,6 @@ class Formula
   def pour_bottle?
     true
   end
-
-  # @private
-  delegate pour_bottle_check_unsatisfied_reason: :"self.class"
 
   # Can be overridden to run commands on both source and bottle installation.
   sig { overridable.void }
@@ -1170,9 +1085,6 @@ class Formula
     keg_only_reason.applicable?
   end
 
-  # @private
-  delegate keg_only_reason: :"self.class"
-
   # @see .skip_clean
   # @private
   sig { params(path: Pathname).returns(T::Boolean) }
@@ -1218,48 +1130,6 @@ class Formula
         to_check =~ /^#{Regexp.escape(p).gsub('\*', ".*?")}$/
     end
   end
-
-  # Whether this {Formula} is deprecated (i.e. warns on installation).
-  # Defaults to false.
-  # @!method deprecated?
-  # @return [Boolean]
-  # @see .deprecate!
-  delegate deprecated?: :"self.class"
-
-  # The date that this {Formula} was or becomes deprecated.
-  # Returns `nil` if no date is specified.
-  # @!method deprecation_date
-  # @return Date
-  # @see .deprecate!
-  delegate deprecation_date: :"self.class"
-
-  # The reason this {Formula} is deprecated.
-  # Returns `nil` if no reason is specified or the formula is not deprecated.
-  # @!method deprecation_reason
-  # @return [String, Symbol]
-  # @see .deprecate!
-  delegate deprecation_reason: :"self.class"
-
-  # Whether this {Formula} is disabled (i.e. cannot be installed).
-  # Defaults to false.
-  # @!method disabled?
-  # @return [Boolean]
-  # @see .disable!
-  delegate disabled?: :"self.class"
-
-  # The date that this {Formula} was or becomes disabled.
-  # Returns `nil` if no date is specified.
-  # @!method disable_date
-  # @return Date
-  # @see .disable!
-  delegate disable_date: :"self.class"
-
-  # The reason this {Formula} is disabled.
-  # Returns `nil` if no reason is specified or the formula is not disabled.
-  # @!method disable_reason
-  # @return [String, Symbol]
-  # @see .disable!
-  delegate disable_reason: :"self.class"
 
   sig { returns(T::Boolean) }
   def skip_cxxstdlib_check?
@@ -1437,20 +1307,7 @@ class Formula
     true
   end
 
-  # @private
-  delegate pinnable?: :@pin
-
-  # @private
-  delegate pinned?: :@pin
-
-  # @private
-  delegate pinned_version: :@pin
-
-  # @private
-  delegate pin: :@pin
-
-  # @private
-  delegate unpin: :@pin
+  def_delegators :@pin, :pinnable?, :pinned?, :pinned_version, :pin, :unpin
 
   # @private
   def ==(other)
@@ -1806,11 +1663,7 @@ class Formula
     ohai "#{verb} #{name} from #{tap}"
   end
 
-  # @private
-  delegate env: :"self.class"
-
-  # @private
-  delegate conflicts: :"self.class"
+  def_delegators :"self.class", :env, :conflicts
 
   # Returns a list of Dependency objects in an installable order, which
   # means if a depends on b then b will be ordered before a in this list

@@ -47,11 +47,7 @@ module Homebrew
 
           extend Forwardable
 
-          # @api public
-          delegate version: :bundle_version
-
-          # @api public
-          delegate short_version: :bundle_version
+          def_delegators :bundle_version, :version, :short_version
         end
 
         # Identify versions from `Item`s produced using

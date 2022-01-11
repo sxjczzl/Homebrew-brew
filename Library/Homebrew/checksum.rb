@@ -13,7 +13,7 @@ class Checksum
     @hexdigest = hexdigest.downcase
   end
 
-  delegate [:empty?, :to_s, :length, :[]] => :@hexdigest
+  def_delegators :@hexdigest, :empty?, :to_s, :length, :[]
 
   def ==(other)
     case other

@@ -9,7 +9,7 @@ require "macho"
 module MachOShim
   extend Forwardable
 
-  delegate [:dylib_id, :rpaths] => :macho
+  def_delegators :macho, :dylib_id, :rpaths
 
   def macho
     @macho ||= MachO.open(to_s)

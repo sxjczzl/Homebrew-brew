@@ -10,7 +10,7 @@ class PATH
   include Enumerable
   extend Forwardable
 
-  delegate each: :@paths
+  def_delegator :@paths, :each
 
   # FIXME: Enable cop again when https://github.com/sorbet/sorbet/issues/3532 is fixed.
   # rubocop:disable Style/MutableConstant

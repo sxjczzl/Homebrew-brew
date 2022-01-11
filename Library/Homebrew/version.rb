@@ -74,13 +74,7 @@ class Version
       "#<#{self.class.name} #{value.inspect}>"
     end
 
-    def_delegator :value, :hash, :hash
-
-    def_delegator :value, :to_f, :to_f
-
-    def_delegator :value, :to_i, :to_i
-
-    def_delegator :value, :to_s, :to_s
+    def_delegators :value, :hash, :to_f, :to_i, :to_s
     alias to_str to_s
 
     sig { returns(T::Boolean) }
@@ -601,13 +595,7 @@ class Version
     self.class.new([major, minor, patch].compact.join("."))
   end
 
-  def_delegator :version, :empty?, :empty?
-
-  def_delegator :version, :hash, :hash
-
-  def_delegator :version, :to_f, :to_f
-
-  def_delegator :version, :to_i, :to_i
+  def_delegators :version, :empty?, :hash, :to_f, :to_i
 
   sig { returns(String) }
   def to_s

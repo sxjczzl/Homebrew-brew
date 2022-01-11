@@ -140,7 +140,7 @@ class Livecheck
     end
   end
 
-  delegate version: :@formula_or_cask
+  def_delegator :@formula_or_cask, :version
   private :version
 
   # Returns a `Hash` of all instance variable values.
