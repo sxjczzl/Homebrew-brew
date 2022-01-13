@@ -103,7 +103,7 @@ class CacheStoreDatabase
   # Returns `true` if the cache is empty.
   #
   # @return [Boolean]
-  def_delegator :db, :empty?, :empty?
+  def_delegator :db, :empty?
 
   # Performs a `each_key` on the underlying database.
   #

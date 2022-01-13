@@ -132,7 +132,7 @@ module Cask
         @cask = cask
       end
 
-      def_delegator :cask, :config, :config
+      def_delegator :cask, :config
 
       sig { returns(String) }
       def to_s

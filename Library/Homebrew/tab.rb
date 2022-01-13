@@ -241,7 +241,7 @@ class Tab < OpenStruct
     !with?(val)
   end
 
-  def_delegator :used_options, :include?, :include?
+  def_delegator :used_options, :include?
 
   def head?
     spec == :head

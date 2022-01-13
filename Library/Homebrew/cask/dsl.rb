@@ -254,7 +254,7 @@ module Cask
       @artifacts ||= SortedSet.new
     end
 
-    def_delegator :cask, :caskroom_path, :caskroom_path
+    def_delegator :cask, :caskroom_path
 
     # @api public
     def staged_path

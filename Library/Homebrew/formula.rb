@@ -938,8 +938,8 @@ class Formula
   end
 
   def_delegators :"self.class", :plist_manual, :plist_startup, :pour_bottle_check_unsatisfied_reason,
-                 :pour_bottle_check_unsatisfied_reason, :keg_only_reason, :deprecated?,
-                 :deprecation_date, :deprecation_reason, :disabled?, :disable_date, :disable_reason
+                 :keg_only_reason, :deprecated?, :deprecation_date, :deprecation_reason,
+                 :disabled?, :disable_date, :disable_reason
 
   # A stable path for this formula, when installed. Contains the formula name
   # but no version number. Only the active version will be linked here if

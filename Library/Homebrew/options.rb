@@ -31,7 +31,7 @@ class Option
   end
   alias eql? ==
 
-  def_delegator :name, :hash, :hash
+  def_delegator :name, :hash
 
   sig { returns(String) }
   def inspect

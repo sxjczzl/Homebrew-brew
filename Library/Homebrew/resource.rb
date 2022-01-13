@@ -77,7 +77,7 @@ class Resource
     downloader.cached_location
   end
 
-  def_delegator :downloader, :clear_cache, :clear_cache
+  def_delegator :downloader, :clear_cache
 
   # Verifies download and unpacks it.
   # The block may call `|resource, staging| staging.retain!` to retain the staging

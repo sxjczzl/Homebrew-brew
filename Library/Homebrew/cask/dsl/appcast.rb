@@ -20,7 +20,7 @@ module Cask
         [uri, parameters].to_yaml
       end
 
-      def_delegator :uri, :to_s, :to_s
+      def_delegator :uri, :to_s
     end
   end
 end

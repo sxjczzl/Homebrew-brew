@@ -166,7 +166,7 @@ class Tap
   end
 
   # True if this {Tap} is a Git repository.
-  def_delegator :path, :git?, :git?
+  def_delegator :path, :git?
 
   # git branch for this {Tap}.
   def git_branch
