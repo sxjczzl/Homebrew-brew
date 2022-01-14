@@ -48,6 +48,9 @@ module Homebrew
       switch "--dot",
              depends_on:  "--graph",
              description: "Show text-based graph description in DOT format."
+      switch "--mermaid",
+             depends_on:  "--graph",
+             description: "Show text-based graph description in Mermaid format."
       switch "--annotate",
              description: "Mark any build, test, optional, or recommended dependencies as "\
                           "such in the output."
@@ -70,6 +73,7 @@ module Homebrew
       conflicts "--tree", "--graph"
       conflicts "--installed", "--all"
       conflicts "--formula", "--cask"
+      conflicts "--dot", "--mermaid"
       formula_options
 
       named_args [:formula, :cask]
@@ -109,11 +113,21 @@ module Homebrew
       end
 
       if args.graph?
-        dot_code = dot_code(dependents, recursive: recursive, args: args)
+        dep_graph = {}
+        dependents.each do |d|
+          graph_deps(d, dep_graph: dep_graph, recursive: recursive, args: args)
+        end
         if args.dot?
-          puts dot_code
+          puts dot_code(dep_graph)
+        elsif args.mermaid?
+          puts mermaid_code(dep_graph)
+          # mermaid_json = {
+          #   "code" => mermaid_code(dep_graph),
+          #   "mermaid" => {"theme" => "default"}.to_json,
+          # }.to_json
+          # exec_browser "https://mermaid.live/edit##{Base64.urlsafe_encode64(mermaid_json)}"
         else
-          exec_browser "https://dreampuf.github.io/GraphvizOnline/##{ERB::Util.url_encode(dot_code)}"
+          exec_browser "https://dreampuf.github.io/GraphvizOnline/##{ERB::Util.url_encode(dot_code(dep_graph))}"
         end
         return
       end
@@ -217,12 +231,7 @@ module Homebrew
     end
   end
 
-  def dot_code(dependents, recursive:, args:)
-    dep_graph = {}
-    dependents.each do |d|
-      graph_deps(d, dep_graph: dep_graph, recursive: recursive, args: args)
-    end
-
+  def dot_code(dep_graph)
     dot_code = dep_graph.map do |d, deps|
       deps.map do |dep|
         attributes = []
@@ -238,6 +247,26 @@ module Homebrew
       end
     end.flatten.join("\n")
     "digraph {\n#{dot_code}\n}"
+  end
+
+  def mermaid_code(dep_graph)
+    lines = []
+    lines << "graph"
+    dep_graph.each do |d, deps|
+      name = d.to_s
+      if name.include? "@"
+        actual_name = name
+        name = name.tr("@", "/")
+        lines << "  #{name}[\"#{actual_name}\"]"
+      end
+      deps.each do |dep|
+        dep_name = dep.to_s.tr("@", "/")
+        arrow = dep.build? || dep.test? ? "-.->" : "-->"
+        comment = " %% #{dep.tags.map(&:inspect).join(", ")}" if dep.tags.any?
+        lines << "  #{name} #{arrow} #{dep_name}#{comment}"
+      end
+    end
+    lines.join("\n")
   end
 
   def graph_deps(f, dep_graph:, recursive:, args:)
