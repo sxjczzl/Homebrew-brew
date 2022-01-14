@@ -134,7 +134,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["GITHUB_ACTIONS"]
+        return if ENV["GITHUB_ACTIONS"] || ENV["SKIP_XCODE_UP_TO_DATE_CHECK"]
 
         message = <<~EOS
           Your Xcode (#{MacOS::Xcode.version}) is outdated.
@@ -161,7 +161,7 @@ module Homebrew
         # `brew test-bot` runs `brew doctor` in the CI for the Homebrew/brew
         # repository. This only needs to support whatever CI providers
         # Homebrew/brew is currently using.
-        return if ENV["GITHUB_ACTIONS"]
+        return if ENV["GITHUB_ACTIONS"] || ENV["SKIP_XCODE_UP_TO_DATE_CHECK"]
 
         <<~EOS
           A newer Command Line Tools release is available.
@@ -171,6 +171,8 @@ module Homebrew
 
       def check_xcode_minimum_version
         return unless MacOS::Xcode.below_minimum_version?
+
+        return if ENV["SKIP_XCODE_UP_TO_DATE_CHECK"]
 
         xcode = MacOS::Xcode.version.to_s
         xcode += " => #{MacOS::Xcode.prefix}" unless MacOS::Xcode.default_prefix?
