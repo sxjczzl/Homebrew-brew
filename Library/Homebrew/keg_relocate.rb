@@ -133,9 +133,16 @@ class Keg
 
   def openjdk_dep_name_if_applicable
     deps = runtime_dependencies
+    deps ||= to_formula.deps # the tab is missing, so fall back to the formula
     return if deps.blank?
 
-    dep_names = deps.map { |d| d["full_name"] }
+    # TODO: Remove this when we support fetching bottle manifests from non-ghcr.io domains.
+    dep_names = case deps.first
+    when Hash then deps.map { |d| d["full_name"] }
+    when Dependency then deps.map(&:name)
+    else odie "Unrecognised dependency array!"
+    end
+
     dep_names.find { |d| d.match? Version.formula_optionally_versioned_regex(:openjdk) }
   end
 
