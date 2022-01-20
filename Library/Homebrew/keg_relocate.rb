@@ -133,7 +133,7 @@ class Keg
 
   def openjdk_dep_name_if_applicable
     deps = runtime_dependencies
-    deps ||= to_formula.deps # the tab is missing, so fall back to the formula
+    deps ||= to_formula.deps.reject(&:build?).reject(&:test?) # the tab is missing, so fall back to the formula
     return if deps.blank?
 
     # TODO: Remove this when we support fetching bottle manifests from non-ghcr.io domains.
