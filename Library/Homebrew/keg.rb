@@ -499,6 +499,7 @@ class Keg
   def runtime_dependencies
     Keg.cache[:runtime_dependencies] ||= {}
     Keg.cache[:runtime_dependencies][path] ||= tab.runtime_dependencies
+    Keg.cache[:runtime_dependencies][path] ||= to_formula.runtime_dependencies(read_from_tab: false)
   end
 
   def aliases
