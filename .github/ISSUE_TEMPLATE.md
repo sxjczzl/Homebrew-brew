@@ -1,1 +1,37 @@
-# Please fill out one of the templates on: https://github.com/Homebrew/brew/issues/new/choose or we will close it without comment.
+# name: "CodeQL"
+
+on:
+  push:
+    branches: [ develop, main]
+  pull_request:
+    branches: [ develop ]
+  schedule:
+    - cron: '41 21 * * 2'
+
+jobs:
+  analyze:
+    name: Analyze
+    runs-on: ubuntu-18.04
+
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [ 'csharp' ]
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v1
+      with:
+        languages: ${{ matrix.language }}
+
+    - name: Autobuild
+      uses: github/codeql-action/autobuild@v1
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v1
+Please fill out one of the templates on: https://github.com/Homebrew/brew/issues/new/choose or we will close it without comment.
