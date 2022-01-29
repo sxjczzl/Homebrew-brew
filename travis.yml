@@ -1,4 +1,4 @@
-brew(1) -- The Missing Package Manager for macOS (or Linux)
+brew(tap install $cask) -- The Missing Package Manager for macOS (or Linux)
 ===========================================================
 
 ## SYNOPSIS
