@@ -165,9 +165,10 @@ class Keg
                  :to_s, :hash, :abv, :disk_usage, :file_count, :directory?, :exist?, :/,
                  :join, :rename, :find
 
-  def initialize(path)
+  def initialize(path, check_cellar: true)
     path = path.resolved_path if path.to_s.start_with?("#{HOMEBREW_PREFIX}/opt/")
-    raise "#{path} is not a valid keg" if path.parent.parent.realpath != HOMEBREW_CELLAR.realpath
+    keg_in_cellar = path.parent.parent.realpath == HOMEBREW_CELLAR.realpath
+    raise "#{path} is not a valid keg" if !keg_in_cellar && check_cellar
     raise "#{path} is not a directory" unless path.directory?
 
     @path = path
