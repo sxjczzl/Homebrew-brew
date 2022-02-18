@@ -248,6 +248,26 @@ describe Tap do
       allow(Utils::Git).to receive(:available?).and_return(false)
       expect(homebrew_foo_tap.remote_repo).to be nil
     end
+
+    it "returns the expected repo even when it's not github.com and it's ssh" do
+      services_tap = described_class.new("Homebrew", "services")
+      services_tap.path.mkpath
+      services_tap.path.cd do
+        system "git", "init"
+        system "git", "remote", "add", "origin", "git@git.example.com:testbrew/homebrew-house.git"
+      end
+      expect(services_tap.remote_repo).to eq("testbrew/homebrew-house")
+    end
+
+    it "returns the expected repo even when it's not github.com and it's https" do
+      services_tap = described_class.new("Homebrew", "services")
+      services_tap.path.mkpath
+      services_tap.path.cd do
+        system "git", "init"
+        system "git", "remote", "add", "origin", "https://git.example.com/testbrew/badlynamed-house.git"
+      end
+      expect(services_tap.remote_repo).to eq("testbrew/badlynamed-house")
+    end
   end
 
   specify "Git variant" do

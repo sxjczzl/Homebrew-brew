@@ -162,6 +162,10 @@ module Homebrew
                      "of Ruby is new enough.",
         boolean:     true,
       },
+      HOMEBREW_GITHUB_API_URL:                   {
+        description: "Use this URL for accessing the GitHub API, such as https://git.example.com/api/v3" \
+                     "for a GitHub Enterprise Server. ",
+      },
       HOMEBREW_GITHUB_API_TOKEN:                 {
         description: "Use this personal access token for the GitHub API, for features such as " \
                      "`brew search`. You can create one at <https://github.com/settings/tokens>. If set, " \

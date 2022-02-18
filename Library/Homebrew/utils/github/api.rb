@@ -5,7 +5,8 @@ require "tempfile"
 require "utils/shell"
 
 module GitHub
-  API_URL = "https://api.github.com"
+  PUBLIC_GITHUB_API_URL = "https://api.github.com"
+  API_URL = ENV.fetch("HOMEBREW_GITHUB_API_URL", PUBLIC_GITHUB_API_URL).freeze
   API_MAX_PAGES = 50
   API_MAX_ITEMS = 5000
 

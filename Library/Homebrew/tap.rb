@@ -146,9 +146,22 @@ class Tap
 
     return unless remote
 
-    @remote_repo ||= remote.delete_prefix("https://github.com/")
-                           .delete_prefix("git@github.com:")
-                           .delete_suffix(".git")
+    path_base = nil
+    begin
+      path_base = URI.parse(remote).path.delete_prefix("/")
+    rescue URI::InvalidURIError
+      # probably SSH
+      # consider using vendoring uri-ssh_git
+      # path_base = URI::SshGit.parse(remote).path
+      path_base = remote.split(":", 2).last
+    end
+
+    unless path_base
+      opoo "Cannot determine the remote repo based on the remote URL"
+      return
+    end
+
+    @remote_repo ||= path_base.delete_suffix(".git")
   end
 
   # The default remote path to this {Tap}.
