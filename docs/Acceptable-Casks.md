@@ -1,12 +1,3 @@
-# Acceptable Casks
-
-Some casks should not go in
-[homebrew/cask](https://github.com/Homebrew/homebrew-cask). But there are
-additional [Interesting Taps and Forks](Interesting-Taps-and-Forks.md) and anyone can [start their own](Taps.md)!
-
-## Finding a Home For Your Cask
-
-We maintain separate Taps for different types of binaries. Our nomenclature is:
 
 + **Stable**: The latest version provided by the developer defined by them as such.
 + **Beta, Development, Unstable**: Subsequent versions to **stable**, yet incomplete and under development, aiming to eventually become the new **stable**. Also includes alternate versions specifically targeted at developers.
