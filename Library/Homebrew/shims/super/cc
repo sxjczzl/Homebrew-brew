@@ -470,7 +470,13 @@ if __FILE__ == $PROGRAM_NAME
 
   args << { close_others: false }
   if mac?
-    exec "#{dirname}/xcrun", tool, *args
+    # If we are being called from the shims/mac/super/cc symlink, xcrun is in our directory.
+    # Otherwise, xcrun is in ../mac/super
+    xcrun_path = "#{dirname}/xcrun"
+    if !File.exists? xcrun_path
+      xcrun_path = "#{dirname}/../mac/super/xcrun"
+    end
+    exec xcrun_path, tool, *args
   else
     paths = ENV["PATH"].split(":")
     paths = remove_superbin_from_path(paths)
