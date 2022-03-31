@@ -26,6 +26,91 @@ describe Homebrew::Diagnostic::Checks do
     end
   end
 
+  specify "#check_for_stray_dylibs" do
+    mktmpdir do |path|
+      FileUtils.mkdir("#{path}/lib")
+      FileUtils.touch "#{path}/lib/test.dylib"
+      stub_const "HOMEBREW_PREFIX", Pathname(path)
+      expected_output = <<~EOS
+        Unbrewed dylibs were found in #{path}/lib.
+        If you didn't put them there on purpose they could cause problems when
+        building Homebrew formulae, and may need to be deleted.
+
+        Unexpected dylibs:
+          #{path}/lib/test.dylib
+      EOS
+      expect(checks.check_for_stray_dylibs).to eq(expected_output)
+    end
+  end
+
+  specify "#check_for_stray_static_libs" do
+    mktmpdir do |path|
+      FileUtils.mkdir("#{path}/lib")
+      FileUtils.touch "#{path}/lib/test.a"
+      stub_const "HOMEBREW_PREFIX", Pathname(path)
+      expected_output = <<~EOS
+        Unbrewed static libraries were found in #{path}/lib.
+        If you didn't put them there on purpose they could cause problems when
+        building Homebrew formulae, and may need to be deleted.
+
+        Unexpected static libraries:
+          #{path}/lib/test.a
+      EOS
+      expect(checks.check_for_stray_static_libs).to eq(expected_output)
+    end
+  end
+
+  specify "#check_for_stray_pcs" do
+    mktmpdir do |path|
+      FileUtils.mkdir_p("#{path}/lib/pkgconfig")
+      FileUtils.touch "#{path}/lib/pkgconfig/test.pc"
+      stub_const "HOMEBREW_PREFIX", Pathname(path)
+      expected_output = <<~EOS
+        Unbrewed '.pc' files were found in #{path}/lib/pkgconfig.
+        If you didn't put them there on purpose they could cause problems when
+        building Homebrew formulae, and may need to be deleted.
+
+        Unexpected '.pc' files:
+          #{path}/lib/pkgconfig/test.pc
+      EOS
+      expect(checks.check_for_stray_pcs).to eq(expected_output)
+    end
+  end
+
+  specify "#check_for_stray_las" do
+    mktmpdir do |path|
+      FileUtils.mkdir("#{path}/lib")
+      FileUtils.touch "#{path}/lib/test.la"
+      stub_const "HOMEBREW_PREFIX", Pathname(path)
+      expected_output = <<~EOS
+        Unbrewed '.la' files were found in #{path}/lib.
+        If you didn't put them there on purpose they could cause problems when
+        building Homebrew formulae, and may need to be deleted.
+
+        Unexpected '.la' files:
+          #{path}/lib/test.la
+      EOS
+      expect(checks.check_for_stray_las).to eq(expected_output)
+    end
+  end
+
+  specify "#check_for_stray_headers" do
+    mktmpdir do |path|
+      FileUtils.mkdir("#{path}/include")
+      FileUtils.touch "#{path}/include/test.h"
+      stub_const "HOMEBREW_PREFIX", Pathname(path)
+      expected_output = <<~EOS
+        Unbrewed header files were found in #{path}/include.
+        If you didn't put them there on purpose they could cause problems when
+        building Homebrew formulae, and may need to be deleted.
+
+        Unexpected header files:
+          #{path}/include/test.h
+      EOS
+      expect(checks.check_for_stray_headers).to eq(expected_output)
+    end
+  end
+
   specify "#check_access_directories" do
     skip "User is root so everything is writable." if Process.euid.zero?
     begin

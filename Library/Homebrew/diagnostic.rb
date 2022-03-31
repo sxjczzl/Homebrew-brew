@@ -239,8 +239,8 @@ module Homebrew
           "sentinel-*.dylib", # SentinelOne
         ]
 
-        __check_stray_files "/usr/local/lib", "*.dylib", allow_list, <<~EOS
-          Unbrewed dylibs were found in /usr/local/lib.
+        __check_stray_files "#{HOMEBREW_PREFIX}/lib", "*.dylib", allow_list, <<~EOS
+          Unbrewed dylibs were found in #{HOMEBREW_PREFIX}/lib.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
@@ -264,8 +264,8 @@ module Homebrew
           "libtrustedcomponents.a", # Symantec Endpoint Protection
         ]
 
-        __check_stray_files "/usr/local/lib", "*.a", allow_list, <<~EOS
-          Unbrewed static libraries were found in /usr/local/lib.
+        __check_stray_files "#{HOMEBREW_PREFIX}/lib", "*.a", allow_list, <<~EOS
+          Unbrewed static libraries were found in #{HOMEBREW_PREFIX}/lib.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
@@ -284,8 +284,8 @@ module Homebrew
           "libublio.pc", # NTFS-3G
         ]
 
-        __check_stray_files "/usr/local/lib/pkgconfig", "*.pc", allow_list, <<~EOS
-          Unbrewed '.pc' files were found in /usr/local/lib/pkgconfig.
+        __check_stray_files "#{HOMEBREW_PREFIX}/lib/pkgconfig", "*.pc", allow_list, <<~EOS
+          Unbrewed '.pc' files were found in #{HOMEBREW_PREFIX}/lib/pkgconfig.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
@@ -305,8 +305,8 @@ module Homebrew
           "libublio.la", # NTFS-3G
         ]
 
-        __check_stray_files "/usr/local/lib", "*.la", allow_list, <<~EOS
-          Unbrewed '.la' files were found in /usr/local/lib.
+        __check_stray_files "#{HOMEBREW_PREFIX}/lib", "*.la", allow_list, <<~EOS
+          Unbrewed '.la' files were found in #{HOMEBREW_PREFIX}/lib.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
@@ -324,8 +324,8 @@ module Homebrew
           "ntfs-3g/**/*.h", # NTFS-3G
         ]
 
-        __check_stray_files "/usr/local/include", "**/*.h", allow_list, <<~EOS
-          Unbrewed header files were found in /usr/local/include.
+        __check_stray_files "#{HOMEBREW_PREFIX}/include", "**/*.h", allow_list, <<~EOS
+          Unbrewed header files were found in #{HOMEBREW_PREFIX}/include.
           If you didn't put them there on purpose they could cause problems when
           building Homebrew formulae, and may need to be deleted.
 
