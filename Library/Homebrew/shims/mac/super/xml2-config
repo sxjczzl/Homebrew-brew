@@ -1,0 +1,11 @@
+#!/bin/bash
+
+xml2config="$(which -a xml2-config | awk NR==2)"
+if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -lt 101300 ]] &&
+   [[ "${xml2config}" == "/usr/bin/xml2-config" ]] && 
+   [[ "$*" =~ (^| )--libs ]]
+then
+  exec "${xml2config}" "$@" | sed 's:-L/:-isysroot /:'
+else
+  exec "${xml2config}" "$@"
+fi
