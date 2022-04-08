@@ -86,16 +86,22 @@ module SharedAudits
     "#{tag} is a GitLab pre-release."
   end
 
-  def github(user, repo)
+  def github(user, repo, formula: nil, cask: nil)
     metadata = github_repo_data(user, repo)
 
     return if metadata.nil?
 
     return "GitHub fork (not canonical repository)" if metadata["fork"]
 
-    if (metadata["forks_count"] < 30) && (metadata["subscribers_count"] < 30) &&
+    notability_exception = if formula
+      formula.tap&.audit_exception(:github_notability_allowlist, formula.name)
+    elsif cask
+      cask.tap&.audit_exception(:github_notability_allowlist, cask.token)
+    end
+
+    if !notability_exception && (metadata["forks_count"] < 30) && (metadata["subscribers_count"] < 30) &&
        (metadata["stargazers_count"] < 75)
-      return "GitHub repository not notable enough (<30 forks, <30 watchers and <75 stars)"
+      return "GitHub repository not notable enough (<30 forks, <30 watchers or <75 stars)"
     end
 
     return if Date.parse(metadata["created_at"]) <= (Date.today - 30)
@@ -110,7 +116,7 @@ module SharedAudits
 
     return "GitLab fork (not canonical repository)" if metadata["fork"]
     if (metadata["forks_count"] < 30) && (metadata["star_count"] < 75)
-      return "GitLab repository not notable enough (<30 forks and <75 stars)"
+      return "GitLab repository not notable enough (<30 forks or <75 stars)"
     end
 
     return if Date.parse(metadata["created_at"]) <= (Date.today - 30)

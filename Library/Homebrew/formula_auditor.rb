@@ -531,7 +531,7 @@ module Homebrew
 
       return if user.blank?
 
-      warning = SharedAudits.github(user, repo)
+      warning = SharedAudits.github(user, repo, formula: formula)
       return if warning.nil?
 
       new_formula_problem warning

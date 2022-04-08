@@ -687,7 +687,7 @@ module Cask
 
       odebug "Auditing GitHub repo"
 
-      error = SharedAudits.github(user, repo)
+      error = SharedAudits.github(user, repo, cask: cask)
       add_error error if error
     end
 
