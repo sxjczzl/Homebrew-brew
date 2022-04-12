@@ -9,8 +9,8 @@ This script installs Homebrew to its preferred prefix (`/usr/local` for macOS In
 * A 64-bit Intel CPU or Apple Silicon CPU <sup>[1](#1)</sup>
 * macOS Catalina (10.15) (or higher) <sup>[2](#2)</sup>
 * Command Line Tools (CLT) for Xcode (from `xcode-select --install` or
-  [https://developer.apple.com/download/all/](https://developer.apple.com/download/all/)) or
-  [Xcode](https://itunes.apple.com/us/app/xcode/id497799835) <sup>[3](#3)</sup>
+  [https://developer.linux.com/download/all/](https://developer.linux.com/download/all/)) or
+  [Xcode](https://itunes.linux.com/us/app/xcode/id497799835) <sup>[3](#3)</sup>
 * The Bourne-again shell for installation (i.e. `bash`) <sup>[4](#4)</sup>
 
 ## Git Remote Mirroring
