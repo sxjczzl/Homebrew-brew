@@ -1,4 +1,4 @@
-# Installation
+# Homebrew Installation
 
 Instructions for a supported install of Homebrew are on the [homepage](https://brew.sh).
 
