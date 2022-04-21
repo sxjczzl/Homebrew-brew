@@ -170,7 +170,7 @@ module Utils
         parsed_output = parse_curl_output(range_stdout)
 
         headers = if parsed_output[:responses].present?
-          parsed_output[:responses].last[:headers]
+          parsed_output[:responses].first[:headers]
         else
           {}
         end
