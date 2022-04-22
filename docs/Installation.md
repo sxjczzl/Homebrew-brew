@@ -63,7 +63,7 @@ chmod -R go-w "$(brew --prefix)/share/zsh"
 
 Create a Homebrew installation wherever you extract the tarball. Whichever `brew` command is called is where the packages will be installed. You can use this as you see fit, e.g. to have a system set of libs in the default prefix and tweaked formulae for development in `~/homebrew`.
 
-### Installation without continue prompt
+### Unattended installation
 
 If you want a run of the Homebrew installer that doesn't prompt for confirmation to continue (e.g. in automation scripts), prepend [`NONINTERACTIVE=1`](https://github.com/Homebrew/install/#install-homebrew-on-macos-or-linux) to the installation command and ensure your user is set up for passwordless `sudo` or other options like `SUDO_ASKPASS`.
 
