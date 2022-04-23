@@ -6,16 +6,13 @@ if ENV["HOMEBREW_STACKPROF"]
   StackProf.start(mode: :wall, raw: true)
 end
 
-raise "HOMEBREW_BREW_FILE was not exported! Please call bin/brew directly!" unless ENV["HOMEBREW_BREW_FILE"]
-
 std_trap = trap("INT") { exit! 130 } # no backtrace thanks
 
 # check ruby version before requiring any modules.
-unless ENV["HOMEBREW_REQUIRED_RUBY_VERSION"]
-  raise "HOMEBREW_REQUIRED_RUBY_VERSION was not exported! Please call bin/brew directly!"
-end
+required_ruby = ENV.fetch("HOMEBREW_REQUIRED_RUBY_VERSION", nil)
+raise "HOMEBREW_REQUIRED_RUBY_VERSION was not exported! Please call bin/brew directly!" unless required_ruby
 
-REQUIRED_RUBY_X, REQUIRED_RUBY_Y, = ENV["HOMEBREW_REQUIRED_RUBY_VERSION"].split(".").map(&:to_i)
+REQUIRED_RUBY_X, REQUIRED_RUBY_Y, = required_ruby.split(".").map(&:to_i)
 RUBY_X, RUBY_Y, = RUBY_VERSION.split(".").map(&:to_i)
 if RUBY_X < REQUIRED_RUBY_X || (RUBY_X == REQUIRED_RUBY_X && RUBY_Y < REQUIRED_RUBY_Y)
   raise "Homebrew must be run under Ruby #{REQUIRED_RUBY_X}.#{REQUIRED_RUBY_Y}! " \
@@ -28,17 +25,17 @@ class MissingEnvironmentVariables < RuntimeError; end
 begin
   require_relative "global"
 rescue MissingEnvironmentVariables => e
-  raise e if ENV["HOMEBREW_MISSING_ENV_RETRY"]
+  raise e if e.env == "HOMEBREW_BREW_FILE" || ENV["HOMEBREW_MISSING_ENV_RETRY"].present?
 
   if ENV["HOMEBREW_DEVELOPER"]
     $stderr.puts <<~EOS
       Warning: #{e.message}
-      Retrying with `exec #{ENV["HOMEBREW_BREW_FILE"]}`!
+      Retrying with `exec #{HOMEBREW_BREW_FILE}`!
     EOS
   end
 
   ENV["HOMEBREW_MISSING_ENV_RETRY"] = "1"
-  exec ENV["HOMEBREW_BREW_FILE"], *ARGV
+  exec HOMEBREW_BREW_FILE, *ARGV
 end
 
 begin

@@ -57,15 +57,15 @@ module Homebrew
                                 reason: "reporting test flakiness")
     end
 
-    ENV["BUILDPULSE_ACCESS_KEY_ID"] = ENV["HOMEBREW_BUILDPULSE_ACCESS_KEY_ID"]
-    ENV["BUILDPULSE_SECRET_ACCESS_KEY"] = ENV["HOMEBREW_BUILDPULSE_SECRET_ACCESS_KEY"]
+    ENV["BUILDPULSE_ACCESS_KEY_ID"] = ENV.fetch("HOMEBREW_BUILDPULSE_ACCESS_KEY_ID")
+    ENV["BUILDPULSE_SECRET_ACCESS_KEY"] = ENV.fetch("HOMEBREW_BUILDPULSE_SECRET_ACCESS_KEY")
 
     ohai "Sending test results to BuildPulse"
 
     safe_system Formula["buildpulse-test-reporter"].opt_bin/"buildpulse-test-reporter",
                 "submit", "#{HOMEBREW_LIBRARY_PATH}/test/junit",
-                "--account-id", ENV["HOMEBREW_BUILDPULSE_ACCOUNT_ID"],
-                "--repository-id", ENV["HOMEBREW_BUILDPULSE_REPOSITORY_ID"]
+                "--account-id", ENV.fetch("HOMEBREW_BUILDPULSE_ACCOUNT_ID"),
+                "--repository-id", ENV.fetch("HOMEBREW_BUILDPULSE_REPOSITORY_ID")
   end
 
   def tests

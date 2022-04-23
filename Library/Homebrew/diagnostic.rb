@@ -541,7 +541,7 @@ module Homebrew
       end
 
       def check_git_version
-        minimum_version = ENV["HOMEBREW_MINIMUM_GIT_VERSION"]
+        minimum_version = ENV.fetch("HOMEBREW_MINIMUM_GIT_VERSION")
         return unless Utils::Git.available?
         return if Version.create(Utils::Git.version) >= Version.create(minimum_version)
 
@@ -1007,7 +1007,7 @@ module Homebrew
         add_info "Cask Environment Variables:", ((locale_variables + environment_variables).sort.each do |var|
           next unless ENV.key?(var)
 
-          var = %Q(#{var}="#{ENV[var]}")
+          var = %Q(#{var}="#{ENV.fetch(var)}")
           user_tilde(var)
         end)
       end

@@ -1,23 +1,8 @@
 # typed: true
 # frozen_string_literal: true
 
-raise "HOMEBREW_BREW_FILE was not exported! Please call bin/brew directly!" unless ENV["HOMEBREW_BREW_FILE"]
-
 # Path to `bin/brew` main executable in `HOMEBREW_PREFIX`
-HOMEBREW_BREW_FILE = Pathname(ENV["HOMEBREW_BREW_FILE"]).freeze
-
-class MissingEnvironmentVariables < RuntimeError; end
-
-# Helper module for getting environment variables which must be set.
-#
-# @api private
-module EnvVar
-  def self.[](env)
-    raise MissingEnvironmentVariables, "#{env} was not exported!" unless ENV[env]
-
-    ENV.fetch(env)
-  end
-end
+HOMEBREW_BREW_FILE = Pathname(EnvVar["HOMEBREW_BREW_FILE"]).freeze
 
 # Where we link under
 HOMEBREW_PREFIX = Pathname(EnvVar["HOMEBREW_PREFIX"]).freeze
@@ -64,5 +49,5 @@ end.freeze
 # The Ruby path and args to use for forked Ruby calls
 HOMEBREW_RUBY_EXEC_ARGS = [
   RUBY_PATH,
-  ENV["HOMEBREW_RUBY_WARNINGS"],
+  EnvVar["HOMEBREW_RUBY_WARNINGS"],
 ].freeze

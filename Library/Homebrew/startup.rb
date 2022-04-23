@@ -5,6 +5,7 @@
 
 require_relative "standalone/load_path"
 require_relative "startup/ruby_path"
+require_relative "startup/env_var"
 require "startup/config"
 require_relative "startup/bootsnap"
 require_relative "startup/sorbet"

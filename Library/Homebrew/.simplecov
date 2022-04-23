@@ -30,9 +30,9 @@ SimpleCov.start do
                .map { |p| "#{p}/**/*.rb" }.join(",")
   files = "#{SimpleCov.root}/{#{subdirs},*.rb}"
 
-  if ENV["HOMEBREW_INTEGRATION_TEST"]
+  if (integration_test = ENV.fetch("HOMEBREW_INTEGRATION_TEST", nil))
     # This needs a unique name so it won't be ovewritten
-    command_name "#{ENV["HOMEBREW_INTEGRATION_TEST"]} (#{$PROCESS_ID})"
+    command_name "#{integration_test} (#{$PROCESS_ID})"
 
     # be quiet, the parent process will be in charge of output and checking coverage totals
     SimpleCov.print_error_status = false

@@ -35,7 +35,7 @@ require "find"
 require "byebug"
 require "timeout"
 
-$LOAD_PATH.push(File.expand_path("#{ENV["HOMEBREW_LIBRARY"]}/Homebrew/test/support/lib"))
+$LOAD_PATH.push(File.expand_path("#{ENV.fetch("HOMEBREW_LIBRARY")}/Homebrew/test/support/lib"))
 
 require_relative "../global"
 
@@ -170,7 +170,7 @@ RSpec.configure do |config|
   end
 
   config.before(:each, :needs_homebrew_curl) do
-    ENV["HOMEBREW_CURL"] = ENV["HOMEBREW_BREWED_CURL_PATH"]
+    ENV["HOMEBREW_CURL"] = HOMEBREW_BREWED_CURL_PATH
     skip "A `curl` with TLS 1.3 support is required." unless curl_supports_tls13?
   rescue FormulaUnavailableError
     skip "No `curl` formula is available."
@@ -203,6 +203,7 @@ RSpec.configure do |config|
     FormulaInstaller.clear_attempted
     FormulaInstaller.clear_installed
     FormulaInstaller.clear_fetched
+    Utils::Curl.clear_path_cache
 
     TEST_DIRECTORIES.each(&:mkpath)
 
