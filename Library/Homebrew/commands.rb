@@ -17,6 +17,8 @@ module Commands
     "-S"          => "search",
     "up"          => "update",
     "ln"          => "link",
+    "i"           => "install",
+    "in"          => "install",
     "instal"      => "install", # gem does the same
     "uninstal"    => "uninstall",
     "rm"          => "uninstall",
