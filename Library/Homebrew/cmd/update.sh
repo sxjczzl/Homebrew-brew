@@ -5,6 +5,7 @@
 #:        --merge                      Use `git merge` to apply updates (rather than `git rebase`).
 #:        --preinstall                 Run on auto-updates (e.g. before `brew install`). Skips some slower steps.
 #:    -f, --force                      Always do a slower, full update check (even if unnecessary).
+#:    -q, --quiet                      Hide the update report. Display only errors.
 #:    -v, --verbose                    Print the directories checked and `git` operations performed.
 #:    -d, --debug                      Display a trace of all shell commands as they are executed.
 #:    -h, --help                       Show this message.
@@ -748,19 +749,22 @@ EOS
 
   # HOMEBREW_UPDATE_PREINSTALL wasn't modified in subshell.
   # shellcheck disable=SC2031
-  if [[ -n "${HOMEBREW_UPDATED}" ]] ||
-     [[ -n "${HOMEBREW_UPDATE_FAILED}" ]] ||
-     [[ -n "${HOMEBREW_MISSING_REMOTE_REF_DIRS}" ]] ||
-     [[ -n "${HOMEBREW_UPDATE_FORCE}" ]] ||
-     [[ -n "${HOMEBREW_MIGRATE_LINUXBREW_FORMULAE}" ]] ||
-     [[ -d "${HOMEBREW_LIBRARY}/LinkedKegs" ]] ||
-     [[ ! -f "${HOMEBREW_CACHE}/all_commands_list.txt" ]] ||
-     [[ -n "${HOMEBREW_DEVELOPER}" && -z "${HOMEBREW_UPDATE_PREINSTALL}" ]]
+  if [[ -z "${HOMEBREW_QUIET}" ]]
   then
-    brew update-report "$@"
-    return $?
-  elif [[ -z "${HOMEBREW_UPDATE_PREINSTALL}" && -z "${HOMEBREW_QUIET}" ]]
-  then
-    echo "Already up-to-date."
+    if [[ -n "${HOMEBREW_UPDATED}" ]] ||
+       [[ -n "${HOMEBREW_UPDATE_FAILED}" ]] ||
+       [[ -n "${HOMEBREW_MISSING_REMOTE_REF_DIRS}" ]] ||
+       [[ -n "${HOMEBREW_UPDATE_FORCE}" ]] ||
+       [[ -n "${HOMEBREW_MIGRATE_LINUXBREW_FORMULAE}" ]] ||
+       [[ -d "${HOMEBREW_LIBRARY}/LinkedKegs" ]] ||
+       [[ ! -f "${HOMEBREW_CACHE}/all_commands_list.txt" ]] ||
+       [[ -n "${HOMEBREW_DEVELOPER}" && -z "${HOMEBREW_UPDATE_PREINSTALL}" ]]
+    then
+      brew update-report "$@"
+      return $?
+    elif [[ -z "${HOMEBREW_UPDATE_PREINSTALL}" ]]
+    then
+      echo "Already up-to-date."
+    fi
   fi
 }

@@ -105,7 +105,7 @@ module Homebrew
       Utils::Analytics.messages_displayed! if $stdout.tty?
     end
 
-    if Settings.read("donationmessage") != "true" && !args.quiet?
+    if Settings.read("donationmessage") != "true"
       ohai "Homebrew is run entirely by unpaid volunteers. Please consider donating:"
       puts "  #{Formatter.url("https://github.com/Homebrew/brew#donations")}\n"
 
@@ -194,9 +194,9 @@ module Homebrew
 
     if updated
       if hub.empty?
-        puts "No changes to formulae." unless args.quiet?
+        puts "No changes to formulae."
       else
-        hub.dump(updated_formula_report: !args.preinstall?) unless args.quiet?
+        hub.dump(updated_formula_report: !args.preinstall?)
         hub.reporters.each(&:migrate_tap_migration)
         hub.reporters.each { |r| r.migrate_formula_rename(force: args.force?, verbose: args.verbose?) }
         CacheStoreDatabase.use(:descriptions) do |db|
@@ -236,7 +236,7 @@ module Homebrew
       end
       puts if args.preinstall?
     elsif !args.preinstall? && !ENV["HOMEBREW_UPDATE_FAILED"] && !ENV["HOMEBREW_MIGRATE_LINUXBREW_FORMULAE"]
-      puts "Already up-to-date." unless args.quiet?
+      puts "Already up-to-date."
     end
 
     Commands.rebuild_commands_completion_list
