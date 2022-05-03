@@ -40,10 +40,10 @@ describe RuboCop::Cop::FormulaAudit::ComponentsRedundancy do
         class Foo < Formula
           url "https://brew.sh/foo-1.0.tgz"
           bottle do
-          ^^^^^^^^^ `bottle :modifier` and `bottle do` should not be simultaneously present
             # bottles go here
           end
           bottle :unneeded
+          ^^^^^^^^^^^^^^^^ `bottle :modifier` and `bottle do` should not be simultaneously present
         end
       RUBY
     end

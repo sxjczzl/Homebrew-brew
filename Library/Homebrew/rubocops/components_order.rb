@@ -14,8 +14,8 @@ module RuboCop
       class ComponentsOrder < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          @present_components, @offensive_nodes = check_order(FORMULA_COMPONENT_PRECEDENCE_LIST, body_node)
+        def on_formula_class(class_node)
+          @present_components, @offensive_nodes = check_order(FORMULA_COMPONENT_PRECEDENCE_LIST, class_node.body)
 
           component_problem @offensive_nodes[0], @offensive_nodes[1] if @offensive_nodes
 
@@ -25,7 +25,7 @@ module RuboCop
             [{ name: :patch, type: :method_call }, { name: :patch, type: :block_call }],
           ]
 
-          on_macos_blocks = find_blocks(body_node, :on_macos)
+          on_macos_blocks = find_blocks(class_node.body, :on_macos)
 
           if on_macos_blocks.length > 1
             @offensive_node = on_macos_blocks.second
@@ -34,7 +34,7 @@ module RuboCop
 
           check_on_os_block_content(component_precedence_list, on_macos_blocks.first) if on_macos_blocks.any?
 
-          on_linux_blocks = find_blocks(body_node, :on_linux)
+          on_linux_blocks = find_blocks(class_node.body, :on_linux)
 
           if on_linux_blocks.length > 1
             @offensive_node = on_linux_blocks.second
@@ -42,72 +42,68 @@ module RuboCop
           end
 
           check_on_os_block_content(component_precedence_list, on_linux_blocks.first) if on_linux_blocks.any?
-
-          resource_blocks = find_blocks(body_node, :resource)
-          resource_blocks.each do |resource_block|
-            on_macos_blocks = find_blocks(resource_block.body, :on_macos)
-            on_linux_blocks = find_blocks(resource_block.body, :on_linux)
-
-            if on_macos_blocks.length.zero? && on_linux_blocks.length.zero?
-              # Found nothing. Try without .body as depending on the code,
-              # on_macos or on_linux might be in .body or not ...
-              on_macos_blocks = find_blocks(resource_block, :on_macos)
-              on_linux_blocks = find_blocks(resource_block, :on_linux)
-
-              next if on_macos_blocks.length.zero? && on_linux_blocks.length.zero?
-            end
-
-            @offensive_node = resource_block
-
-            next if on_macos_blocks.length.zero? && on_linux_blocks.length.zero?
-
-            on_os_bodies = []
-
-            (on_macos_blocks + on_linux_blocks).each do |on_os_block|
-              on_os_body = on_os_block.body
-              branches = on_os_body.if_type? ? on_os_body.branches : [on_os_body]
-              on_os_bodies += branches.map { |branch| [on_os_block, branch] }
-            end
-
-            message = nil
-            allowed_methods = [
-              [:url, :sha256],
-              [:url, :mirror, :sha256],
-              [:url, :version, :sha256],
-              [:url, :mirror, :version, :sha256],
-            ]
-            minimum_methods = allowed_methods.first.map { |m| "`#{m}`" }.to_sentence
-            maximum_methods = allowed_methods.last.map { |m| "`#{m}`" }.to_sentence
-
-            on_os_bodies.each do |on_os_block, on_os_body|
-              method_name = on_os_block.method_name
-              child_nodes = on_os_body.begin_type? ? on_os_body.child_nodes : [on_os_body]
-              if child_nodes.all? { |n| n.send_type? || n.block_type? }
-                method_names = child_nodes.map(&:method_name)
-                next if allowed_methods.include? method_names
-              end
-              offending_node(on_os_block)
-              message = "`#{method_name}` blocks within `resource` blocks must contain at least "\
-                        "#{minimum_methods} and at most #{maximum_methods} (in order)."
-              break
-            end
-
-            if message.present?
-              problem message
-              next
-            end
-
-            if on_macos_blocks.length > 1
-              problem "there can only be one `on_macos` block in a resource block."
-              next
-            end
-
-            if on_linux_blocks.length > 1
-              problem "there can only be one `on_linux` block in a resource block."
-              next
-            end
-          end
         end
+
+        def on_formula_resource(node)
+          on_macos_blocks = find_blocks(node.body, :on_macos)
+          on_linux_blocks = find_blocks(node.body, :on_linux)
+
+          if on_macos_blocks.length.zero? && on_linux_blocks.length.zero?
+            # Found nothing. Try without .body as depending on the code,
+            # on_macos or on_linux might be in .body or not ... (TODO: why?)
+            on_macos_blocks = find_blocks(node, :on_macos)
+            on_linux_blocks = find_blocks(node, :on_linux)
+          end
+
+          return if on_macos_blocks.length.zero? && on_linux_blocks.length.zero?
+
+          offending_node(node)
+
+          on_os_bodies = []
+
+          (on_macos_blocks + on_linux_blocks).each do |on_os_block|
+            on_os_body = on_os_block.body
+            branches = on_os_body.if_type? ? on_os_body.branches : [on_os_body]
+            on_os_bodies += branches.map { |branch| [on_os_block, branch] }
+          end
+
+          message = nil
+          allowed_methods = [
+            [:url, :sha256],
+            [:url, :mirror, :sha256],
+            [:url, :version, :sha256],
+            [:url, :mirror, :version, :sha256],
+          ]
+          minimum_methods = allowed_methods.first.map { |m| "`#{m}`" }.to_sentence
+          maximum_methods = allowed_methods.last.map { |m| "`#{m}`" }.to_sentence
+
+          on_os_bodies.each do |on_os_block, on_os_body|
+            method_name = on_os_block.method_name
+            child_nodes = on_os_body.begin_type? ? on_os_body.child_nodes : [on_os_body]
+            if child_nodes.all? { |n| n.send_type? || n.block_type? }
+              method_names = child_nodes.map(&:method_name)
+              next if allowed_methods.include? method_names
+            end
+            offending_node(on_os_block)
+            message = "`#{method_name}` blocks within `resource` blocks must contain at least "\
+                      "#{minimum_methods} and at most #{maximum_methods} (in order)."
+            break
+          end
+
+          if message.present?
+            problem message
+            return
+          end
+
+          if on_macos_blocks.length > 1
+            problem "there can only be one `on_macos` block in a resource block."
+            return
+          end
+
+          problem "there can only be one `on_linux` block in a resource block." if on_linux_blocks.length > 1
+        end
+
+        private
 
         def check_on_os_block_content(component_precedence_list, on_os_block)
           on_os_allowed_methods = %w[

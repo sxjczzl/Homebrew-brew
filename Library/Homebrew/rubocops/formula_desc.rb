@@ -14,10 +14,19 @@ module RuboCop
         include DescHelper
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
+        def on_formula_class(_class_node)
+          @formula_desc = nil
+        end
+
+        def on_formula_desc(node)
+          # audit_desc also tracks description presence, so defer to class end
+          @formula_desc = node
+        end
+
+        def on_formula_class_end(class_node)
           @name = @formula_name
-          desc_call = find_node_method_by_name(body_node, :desc)
-          audit_desc(:formula, @name, desc_call)
+          offending_node(class_node)
+          audit_desc(:formula, @name, @formula_desc)
         end
       end
     end

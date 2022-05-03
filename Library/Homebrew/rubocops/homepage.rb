@@ -10,15 +10,14 @@ module RuboCop
       class Homepage < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          homepage_node = find_node_method_by_name(body_node, :homepage)
+        def on_formula_class(_class_node)
+          @homepage_found = false
+        end
 
-          if homepage_node.nil?
-            problem "Formula should have a homepage."
-            return
-          end
+        def on_formula_homepage(node)
+          @homepage_found = true
 
-          homepage_parameter_node = parameters(homepage_node).first
+          homepage_parameter_node = parameters(node).first
           offending_node(homepage_parameter_node)
           homepage = string_content(homepage_parameter_node)
 
@@ -98,6 +97,13 @@ module RuboCop
               corrector.replace(homepage_parameter_node.source_range, "\"#{homepage.sub("http", "https")}\"")
             end
           end
+        end
+
+        def on_formula_class_end(class_node)
+          return if @homepage_found
+
+          offending_node(class_node)
+          problem "Formula should have a homepage."
         end
       end
     end

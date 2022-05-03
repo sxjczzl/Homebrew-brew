@@ -10,11 +10,12 @@ module RuboCop
       #
       # @api private
       class Version < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          version_node = find_node_method_by_name(body_node, :version)
-          return unless version_node
+        def on_formula_version(node)
+          param = parameters(node).first
+          return if param.lvar_type?
 
-          version = string_content(parameters(version_node).first)
+          offending_node(node)
+          version = string_content(param)
 
           problem "version is set to an empty string" if version.empty?
 

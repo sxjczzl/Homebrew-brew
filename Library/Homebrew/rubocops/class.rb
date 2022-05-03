@@ -18,12 +18,12 @@ module RuboCop
           AmazonWebServicesFormula
         ].freeze
 
-        def audit_formula(_node, _class_node, parent_class_node, _body_node)
-          parent_class = class_name(parent_class_node)
+        def on_formula_class(class_node)
+          parent_class = class_name(class_node.parent_class)
           return unless DEPRECATED_CLASSES.include?(parent_class)
 
           problem "#{parent_class} is deprecated, use Formula instead" do |corrector|
-            corrector.replace(parent_class_node.source_range, "Formula")
+            corrector.replace(class_node.parent_class.source_range, "Formula")
           end
         end
       end
@@ -34,27 +34,26 @@ module RuboCop
       class Test < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          test = find_block(body_node, :test)
-          return unless test
+        def on_formula_test(node)
+          offending_node(node)
 
-          if test.body.nil?
+          if node.body.nil?
             problem "`test do` should not be empty"
             return
           end
 
-          problem "`test do` should contain a real test" if test.body.single_line? && test.body.source.to_s == "true"
+          problem "`test do` should contain a real test" if node.body.single_line? && node.body.source.to_s == "true"
 
-          test_calls(test) do |node, params|
+          test_calls(node) do |call_node, params|
             p1, p2 = params
             if (match = string_content(p1).match(%r{(/usr/local/(s?bin))}))
               offending_node(p1)
-              problem "use \#{#{match[2]}} instead of #{match[1]} in #{node}" do |corrector|
+              problem "use \#{#{match[2]}} instead of #{match[1]} in #{call_node}" do |corrector|
                 corrector.replace(p1.source_range, p1.source.sub(match[1], "\#{#{match[2]}}"))
               end
             end
 
-            if node == :shell_output && node_equals?(p2, 0)
+            if call_node == :shell_output && p2&.numeric_type? && p2.value.zero?
               offending_node(p2)
               problem "Passing 0 to shell_output() is redundant" do |corrector|
                 corrector.remove(range_with_surrounding_comma(range_with_surrounding_space(range: p2.source_range,
@@ -75,9 +74,18 @@ module RuboCop
       #
       # @api private
       class TestPresent < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          return if find_block(body_node, :test)
+        def on_formula_class(_class_node)
+          @test_present = false
+        end
 
+        def on_formula_test(_node)
+          @test_present = true
+        end
+
+        def on_formula_class_end(class_node)
+          return if @test_present
+
+          offending_node(class_node)
           problem "A `test do` test block should be added"
         end
       end

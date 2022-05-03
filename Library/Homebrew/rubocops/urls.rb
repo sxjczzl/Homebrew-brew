@@ -10,48 +10,60 @@ module RuboCop
       #
       # @api private
       class Urls < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          urls = find_every_func_call_by_name(body_node, :url)
-          mirrors = find_every_func_call_by_name(body_node, :mirror)
+        def on_formula_class(_class_node)
+          @urls = []
+          @mirrors = []
+          @livecheck_url = nil
+        end
 
-          # Identify livecheck URLs, to skip some checks for them
-          livecheck_url = if (livecheck = find_every_func_call_by_name(body_node, :livecheck).first) &&
-                             (livecheck_url = find_every_func_call_by_name(livecheck.parent, :url).first)
-            string_content(parameters(livecheck_url).first)
+        def on_formula_url(node)
+          @urls << node
+
+          node.each_ancestor(:block) do |ancestor|
+            next if ancestor.method_name != :livecheck
+
+            @livecheck_url = string_content(parameters(node).first)
+            break
           end
+        end
 
+        def on_formula_mirror(node)
+          @mirrors << node
+        end
+
+        def on_formula_class_end(_class_node)
           # GNU URLs; doesn't apply to mirrors
           gnu_pattern = %r{^(?:https?|ftp)://ftpmirror\.gnu\.org/(.*)}
-          audit_urls(urls, gnu_pattern) do |match, url|
+          audit_urls(@urls, gnu_pattern) do |match, url|
             problem "Please use \"https://ftp.gnu.org/gnu/#{match[1]}\" instead of #{url}."
           end
 
           # Fossies upstream requests they aren't used as primary URLs
           # https://github.com/Homebrew/homebrew-core/issues/14486#issuecomment-307753234
           fossies_pattern = %r{^https?://fossies\.org/}
-          audit_urls(urls, fossies_pattern) do
+          audit_urls(@urls, fossies_pattern) do
             problem "Please don't use fossies.org in the url (using as a mirror is fine)"
           end
 
           apache_pattern = %r{^https?://(?:[^/]*\.)?apache\.org/(?:dyn/closer\.cgi\?path=/?|dist/)(.*)}i
-          audit_urls(urls, apache_pattern) do |match, url|
-            next if url == livecheck_url
+          audit_urls(@urls, apache_pattern) do |match, url|
+            next if url == @livecheck_url
 
             problem "#{url} should be `https://www.apache.org/dyn/closer.lua?path=#{match[1]}`"
           end
 
           version_control_pattern = %r{^(cvs|bzr|hg|fossil)://}
-          audit_urls(urls, version_control_pattern) do |match, _|
+          audit_urls(@urls, version_control_pattern) do |match, _|
             problem "Use of the #{match[1]}:// scheme is deprecated, pass `:using => :#{match[1]}` instead"
           end
 
           svn_pattern = %r{^svn\+http://}
-          audit_urls(urls, svn_pattern) do |_, _|
+          audit_urls(@urls, svn_pattern) do |_, _|
             problem "Use of the svn+http:// scheme is deprecated, pass `:using => :svn` instead"
           end
 
-          audit_urls(mirrors, /.*/) do |_, mirror|
-            urls.each do |url|
+          audit_urls(@mirrors, /.*/) do |_, mirror|
+            @urls.each do |url|
               url_string = string_content(parameters(url).first)
               next unless url_string.eql?(mirror)
 
@@ -59,7 +71,7 @@ module RuboCop
             end
           end
 
-          urls += mirrors
+          urls = @urls + @mirrors
 
           # Check a variety of SSL/TLS URLs that don't consistently auto-redirect
           # or are overly common errors that need to be reduced & fixed over time.
@@ -94,7 +106,7 @@ module RuboCop
           end
 
           apache_mirror_pattern = %r{^https?://(?:[^/]*\.)?apache\.org/dyn/closer\.(?:cgi|lua)\?path=/?(.*)}i
-          audit_urls(mirrors, apache_mirror_pattern) do |match, mirror|
+          audit_urls(@mirrors, apache_mirror_pattern) do |match, mirror|
             problem "Please use `https://archive.apache.org/dist/#{match[1]}` as a mirror instead of #{mirror}."
           end
 
@@ -138,7 +150,7 @@ module RuboCop
 
             problem "Don't use /download in SourceForge urls (url is #{url})." if url.end_with?("/download")
 
-            if url.match?(%r{^https?://sourceforge\.}) && url != livecheck_url
+            if url.match?(%r{^https?://sourceforge\.}) && url != @livecheck_url
               problem "Use https://downloads.sourceforge.net to get geolocation (url is #{url})."
             end
 
@@ -240,7 +252,7 @@ module RuboCop
             problem "#{url} should be `https://search.maven.org/remotecontent?filepath=#{match[1]}`"
           end
 
-          return if formula_tap != "homebrew-core"
+          return unless core_tap?
 
           # Check for binary URLs
           audit_urls(urls, /(darwin|macos|osx)/i) do |match, url|
@@ -261,20 +273,28 @@ module RuboCop
       class PyPiUrls < FormulaCop
         extend T::Sig
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          urls = find_every_func_call_by_name(body_node, :url)
-          mirrors = find_every_func_call_by_name(body_node, :mirror)
-          urls += mirrors
+        def on_formula_class(_class_node)
+          @urls = []
+        end
 
+        def on_formula_url(node)
+          @urls << node
+        end
+
+        def on_formula_mirror(node)
+          @urls << node
+        end
+
+        def on_formula_class_end(_class_node)
           # Check pypi URLs
           pypi_pattern = %r{^https?://pypi\.python\.org/}
-          audit_urls(urls, pypi_pattern) do |_, url|
+          audit_urls(@urls, pypi_pattern) do |_, url|
             problem "use the `Source` url found on PyPI downloads page (`#{get_pypi_url(url)}`)"
           end
 
           # Require long files.pythonhosted.org URLs
           pythonhosted_pattern = %r{^https?://files\.pythonhosted\.org/packages/source/}
-          audit_urls(urls, pythonhosted_pattern) do |_, url|
+          audit_urls(@urls, pythonhosted_pattern) do |_, url|
             problem "use the `Source` url found on PyPI downloads page (`#{get_pypi_url(url)}`)"
           end
         end
@@ -291,16 +311,19 @@ module RuboCop
       #
       # @api private
       class GitUrls < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          return unless formula_tap == "homebrew-core"
+        def on_formula_url(node)
+          return unless core_tap?
+          return unless string_content(parameters(node).first).match?(/\.git$/)
+          return if url_has_revision?(parameters(node).last)
 
-          find_method_calls_by_name(body_node, :url).each do |url|
-            next unless string_content(parameters(url).first).match?(/\.git$/)
-            next if url_has_revision?(parameters(url).last)
-
-            offending_node(url)
-            problem "Formulae in homebrew/core should specify a revision for git URLs"
+          head_node = false
+          node.each_ancestor(:block) do |ancestor|
+            head_node = true if ancestor.method_name == :head || ancestor.method_name == :livecheck
           end
+          return if head_node
+
+          offending_node(node)
+          problem "Formulae in homebrew/core should specify a revision for git URLs"
         end
 
         def_node_matcher :url_has_revision?, <<~EOS
@@ -314,16 +337,22 @@ module RuboCop
       #
       # @api private
       class GitUrls < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          return unless formula_tap == "homebrew-core"
+        def on_formula_url(node)
+          return unless core_tap?
+          return unless string_content(parameters(node).first).match?(/\.git$/)
+          return if url_has_tag?(parameters(node).last)
 
-          find_method_calls_by_name(body_node, :url).each do |url|
-            next unless string_content(parameters(url).first).match?(/\.git$/)
-            next if url_has_tag?(parameters(url).last)
+          head_node = false
+          node.each_ancestor(:block) do |ancestor|
+            next if ancestor.method_name != :head && ancestor.method_name != :livecheck
 
-            offending_node(url)
-            problem "Formulae in homebrew/core should specify a tag for git URLs"
+            head_node = true
+            break
           end
+          return if head_node
+
+          offending_node(node)
+          problem "Formulae in homebrew/core should specify a tag for git URLs"
         end
 
         def_node_matcher :url_has_tag?, <<~EOS

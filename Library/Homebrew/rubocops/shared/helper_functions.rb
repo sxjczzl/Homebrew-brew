@@ -3,11 +3,6 @@
 
 require "rubocop"
 
-require_relative "../../warnings"
-Warnings.ignore :parser_syntax do
-  require "parser/current"
-end
-
 module RuboCop
   module Cop
     # Helper functions for cops.
@@ -182,15 +177,21 @@ module RuboCop
       def find_instance_method_call(node, instance, method_name)
         methods = find_every_method_call_by_name(node, method_name)
         methods.each do |method|
-          next if method.receiver.nil?
-          next if method.receiver.const_name != instance &&
-                  !(method.receiver.send_type? && method.receiver.method_name == instance)
+          next unless instance_method_call?(method, instance)
 
-          @offensive_node = method
           return true unless block_given?
 
           yield method
         end
+      end
+
+      def instance_method_call?(method, instance)
+        return false if method.receiver.nil?
+        return false if method.receiver.const_name != instance &&
+                        !(method.receiver.send_type? && method.receiver.method_name == instance)
+
+        @offensive_node = method
+        true
       end
 
       # Matches receiver part of method. Yields to a block with parent node of receiver.
@@ -223,11 +224,6 @@ module RuboCop
           return true
         end
         nil
-      end
-
-      # To compare node with appropriate Ruby variable.
-      def node_equals?(node, var)
-        node == Parser::CurrentRuby.parse(var.inspect)
       end
 
       # Returns a block named block_name inside node.
@@ -366,7 +362,8 @@ module RuboCop
             if given_param.instance_of?(Regexp)
               regex_match_group(method_param, given_param)
             else
-              node_equals?(method_param, given_param)
+              # Non-literals are not supported.
+              method_param.basic_literal? && method_param.value == given_param
             end
           end
         end

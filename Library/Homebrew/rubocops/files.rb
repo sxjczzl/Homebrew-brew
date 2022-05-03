@@ -10,10 +10,10 @@ module RuboCop
       #
       # @api private
       class Files < FormulaCop
-        def audit_formula(node, _class_node, _parent_class_node, _body_node)
+        def on_formula_class(class_node)
           return unless file_path
 
-          offending_node(node)
+          offending_node(class_node)
           actual_mode = File.stat(file_path).mode
           # Check that the file is world-readable.
           if actual_mode & 0444 != 0444

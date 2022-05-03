@@ -1,6 +1,7 @@
-# typed: false
+# typed: true
 # frozen_string_literal: true
 
+require_relative "formula_force"
 require "extend/string"
 require "rubocops/shared/helper_functions"
 
@@ -15,19 +16,16 @@ module RuboCop
 
       attr_accessor :file_path
 
-      @registry = Cop.registry
+      def self.inherited(subclass)
+        super(subclass)
+        subclass.define_singleton_method(:joining_forces) do
+          FormulaForce
+        end
+      end
 
-      # This method is called by RuboCop and is the main entry point.
-      def on_class(node)
-        @file_path = processed_source.buffer.name
-        return unless file_path_allowed?
-        return unless formula_class?(node)
-        return unless respond_to?(:audit_formula)
-
-        class_node, parent_class_node, @body = *node
-        @formula_name = Pathname.new(@file_path).basename(".rb").to_s
-        @tap_style_exceptions = nil
-        audit_formula(node, class_node, parent_class_node, @body)
+      def on_formula_file(file_path)
+        @file_path = file_path
+        @formula_name = Pathname.new(file_path).basename(".rb").to_s
       end
 
       # Yields to block when there is a match.
@@ -46,23 +44,14 @@ module RuboCop
         end
       end
 
-      # Returns nil if does not depend on dependency_name.
-      #
-      # @param dependency_name dependency's name
-      def depends_on?(dependency_name, *types)
-        types = [:any] if types.empty?
-        dependency_nodes = find_every_method_call_by_name(@body, :depends_on)
-        idx = dependency_nodes.index do |n|
-          types.any? { |type| depends_on_name_type?(n, dependency_name, type) }
-        end
-        return if idx.nil?
-
-        @offensive_node = dependency_nodes[idx]
-      end
-
       # Returns true if given dependency name and dependency type exist in given dependency method call node.
       # TODO: Add case where key of hash is an array
-      def depends_on_name_type?(node, name = nil, type = :required)
+      def depends_on_matches?(node, name = nil, type = :any)
+        return false unless node.send_type?
+
+        first_arg = node.first_argument
+        return false if first_arg.nil?
+
         name_match = if name
           false
         else
@@ -74,12 +63,12 @@ module RuboCop
           type_match = required_dependency?(node)
           name_match ||= required_dependency_name?(node, name) if type_match
         when :build, :test, :optional, :recommended
-          type_match = dependency_type_hash_match?(node, type)
-          name_match ||= dependency_name_hash_match?(node, name) if type_match
+          type_match = dependency_type_hash_match?(first_arg, type)
+          name_match ||= dependency_name_hash_match?(first_arg, name) if type_match
         when :any
           type_match = true
           name_match ||= required_dependency_name?(node, name)
-          name_match ||= dependency_name_hash_match?(node, name)
+          name_match ||= dependency_name_hash_match?(first_arg, name)
         else
           type_match = false
         end
@@ -88,26 +77,21 @@ module RuboCop
         type_match && name_match
       end
 
-      def_node_search :required_dependency?, <<~EOS
+      def_node_matcher :required_dependency?, <<~EOS
         (send nil? :depends_on ({str sym} _))
       EOS
 
-      def_node_search :required_dependency_name?, <<~EOS
+      def_node_matcher :required_dependency_name?, <<~EOS
         (send nil? :depends_on ({str sym} %1))
       EOS
 
-      def_node_search :dependency_type_hash_match?, <<~EOS
+      def_node_matcher :dependency_type_hash_match?, <<~EOS
         (hash (pair ({str sym} _) ({str sym} %1)))
       EOS
 
-      def_node_search :dependency_name_hash_match?, <<~EOS
+      def_node_matcher :dependency_name_hash_match?, <<~EOS
         (hash (pair ({str sym} %1) (...)))
       EOS
-
-      # Return all the caveats' string nodes in an array.
-      def caveats_strings
-        find_strings(find_method_def(@body, :caveats))
-      end
 
       # Returns the sha256 str node given a sha256 call node.
       def get_checksum_node(call)
@@ -131,14 +115,6 @@ module RuboCop
         end
       end
 
-      # Yields to a block with comment text as parameter.
-      def audit_comments
-        processed_source.comments.each do |comment_node|
-          @offensive_node = comment_node
-          yield comment_node.text
-        end
-      end
-
       # Returns true if the formula is versioned.
       def versioned_formula?
         @formula_name.include?("@")
@@ -149,6 +125,10 @@ module RuboCop
         return unless (match_obj = @file_path.match(%r{/(homebrew-\w+)/}))
 
         match_obj[1]
+      end
+
+      def core_tap?
+        formula_tap == "homebrew-core"
       end
 
       # Returns whether the given formula exists in the given style exception list.
@@ -175,28 +155,6 @@ module RuboCop
         return false unless @tap_style_exceptions.key? list
 
         @tap_style_exceptions[list].include?(formula || @formula_name)
-      end
-
-      private
-
-      def formula_class?(node)
-        _, class_node, = *node
-        class_names = %w[
-          Formula
-          GithubGistFormula
-          ScriptFileFormula
-          AmazonWebServicesFormula
-        ]
-
-        class_node && class_names.include?(string_content(class_node))
-      end
-
-      def file_path_allowed?
-        paths_to_exclude = [%r{/Library/Homebrew/compat/},
-                            %r{/Library/Homebrew/test/}]
-        return true if @file_path.nil? # file_path is nil when source is directly passed to the cop, e.g. in specs
-
-        @file_path !~ Regexp.union(paths_to_exclude)
       end
     end
   end

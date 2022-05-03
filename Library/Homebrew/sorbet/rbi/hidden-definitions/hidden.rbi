@@ -5182,11 +5182,11 @@ class RuboCop::Cop::FormulaAudit::Licenses
 end
 
 class RuboCop::Cop::FormulaAudit::Miscellaneous
-  def conditional_dependencies(param0); end
+  def conditional_dependencies(param0=T.unsafe(nil)); end
 
   def destructure_hash(param0=T.unsafe(nil)); end
 
-  def formula_path_strings(param0, param1); end
+  def formula_path_strings(param0=T.unsafe(nil), param1); end
 
   def hash_dep(param0=T.unsafe(nil)); end
 
@@ -5194,7 +5194,7 @@ class RuboCop::Cop::FormulaAudit::Miscellaneous
 end
 
 class RuboCop::Cop::FormulaAudit::OptionDeclarations
-  def depends_on_build_with(param0); end
+  def depends_on_build_with(param0=T.unsafe(nil)); end
 end
 
 class RuboCop::Cop::FormulaAudit::Patches
@@ -5216,7 +5216,7 @@ class RuboCop::Cop::FormulaAudit::Test
 end
 
 class RuboCop::Cop::FormulaAudit::Text
-  def prefix_path(param0); end
+  def prefix_path(param0=T.unsafe(nil)); end
 end
 
 class RuboCop::Cop::FormulaAuditStrict::GitUrls
@@ -5224,19 +5224,19 @@ class RuboCop::Cop::FormulaAuditStrict::GitUrls
 end
 
 class RuboCop::Cop::FormulaAuditStrict::Text
-  def interpolated_share_path_starts_with(param0, param1); end
+  def interpolated_share_path_starts_with?(param0=T.unsafe(nil), param1); end
 
-  def share_path_starts_with(param0, param1); end
+  def share_path_starts_with?(param0=T.unsafe(nil), param1); end
 end
 
 class RuboCop::Cop::FormulaCop
-  def dependency_name_hash_match?(param0, param1); end
+  def dependency_name_hash_match?(param0=T.unsafe(nil), param1); end
 
-  def dependency_type_hash_match?(param0, param1); end
+  def dependency_type_hash_match?(param0=T.unsafe(nil), param1); end
 
-  def required_dependency?(param0); end
+  def required_dependency?(param0=T.unsafe(nil)); end
 
-  def required_dependency_name?(param0, param1); end
+  def required_dependency_name?(param0=T.unsafe(nil), param1); end
 end
 
 class RuboCop::Cop::Style::MutableConstant

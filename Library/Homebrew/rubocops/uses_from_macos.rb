@@ -59,13 +59,12 @@ module RuboCop
           zlib
         ].freeze
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          find_method_with_args(body_node, :keg_only, :provided_by_macos) do
-            return if PROVIDED_BY_MACOS_FORMULAE.include? @formula_name
+        def on_formula_keg_only(node)
+          return unless parameters_passed?(node, :provided_by_macos)
+          return if PROVIDED_BY_MACOS_FORMULAE.include? @formula_name
 
-            problem "Formulae that are `keg_only :provided_by_macos` should be "\
-                    "added to the `PROVIDED_BY_MACOS_FORMULAE` list (in the Homebrew/brew repo)"
-          end
+          problem "Formulae that are `keg_only :provided_by_macos` should be "\
+                  "added to the `PROVIDED_BY_MACOS_FORMULAE` list (in the Homebrew/brew repo)"
         end
       end
 
@@ -91,20 +90,19 @@ module RuboCop
           zsh
         ].freeze
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          find_method_with_args(body_node, :uses_from_macos, /^"(.+)"/).each do |method|
-            dep = if parameters(method).first.instance_of?(RuboCop::AST::StrNode)
-              parameters(method).first
-            elsif parameters(method).first.instance_of?(RuboCop::AST::HashNode)
-              parameters(method).first.keys.first
-            end
-
-            dep_name = string_content(dep)
-            next if ALLOWED_USES_FROM_MACOS_DEPS.include? dep_name
-            next if ProvidedByMacos::PROVIDED_BY_MACOS_FORMULAE.include? dep_name
-
-            problem "`uses_from_macos` should only be used for macOS dependencies, not #{dep_name}."
+        def on_formula_uses_from_macos(node)
+          dep = if parameters(node).first.str_type?
+            parameters(node).first
+          elsif parameters(node).first.hash_type?
+            parameters(node).first.keys.first
           end
+
+          dep_name = string_content(dep)
+          return if ALLOWED_USES_FROM_MACOS_DEPS.include? dep_name
+          return if ProvidedByMacos::PROVIDED_BY_MACOS_FORMULAE.include? dep_name
+
+          offending_node(node)
+          problem "`uses_from_macos` should only be used for macOS dependencies, not #{dep_name}."
         end
       end
     end

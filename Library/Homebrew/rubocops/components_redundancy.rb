@@ -19,37 +19,60 @@ module RuboCop
         BOTTLE_MSG = "`bottle :modifier` and `bottle do` should not be simultaneously present"
         STABLE_MSG = "`stable do` should not be present without a `head` spec"
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          urls = find_method_calls_by_name(body_node, :url)
+        def on_formula_class(_class_node)
+          @stable_block = nil
+          @head_type = nil
+          @bottle_type = nil
+        end
 
-          urls.each do |url|
-            url.arguments.each do |arg|
-              next if arg.class != RuboCop::AST::HashNode
+        def on_formula_url(node)
+          parent = node.each_ancestor(:begin, :block, :class).first || node.parent
 
-              url_args = arg.keys.each.map(&:value)
-              if method_called?(body_node, :sha256) && url_args.include?(:tag) && url_args.include?(:revision)
-                problem "Do not use both sha256 and tag/revision."
-              end
+          node.arguments.each do |arg|
+            next unless arg.hash_type?
+
+            url_args = arg.keys.each.map(&:value)
+            if method_called?(parent, :sha256) && url_args.include?(:tag) && url_args.include?(:revision)
+              problem "Do not use both sha256 and tag/revision."
             end
           end
+        end
 
-          stable_block = find_block(body_node, :stable)
-          if stable_block
-            [:url, :sha256, :mirror].each do |method_name|
-              problem "`#{method_name}` should be put inside `stable` block" if method_called?(body_node, method_name)
-            end
+        def on_formula_stable(node)
+          @stable_block = node
+        end
+
+        def on_formula_head(node)
+          if @head_type && @head_type != node.type
+            offending_node(node)
+            problem HEAD_MSG
           end
 
-          problem HEAD_MSG if method_called?(body_node, :head) &&
-                              find_block(body_node, :head)
+          @head_type = node.type
+        end
 
-          problem BOTTLE_MSG if method_called?(body_node, :bottle) &&
-                                find_block(body_node, :bottle)
+        def on_formula_bottle(node)
+          if @bottle_type && @bottle_type != node.type
+            offending_node(node)
+            problem BOTTLE_MSG
+          end
 
-          return if method_called?(body_node, :head) ||
-                    find_block(body_node, :head)
+          @bottle_type = node.type
+        end
 
-          problem STABLE_MSG if stable_block
+        def on_formula_class_end(class_node)
+          return unless @stable_block
+
+          [:url, :sha256, :mirror].each do |method_name|
+            next unless method_called?(class_node.body, method_name)
+
+            problem "`#{method_name}` should be put inside `stable` block"
+          end
+
+          return if @head_type
+
+          offending_node(@stable_block)
+          problem STABLE_MSG
         end
       end
     end

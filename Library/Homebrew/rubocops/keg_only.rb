@@ -12,10 +12,7 @@ module RuboCop
       class KegOnly < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          keg_only_node = find_node_method_by_name(body_node, :keg_only)
-          return unless keg_only_node
-
+        def on_formula_keg_only(node)
           allowlist = %w[
             Apple
             macOS
@@ -28,7 +25,7 @@ module RuboCop
             Firefox
           ].freeze
 
-          reason = parameters(keg_only_node).first
+          reason = parameters(node).first
           offending_node(reason)
           name = Regexp.new(@formula_name, Regexp::IGNORECASE)
           reason = string_content(reason).sub(name, "")

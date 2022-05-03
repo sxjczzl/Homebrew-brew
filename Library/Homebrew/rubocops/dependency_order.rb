@@ -13,16 +13,21 @@ module RuboCop
       class DependencyOrder < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          check_dependency_nodes_order(body_node)
-          check_uses_from_macos_nodes_order(body_node)
-          [:head, :stable].each do |block_name|
-            block = find_block(body_node, block_name)
-            next unless block
+        def on_formula_class(class_node)
+          check_dependency_nodes_order(class_node.body)
+          check_uses_from_macos_nodes_order(class_node.body)
+        end
 
-            check_dependency_nodes_order(block.body)
-            check_uses_from_macos_nodes_order(block.body)
-          end
+        def on_formula_stable(node)
+          check_dependency_nodes_order(node.body)
+          check_uses_from_macos_nodes_order(node.body)
+        end
+
+        def on_formula_head(node)
+          return unless node.block_type?
+
+          check_dependency_nodes_order(node.body)
+          check_uses_from_macos_nodes_order(node.body)
         end
 
         def check_uses_from_macos_nodes_order(parent_node)

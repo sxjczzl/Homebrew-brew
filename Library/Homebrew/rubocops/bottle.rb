@@ -12,9 +12,8 @@ module RuboCop
       class BottleFormat < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          bottle_node = find_block(body_node, :bottle)
-          return if bottle_node.nil?
+        def on_formula_bottle(bottle_node)
+          return unless bottle_node.block_type?
 
           sha256_nodes = find_method_calls_by_name(bottle_node.body, :sha256)
           cellar_node = find_node_method_by_name(bottle_node.body, :cellar)
@@ -59,9 +58,8 @@ module RuboCop
       class BottleTagIndentation < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          bottle_node = find_block(body_node, :bottle)
-          return if bottle_node.nil?
+        def on_formula_bottle(bottle_node)
+          return unless bottle_node.block_type?
 
           sha256_nodes = find_method_calls_by_name(bottle_node.body, :sha256)
 
@@ -95,9 +93,8 @@ module RuboCop
       class BottleDigestIndentation < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          bottle_node = find_block(body_node, :bottle)
-          return if bottle_node.nil?
+        def on_formula_bottle(bottle_node)
+          return unless bottle_node.block_type?
 
           sha256_nodes = find_method_calls_by_name(bottle_node.body, :sha256)
 
@@ -131,9 +128,8 @@ module RuboCop
       class BottleOrder < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          bottle_node = find_block(body_node, :bottle)
-          return if bottle_node.nil?
+        def on_formula_bottle(bottle_node)
+          return unless bottle_node.block_type?
           return if bottle_node.child_nodes.blank?
 
           non_sha256_nodes = []

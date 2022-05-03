@@ -13,30 +13,40 @@ module RuboCop
         extend T::Sig
         extend AutoCorrector
 
-        def audit_formula(node, _class_node, _parent_class_node, body)
-          @full_source_content = source_buffer(node).source
+        def on_formula_source(processed_source)
+          @full_source_content = processed_source.raw_source
+        end
 
-          external_patches = find_all_blocks(body, :patch)
-          external_patches.each do |patch_block|
-            url_node = find_every_method_call_by_name(patch_block, :url).first
+        def on_formula_class(_class_node)
+          @inline_patch = false
+        end
+
+        def on_formula_patch(node)
+          if node.block_type?
+            url_node = find_every_method_call_by_name(node, :url).first
             url_string = parameters(url_node).first
             patch_problems(url_string)
+          else
+            @inline_patch = true
+            inline_patch_problems(node)
           end
+        end
 
-          inline_patches = find_every_method_call_by_name(body, :patch)
-          inline_patches.each { |patch| inline_patch_problems(patch) }
+        def on_formula_def(node)
+          return if node.method_name != :patches
 
-          if inline_patches.empty? && patch_end?
-            offending_patch_end_node(node)
-            add_offense(@offense_source_range, message: "patch is missing 'DATA'")
-          end
-
-          patches_node = find_method_def(body, :patches)
-          return if patches_node.nil?
-
-          legacy_patches = find_strings(patches_node)
+          offending_node(node)
+          legacy_patches = find_strings(node)
           problem "Use the patch DSL instead of defining a 'patches' method"
           legacy_patches.each { |p| patch_problems(p) }
+        end
+
+        def on_formula_class_end(class_node)
+          return if @inline_patch
+          return unless patch_end?
+
+          offending_patch_end_node(class_node)
+          add_offense(@offense_source_range, message: "patch is missing 'DATA'")
         end
 
         private

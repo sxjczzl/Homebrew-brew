@@ -12,90 +12,119 @@ module RuboCop
       class Text < FormulaCop
         extend AutoCorrector
 
-        def audit_formula(node, _class_node, _parent_class_node, body_node)
-          full_source_content = source_buffer(node).source
+        def on_formula_source(processed_source)
+          @go_require = nil
+          @go_resource_found = false
 
-          if (match = full_source_content.match(/^require ['"]formula['"]$/))
-            range = source_range(source_buffer(node), match.pre_match.count("\n") + 1, 0, match[0].length)
-            add_offense(range, message: "`#{match}` is now unnecessary") do |corrector|
-              corrector.remove(range_with_surrounding_space(range: range))
+          requires = find_method_calls_by_name(processed_source.ast, :require)
+          requires.each do |req|
+            if parameters_passed?(req, "formula")
+              range = req.source_range
+              add_offense(range, message: "`require \"formula\"` is now unnecessary") do |corrector|
+                corrector.remove(range_with_surrounding_space(range: range))
+              end
+            elsif parameters_passed?(req, "language/go")
+              @go_require = req
             end
           end
+        end
 
-          if !find_node_method_by_name(body_node, :plist_options) &&
-             find_method_def(body_node, :plist)
-            problem "Please set plist_options when using a formula-defined plist."
+        def on_formula_class(_class_node)
+          @plist_options_found = false
+          @plist_node = nil
+          @ssl_type = nil
+        end
+
+        def on_formula_plist_options(_node)
+          @plist_options_found = true
+        end
+
+        def on_formula_plist(node)
+          @plist_node = node
+        end
+
+        def on_formula_depends_on(node)
+          new_ssl_type = if depends_on_matches?(node, "openssl") || depends_on_matches?(node, "openssl@1.1") ||
+                            depends_on_matches?(node, "openssl@3")
+            "openssl"
+          elsif depends_on_matches?(node, "libressl")
+            "libressl"
           end
 
-          if (depends_on?("openssl") || depends_on?("openssl@1.1")) && depends_on?("libressl")
+          if @ssl_type && new_ssl_type && @ssl_type != new_ssl_type
             problem "Formulae should not depend on both OpenSSL and LibreSSL (even optionally)."
           end
 
-          if formula_tap == "homebrew-core" && (depends_on?("veclibfort") || depends_on?("lapack"))
-            problem "Formulae in homebrew/core should use OpenBLAS as the default serial linear algebra library."
-          end
+          @ssl_type = new_ssl_type if new_ssl_type
 
-          unless method_called_ever?(body_node, :go_resource)
-            # processed_source.ast is passed instead of body_node because `require` would be outside body_node
-            find_method_with_args(processed_source.ast, :require, "language/go") do
-              problem "require \"language/go\" is unnecessary unless using `go_resource`s"
-            end
-          end
+          return unless core_tap?
+          return if !depends_on_matches?(node, "veclibfort") && !depends_on_matches?(node, "lapack")
 
-          find_instance_method_call(body_node, "Formula", :factory) do
+          problem "Formulae in homebrew/core should use OpenBLAS as the default serial linear algebra library."
+        end
+
+        def on_formula_go_resource(_node)
+          @go_resource_found = true
+        end
+
+        def on_formula_send(send_node)
+          if send_node.method_name == :factory && instance_method_call?(send_node, "Formula")
             problem "\"Formula.factory(name)\" is deprecated in favor of \"Formula[name]\""
-          end
-
-          find_method_with_args(body_node, :system, "xcodebuild") do
-            problem %q(use "xcodebuild *args" instead of "system 'xcodebuild', *args")
-          end
-
-          if (method_node = find_method_def(body_node, :install))
-            find_method_with_args(method_node, :system, "go", "get") do
-              problem "Do not use `go get`. Please ask upstream to implement Go vendoring"
+          elsif send_node.method_name == :system
+            if parameters_passed?(send_node, "xcodebuild")
+              problem %q(use "xcodebuild *args" instead of "system 'xcodebuild', *args")
+            elsif parameters_passed?(send_node, "dep", "ensure") && !parameters_passed?(send_node, /vendor-only/) &&
+                  @formula_name != "goose" # needed in 2.3.0
+              offending_node(send_node)
+              problem "use \"dep\", \"ensure\", \"-vendor-only\""
+            elsif parameters_passed?(send_node, "cargo", "build") && !parameters_passed?(send_node, /--lib/)
+              offending_node(send_node)
+              problem "use \"cargo\", \"install\", *std_cargo_args"
+            elsif parameters_passed?(send_node, /make && make/)
+              offending_node(send_node)
+              problem "Use separate `make` calls"
             end
-          end
-
-          find_method_with_args(body_node, :system, "dep", "ensure") do |d|
-            next if parameters_passed?(d, /vendor-only/)
-            next if @formula_name == "goose" # needed in 2.3.0
-
-            problem "use \"dep\", \"ensure\", \"-vendor-only\""
-          end
-
-          find_method_with_args(body_node, :system, "cargo", "build") do |m|
-            next if parameters_passed?(m, /--lib/)
-
-            problem "use \"cargo\", \"install\", *std_cargo_args"
-          end
-
-          find_every_method_call_by_name(body_node, :system).each do |m|
-            next unless parameters_passed?(m, /make && make/)
-
-            offending_node(m)
-            problem "Use separate `make` calls"
-          end
-
-          body_node.each_descendant(:dstr) do |dstr_node|
-            dstr_node.each_descendant(:begin) do |interpolation_node|
-              next unless interpolation_node.source.match?(/#\{\w+\s*\+\s*['"][^}]+\}/)
-
-              offending_node(interpolation_node)
-              problem "Do not concatenate paths in string interpolation"
-            end
-          end
-
-          prefix_path(body_node) do |prefix_node, path|
-            next unless (match = path.match(%r{^(bin|include|libexec|lib|sbin|share|Frameworks)(?:/| |$)}))
-
-            offending_node(prefix_node)
+          elsif (path = prefix_path(send_node)) &&
+                (match = path.match(%r{^(bin|include|libexec|lib|sbin|share|Frameworks)(?:/| |$)}))
+            offending_node(send_node)
             problem "Use `#{match[1].downcase}` instead of `prefix + \"#{match[1]}\"`"
           end
         end
 
+        def on_formula_install(node)
+          find_method_with_args(node, :system, "go", "get") do
+            problem "Do not use `go get`. Please ask upstream to implement Go vendoring"
+          end
+        end
+
+        def on_formula_dstr(node)
+          node.each_descendant(:begin) do |interpolation_node|
+            next unless interpolation_node.source.match?(/#\{\w+\s*\+\s*['"][^}]+\}/)
+
+            offending_node(interpolation_node)
+            problem "Do not concatenate paths in string interpolation"
+          end
+        end
+
+        def on_formula_class_end(_class_node)
+          return if @plist_options_found
+          return unless @plist_node
+
+          offending_node(@plist_node)
+          problem "Please set plist_options when using a formula-defined plist."
+        end
+
+        def on_formula_source_end(_processed_source)
+          return if @go_resource_found
+          return unless @go_require
+
+          offending_node(@go_require)
+          problem "require \"language/go\" is unnecessary unless using `go_resource`s"
+        end
+
         # Find: prefix + "foo"
-        def_node_search :prefix_path, <<~EOS
-          $(send (send nil? :prefix) :+ (str $_))
+        def_node_matcher :prefix_path, <<~EOS
+          (send (send nil? :prefix) :+ (str $_))
         EOS
       end
     end
@@ -105,30 +134,28 @@ module RuboCop
       #
       # @api private
       class Text < FormulaCop
-        def audit_formula(_node, _class_node, _parent_class_node, body_node)
-          find_method_with_args(body_node, :go_resource) do
-            problem "`go_resource`s are deprecated. Please ask upstream to implement Go vendoring"
-          end
+        def on_formula_go_resource(_node)
+          problem "`go_resource`s are deprecated. Please ask upstream to implement Go vendoring"
+        end
 
-          find_method_with_args(body_node, :env, :userpaths) do
-            problem "`env :userpaths` in homebrew/core formulae is deprecated"
-          end
-
-          share_path_starts_with(body_node, @formula_name) do |share_node|
-            offending_node(share_node)
+        def on_formula_send(send_node)
+          if send_node.method_name == :env
+            if parameters_passed?(send_node, :userpaths)
+              problem "`env :userpaths` in homebrew/core formulae is deprecated"
+            elsif core_tap? && parameters_passed?(send_node, :std)
+              problem "`env :std` in homebrew/core formulae is deprecated"
+            end
+          elsif share_path_starts_with?(send_node, @formula_name)
+            offending_node(send_node)
             problem "Use `pkgshare` instead of `share/\"#{@formula_name}\"`"
           end
+        end
 
-          interpolated_share_path_starts_with(body_node, "/#{@formula_name}") do |share_node|
-            offending_node(share_node)
-            problem "Use `\#{pkgshare}` instead of `\#{share}/#{@formula_name}`"
-          end
+        def on_formula_dstr(node)
+          return unless interpolated_share_path_starts_with?(node, "/#{@formula_name}")
 
-          return unless formula_tap == "homebrew-core"
-
-          find_method_with_args(body_node, :env, :std) do
-            problem "`env :std` in homebrew/core formulae is deprecated"
-          end
+          offending_node(node)
+          problem "Use `\#{pkgshare}` instead of `\#{share}/#{@formula_name}`"
         end
 
         # Check whether value starts with the formula name and then a "/", " " or EOS.
@@ -137,13 +164,13 @@ module RuboCop
         end
 
         # Find "#{share}/foo"
-        def_node_search :interpolated_share_path_starts_with, <<~EOS
-          $(dstr (begin (send nil? :share)) (str #path_starts_with?(%1)))
+        def_node_matcher :interpolated_share_path_starts_with?, <<~EOS
+          (dstr (begin (send nil? :share)) (str #path_starts_with?(%1)))
         EOS
 
         # Find share/"foo"
-        def_node_search :share_path_starts_with, <<~EOS
-          $(send (send nil? :share) :/ (str #path_starts_with?(%1)))
+        def_node_matcher :share_path_starts_with?, <<~EOS
+          (send (send nil? :share) :/ (str #path_starts_with?(%1)))
         EOS
       end
     end
