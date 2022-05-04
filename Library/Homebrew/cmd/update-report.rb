@@ -362,27 +362,7 @@ class Reporter
         new_tap = tap.tap_migrations[name]
         @report[status.to_sym] << full_name unless new_tap
       when "M"
-        name = tap.formula_file_to_name(src)
-
-        # Skip reporting updated formulae to speed up automatic updates.
-        if preinstall
-          @report[:M] << name
-          next
-        end
-
-        begin
-          formula = Formulary.factory(tap.path/src)
-          new_version = formula.pkg_version
-          old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
-          next if new_version == old_version
-        rescue FormulaUnavailableError
-          # Don't care if the formula isn't available right now.
-          nil
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
-        end
-
-        @report[:M] << name
+        @report[:M] << tap.formula_file_to_name(src)
       when /^R\d{0,3}/
         src_full_name = tap.formula_file_to_name(src)
         dst_full_name = tap.formula_file_to_name(dst)
