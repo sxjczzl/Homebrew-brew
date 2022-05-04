@@ -1,7 +1,7 @@
 # typed: false
 # frozen_string_literal: true
 
-require "formula_versions"
+require "formulae_at_revision"
 require "migrator"
 require "formulary"
 require "descriptions"
@@ -362,27 +362,7 @@ class Reporter
         new_tap = tap.tap_migrations[name]
         @report[status.to_sym] << full_name unless new_tap
       when "M"
-        name = tap.formula_file_to_name(src)
-
-        # Skip reporting updated formulae to speed up automatic updates.
-        if preinstall
-          @report[:M] << name
-          next
-        end
-
-        begin
-          formula = Formulary.factory(tap.path/src)
-          new_version = formula.pkg_version
-          old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
-          next if new_version == old_version
-        rescue FormulaUnavailableError
-          # Don't care if the formula isn't available right now.
-          nil
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
-        end
-
-        @report[:M] << name
+        @report[:M] << src
       when /^R\d{0,3}/
         src_full_name = tap.formula_file_to_name(src)
         dst_full_name = tap.formula_file_to_name(dst)
@@ -392,6 +372,32 @@ class Reporter
         @report[:D] << src_full_name
         @report[:A] << dst_full_name
       end
+    end
+
+    # Filter out formulae from @report[:M] whose versions didn't change
+    unless preinstall
+      formulae =
+        @report[:M].map do |src|
+          Formulary.factory(tap.path/src)
+        rescue FormulaUnavailableError
+          # Don't care if the formula isn't available right now.
+          nil
+        rescue Exception => e # rubocop:disable Lint/RescueException
+          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
+        end.compact
+
+      formulae_at_revision = FormulaeAtRevision.new(formulae, tap.path, @initial_revision)
+
+      formulae.each do |formula|
+        old_formula = formulae_at_revision[formula]
+        next unless old_formula # Formula did not exist at @initial_revision
+
+        @report[:M].delete formula.path.relative_path_from(tap.path) if formula.pkg_version == old_formula.pkg_version
+      end
+    end
+
+    @report[:M].map! do |src|
+      tap.formula_file_to_name(src)
     end
 
     renamed_formulae = Set.new
