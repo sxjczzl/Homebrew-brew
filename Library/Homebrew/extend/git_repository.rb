@@ -3,6 +3,7 @@
 
 require "utils/git"
 require "utils/popen"
+require "strscan"
 
 # Extensions to {Pathname} for querying Git repository information.
 # @see Utils::Git
@@ -99,6 +100,44 @@ module GitRepositoryExtension
   sig { params(commit: String, safe: T::Boolean).returns(T.nilable(String)) }
   def git_commit_message(commit = "HEAD", safe: false)
     popen_git("log", "-1", "--pretty=%B", commit, "--", safe: safe, err: :out)&.strip
+  end
+
+  # Gets the contents of a list of entries in the repo.
+  # Entries are specified as REVISION:PATH.
+  sig { params(entries: T::Array[String]).returns(T::Hash[String, T.nilable(String)]) }
+  def git_cat_files(entries)
+    snip = "------------>8-----------------"
+    batch_size = 500 # git chokes if this number is too large
+
+    output =
+      entries.each_slice(batch_size).map do |batch|
+        # Docs: https://git-scm.com/docs/git-cat-file
+        Utils.popen_write("git", "-C", self, "cat-file", "--batch=#{snip}") do |pipe|
+          pipe.write(batch.join("\n"))
+        end
+      end.join
+
+    # Read the output of git cat-file in chunks
+    # Read until we either encounter `snip` (the start of a new blob)
+    # or else the message "<ENTRY> missing" (which indicates a missing blob)
+    s = StringScanner.new(output)
+    [*entries, nil].each_cons(2).to_h do |(entry, next_entry)|
+      if s.scan(/#{entry} missing\n/)
+        [entry, nil]
+      elsif s.scan(/#{Regexp.escape(snip)}\n/)
+        contents = next_entry ? s.scan_until(/^(?=#{Regexp.escape(snip)}|#{next_entry} missing)/) : s.rest
+        [entry, contents]
+      else
+        raise "that didn't work"
+      end
+    end
+  end
+
+  # Gets the contents of a single entry in the repo.
+  # Entries are specified as REVISION:PATH.
+  sig { params(entry: String).returns(T.nilable(String)) }
+  def git_cat_file(entry)
+    git_cat_files([entry])[entry]
   end
 
   private

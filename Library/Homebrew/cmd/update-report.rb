@@ -1,7 +1,7 @@
 # typed: false
 # frozen_string_literal: true
 
-require "formulae_at_revision"
+require "formula_versions"
 require "migrator"
 require "formulary"
 require "descriptions"
@@ -386,10 +386,9 @@ class Reporter
           onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
         end.compact
 
-      formulae_at_revision = FormulaeAtRevision.new(formulae, tap.path, @initial_revision)
+      formulae_at_revision = FormulaVersions.formulae_at_repo_revision(formulae, tap.path, @initial_revision)
 
-      formulae.each do |formula|
-        old_formula = formulae_at_revision[formula]
+      formulae_at_revision.each do |formula, old_formula|
         next unless old_formula # Formula did not exist at @initial_revision
 
         @report[:M].delete formula.path.relative_path_from(tap.path) if formula.pkg_version == old_formula.pkg_version

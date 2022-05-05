@@ -39,23 +39,40 @@ class FormulaVersions
   end
 
   def file_contents_at_revision(rev)
-    repository.cd { Utils.popen_read("git", "cat-file", "blob", "#{rev}:#{entry_name}") }
+    repository.git_cat_file("#{rev}:#{entry_name}").to_s
   end
 
   def formula_at_revision(rev)
-    Homebrew.raise_deprecation_exceptions = true
+    @formula_at_revision[rev] ||=
+      self.class.formula_from_contents(name, path, file_contents_at_revision(rev), rev)
 
-    yield @formula_at_revision[rev] ||= begin
-      contents = file_contents_at_revision(rev)
-      nostdout { Formulary.from_contents(name, path, contents, ignore_errors: true) }
+    yield @formula_at_revision[rev] if @formula_at_revision[rev]
+  end
+
+  class << self
+    include Context
+
+    def formulae_at_repo_revision(formulae, repo, revision)
+      entries = formulae.map { |formula| "#{revision}:#{new(formula).entry_name}" }
+      contents = repo.git_cat_files(entries).values
+
+      formulae.zip(contents).to_h do |formula, content|
+        [formula, contents.present? && formula_from_contents(formula.name, formula.path, content, revision)]
+      end
     end
-  rescue *IGNORED_EXCEPTIONS => e
-    # We rescue these so that we can skip bad versions and
-    # continue walking the history
-    odebug "#{e} in #{name} at revision #{rev}", e.backtrace
-  rescue FormulaUnavailableError
-    nil
-  ensure
-    Homebrew.raise_deprecation_exceptions = false
+
+    def formula_from_contents(name, path, contents, revision)
+      Homebrew.raise_deprecation_exceptions = true
+
+      nostdout { Formulary.from_contents(name, path, contents, ignore_errors: true) }
+    rescue *IGNORED_EXCEPTIONS => e
+      # We rescue these so that we can skip bad versions and
+      # continue walking the history
+      odebug "#{e} in #{name} at revision #{revision}", e.backtrace
+    rescue FormulaUnavailableError
+      nil
+    ensure
+      Homebrew.raise_deprecation_exceptions = false
+    end
   end
 end
