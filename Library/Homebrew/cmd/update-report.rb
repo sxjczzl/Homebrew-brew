@@ -182,7 +182,7 @@ module Homebrew
       end
       if reporter.updated?
         updated_taps << tap.name
-        hub.add(reporter, preinstall: args.preinstall?)
+        hub.add(reporter, only_show_upgraded_modified_formulae: !args.preinstall?)
       end
     end
 
@@ -326,7 +326,7 @@ class Reporter
     raise ReporterRevisionUnsetError, current_revision_var if @current_revision.empty?
   end
 
-  def report(preinstall: false)
+  def report(only_show_upgraded_modified_formulae: true)
     return @report if @report
 
     @report = Hash.new { |h, k| h[k] = [] }
@@ -364,22 +364,19 @@ class Reporter
       when "M"
         name = tap.formula_file_to_name(src)
 
-        # Skip reporting updated formulae to speed up automatic updates.
-        if preinstall
-          @report[:M] << name
-          next
-        end
-
-        begin
-          formula = Formulary.factory(tap.path/src)
-          new_version = formula.pkg_version
-          old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
-          next if new_version == old_version
-        rescue FormulaUnavailableError
-          # Don't care if the formula isn't available right now.
-          nil
-        rescue Exception => e # rubocop:disable Lint/RescueException
-          onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
+        # Filter out formula that were not meaningfully modified
+        if only_show_upgraded_modified_formulae
+          begin
+            formula = Formulary.factory(tap.path/src)
+            new_version = formula.pkg_version
+            old_version = FormulaVersions.new(formula).formula_at_revision(@initial_revision, &:pkg_version)
+            next if new_version == old_version
+          rescue FormulaUnavailableError
+            # Don't care if the formula isn't available right now.
+            nil
+          rescue Exception => e # rubocop:disable Lint/RescueException
+            onoe "#{e.message}\n#{e.backtrace.join "\n"}" if Homebrew::EnvConfig.developer?
+          end
         end
 
         @report[:M] << name
@@ -570,9 +567,11 @@ class ReporterHub
     @hash.fetch(key, [])
   end
 
-  def add(reporter, preinstall: false)
+  def add(reporter, only_show_upgraded_modified_formulae: true)
     @reporters << reporter
-    report = reporter.report(preinstall: preinstall).delete_if { |_k, v| v.empty? }
+    report = reporter
+             .report(only_show_upgraded_modified_formulae: only_show_upgraded_modified_formulae)
+             .delete_if { |_k, v| v.empty? }
     @hash.update(report) { |_key, oldval, newval| oldval.concat(newval) }
   end
 
