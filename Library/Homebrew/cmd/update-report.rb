@@ -182,7 +182,7 @@ module Homebrew
       end
       if reporter.updated?
         updated_taps << tap.name
-        hub.add(reporter, only_show_upgraded_modified_formulae: !args.preinstall?)
+        hub.add(reporter, only_show_upgraded_modified_formulae: !args.preinstall? && !args.quiet?)
       end
     end
 
