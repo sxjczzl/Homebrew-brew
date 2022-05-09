@@ -36,7 +36,7 @@ Alternative versions should be submitted to [Homebrew/homebrew-cask-versions](ht
 
 ### Regional and Localized
 
-When an App exists in more than one language or has different regional editions, [the `language` stanza should be used to switch between languages or regions](https://docs.brew.sh/Cask-Cookbook#stanza-language).
+When an App exists in more than one language or has different regional editions,the [`language` stanza] should be used to switch between languages or regions(https://docs.brew.sh/Cask-Cookbook#stanza-language).
 
 ### Trial and Freemium Versions
 
@@ -67,7 +67,7 @@ for details.
 
 ## Apps that bundle malware
 
-Unfortunately, in the world of software there are bad actors that bundle malware with their apps. Even so, Homebrew Cask has long decided it will not be an active gatekeeper ([macOS already has one](https://support.apple.com/en-us/HT202491)) and [users are expected to know about the software they are installing](#homebrew-cask-is-not-a-discoverability-service). This means we will not always remove casks that link to these apps, in part because there is no clear line between useful app, potentially unwanted program, and the different shades of malware — what is useful to one user may be seen as malicious by another.
+Unfortunately, in the world of software there are bad actors that bundle malware with their apps. Even so, Homebrew Cask has long decided it will not be an active gatekeeper ([macOS already has one](https://support.apple.com/en-us/HT202491)) and users are expected to know about the [software] they are installing(#homebrew-cask-is-not-a-discoverability-service). This means we will not always remove casks that link to these apps, in part because there is no clear line between useful app, potentially unwanted program, and the different shades of malware — what is useful to one user may be seen as malicious by another.
 
 But we’d still like for users to enjoy some kind of protection while minimising occurrences of legitimate developers being branded as malware carriers. To do so, we evaluate casks on a case-by-case basis and any user is free to bring a potential malware case to our attention. However, it is important to never forget the last line of defence is *always* the user.
 
@@ -109,7 +109,7 @@ Common reasons to reject a Cask entirely:
 + The Cask is unreasonably difficult to maintain. Examples once included [Audacity](https://github.com/Homebrew/homebrew-cask/pull/27517) and [older Java development Casks](https://github.com/Homebrew/homebrew-cask/issues/57387).
 + The app is a trial version, and the only way to acquire the full version is through the Mac App Store.
   + Similarly (and trickier to spot), the app has moved to the Mac App Store but still provides old versions via direct download. We reject these in all official repos so users don’t get stuck using an old version, wrongly thinking they’re using the most up-to-date one (which, amongst other things, might be a security risk).
-+ The app is both open-source and CLI-only (i.e. it only uses the `binary` artifact). In that case, and [in the spirit of deduplication](https://github.com/Homebrew/homebrew-cask/issues/15603), submit it first to [Homebrew/core](https://github.com/Homebrew/homebrew-core) as a formula that builds from source. If it is rejected, you may then try again as a cask (link us to the issue so we can see the discussion and reasoning for rejection).
++ The app is both open-source and CLI-only (i.e. it only uses the `binary` artifact). In that case, and in the spirit of [deduplication](https://github.com/Homebrew/homebrew-cask/issues/15603), submit it first to [Homebrew/core](https://github.com/Homebrew/homebrew-core) as a formula that builds from source. If it is rejected, you may then try again as a cask (link us to the issue so we can see the discussion and reasoning for rejection).
 + The app is open-source and has a GUI but no compiled versions (or only old ones) are provided. It’s better to have them in [Homebrew/core](https://github.com/Homebrew/homebrew-core) so users don’t get perpetually outdated versions. See [`gedit`](https://github.com/Homebrew/homebrew-cask/pull/23360) for example.
 + The app has been rejected before due to an issue we cannot fix, and the new submission doesn’t fix that. An example would be [the first submission of `soapui`](https://github.com/Homebrew/homebrew-cask/pull/4939), whose installation problems were not fixed in the two subsequent submissions ([#9969](https://github.com/Homebrew/homebrew-cask/pull/9969), [#10606](https://github.com/Homebrew/homebrew-cask/pull/10606)).
 + The Cask is a duplicate. These submissions mostly occur when the [token reference](https://docs.brew.sh/Cask-Cookbook#token-reference) was not followed.
