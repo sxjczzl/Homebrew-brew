@@ -36,7 +36,7 @@ Alternative versions should be submitted to [Homebrew/homebrew-cask-versions](ht
 
 ### Regional and Localized
 
-When an App exists in more than one language or has different regional editions,the [`language` stanza] should be used to switch between languages or regions(https://docs.brew.sh/Cask-Cookbook#stanza-language).
+When an App exists in more than one language or has different regional editions,the [`language` stanza](https://docs.brew.sh/Cask-Cookbook#stanza-language) should be used to switch between languages or regions.
 
 ### Trial and Freemium Versions
 
@@ -67,7 +67,7 @@ for details.
 
 ## Apps that bundle malware
 
-Unfortunately, in the world of software there are bad actors that bundle malware with their apps. Even so, Homebrew Cask has long decided it will not be an active gatekeeper ([macOS already has one](https://support.apple.com/en-us/HT202491)) and users are expected to know about the [software] they are installing(#homebrew-cask-is-not-a-discoverability-service). This means we will not always remove casks that link to these apps, in part because there is no clear line between useful app, potentially unwanted program, and the different shades of malware — what is useful to one user may be seen as malicious by another.
+Unfortunately, in the world of software there are bad actors that bundle malware with their apps. Even so, Homebrew Cask has long decided it will not be an active gatekeeper ([macOS already has one](https://support.apple.com/en-us/HT202491)) and users are expected to know about the [software](#homebrew-cask-is-not-a-discoverability-service) they are installing. This means we will not always remove casks that link to these apps, in part because there is no clear line between useful app, potentially unwanted program, and the different shades of malware — what is useful to one user may be seen as malicious by another.
 
 But we’d still like for users to enjoy some kind of protection while minimising occurrences of legitimate developers being branded as malware carriers. To do so, we evaluate casks on a case-by-case basis and any user is free to bring a potential malware case to our attention. However, it is important to never forget the last line of defence is *always* the user.
 
