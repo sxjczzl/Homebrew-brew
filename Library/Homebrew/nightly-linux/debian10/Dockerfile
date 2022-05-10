@@ -14,3 +14,5 @@ RUN /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/instal
 RUN chown -R linuxbrew /home/linuxbrew/.linuxbrew
 
 RUN echo "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" >> /home/linuxbrew/.bashrc
+# For non-interactive shells:
+RUN echo "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" >> /home/linuxbrew/.linuxbrew-bashrc

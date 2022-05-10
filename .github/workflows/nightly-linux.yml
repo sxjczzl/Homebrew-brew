@@ -53,4 +53,4 @@ jobs:
         run: docker build -t ${{ matrix.container }} .
         working-directory: Library/Homebrew/nightly-linux/${{ matrix.container }}
       - name: Run tests
-        run: docker run --rm --user linuxbrew -w /home/linuxbrew -v $(pwd)/Library/Homebrew/nightly-linux/test.sh:/home/linuxbrew/test.sh ${{ matrix.container }} /bin/bash -i -c ./test.sh
+        run: docker run --rm --user linuxbrew -w /home/linuxbrew -v $(pwd)/Library/Homebrew/nightly-linux/test.sh:/home/linuxbrew/test.sh ${{ matrix.container }} /bin/bash -c "BASH_ENV=/home/linuxbrew/.linuxbrew-bashrc /home/linuxbrew/test.sh"

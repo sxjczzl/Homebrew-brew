@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 brew install hello
 brew test hello
