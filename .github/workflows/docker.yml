@@ -35,6 +35,7 @@ jobs:
           echo "Building for Homebrew ${brew_version}"
           docker build -t brew \
                --build-arg=version=${{matrix.version}} \
+               --build-arg=homebrew_git_gc=true \
                --label org.opencontainers.image.created="$(date --rfc-3339=seconds --utc)" \
                --label org.opencontainers.image.url="https://brew.sh" \
                --label org.opencontainers.image.documentation="https://docs.brew.sh" \
@@ -44,6 +45,10 @@ jobs:
                --label org.opencontainers.image.vendor="${GITHUB_REPOSITORY_OWNER}" \
                --label org.opencontainers.image.licenses="BSD-2-Clause" \
                .
+
+      - name: Get image size
+        run: |
+          docker container ls -s
 
       - name: Run brew test-bot --only-setup
         run: docker run --rm brew brew test-bot --only-setup

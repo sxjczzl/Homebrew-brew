@@ -40,6 +40,9 @@ COPY --chown=linuxbrew:linuxbrew . /home/linuxbrew/.linuxbrew/Homebrew
 ENV PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 WORKDIR /home/linuxbrew
 
+ARG homebrew_git_gc="false"
+
+# shellcheck disable=SC2154
 RUN mkdir -p \
      .linuxbrew/bin \
      .linuxbrew/etc \
@@ -56,6 +59,8 @@ RUN mkdir -p \
   && HOMEBREW_NO_ANALYTICS=1 HOMEBREW_NO_AUTO_UPDATE=1 brew tap homebrew/core \
   && brew install-bundler-gems \
   && brew cleanup \
+  && { [[ "${homebrew_git_gc}" = "true" ]] && git -C .linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core gc --aggressive; true; } \
   && { git -C .linuxbrew/Homebrew config --unset gc.auto; true; } \
   && { git -C .linuxbrew/Homebrew config --unset homebrew.devcmdrun; true; } \
-  && rm -rf .cache
+  && rm -rf .cache \
+  && du -hs .linuxbrew/Homebrew/Library/Taps/homebrew/homebrew-core/.git/
