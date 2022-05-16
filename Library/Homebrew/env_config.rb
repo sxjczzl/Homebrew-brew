@@ -20,10 +20,10 @@ module Homebrew
         default:     "native",
       },
       HOMEBREW_ARTIFACT_DOMAIN:                  {
-        description: "Prefix all download URLs, including those for bottles, with this value. " \
+        description: "Replace GitHub Packages URL to enable use of a private image registry for formulae. " \
                      "For example, `HOMEBREW_ARTIFACT_DOMAIN=http://localhost:8080` will cause a " \
-                     "formula with the URL `https://example.com/foo.tar.gz` to instead download from " \
-                     "`http://localhost:8080/example.com/foo.tar.gz`.",
+                     "formula with the URL `https://ghcr.io/v2/homebrew/core/foo/manifests/1.0` to instead download from " \
+                     "`http://localhost:8080/v2/homebrew/core/foo/manifests/1.0`.",
       },
       HOMEBREW_AUTO_UPDATE_SECS:                 {
         description: "Run `brew update` once every `HOMEBREW_AUTO_UPDATE_SECS` seconds before some commands, " \
