@@ -150,12 +150,12 @@ module Cask
       @caskroom_path ||= Caskroom.path.join(token)
     end
 
-    def outdated?(greedy: false, greedy_latest: false, greedy_auto_updates: false)
+    def outdated?(greedy: false, greedy_latest: false, greedy_auto_updates: false, upgrade: false)
       !outdated_versions(greedy: greedy, greedy_latest: greedy_latest,
-                         greedy_auto_updates: greedy_auto_updates).empty?
+                         greedy_auto_updates: greedy_auto_updates, upgrade: upgrade).empty?
     end
 
-    def outdated_versions(greedy: false, greedy_latest: false, greedy_auto_updates: false)
+    def outdated_versions(greedy: false, greedy_latest: false, greedy_auto_updates: false, upgrade: false)
       # special case: tap version is not available
       return [] if version.nil?
 
@@ -168,6 +168,9 @@ module Cask
 
       if greedy || greedy_latest || (greedy_auto_updates && auto_updates)
         if latest_version.latest?
+          if !outdated_download_sha? && upgrade
+            ohai "Not upgrading #{token} because the downloaded artifact has not changed"
+          end
           return versions if outdated_download_sha?
 
           return []

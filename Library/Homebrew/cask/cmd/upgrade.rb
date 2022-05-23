@@ -96,13 +96,13 @@ module Cask
         outdated_casks = if casks.empty?
           Caskroom.casks(config: Config.from_args(args)).select do |cask|
             cask.outdated?(greedy: greedy, greedy_latest: greedy_latest,
-                           greedy_auto_updates: greedy_auto_updates)
+                           greedy_auto_updates: greedy_auto_updates, upgrade: true)
           end
         else
           casks.select do |cask|
             raise CaskNotInstalledError, cask if !cask.installed? && !force
 
-            cask.outdated?(greedy: true)
+            cask.outdated?(greedy: true, upgrade: true)
           end
         end
 
