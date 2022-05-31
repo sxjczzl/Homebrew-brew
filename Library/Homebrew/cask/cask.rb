@@ -138,7 +138,7 @@ module Cask
 
       @new_download_sha ||= Installer.new(self, verify_download_integrity: false)
                                      .download(quiet: true)
-                                     .instance_eval { |x| Digest::SHA256.file(x).hexdigest }
+                                     .instance_eval { |x| Digest::SHA256.file(x).hexdigest unless x.directory? }
     end
 
     def outdated_download_sha?
