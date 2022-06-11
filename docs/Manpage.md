@@ -221,7 +221,7 @@ an issue; just ignore this.
 
 ### `fetch` [*`options`*] *`formula`*|*`cask`* [...]
 
-Download a bottle (if available) or source packages for *`formula`*e
+Download a bottle (if available) or source packages for *`formulae`*
 and binaries for *`cask`*s. For files, also print SHA-256 checksums.
 
 * `--bottle-tag`:
