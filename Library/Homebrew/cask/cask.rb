@@ -130,7 +130,7 @@ module Cask
     end
 
     def checksumable?
-      url.using.blank? || url.using == :post
+      (url.using.blank? && url.only_paths.blank?) || url.using == :post
     end
 
     def download_sha_path
