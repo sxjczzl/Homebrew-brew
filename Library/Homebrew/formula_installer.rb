@@ -1237,6 +1237,14 @@ class FormulaInstaller
         - HOMEBREW_PREFIX: #{HOMEBREW_PREFIX} (#{prefix})
         Consider installing Homebrew into a real directory.
       EOS
+      if OS.linux?
+        opoo <<~EOS
+          You can ask an admin to replace the symlinks created by:
+            sudo ln -s /src/folder /target/folder
+          with the `mount` command:
+            sudo mount --bind /src/folder /target/folder
+        EOS
+      end
       return
     end
 
