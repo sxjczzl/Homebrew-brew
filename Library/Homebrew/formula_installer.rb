@@ -1226,8 +1226,19 @@ class FormulaInstaller
     cellar = formula.bottle_specification.tag_to_cellar(Utils::Bottles.tag)
     return if [:any, :any_skip_relocation].include?(cellar)
 
-    prefix = Pathname(cellar).parent.to_s
-    return if cellar == HOMEBREW_CELLAR.to_s && prefix == HOMEBREW_PREFIX.to_s
+    cellar = Pathname(cellar)
+    prefix = cellar.parent
+    return if cellar.to_s == HOMEBREW_CELLAR.to_s && prefix.to_s == HOMEBREW_PREFIX.to_s
+
+    if cellar.realpath.to_s == HOMEBREW_CELLAR.realpath.to_s && prefix.realpath.to_s == HOMEBREW_PREFIX.realpath.to_s
+      opoo <<~EOS
+        Your cellar path contains symlinks which may cause problems:
+        - HOMEBREW_CELLAR: #{HOMEBREW_CELLAR} (#{cellar})
+        - HOMEBREW_PREFIX: #{HOMEBREW_PREFIX} (#{prefix})
+        Consider installing Homebrew into a real directory.
+      EOS
+      return
+    end
 
     return unless ENV["HOMEBREW_RELOCATE_BUILD_PREFIX"]
 

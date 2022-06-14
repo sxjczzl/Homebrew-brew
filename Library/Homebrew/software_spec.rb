@@ -506,13 +506,15 @@ class BottleSpecification
 
     return true if RELOCATABLE_CELLARS.include?(cellar)
 
-    prefix = Pathname(cellar).parent.to_s
+    cellar = Pathname(cellar) # the required bottle cellar path may have symlinks on the user's machine
+    prefix = cellar.parent
 
-    cellar_relocatable = cellar.size >= HOMEBREW_CELLAR.to_s.size && ENV["HOMEBREW_RELOCATE_BUILD_PREFIX"]
-    prefix_relocatable = prefix.size >= HOMEBREW_PREFIX.to_s.size && ENV["HOMEBREW_RELOCATE_BUILD_PREFIX"]
+    cellar_relocatable = cellar.to_s.size >= HOMEBREW_CELLAR.to_s.size && ENV["HOMEBREW_RELOCATE_BUILD_PREFIX"]
+    prefix_relocatable = prefix.to_s.size >= HOMEBREW_PREFIX.to_s.size && ENV["HOMEBREW_RELOCATE_BUILD_PREFIX"]
 
-    compatible_cellar = cellar == HOMEBREW_CELLAR.to_s || cellar_relocatable
-    compatible_prefix = prefix == HOMEBREW_PREFIX.to_s || prefix_relocatable
+    # prefix/cellar may be symlinks but the physical paths are compatible
+    compatible_cellar = cellar.realpath.to_s == HOMEBREW_CELLAR.realpath.to_s || cellar_relocatable
+    compatible_prefix = prefix.realpath.to_s == HOMEBREW_PREFIX.realpath.to_s || prefix_relocatable
 
     compatible_cellar && compatible_prefix
   end
