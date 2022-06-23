@@ -46,13 +46,9 @@ RUN echo "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" >> /home/linuxbrew/.b
 RUN echo "export HOMEBREW_GIT_PATH=/usr/local/bin/git" >> /home/linuxbrew/.bashrc
 RUN echo "export HOMEBREW_CURL_PATH=/usr/local/bin/curl" >> /home/linuxbrew/.bashrc
 RUN echo "export HOMEBREW_FORCE_BREWED_CA_CERTIFICATES=1" >> /home/linuxbrew/.bashrc
-# This is necessary so that HOMEBREW_GIT_PATH and HOMEBREW_CURL_PATH are picked up by brew:
-RUN echo "export HOMEBREW_DEVELOPER=1" >> /home/linuxbrew/.bashrc
 
 # For non-interactive shells:
 RUN echo "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)" >> /home/linuxbrew/.linuxbrew-bashrc
 RUN echo "export HOMEBREW_GIT_PATH=/usr/local/bin/git" >> /home/linuxbrew/.linuxbrew-bashrc
 RUN echo "export HOMEBREW_CURL_PATH=/usr/local/bin/curl" >> /home/linuxbrew/.linuxbrew-bashrc
 RUN echo "export HOMEBREW_FORCE_BREWED_CA_CERTIFICATES=1" >> /home/linuxbrew/.linuxbrew-bashrc
-# This is necessary so that HOMEBREW_GIT_PATH and HOMEBREW_CURL_PATH are picked up by brew:
-RUN echo "export HOMEBREW_DEVELOPER=1" >> /home/linuxbrew/.linuxbrew-bashrc
