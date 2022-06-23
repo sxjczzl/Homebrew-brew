@@ -1,10 +1,10 @@
 name: Linux Nightly Builds
 
 # Hombrew supports glibc 2.13 or newer
-# Binutils is built with glibc 2.13 (debian:wheezy)
+# Binutils is built with glibc 2.13 (ubuntu:16.04)
 # Bottles are built with glibc 2.23 (ubuntu:16.04)
 
-# You can't install any package with a glibc version below 2.12
+# You can't install any package with a glibc version below or equal to 2.12
 # When you install a package and your glibc version is >= 2.13 and < 2.23, brewed binutils, gcc@5 and glibc 2.13 will be installed for you
 # When you install a package and your glibc version is >= 2.23, the bottle is poured and can be used right away
 
