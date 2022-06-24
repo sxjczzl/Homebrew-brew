@@ -195,14 +195,13 @@ describe Homebrew::Completions do
 
       it "returns an array of options for a shell command" do
         expected_options = {
-          "--auto-update"      => "Run on auto-updates (e.g. before `brew install`). Skips some slower steps.",
-          "--debug"            => "Display a trace of all shell commands as they are executed.",
-          "--force"            => "Always do a slower, full update check (even if unnecessary).",
-          "--help"             => "Show this message.",
-          "--merge"            => "Use `git merge` to apply updates (rather than `git rebase`).",
-          "--quiet"            => "Make some output more quiet",
-          "--verbose"          => "Print the directories checked and `git` operations performed.",
-          "--sequential-fetch" => "Fetch in sequence instead of in parallel. Useful if using U2F SSH keys.",
+          "--auto-update" => "Run on auto-updates (e.g. before `brew install`). Skips some slower steps.",
+          "--debug"       => "Display a trace of all shell commands as they are executed.",
+          "--force"       => "Always do a slower, full update check (even if unnecessary).",
+          "--help"        => "Show this message.",
+          "--merge"       => "Use `git merge` to apply updates (rather than `git rebase`).",
+          "--quiet"       => "Make some output more quiet",
+          "--verbose"     => "Print the directories checked and `git` operations performed.",
         }
         expect(described_class.command_options("update")).to eq expected_options
       end
@@ -284,7 +283,6 @@ describe Homebrew::Completions do
                 --help
                 --merge
                 --quiet
-                --sequential-fetch
                 --verbose
                 "
                 return
@@ -350,7 +348,6 @@ describe Homebrew::Completions do
               '--help[Show this message]' \\
               '--merge[Use `git merge` to apply updates (rather than `git rebase`)]' \\
               '--quiet[Make some output more quiet]' \\
-              '--sequential-fetch[Fetch in sequence instead of in parallel. Useful if using U2F SSH keys]' \\
               '--verbose[Print the directories checked and `git` operations performed]'
           }
         COMPLETION
@@ -411,7 +408,6 @@ describe Homebrew::Completions do
           __fish_brew_complete_arg 'update' -l help -d 'Show this message'
           __fish_brew_complete_arg 'update' -l merge -d 'Use `git merge` to apply updates (rather than `git rebase`)'
           __fish_brew_complete_arg 'update' -l quiet -d 'Make some output more quiet'
-          __fish_brew_complete_arg 'update' -l sequential-fetch -d 'Fetch in sequence instead of in parallel. Useful if using U2F SSH keys'
           __fish_brew_complete_arg 'update' -l verbose -d 'Print the directories checked and `git` operations performed'
         COMPLETION
       end

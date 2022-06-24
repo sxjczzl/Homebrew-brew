@@ -943,10 +943,6 @@ Run on auto\-updates (e\.g\. before \fBbrew install\fR)\. Skips some slower step
 \fB\-f\fR, \fB\-\-force\fR
 Always do a slower, full update check (even if unnecessary)\.
 .
-.TP
-\fB\-s\fR, \fB\-\-sequential\-fetch\fR
-Fetch in sequence instead of in parallel\. Useful if using U2F SSH keys\.
-.
 .SS "\fBupdate\-reset\fR [\fIrepository\fR \.\.\.]"
 Fetch and reset Homebrew and all tap repositories (or any specified \fIrepository\fR) using \fBgit\fR(1) to their latest \fBorigin/HEAD\fR\.
 .
@@ -3247,7 +3243,7 @@ If set, always assume \fB\-\-debug\fR when running commands\.
 \fBHOMEBREW_SEQUENTIAL_FETCH\fR
 .
 .br
-If set, always assume \fB\-\-sequential\-fetch\fR when running commands\.
+If set, use sequential git fetching instead of fetching in parallel\.
 .
 .TP
 \fBHOMEBREW_VERBOSE_USING_DOTS\fR

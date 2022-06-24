@@ -366,7 +366,7 @@ module Homebrew
         boolean:     true,
       },
       HOMEBREW_SEQUENTIAL_FETCH:                 {
-        description: "If set, always assume `--sequential-fetch` when running commands.",
+        description: "If set, use sequential git fetching instead of fetching in parallel.",
         boolean:     true,
       },
       HOMEBREW_VERBOSE_USING_DOTS:               {
