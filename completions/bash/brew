@@ -2205,6 +2205,7 @@ _brew_up() {
       --help
       --merge
       --quiet
+      --sequential-fetch
       --verbose
       "
       return
@@ -2224,6 +2225,7 @@ _brew_update() {
       --help
       --merge
       --quiet
+      --sequential-fetch
       --verbose
       "
       return
@@ -2299,6 +2301,7 @@ _brew_update_report() {
       --force
       --help
       --quiet
+      --sequential-fetch
       --verbose
       "
       return

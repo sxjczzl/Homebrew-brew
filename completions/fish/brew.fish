@@ -1474,6 +1474,7 @@ __fish_brew_complete_arg 'up' -l force -d 'Always do a slower, full update check
 __fish_brew_complete_arg 'up' -l help -d 'Show this message'
 __fish_brew_complete_arg 'up' -l merge -d 'Use `git merge` to apply updates (rather than `git rebase`)'
 __fish_brew_complete_arg 'up' -l quiet -d 'Make some output more quiet'
+__fish_brew_complete_arg 'up' -l sequential-fetch -d 'Fetch in sequence instead of in parallel. Useful if using U2F SSH keys'
 __fish_brew_complete_arg 'up' -l verbose -d 'Print the directories checked and `git` operations performed'
 
 
@@ -1484,6 +1485,7 @@ __fish_brew_complete_arg 'update' -l force -d 'Always do a slower, full update c
 __fish_brew_complete_arg 'update' -l help -d 'Show this message'
 __fish_brew_complete_arg 'update' -l merge -d 'Use `git merge` to apply updates (rather than `git rebase`)'
 __fish_brew_complete_arg 'update' -l quiet -d 'Make some output more quiet'
+__fish_brew_complete_arg 'update' -l sequential-fetch -d 'Fetch in sequence instead of in parallel. Useful if using U2F SSH keys'
 __fish_brew_complete_arg 'update' -l verbose -d 'Print the directories checked and `git` operations performed'
 
 
@@ -1523,6 +1525,7 @@ __fish_brew_complete_arg 'update-report' -l debug -d 'Display any debugging info
 __fish_brew_complete_arg 'update-report' -l force -d 'Treat installed and updated formulae as if they are from the same taps and migrate them anyway'
 __fish_brew_complete_arg 'update-report' -l help -d 'Show this message'
 __fish_brew_complete_arg 'update-report' -l quiet -d 'Make some output more quiet'
+__fish_brew_complete_arg 'update-report' -l sequential-fetch -d 'Fetch in sequence instead of in parallel. Useful if using U2F SSH keys'
 __fish_brew_complete_arg 'update-report' -l verbose -d 'Make some output more verbose'
 
 

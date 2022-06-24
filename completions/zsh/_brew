@@ -1804,6 +1804,7 @@ _brew_up() {
     '--help[Show this message]' \
     '--merge[Use `git merge` to apply updates (rather than `git rebase`)]' \
     '--quiet[Make some output more quiet]' \
+    '--sequential-fetch[Fetch in sequence instead of in parallel. Useful if using U2F SSH keys]' \
     '--verbose[Print the directories checked and `git` operations performed]'
 }
 
@@ -1816,6 +1817,7 @@ _brew_update() {
     '--help[Show this message]' \
     '--merge[Use `git merge` to apply updates (rather than `git rebase`)]' \
     '--quiet[Make some output more quiet]' \
+    '--sequential-fetch[Fetch in sequence instead of in parallel. Useful if using U2F SSH keys]' \
     '--verbose[Print the directories checked and `git` operations performed]'
 }
 
@@ -1864,6 +1866,7 @@ _brew_update_report() {
     '--force[Treat installed and updated formulae as if they are from the same taps and migrate them anyway]' \
     '--help[Show this message]' \
     '--quiet[Make some output more quiet]' \
+    '--sequential-fetch[Fetch in sequence instead of in parallel. Useful if using U2F SSH keys]' \
     '--verbose[Make some output more verbose]'
 }
 

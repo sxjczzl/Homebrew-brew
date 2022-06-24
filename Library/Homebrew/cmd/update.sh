@@ -8,6 +8,7 @@
 #:    -q, --quiet                      Make some output more quiet
 #:    -v, --verbose                    Print the directories checked and `git` operations performed.
 #:    -d, --debug                      Display a trace of all shell commands as they are executed.
+#:    -s, --sequential-fetch           Fetch in sequence instead of in parallel. Useful if using U2F SSH keys.
 #:    -h, --help                       Show this message.
 
 # HOMEBREW_CURLRC, HOMEBREW_DEVELOPER, HOMEBREW_GIT_EMAIL, HOMEBREW_GIT_NAME
@@ -336,6 +337,7 @@ homebrew-update() {
       --quiet) HOMEBREW_QUIET=1 ;;
       --merge) HOMEBREW_MERGE=1 ;;
       --force) HOMEBREW_UPDATE_FORCE=1 ;;
+      --sequential-fetch) HOMEBREW_SEQUENTIAL_FETCH=1 ;;
       --simulate-from-current-branch) HOMEBREW_SIMULATE_FROM_CURRENT_BRANCH=1 ;;
       --auto-update) export HOMEBREW_UPDATE_AUTO=1 ;;
       --*) ;;
@@ -344,6 +346,7 @@ homebrew-update() {
         [[ "${option}" == *q* ]] && HOMEBREW_QUIET=1
         [[ "${option}" == *d* ]] && HOMEBREW_DEBUG=1
         [[ "${option}" == *f* ]] && HOMEBREW_UPDATE_FORCE=1
+        [[ "${option}" == *s* ]] && HOMEBREW_SEQUENTIAL_FETCH=1
         ;;
       *)
         odie <<EOS
@@ -588,7 +591,7 @@ EOS
     # check refs/remotes/origin/HEAD to see what the default
     # origin branch name is, and use that. If not set, fall back to "master".
     # the refspec ensures that the default upstream branch gets updated
-    (
+    do_fetch() {
       UPSTREAM_REPOSITORY_URL="$(git config remote.origin.url)"
 
       # HOMEBREW_UPDATE_FORCE and HOMEBREW_UPDATE_AUTO aren't modified here so ignore subshell warning.
@@ -679,7 +682,13 @@ EOS
       fi
 
       rm -f "${tmp_failure_file}"
-    ) &
+    }
+    if [[ -n "${HOMEBREW_SEQUENTIAL_FETCH}" ]]
+    then
+      do_fetch
+    else
+      do_fetch &
+    fi
   done
 
   wait

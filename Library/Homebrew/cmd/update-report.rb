@@ -33,6 +33,9 @@ module Homebrew
       switch "-f", "--force",
              description: "Treat installed and updated formulae as if they are from "\
                           "the same taps and migrate them anyway."
+      switch "-s", "--sequential-fetch",
+             description: "Fetch in sequence instead of in parallel. Useful if using "\
+                          "U2F SSH keys."
 
       hide_from_man_page!
     end

@@ -686,6 +686,8 @@ Fetch the newest version of Homebrew and all formulae from GitHub using `git`(1)
   Run on auto-updates (e.g. before `brew install`). Skips some slower steps.
 * `-f`, `--force`:
   Always do a slower, full update check (even if unnecessary).
+* `-s`, `--sequential-fetch`:
+  Fetch in sequence instead of in parallel. Useful if using U2F SSH keys.
 
 ### `update-reset` [*`repository`* ...]
 
@@ -2200,6 +2202,9 @@ example, run `export HOMEBREW_NO_INSECURE_REDIRECT=1` rather than just
 
 - `HOMEBREW_DEBUG`
   <br>If set, always assume `--debug` when running commands.
+
+- `HOMEBREW_SEQUENTIAL_FETCH`
+  <br>If set, always assume `--sequential-fetch` when running commands.
 
 - `HOMEBREW_VERBOSE_USING_DOTS`
   <br>If set, verbose output will print a `.` no more than once a minute. This can be useful to avoid long-running Homebrew commands being killed due to no output.

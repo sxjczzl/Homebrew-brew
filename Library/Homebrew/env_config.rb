@@ -365,6 +365,10 @@ module Homebrew
         description: "If set, always assume `--debug` when running commands.",
         boolean:     true,
       },
+      HOMEBREW_SEQUENTIAL_FETCH:                 {
+        description: "If set, always assume `--sequential-fetch` when running commands.",
+        boolean:     true,
+      },
       HOMEBREW_VERBOSE_USING_DOTS:               {
         description: "If set, verbose output will print a `.` no more than once a minute. This can be " \
                      "useful to avoid long-running Homebrew commands being killed due to no output.",
