@@ -354,6 +354,14 @@ class Pathname
   end
 
   # Writes an exec script in this folder for each target pathname.
+  #
+  # If the `targets` require environment variables to be set by the exec script,
+  # then use {#write_env_script}.
+  #
+  # To `exec java`, use {#write_jar_script}; it will correctly configure the
+  # environment so that `JAVA_HOME` is configured _and used to execute_ the correct
+  # version of Java. (`JAVA_HOME` is not configured in the Homebrew CI environment,
+  # nor is it configured in the environment provided by `brew test`.)
   def write_exec_script(*targets)
     targets.flatten!
     if targets.empty?
@@ -371,6 +379,13 @@ class Pathname
   end
 
   # Writes an exec script that sets environment variables.
+  #
+  # The manner in which the environment variables are set makes them available to
+  # the `target` when it is executed. However, the environment variables will not
+  # be available for shell parameter expansion within the `target` string itself.
+  # For example, this method should not be used to `exec ${JAVA_HOME}/bin/java`,
+  # because the `JAVA_HOME` from the passed environment will not be available
+  # for shell parameter expansion; use {#write_jar_script} instead.
   def write_env_script(target, args, env = nil)
     unless env
       env = args
