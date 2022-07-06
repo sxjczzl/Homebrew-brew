@@ -3,6 +3,7 @@
 
 require "searchable"
 require "description_cache_store"
+require "algolia"
 
 module Homebrew
   # Helper module for searching formulae or casks.
@@ -40,6 +41,42 @@ module Homebrew
 
       unless silent
         # Use stderr to avoid breaking parsed output
+        $stderr.puts Formatter.headline("Searching taps on Algolia...", color: :blue)
+      end
+
+      # TODO: consider adding a HOMEBREW_INSTALL_FROM_API check here too
+      # if `Cask::Cask.all` works under that setup in the future.
+      algolia_results = if Tap.default_cask_tap.installed?
+        # Algolia (currently) only indexes Homebrew/core and Homebrew/cask.
+        # So don't bother searching if we already have those installed.
+        []
+      else
+        begin
+          Algolia.search(query,
+                         filters:                "site:formulae AND tags:formula AND NOT tags:analytics",
+                         searchable_attributes:  ["hierarchy.lvl1"], # Only search names
+                         attributes_to_retrieve: ["hierarchy.lvl0", "hierarchy.lvl1"])
+        rescue Algolia::APIError
+          opoo "Error searching on Algolia."
+          []
+        end
+      end
+
+      algolia_results.each do |result|
+        hierarchy = result.fetch("hierarchy")
+        name = hierarchy.fetch("lvl1")
+        case (type = hierarchy.fetch("lvl0"))
+        when "Formulae"
+          # We only index Homebrew/core and that (should?) always be available for local searching.
+        when "Casks"
+          results[:casks] << "homebrew/cask/#{name}"
+        else
+          opoo "Unknown result type \"#{type}\"!"
+        end
+      end
+
+      unless silent
+        # Use stderr to avoid breaking parsed output
         $stderr.puts Formatter.headline("Searching taps on GitHub...", color: :blue)
       end
 
@@ -55,21 +92,23 @@ module Homebrew
         nil
       end
 
-      return results if matches.blank?
-
       matches.each do |match|
         name = File.basename(match["path"], ".rb")
         tap = Tap.fetch(match["repository"]["full_name"])
         full_name = "#{tap.name}/#{name}"
 
         next if tap.installed?
+        next if tap.core_tap? || tap == Tap.default_cask_tap # Handled by Algolia
 
         if match["path"].start_with?("Casks/")
-          results[:casks] = [*results[:casks], full_name].sort
+          results[:casks] << full_name
         else
-          results[:formulae] = [*results[:formulae], full_name].sort
+          results[:formulae] << full_name
         end
       end
+
+      results[:formulae].sort!
+      results[:casks].sort!
 
       results
     end
