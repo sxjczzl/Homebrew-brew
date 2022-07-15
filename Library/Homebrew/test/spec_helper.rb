@@ -29,7 +29,6 @@ require "rspec/its"
 require "rspec/github"
 require "rspec/wait"
 require "rspec/retry"
-require "rspec/sorbet"
 require "rubocop/rspec/support"
 require "find"
 require "byebug"
@@ -60,9 +59,12 @@ TEST_DIRECTORIES = [
   HOMEBREW_TEMP,
 ].freeze
 
-# Make `instance_double` and `class_double`
-# work when type-checking is active.
-RSpec::Sorbet.allow_doubles!
+# Make `instance_double` and `class_double` work when type-checking is active.
+# Be resistant to the Sorbet gem not being installed but be sure we always do this in CI.
+if require?("rspec/sorbet") || \
+   ENV.fetch("CI", false) || ENV.fetch("HOMEBREW_SORBET_RUNTIME", false)
+  RSpec::Sorbet.allow_doubles!
+end
 
 RSpec.configure do |config|
   config.order = :random
@@ -81,7 +83,7 @@ RSpec.configure do |config|
   config.default_sleep_interval = 1
 
   # Don't make retries as noisy unless in CI.
-  if ENV["CI"]
+  if ENV.fetch("CI", false)
     config.verbose_retry = true
     config.display_try_failure_messages = true
   end

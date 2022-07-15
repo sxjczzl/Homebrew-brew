@@ -139,9 +139,15 @@ module Homebrew
 
     require "settings"
 
-    # Combine the passed groups with the ones stored in settings
-    groups |= (Homebrew::Settings.read(:gemgroups)&.split(";") || [])
-    groups.sort!
+    groups = if groups.nil?
+      # Don't use any existing groups if this is explicitly set to nil
+      Homebrew::Settings.delete(:gemgroups)
+      []
+    else
+      # Combine the passed groups with the ones stored in settings
+      groups |= (Homebrew::Settings.read(:gemgroups)&.split(";") || [])
+      groups.sort
+    end
 
     ENV["BUNDLE_GEMFILE"] = File.join(ENV.fetch("HOMEBREW_LIBRARY"), "Homebrew", "Gemfile")
     ENV["BUNDLE_WITH"] = groups.join(" ")

@@ -88,7 +88,12 @@ module Homebrew
   def tests
     args = tests_args.parse
 
-    Homebrew.install_bundler_gems!(groups: ["sorbet"])
+    # Only use Sorbet at test time for CI or when explicitly enabled.
+    bundler_groups = if ENV.fetch("CI", false) || ENV.fetch("HOMEBREW_SORBET_RUNTIME", false)
+      ENV["HOMEBREW_SORBET_RUNTIME"] = "1"
+      ["sorbet"]
+    end
+    Homebrew.install_bundler_gems!(groups: bundler_groups)
 
     require "byebug" if args.byebug?
 
@@ -98,6 +103,7 @@ module Homebrew
         HOMEBREW_GITHUB_API_TOKEN
         HOMEBREW_CACHE
         HOMEBREW_LOGS
+        HOMEBREW_SORBET_RUNTIME
         HOMEBREW_TEMP
       ]
       Homebrew::EnvConfig::ENVS.keys.map(&:to_s).each do |env|
@@ -110,7 +116,6 @@ module Homebrew
       ENV["HOMEBREW_NO_COMPAT"] = "1" if args.no_compat?
       ENV["HOMEBREW_TEST_GENERIC_OS"] = "1" if args.generic?
       ENV["HOMEBREW_TEST_ONLINE"] = "1" if args.online?
-      ENV["HOMEBREW_SORBET_RUNTIME"] = "1"
 
       ENV["USER"] ||= system_command!("id", args: ["-nu"]).stdout.chomp
 
