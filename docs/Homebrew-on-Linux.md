@@ -28,7 +28,7 @@ The installation script installs Homebrew to `/home/linuxbrew/.linuxbrew` using 
 
 The prefix `/home/linuxbrew/.linuxbrew` was chosen so that users without admin access can ask an admin to create a `linuxbrew` role account and still benefit from precompiled binaries. If you do not yourself have admin privileges, consider asking your admin staff to create a `linuxbrew` role account for you with home directory set to `/home/linuxbrew`.
 
-Follow the *Next steps* instructions to add Homebrew to your `PATH` and to your bash shell profile script, either `~/.profile` on Debian/Ubuntu or `~/.bash_profile` on CentOS/Fedora/Red Hat.
+Follow the *Next steps* instructions to add Homebrew to your `PATH` and to your bash shell profile script, either `~/.profile` on Debian/Ubuntu, `~/.bash_profile` on CentOS/Fedora/Red Hat, or `~/.bashrc` on Pop OS.
 
 ```sh
 test -d ~/.linuxbrew && eval "$(~/.linuxbrew/bin/brew shellenv)"
