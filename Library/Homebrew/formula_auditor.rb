@@ -640,7 +640,7 @@ module Homebrew
         return if formula.tap&.audit_exception :unstable_devel_allowlist, formula.name, version_prefix
 
         problem "Stable version URLs should not contain #{matched}"
-      when %r{download\.gnome\.org/sources}, %r{ftp\.gnome\.org/pub/GNOME/sources}i
+      when %r{download\.gnome\.org/sources}, %r{ftp\.gnome\.org/pub/GNOME/sources}i, %r{gitlab\.gnome\.org/GNOME}i
         version_prefix = stable.version.major_minor
         return if formula.tap&.audit_exception :gnome_devel_allowlist, formula.name, version_prefix
         return if stable_url_version < Version.create("1.0")
