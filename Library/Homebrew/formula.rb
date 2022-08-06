@@ -1352,6 +1352,7 @@ class Formula
         next if version.head?
 
         tab = Tab.for_keg(keg)
+        next if tab.version_scheme == -1
         next if version_scheme > tab.version_scheme && pkg_version != version
         next if version_scheme == tab.version_scheme && pkg_version > version
 
