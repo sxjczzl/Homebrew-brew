@@ -433,12 +433,14 @@ then
   # shellcheck disable=SC2086,SC2183
   printf -v HOMEBREW_MACOS_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_MACOS_VERSION//./ }
 
-  # Don't include minor versions for Big Sur and later.
+  # Don't include minor versions for Big Sur and later, or patch versions for Catalina and older.
   if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -gt "110000" ]]
   then
-    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION%.*}"
+    HOMEBREW_MACOS_VERSION_NUMBER="${HOMEBREW_MACOS_VERSION%%.*}"
+    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION_NUMBER}"
   else
-    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION}"
+    HOMEBREW_MACOS_VERSION_NUMBER="${HOMEBREW_MACOS_VERSION%.*}"
+    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION_NUMBER}"
   fi
 
   # Refuse to run on pre-El Capitan
@@ -489,6 +491,9 @@ then
     # shellcheck disable=SC2034
     HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH="1"
   fi
+
+  # This allows us to avoid rebuilding/reinstalling `pkg-config` on OS upgrades.
+  /bin/ln -sfh "${HOMEBREW_MACOS_VERSION_NUMBER}" "${HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/current"
 else
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
   [[ -n "${HOMEBREW_LINUX}" ]] && HOMEBREW_OS_VERSION="$(lsb_release -s -d 2>/dev/null)"

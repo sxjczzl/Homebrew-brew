@@ -21,6 +21,7 @@
 /Library/PinnedTaps
 /Library/Homebrew/.byebug_history
 /Library/Homebrew/sorbet/rbi/hidden-definitions/errors.txt
+/Library/Homebrew/os/mac/pkgconfig/current
 
 # Ignore Bundler files
 **/.bundle/bin
