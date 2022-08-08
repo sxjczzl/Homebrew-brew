@@ -426,22 +426,13 @@ then
   HOMEBREW_SYSTEM="Macintosh"
   [[ "${HOMEBREW_PROCESSOR}" == "x86_64" ]] && HOMEBREW_PROCESSOR="Intel"
   HOMEBREW_MACOS_VERSION="$(/usr/bin/sw_vers -productVersion)"
+  HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION}"
   # Don't change this from Mac OS X to match what macOS itself does in Safari on 10.12
   HOMEBREW_OS_USER_AGENT_VERSION="Mac OS X ${HOMEBREW_MACOS_VERSION}"
 
   # Intentionally set this variable by exploding another.
   # shellcheck disable=SC2086,SC2183
   printf -v HOMEBREW_MACOS_VERSION_NUMERIC "%02d%02d%02d" ${HOMEBREW_MACOS_VERSION//./ }
-
-  # Don't include minor versions for Big Sur and later, or patch versions for Catalina and older.
-  if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -gt "110000" ]]
-  then
-    HOMEBREW_MACOS_VERSION_NUMBER="${HOMEBREW_MACOS_VERSION%%.*}"
-    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION_NUMBER}"
-  else
-    HOMEBREW_MACOS_VERSION_NUMBER="${HOMEBREW_MACOS_VERSION%.*}"
-    HOMEBREW_OS_VERSION="macOS ${HOMEBREW_MACOS_VERSION_NUMBER}"
-  fi
 
   # Refuse to run on pre-El Capitan
   if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -lt "101100" ]]
@@ -492,8 +483,16 @@ then
     HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH="1"
   fi
 
+  # Strip the minor/patch version on Big Sur or newer, and the patch version on Catalina or older.
+  if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -gt "110000" ]]
+  then
+    HOMEBREW_MACOS_CANONICAL_VERSION="${HOMEBREW_MACOS_VERSION%%.*}"
+  else
+    HOMEBREW_MACOS_CANONICAL_VERSION="${HOMEBREW_MACOS_VERSION%.*}"
+  fi
+
   # This allows us to avoid rebuilding/reinstalling `pkg-config` on OS upgrades.
-  /bin/ln -sfh "${HOMEBREW_MACOS_VERSION_NUMBER}" "${HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/current"
+  /bin/ln -sfh "${HOMEBREW_MACOS_CANONICAL_VERSION}" "${HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/current"
 else
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
   [[ -n "${HOMEBREW_LINUX}" ]] && HOMEBREW_OS_VERSION="$(lsb_release -s -d 2>/dev/null)"
