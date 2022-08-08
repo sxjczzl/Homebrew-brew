@@ -484,7 +484,7 @@ then
   fi
 
   # Strip the minor/patch version on Big Sur or newer, and the patch version on Catalina or older.
-  if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -gt "110000" ]]
+  if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -ge "110000" ]]
   then
     HOMEBREW_MACOS_CANONICAL_VERSION="${HOMEBREW_MACOS_VERSION%%.*}"
   else
