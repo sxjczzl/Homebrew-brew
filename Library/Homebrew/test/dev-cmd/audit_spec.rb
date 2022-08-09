@@ -783,6 +783,45 @@ module Homebrew
       end
     end
 
+    describe '#audit_head_only' do
+      it "does warn about a HEAD-only formula" do
+        fa = formula_auditor "foo", <<~RUBY, core_tap: true
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            head "https://brew.sh/foo.git", :branch => "master"
+          end
+        RUBY
+
+        fa.audit_head_only
+        expect(fa.problems).to_not be_empty
+      end
+
+      it "does not warn about a non HEAD-only formula" do
+        fa = formula_auditor "foo", <<~RUBY, core_tap: true
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"
+            head "https://brew.sh/foo.git"
+          end
+        RUBY
+
+        fa.audit_head_only
+        expect(fa.problems).to_not be_empty
+      end
+
+      it "does not warn about a HEAD-less formula" do
+        fa = formula_auditor "foo", <<~RUBY, core_tap: true
+          class Foo < Formula
+            url "https://brew.sh/foo-1.0.tgz"
+            sha256 "31cccfc6630528db1c8e3a06f6decf2a370060b982841cfab2b8677400a5092e"
+          end
+        RUBY
+
+        fa.audit_head_only
+        expect(fa.problems).to_not be_empty
+      end
+    end
+
     describe "#audit_deps" do
       describe "a dependency on a macOS-provided keg-only formula" do
         describe "which is allowlisted" do
