@@ -560,9 +560,11 @@ module Homebrew
       [user, repo]
     end
 
-    def audit_specs
+    def audit_head_only
       problem "Head-only (no stable download)" if head_only?(formula)
+    end
 
+    def audit_specs
       %w[Stable HEAD].each do |name|
         spec_name = name.downcase.to_sym
         next unless (spec = formula.send(spec_name))
