@@ -17,14 +17,14 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def contributions_args
     Homebrew::CLI::Parser.new do
-      usage_banner "`contributions` <email|name> [<--repositories>`=`]"
+      usage_banner "`contributions` <email|name> [<--repositories|--repos>`=`]"
       description <<~EOS
         Contributions to Homebrew repos for a user.
 
         The first argument is a name (e.g. "BrewTestBot") or an email address (e.g. "brewtestbot@brew.sh").
       EOS
 
-      comma_array "--repositories",
+      comma_array "--repositories", "--repos",
                   description: "Specify a comma-separated (no spaces) list of repositories to search. " \
                                "Supported repositories: #{SUPPORTED_REPOS.map { |t| "`#{t}`" }.to_sentence}." \
                                "Omitting this flag, or specifying `--repositories=all`, will search all repositories."

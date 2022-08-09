@@ -115,6 +115,26 @@ describe Homebrew::CLI::Parser do
     end
   end
 
+  describe "test comma array options" do
+    subject(:parser) {
+      described_class.new do
+        comma_array "--repos", "--repositories=", description: "List of repositories"
+      end
+    }
+
+    it "parses a short comma_array option with its argument" do
+      args = parser.parse(["--repos=test1,test2"])
+      expect(args.repos).to eq %w[test1 test2]
+      expect(args.repositories).to eq %w[test1 test2]
+    end
+
+    it "parses a long comma_array option with its argument" do
+      args = parser.parse(["--repositories=test1,test2"])
+      expect(args.repositories).to eq %w[test1 test2]
+      expect(args.repos).to eq %w[test1 test2]
+    end
+  end
+
   describe "test long flag options" do
     subject(:parser) {
       described_class.new do

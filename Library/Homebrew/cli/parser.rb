@@ -195,12 +195,14 @@ module Homebrew
         @parser.banner
       end
 
-      def comma_array(name, description: nil, hidden: false)
-        name = name.chomp "="
-        description = option_description(description, name, hidden: hidden)
-        process_option(name, description, type: :comma_array, hidden: hidden)
-        @parser.on(name, OptionParser::REQUIRED_ARGUMENT, Array, *wrap_option_desc(description)) do |list|
-          @args[option_to_name(name)] = list
+      def comma_array(*names, description: nil, hidden: false)
+        names.map! { |name| name.chomp "=" }
+        description = option_description(description, *names, hidden: hidden)
+        process_option(*names, description, type: :comma_array, hidden: hidden)
+        @parser.on(*names, OptionParser::REQUIRED_ARGUMENT, Array, *wrap_option_desc(description)) do |list|
+          names.each do |name|
+            @args[option_to_name(name)] = list
+          end
         end
       end
 
