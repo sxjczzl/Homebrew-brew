@@ -17,7 +17,7 @@ module Homebrew
   sig { returns(CLI::Parser) }
   def contributions_args
     Homebrew::CLI::Parser.new do
-      usage_banner "`contributions` <email|name> [<--repositories|--repos>`=`]"
+      usage_banner "`contributions` <email|name> [<--repositories>`=`]"
       description <<~EOS
         Contributions to Homebrew repos for a user.
 
