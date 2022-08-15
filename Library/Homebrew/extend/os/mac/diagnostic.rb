@@ -488,6 +488,20 @@ module Homebrew
           #{installation_instructions}
         EOS
       end
+
+      def check_pkgconfig_current_symlink
+        current_symlink = HOMEBREW_LIBRARY/"Homebrew/os/mac/pkgconfig/current"
+        return if current_symlink.symlink? && Version.new(current_symlink.readlink) == MacOS.version
+        return unless Formula["pkg-config"].any_version_installed?
+
+        <<~EOS
+          The `current` symlink in Homebrew's `pkgconfig` directory is broken. Fix it with:
+            rm -rf #{current_symlink} && \\
+              ln -sfn #{MacOS.version} #{current_symlink}
+        EOS
+      rescue FormulaUnavailableError
+        nil
+      end
     end
   end
 end
