@@ -13,6 +13,7 @@ class Version
 
   include Comparable
 
+  # @api public
   sig { params(name: T.any(String, Symbol), full: T::Boolean).returns(Regexp) }
   def self.formula_optionally_versioned_regex(name, full: true)
     /#{"^" if full}#{Regexp.escape(name)}(@\d[\d.]*)?#{"$" if full}/
