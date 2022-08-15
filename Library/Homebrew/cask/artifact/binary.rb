@@ -35,15 +35,36 @@ module Cask
         @source = cask.staged_path.join(shimscript)
       end
 
-      def link(command: nil, **options)
+      def link(force: false, command: nil, **options)
         if @shimscript_source
-          File.write source, <<~EOS
-            #!/bin/bash
-            exec '#{@shimscript_source}' "$@"
-          EOS
+          check_if_source_missing(@shimscript_source)
+
+          check_if_target_exists(source) do
+            next false unless force
+
+            source.realpath.to_s.start_with?("#{cask.caskroom_path}/")
+          end
+
+          ohai "Creating Shim Script of '#{@shimscript_source.basename}' at '#{source}'"
+          create_shimscript
         end
 
-        super(command: command, **options)
+        super(force: force, command: command, **options)
+
+        check_if_source_executable(source, command: command)
+        check_if_source_executable(@shimscript_source, command: command) if @shimscript_source
+      end
+
+      def unlink(**options)
+        super(**options)
+
+        return unless @shimscript_source
+
+        ohai "Removing Shim Script '#{source}'"
+        source.delete
+      end
+
+      def check_if_source_executable(source, command:)
         return if source.executable?
 
         if source.writable?
@@ -51,6 +72,15 @@ module Cask
         else
           command.run!("/bin/chmod", args: ["+x", source], sudo: true)
         end
+      end
+
+      def create_shimscript
+        source.dirname.mkpath
+
+        File.write source, <<~EOS
+          #!/bin/bash
+          exec '#{@shimscript_source}' "$@"
+        EOS
       end
     end
   end

@@ -46,23 +46,13 @@ module Cask
       private
 
       def link(force: false, **options)
-        unless source.exist?
-          raise CaskError,
-                "It seems the #{self.class.link_type_english_name.downcase} " \
-                "source '#{source}' is not there."
-        end
+        check_if_source_missing(source)
 
-        if target.exist?
-          message = "It seems there is already #{self.class.english_article} " \
-                    "#{self.class.english_name} at '#{target}'"
+        check_if_target_exists(target) do
+          next false unless force
+          next false unless target.symlink?
 
-          if force && target.symlink? && \
-             (target.realpath == source.realpath || target.realpath.to_s.start_with?("#{cask.caskroom_path}/"))
-            opoo "#{message}; overwriting."
-            target.delete
-          else
-            raise CaskError, "#{message}."
-          end
+          target.realpath == source.realpath || target.realpath.to_s.start_with?("#{cask.caskroom_path}/")
         end
 
         ohai "Linking #{self.class.english_name} '#{source.basename}' to '#{target}'"
@@ -80,6 +70,27 @@ module Cask
         target.dirname.mkpath
         command.run!("/bin/ln", args: ["-h", "-f", "-s", "--", source, target])
         add_altname_metadata(source, target.basename, command: command)
+      end
+
+      def check_if_source_missing(source)
+        return if source.exist?
+
+        raise CaskError,
+              "It seems the #{self.class.link_type_english_name.downcase} " \
+              "source '#{source}' is not there."
+      end
+
+      def check_if_target_exists(target)
+        return unless target.exist?
+
+        message = "It seems there is already #{self.class.english_article} " \
+                  "#{self.class.english_name} at '#{target}'"
+
+        # Block must return true if target should be overwritten
+        raise CaskError, "#{message}." unless yield
+
+        opoo "#{message}; overwriting."
+        target.delete
       end
     end
   end
