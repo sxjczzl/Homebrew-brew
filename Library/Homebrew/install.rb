@@ -15,6 +15,7 @@ module Homebrew
     module_function
 
     def perform_preinstall_checks(all_fatal: false, cc: nil)
+      MacOS.symlink_current_pkgconfig_directory
       check_prefix
       check_cpu
       attempt_directory_creation

@@ -63,6 +63,8 @@ module OS
       nil
     end
 
+    def symlink_current_pkgconfig_directory; end
+
     module Xcode
       module_function
 

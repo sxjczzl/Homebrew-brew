@@ -210,5 +210,13 @@ module OS
     def mdfind_query(*ids)
       ids.map! { |id| "kMDItemCFBundleIdentifier == #{id}" }.join(" || ")
     end
+
+    # Avoid mandatory reinstalls of `pkg-config` upon OS upgrade.
+    sig { void }
+    def symlink_current_pkgconfig_directory
+      pkgconfig_dir = HOMEBREW_LIBRARY/"Homebrew/os/mac/pkgconfig"
+      FileUtils.rm_f pkgconfig_dir/"current"
+      pkgconfig_dir.install_symlink MacOS.version => "current"
+    end
   end
 end

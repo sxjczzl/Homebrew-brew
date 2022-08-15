@@ -39,21 +39,12 @@ module Homebrew
   end
 
   def update_report
-    # Avoid mandatory reinstalls of `pkg-config` upon OS upgrade.
-    symlink_current_pkgconfig_directory
+    MacOS.symlink_current_pkgconfig_directory
     return output_update_report if $stdout.tty?
 
     redirect_stdout($stderr) do
       output_update_report
     end
-  end
-
-  def symlink_current_pkgconfig_directory
-    return if OS.linux?
-
-    pkgconfig_dir = HOMEBREW_LIBRARY/"Homebrew/os/mac/pkgconfig"
-    FileUtils.rm_f pkgconfig_dir/"current"
-    pkgconfig_dir.install_symlink MacOS.version => "current"
   end
 
   def output_update_report
