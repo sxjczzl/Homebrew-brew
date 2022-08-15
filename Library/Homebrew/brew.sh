@@ -482,17 +482,6 @@ then
     # shellcheck disable=SC2034
     HOMEBREW_MACOS_SYSTEM_RUBY_NEW_ENOUGH="1"
   fi
-
-  # Strip the minor/patch version on Big Sur or newer, and the patch version on Catalina or older.
-  if [[ "${HOMEBREW_MACOS_VERSION_NUMERIC}" -ge "110000" ]]
-  then
-    HOMEBREW_MACOS_CANONICAL_VERSION="${HOMEBREW_MACOS_VERSION%%.*}"
-  else
-    HOMEBREW_MACOS_CANONICAL_VERSION="${HOMEBREW_MACOS_VERSION%.*}"
-  fi
-
-  # This allows us to avoid rebuilding/reinstalling `pkg-config` on OS upgrades.
-  /bin/ln -sfh "${HOMEBREW_MACOS_CANONICAL_VERSION}" "${HOMEBREW_LIBRARY}/Homebrew/os/mac/pkgconfig/current"
 else
   HOMEBREW_PRODUCT="${HOMEBREW_SYSTEM}brew"
   [[ -n "${HOMEBREW_LINUX}" ]] && HOMEBREW_OS_VERSION="$(lsb_release -s -d 2>/dev/null)"
