@@ -30,7 +30,7 @@ module Cask
         super(cask, source, target: target)
         return if shimscript.nil?
 
-        @shimscript_source = @source
+        @shimscript_source = self.source
         @source_string = shimscript.to_s
         @source = cask.staged_path.join(shimscript)
       end
@@ -45,7 +45,7 @@ module Cask
             source.realpath.to_s.start_with?("#{cask.caskroom_path}/")
           end
 
-          ohai "Creating Shim Script of '#{@shimscript_source.basename}' at '#{source}'"
+          ohai "Creating shim script for '#{@shimscript_source.basename}' at '#{source}'"
           create_shimscript
         end
 
@@ -58,9 +58,9 @@ module Cask
       def unlink(**options)
         super(**options)
 
-        return unless @shimscript_source
+        return if @shimscript_source.blank?
 
-        ohai "Removing Shim Script '#{source}'"
+        ohai "Removing shim script '#{source}'"
         source.delete
       end
 
