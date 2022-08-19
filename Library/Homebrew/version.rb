@@ -13,6 +13,9 @@ class Version
 
   include Comparable
 
+  # Provides a {Regexp} object that can be used scan for names of a versioned formula.
+  # @see https://www.rubydoc.info/stdlib/core/Regexp Regexp
+  # @return [Regexp]
   # @api public
   sig { params(name: T.any(String, Symbol), full: T::Boolean).returns(Regexp) }
   def self.formula_optionally_versioned_regex(name, full: true)
