@@ -44,7 +44,7 @@ class FormulaInstaller
 
   def initialize(
     formula,
-    link_keg: false,
+    link_keg: nil,
     installed_as_dependency: false,
     installed_on_request: true,
     show_header: false,
@@ -74,7 +74,7 @@ class FormulaInstaller
     @overwrite = overwrite
     @keep_tmp = keep_tmp
     @debug_symbols = debug_symbols
-    @link_keg = !formula.keg_only? || link_keg
+    @link_keg = link_keg.nil? ? !formula.keg_only? : link_keg
     @show_header = show_header
     @ignore_deps = ignore_deps
     @only_deps = only_deps
