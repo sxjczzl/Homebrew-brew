@@ -616,7 +616,7 @@ class FormulaInstaller
     expanded_deps, any_dep_bottle_used = expand_dependencies_for_formula(formula, inherited_options)
     any_bottle_used ||= any_dep_bottle_used
 
-    # We require some dependencies (glibc, GCC 5, etc.) if binaries were built.
+    # We require some dependencies (glibc, GCC, etc.) if binaries were built.
     # Native binaries shouldn't exist in cross-platform `all` bottles.
     if any_bottle_used && !formula.bottled?(:all) && !Keg.bottle_dependencies.empty?
       all_bottle_deps = Keg.bottle_dependencies.flat_map do |bottle_dep|
