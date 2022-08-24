@@ -626,7 +626,7 @@ class FormulaInstaller
       if all_bottle_deps.exclude?(formula.name)
         bottle_deps = Keg.bottle_dependencies.flat_map do |bottle_dep|
           expanded_bottle_deps, = expand_dependencies_for_formula(bottle_dep, inherited_options)
-          expanded_bottle_deps
+          expanded_bottle_deps + [Dependency.new(bottle_dep.name)]
         end
         expanded_deps = Dependency.merge_repeats(bottle_deps + expanded_deps)
       end
