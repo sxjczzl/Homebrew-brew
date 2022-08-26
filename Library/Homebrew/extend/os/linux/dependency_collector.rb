@@ -63,7 +63,13 @@ class DependencyCollector
         end
 
         @@global_dep_tree[global_dep_name].merge(deps.map(&:name))
-        deps = deps.flat_map { |dep| dep.to_formula.deps }
+        deps = deps.flat_map do |dep|
+          # Stop searching if the dependency is glibc because it is the root
+          # of the dependency tree in Linux.
+          next if dep.name == GLIBC
+
+          dep.to_formula.deps
+        end
       end
     end
   end
