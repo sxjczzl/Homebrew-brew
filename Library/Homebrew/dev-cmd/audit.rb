@@ -66,6 +66,9 @@ module Homebrew
       switch "--skip-style",
              description: "Skip running non-RuboCop style checks. Useful if you plan on running " \
                           "`brew style` separately. Enabled by default unless a formula is specified by name."
+      switch "--skip-repository",
+             description: "Skip repository checks. Should only be used after manually" \
+                          "determining that repository requirements are met."
       switch "-D", "--audit-debug",
              description: "Enable debugging and profiling of audit methods."
       comma_array "--only",
@@ -225,6 +228,7 @@ module Homebrew
         # No need for `|| nil` for `--[no-]appcast` because boolean switches are already `nil` if not passed
         appcast:               args.appcast?,
         online:                args.online? || nil,
+        repository:            !args.skip_repository? || nil,
         strict:                args.strict? || nil,
         new_cask:              args.new_cask? || nil,
         token_conflicts:       args.token_conflicts? || nil,

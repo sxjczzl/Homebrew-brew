@@ -13,6 +13,7 @@ module Cask
       audit_download: nil,
       audit_appcast: nil,
       audit_online: nil,
+      audit_repository: nil,
       audit_new_cask: nil,
       audit_strict: nil,
       audit_signing: nil,
@@ -28,6 +29,7 @@ module Cask
         audit_download:        audit_download,
         audit_appcast:         audit_appcast,
         audit_online:          audit_online,
+        audit_repository:      audit_repository,
         audit_new_cask:        audit_new_cask,
         audit_strict:          audit_strict,
         audit_signing:         audit_signing,
@@ -47,6 +49,7 @@ module Cask
       audit_download: nil,
       audit_appcast: nil,
       audit_online: nil,
+      audit_repository: nil,
       audit_strict: nil,
       audit_signing: nil,
       audit_token_conflicts: nil,
@@ -61,6 +64,7 @@ module Cask
       @audit_download = audit_download
       @audit_appcast = audit_appcast
       @audit_online = audit_online
+      @audit_repository = audit_repository
       @audit_new_cask = audit_new_cask
       @audit_strict = audit_strict
       @audit_signing = audit_signing
@@ -136,6 +140,7 @@ module Cask
         cask,
         appcast:         @audit_appcast,
         online:          @audit_online,
+        repository:      @audit_repository,
         strict:          @audit_strict,
         signing:         @audit_signing,
         new_cask:        @audit_new_cask,

@@ -20,11 +20,11 @@ module Cask
 
     attr_reader :cask, :download
 
-    attr_predicate :appcast?, :new_cask?, :strict?, :signing?, :online?, :token_conflicts?
+    attr_predicate :appcast?, :new_cask?, :strict?, :signing?, :online?, :repository?, :token_conflicts?
 
     def initialize(cask, appcast: nil, download: nil, quarantine: nil,
-                   token_conflicts: nil, online: nil, strict: nil, signing: nil,
-                   new_cask: nil)
+                   token_conflicts: nil, online: nil, repository: nil, strict: nil,
+                   signing: nil, new_cask: nil)
 
       # `new_cask` implies `online`, `token_conflicts`, `strict` and `signing`
       online = new_cask if online.nil?
@@ -32,9 +32,10 @@ module Cask
       signing = new_cask if signing.nil?
       token_conflicts = new_cask if token_conflicts.nil?
 
-      # `online` implies `appcast` and `download`
+      # `online` implies `appcast`, `download` and `repository`
       appcast = online if appcast.nil?
       download = online if download.nil?
+      repository = online if repository.nil?
 
       # `signing` implies `download`
       download = signing if download.nil?
@@ -43,6 +44,7 @@ module Cask
       @appcast = appcast
       @download = Download.new(cask, quarantine: quarantine) if download
       @online = online
+      @repository = repository
       @strict = strict
       @signing = signing
       @new_cask = new_cask
@@ -77,13 +79,13 @@ module Cask
       check_latest_with_auto_updates
       check_stanza_requires_uninstall
       check_appcast_contains_version
-      check_gitlab_repository
+      check_gitlab_repository if repository?
       check_gitlab_repository_archived
       check_gitlab_prerelease_version
-      check_github_repository
+      check_github_repository if repository?
       check_github_repository_archived
       check_github_prerelease_version
-      check_bitbucket_repository
+      check_bitbucket_repository if repository?
       check_signing
       self
     rescue => e
